@@ -1,0 +1,20 @@
+{
+  "name": "authwall",
+  "author": "Vladimir Barbaros <authwall@vbarbarosh.com>",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node .",
+    "watch": "nodemon ."
+  },
+  "dependencies": {
+    "@vbarbarosh/express-helpers": "^2.2.1",
+    "@vbarbarosh/node-helpers": "^3.74.0",
+    "express": "^4.22.1",
+    "express-session": "^1.19.0",
+    "http-proxy-middleware": "^3.0.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

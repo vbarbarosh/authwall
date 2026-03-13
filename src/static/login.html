@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://unpkg.com/@vbarbarosh/smcss@1.2.0/dist/reset.css" rel="stylesheet">
+    <link href="https://unpkg.com/@vbarbarosh/smcss@1.2.0/dist/sm.css" rel="stylesheet">
+    <title>Login | authapp</title>
+    <style>
+    form {
+        display: block;
+        width: 400px;
+        border: 1px dashed;
+        padding: 10px 5px;
+        margin-top: 10px;
+    }
+    input {
+        display: block;
+    }
+    </style>
+</head>
+<body>
+
+<form method="POST">
+    <label>
+        Username:
+        <input type="text" name="username">
+    </label>
+    <label>
+        Password:
+        <input type="password" name="password">
+    </label>
+    <br>
+    <input type="submit" value="Login">
+</form>
+
+<form action="/auth/logout" method="POST">
+    <input type="submit" value="Logout">
+</form>
+
+<pre id="me"></pre>
+
+<script type="module">
+    const response = await fetch('/me');
+    document.querySelector('#me').innerText = await response.text();
+</script>
+
+</body>
+</html>

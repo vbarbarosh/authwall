@@ -1,0 +1,14 @@
+services:
+
+  authwall:
+    build: .
+    restart: unless-stopped
+    environment:
+      AUTHWALL_TARGET: http://echo-server:8080
+      AUTHWALL_SESSION_SECRET: hello
+    ports:
+      - 3000:3000
+
+  echo-server:
+      image: jmalloc/echo-server
+      restart: unless-stopped
