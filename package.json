@@ -5,16 +5,24 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node .",
-    "watch": "nodemon ."
+    "watch": "nodemon .",
+    "migrate": "knex migrate:latest",
+    "migrate:make": "knex migrate:make",
+    "migrate:rollback": "knex migrate:rollback"
   },
   "dependencies": {
     "@vbarbarosh/express-helpers": "^2.2.1",
     "@vbarbarosh/node-helpers": "^3.74.0",
+    "bcrypt": "^6.0.0",
+    "bluebird": "^3.7.2",
     "express": "^4.22.1",
     "express-session": "^1.19.0",
-    "http-proxy-middleware": "^3.0.5"
+    "http-proxy-middleware": "^3.0.5",
+    "knex": "^3.1.0",
+    "mysql2": "^3.19.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "sqlite3": "^6.0.1"
   }
 }

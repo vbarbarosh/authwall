@@ -4,10 +4,25 @@ services:
     build: .
     restart: unless-stopped
     environment:
+      AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
       AUTHWALL_TARGET: http://echo-server:8080
       AUTHWALL_SESSION_SECRET: hello
     ports:
-      - 3000:3000
+      - '3000:3000'
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.4.8
+    environment:
+      MYSQL_DATABASE: authwall
+      MYSQL_USER: authwall
+      MYSQL_PASSWORD: authwall
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./data/mysql:/var/lib/mysql
 
   echo-server:
       image: jmalloc/echo-server
