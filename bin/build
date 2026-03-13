@@ -10,4 +10,4 @@ scriptname=`basename $script`
 
 cd $scriptdir/..
 
-docker build -t authwall .
+docker build -t vbarbarosh/authwall .

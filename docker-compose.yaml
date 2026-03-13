@@ -1,7 +1,7 @@
 services:
 
   authwall:
-    build: .
+    image: vbarbarosh/authwall
     restart: unless-stopped
     environment:
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
