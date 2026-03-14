@@ -246,9 +246,8 @@ async function google_callback_get(req, res)
         });
     }
 
-    const user = await db('users').where({id: user_id}).first();
     await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user.id;
+    req.session.user_id = user_id;
     await promisify(v => req.session.save(v));
     redirect(req, res);
 }
