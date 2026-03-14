@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<div id="error"></div>
+
 <p>You are about to sign out.</p>
 
 <form action="/auth/sign-out" method="POST">
@@ -15,6 +17,11 @@
 </form>
 
 <p><a href="/">Cancel</a></p>
+
+<script type="module">
+    const response = await fetch('/auth/error');
+    document.querySelector('#error').innerText = await response.text();
+</script>
 
 </body>
 </html>

@@ -10,3 +10,14 @@ input {
     display: block;
     margin-bottom: 10px;
 }
+
+#error {
+    background: #f88;
+    padding: 10px 5px;
+    border: 1px dashed;
+    width: 400px;
+}
+
+#error:empty {
+    display: none;
+}

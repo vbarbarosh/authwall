@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<div id="error"></div>
+
 <form action="/auth/sign-in" method="POST">
     <label>
         Username
@@ -22,11 +24,9 @@
 
 <p><a href="/auth/sign-up">Sign up</a></p>
 
-<pre id="me"></pre>
-
 <script type="module">
-    const response = await fetch('/auth/me');
-    document.querySelector('#me').innerText = await response.text();
+    const response = await fetch('/auth/error');
+    document.querySelector('#error').innerText = await response.text();
 </script>
 
 </body>

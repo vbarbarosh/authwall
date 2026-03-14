@@ -7,6 +7,7 @@ const promisify = require('../helpers/promisify');
 
 const routes = [
     {req: 'GET /auth/me', fn: me_get},
+    {req: 'GET /auth/error', fn: error_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
     {req: 'GET /auth/sign-out', fn: sign_out_get},
     {req: 'GET /auth/sign-up', fn: sign_up_get},
@@ -25,6 +26,14 @@ const routes = [
 async function me_get(req, res)
 {
     res.send({username: req.session.username});
+}
+
+// GET /auth/error
+async function error_get(req, res)
+{
+    const s = req.session.error;
+    delete req.session.error;
+    res.type('text').send(s);
 }
 
 // GET /auth/sign-in

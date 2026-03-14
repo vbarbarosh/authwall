@@ -61,6 +61,20 @@ async function main()
         },
     }));
 
+    app.use(error_handler);
+
+    function error_handler(error, req, res, next)
+    {
+        console.log('⚠️ error_handler');
+        console.error(error);
+
+        if (req.session) {
+            req.session.error = error.message;
+        }
+
+        res.redirect(req.originalUrl);
+    }
+
     await express_run(app, config.port, config.listen);
 }
 
