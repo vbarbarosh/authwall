@@ -174,6 +174,10 @@ async function change_password_post(req, res)
 // GET /auth/google
 async function google_get(req, res)
 {
+    const state = random_hex();
+    req.session.oauth_state = state;
+    await promisify(v => req.session.save(v));
+
     res.redirect(urlmod('https://accounts.google.com/o/oauth2/v2/auth', {
         client_id: config.google_client_id,
         redirect_uri: config.google_redirect_url,
@@ -181,16 +185,22 @@ async function google_get(req, res)
         scope: 'openid email profile',
         access_type: 'offline',
         prompt: 'select_account',
+        state,
     }));
 }
 
 // GET /auth/google/callback
 async function google_callback_get(req, res)
 {
-    const {code} = req.query;
+    const {code, state} = req.query;
+    const expected_state = req.session.oauth_state;
+    delete req.session.oauth_state;
 
     if (!code) {
         throw new Error('Missing OAuth code');
+    }
+    if (!state || state !== expected_state) {
+        throw new Error('Invalid OAuth state');
     }
 
     const token = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
