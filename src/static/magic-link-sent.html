@@ -3,35 +3,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Sign in | authwall</title>
+    <title>Magic link sent | authwall</title>
     <link href="/auth/static/authwall.css" rel="stylesheet">
 </head>
 <body>
 
 <div id="error"></div>
 
-<form action="/auth/sign-in" method="POST">
+<p>Check your email for a login link or enter the code below.</p>
+
+<form action="/auth/magic-link-sent" method="POST">
     <label>
-        Username
-        <input type="text" name="username" autocomplete="username" required>
+        Email
+        <input type="email" name="email" autocomplete="email" required readonly>
     </label>
     <label>
-        Password
-        <input type="password" name="password" autocomplete="current-password" required>
+        Code
+        <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
     </label>
-    <input type="submit" value="Sign in">
+    <input type="submit" value="Submit code">
 </form>
 
 <p><a href="/auth/sign-up">Sign up</a></p>
+<p><a href="/auth/sign-in">Sign in</a></p>
 <p><a href="/auth/google">Sign in with Google</a></p>
-<p><a href="/auth/forgot-password">Forgot password</a></p>
-<p><a href="/auth/magic-link">Sign in with the magic link</a></p>
 
 <script type="module">
     const response = await fetch('/auth/status');
     const status = await response.json();
     console.log(status);
     document.querySelector('#error').innerText = status.error;
+    document.querySelector('[name=email]').value = (new URLSearchParams(location.search).get('email') || '');
 </script>
 
 </body>

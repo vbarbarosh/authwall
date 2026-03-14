@@ -1,0 +1,11 @@
+Sign in to Example
+
+Click the link below to sign in:
+
+https://example.com/auth/magic-link/callback?token=abc123
+
+Or enter this code:
+
+483912
+
+This code expires in 10 minutes.
