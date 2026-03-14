@@ -16,6 +16,7 @@ let log_dir = null;
 const log_file = process.env.LOG_FILE ?? null;
 
 const config = {
+    base_url: process.env.AUTHWALL_BASE_URL ?? 'http://localhost:3000',
     log_file,
     log_file_http: log_file ?? function () {
         if (log_dir === null) {

@@ -1,7 +1,8 @@
-const NotImplemented = require('@vbarbarosh/node-helpers/src/errors/NotImplemented');
 const bcrypt = require('bcrypt');
 const config = require('../config');
 const const_providers = require('../helpers/const/const_providers');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
+const date_add_hours = require('@vbarbarosh/node-helpers/src/date_add_hours');
 const db = require('../../db');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
@@ -139,25 +140,94 @@ async function sign_up_post(req, res)
 // GET /auth/forgot-password
 async function forgot_password_get(req, res)
 {
-    throw new NotImplemented();
+    if (req.session.user_id) {
+        // If a user is already authenticated, the forgot-password page probably shouldn't be used.
+        redirect(req, res);
+        return;
+    }
+
+    res.sendFile(fs_path_resolve(__dirname, '../static/forgot-password.html'));
 }
 
 // POST /auth/forgot-password
 async function forgot_password_post(req, res)
 {
-    throw new NotImplemented();
+    const {email} = req.body;
+    if (!email) {
+        throw new Error('Missing email');
+    }
+
+    const user = await db('users').where({email}).first();
+    if (user) {
+        const token = random_hex();
+        const now = db.fn.now();
+
+        await db('password_reset_tokens').insert({
+            user_id: user.id,
+            token_hash: crypto_hash_sha256(token),
+            created_at: now,
+            updated_at: now,
+            expires_at: date_add_hours(new Date(), 1),
+        });
+
+        const reset_link = urlmod(`${config.base_url}/auth/reset-password`, {token});
+        console.log(`Reset link: ${reset_link}`);
+    }
+
+    // never reveal whether email exists
+    redirect(req, res, '/auth/sign-in');
 }
 
 // GET /auth/reset-password
 async function reset_password_get(req, res)
 {
-    throw new NotImplemented();
+    const {token} = req.query;
+    if (!token) {
+        throw new Error('Missing token');
+    }
+
+    const token_hash = crypto_hash_sha256(token);
+    const reset = await db('password_reset_tokens').where({token_hash}).first();
+    if (!reset || reset.used_at || new Date(reset.expires_at) < new Date()) {
+        throw new Error('Invalid reset token');
+    }
+
+    res.sendFile(fs_path_resolve(__dirname, '../static/reset-password.html'));
 }
 
 // POST /auth/reset-password
 async function reset_password_post(req, res)
 {
-    throw new NotImplemented();
+    const {token, password, password_confirm} = req.body;
+
+    if (!token || !password || !password_confirm) {
+        throw new Error('Missing fields');
+    }
+
+    if (password !== password_confirm) {
+        throw new Error('Passwords do not match');
+    }
+
+    const token_hash = crypto_hash_sha256(token);
+    const reset = await db('password_reset_tokens').where({token_hash}).first();
+    if (!reset) {
+        throw new Error('Invalid reset token');
+    }
+    if (reset.used_at) {
+        throw new Error('Reset token already used');
+    }
+    if (new Date(reset.expires_at) < new Date()) {
+        throw new Error('Reset token expired');
+    }
+
+    const password_hash = await bcrypt.hash(password, config.password_rounds);
+    await db.transaction(async function (trx) {
+        const now = trx.fn.now();
+        await trx('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
+        await trx('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
+    });
+
+    redirect(req, res, '/auth/sign-in');
 }
 
 // GET /auth/change-password

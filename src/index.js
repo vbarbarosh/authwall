@@ -65,7 +65,7 @@ async function main()
 
     function error_handler(error, req, res, next)
     {
-        console.log('⚠️ error_handler', req.originalUrl);
+        console.log('⚠️ error_handler', req.url, req.originalUrl);
         console.error(error);
 
         if (req.session) {
@@ -73,9 +73,12 @@ async function main()
         }
 
         // Prevent infinite redirects
-        if (req.originalUrl.startsWith('/auth/google')) {
+        if (req.url === req.originalUrl) {
             res.redirect('/auth/sign-in');
         }
+        // if (req.originalUrl.startsWith('/auth/google')) {
+        //     res.redirect('/auth/sign-in');
+        // }
         else {
             res.redirect(req.originalUrl);
         }
