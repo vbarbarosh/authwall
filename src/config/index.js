@@ -34,6 +34,11 @@ const config = {
         connection: process.env.AUTHWALL_MYSQL ?? knexfile[NODE_ENV].connection,
     },
     password_rounds: 12,
+
+    // Google Login
+    google_client_id: process.env.AUTHWALL_GOOGLE_CLIENT_ID,
+    google_client_secret: process.env.AUTHWALL_GOOGLE_CLIENT_SECRET,
+    google_redirect_url: process.env.AUTHWALL_GOOGLE_REDIRECT_URL,
 };
 
 if (!process.env.AUTHWALL_SESSION_SECRET) {

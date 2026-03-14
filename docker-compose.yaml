@@ -3,6 +3,8 @@ services:
   authwall:
     image: vbarbarosh/authwall
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
       AUTHWALL_TARGET: http://echo-server:8080

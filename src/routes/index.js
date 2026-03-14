@@ -3,7 +3,11 @@ const bcrypt = require('bcrypt');
 const config = require('../config');
 const db = require('../../db');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
+const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const promisify = require('../helpers/promisify');
+const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const routes = [
     {req: 'GET /auth/me', fn: me_get},
@@ -14,6 +18,8 @@ const routes = [
     {req: 'GET /auth/forgot-password', fn: forgot_password_get},
     {req: 'GET /auth/reset-password', fn: reset_password_get},
     {req: 'GET /auth/change-password', fn: change_password_get},
+    {req: 'GET /auth/google', fn: google_get},
+    {req: 'GET /auth/google/callback', fn: google_callback_get},
     {req: 'POST /auth/sign-in', fn: sign_in_post},
     {req: 'POST /auth/sign-out', fn: sign_out_post},
     {req: 'POST /auth/sign-up', fn: sign_up_post},
@@ -149,6 +155,61 @@ async function change_password_get(req, res)
 async function change_password_post(req, res)
 {
     throw new NotImplemented();
+}
+
+// GET /auth/google
+async function google_get(req, res)
+{
+    res.redirect(urlmod('https://accounts.google.com/o/oauth2/v2/auth', {
+        client_id: config.google_client_id,
+        redirect_uri: config.google_redirect_url,
+        response_type: 'code',
+        scope: 'openid email profile',
+        access_type: 'offline',
+        prompt: 'select_account',
+    }));
+}
+
+// GET /auth/google/callback
+async function google_callback_get(req, res)
+{
+    const {code} = req.query;
+
+    if (!code) {
+        throw new Error('Missing OAuth code');
+    }
+
+    const token = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
+        code,
+        client_id: config.google_client_id,
+        client_secret: config.google_client_secret,
+        redirect_uri: config.google_redirect_url,
+        grant_type: 'authorization_code',
+    });
+    console.log(token);
+
+    const userinfo = await http_get_json('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {Authorization: `Bearer ${token.access_token}`},
+    });
+    console.log(userinfo);
+
+    const username = `google-${userinfo.sub}`;
+
+    try {
+        const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
+        const now = db.fn.now();
+        await db('users').insert({username, password_hash, created_at: now, updated_at: now});
+    }
+    catch (error) {
+        if (error.code !== 'ER_DUP_ENTRY' && error.code !== 'SQLITE_CONSTRAINT') {
+            throw error;
+        }
+    }
+
+    await promisify(v => req.session.regenerate(v));
+    req.session.username = username;
+    await promisify(v => req.session.save(v));
+    redirect(req, res);
 }
 
 function redirect(req, res, default_url = '/')

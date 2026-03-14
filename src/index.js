@@ -65,14 +65,20 @@ async function main()
 
     function error_handler(error, req, res, next)
     {
-        console.log('⚠️ error_handler');
+        console.log('⚠️ error_handler', req.originalUrl);
         console.error(error);
 
         if (req.session) {
             req.session.error = error.message;
         }
 
-        res.redirect(req.originalUrl);
+        // Prevent infinite redirects
+        if (req.originalUrl.startsWith('/auth/google')) {
+            res.redirect('/auth/sign-in');
+        }
+        else {
+            res.redirect(req.originalUrl);
+        }
     }
 
     await express_run(app, config.port, config.listen);
