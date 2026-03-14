@@ -132,6 +132,7 @@ async function sign_up_post(req, res)
         if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {
             throw new Error('Username already exists')
         }
+        throw error;
     }
 }
 
@@ -162,13 +163,49 @@ async function reset_password_post(req, res)
 // GET /auth/change-password
 async function change_password_get(req, res)
 {
-    throw new NotImplemented();
+    if (!req.session.user_id) {
+        return redirect(req, res, '/auth/sign-in');
+    }
+
+    res.sendFile(fs_path_resolve(__dirname, '../static/change-password.html'));
 }
 
 // POST /auth/change-password
 async function change_password_post(req, res)
 {
-    throw new NotImplemented();
+    if (!req.session.user_id) {
+        throw new Error('Authentication required');
+    }
+
+    const {current_password, password, password_confirm} = req.body;
+
+    if (!current_password || !password || !password_confirm) {
+        throw new Error('Missing fields');
+    }
+
+    if (password !== password_confirm) {
+        throw new Error('Passwords do not match');
+    }
+
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    const ok = await bcrypt.compare(current_password, user.password_hash);
+    if (!ok) {
+        throw new Error('Current password is incorrect');
+    }
+
+    const password_hash = await bcrypt.hash(password, config.password_rounds);
+    const now = db.fn.now();
+    await db('users').where({id: user.id}).update({password_hash, updated_at: now});
+
+    await promisify(v => req.session.regenerate(v));
+    req.session.user_id = user.id;
+    await promisify(v => req.session.save(v));
+
+    redirect(req, res);
 }
 
 // GET /auth/google
