@@ -33,6 +33,7 @@ const config = {
         ...knexfile[NODE_ENV],
         connection: process.env.AUTHWALL_MYSQL ?? knexfile[NODE_ENV].connection,
     },
+    password_rounds: 12,
 };
 
 if (!process.env.AUTHWALL_SESSION_SECRET) {

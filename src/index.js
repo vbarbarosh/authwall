@@ -9,6 +9,7 @@ const express_log = require('@vbarbarosh/express-helpers/src/express_log');
 const express_routes = require('@vbarbarosh/express-helpers/src/express_routes');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const express_session = require('express-session');
+const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const routes = require('./routes');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
@@ -24,6 +25,7 @@ async function main()
     app.use(express_log({file: config.log_file_http}));
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
+    app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
 
     app.use(express_session({
         store: new SessionStore(),

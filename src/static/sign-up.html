@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Sign up | authwall</title>
+    <link href="/auth/static/authwall.css" rel="stylesheet">
+</head>
+<body>
+
+<form action="/auth/sign-up" method="POST">
+    <label>
+        Username
+        <input type="text" name="username" autocomplete="username" required>
+    </label>
+    <label>
+        Password
+        <input type="password" name="password" autocomplete="new-password" required>
+    </label>
+    <label>
+        Confirm password
+        <input type="password" name="password_confirm" autocomplete="new-password" required>
+    </label>
+    <input type="submit" value="Sign up">
+</form>
+
+</body>
+</html>

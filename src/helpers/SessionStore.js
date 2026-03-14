@@ -17,7 +17,7 @@ class SessionStore extends express_session.Store
                 return callback(null, null);
             }
 
-            callback(null, row.data);
+            callback(null, decode_json_column(row.data));
         }
         catch (error) {
             callback(error);
@@ -64,6 +64,16 @@ class SessionStore extends express_session.Store
             callback(error);
         }
     }
+}
+
+function decode_json_column(value)
+{
+    // MySQL return objects
+    // SQLite return strings
+    if (typeof value === 'string') {
+        return JSON.parse(value);
+    }
+    return value;
 }
 
 module.exports = SessionStore;

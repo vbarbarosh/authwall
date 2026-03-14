@@ -3,40 +3,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://unpkg.com/@vbarbarosh/smcss@1.2.0/dist/reset.css" rel="stylesheet">
-    <link href="https://unpkg.com/@vbarbarosh/smcss@1.2.0/dist/sm.css" rel="stylesheet">
     <title>Sign in | authwall</title>
-    <style>
-    form {
-        display: block;
-        width: 400px;
-        border: 1px dashed;
-        padding: 10px 5px;
-        margin-top: 10px;
-    }
-    input {
-        display: block;
-    }
-    </style>
+    <link href="/auth/static/authwall.css" rel="stylesheet">
 </head>
 <body>
 
-<form method="POST">
+<form action="/auth/sign-in" method="POST">
     <label>
-        Username:
-        <input type="text" name="username">
+        Username
+        <input type="text" name="username" autocomplete="username" required>
     </label>
     <label>
-        Password:
-        <input type="password" name="password">
+        Password
+        <input type="password" name="password" autocomplete="current-password" required>
     </label>
-    <br>
-    <input type="submit" value="Login">
+    <input type="submit" value="Sign in">
 </form>
 
-<form action="/auth/sign-out" method="POST">
-    <input type="submit" value="Sign out">
-</form>
+<p><a href="/auth/sign-up">Sign up</a></p>
 
 <pre id="me"></pre>
 

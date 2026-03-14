@@ -1,4 +1,7 @@
 const NotImplemented = require('@vbarbarosh/node-helpers/src/errors/NotImplemented');
+const bcrypt = require('bcrypt');
+const config = require('../config');
+const db = require('../../db');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const promisify = require('../helpers/promisify');
 
@@ -33,41 +36,74 @@ async function sign_in_get(req, res)
 // POST /auth/sign-in
 async function sign_in_post(req, res)
 {
-    await promisify(v => req.session.regenerate(v));
-    req.session.username = req.body.username;
-    await promisify(v => req.session.save(v));
+    const {username, password} = req.body;
 
-    if (typeof req.query.return === 'string' && req.query.return.startsWith('/')) {
-        res.redirect(req.query.return);
+    if (!username || !password) {
+        throw new Error('Missing fields');
     }
-    else {
-        res.redirect('/');
+
+    const user = await db('users').where({username}).first();
+    if (!user) {
+        throw new Error('Invalid username or password');
     }
+
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+        throw new Error('Invalid username or password');
+    }
+
+    await promisify(v => req.session.regenerate(v));
+    req.session.username = user.username;
+    await promisify(v => req.session.save(v));
+    redirect(req, res);
 }
 
 // GET /auth/sign-out
 async function sign_out_get(req, res)
 {
-    throw new NotImplemented();
+    res.sendFile(fs_path_resolve(__dirname, '../static/sign-out.html'));
 }
 
 // POST /auth/sign-out
 async function sign_out_post(req, res)
 {
     await promisify(v => req.session.destroy(v));
-    res.redirect('/auth/sign-in');
+    redirect(req, res, '/auth/sign-in');
 }
 
 // GET /auth/sign-up
 async function sign_up_get(req, res)
 {
-    throw new NotImplemented();
+    res.sendFile(fs_path_resolve(__dirname, '../static/sign-up.html'));
 }
 
 // POST /auth/sign-up
 async function sign_up_post(req, res)
 {
-    throw new NotImplemented();
+    const {username, password, password_confirm} = req.body;
+
+    if (!username || !password) {
+        throw new Error('Missing fields');
+    }
+
+    if (password !== password_confirm) {
+        throw new Error('Passwords do not match')
+    }
+
+    try {
+        const password_hash = await bcrypt.hash(password, config.password_rounds);
+        const now = db.fn.now();
+        await db('users').insert({username, password_hash, created_at: now, updated_at: now});
+        await promisify(v => req.session.regenerate(v));
+        req.session.username = username;
+        await promisify(v => req.session.save(v));
+        redirect(req, res);
+    }
+    catch (error) {
+        if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {
+            throw new Error('Username already exists')
+        }
+    }
 }
 
 // GET /auth/forgot-password
@@ -104,6 +140,16 @@ async function change_password_get(req, res)
 async function change_password_post(req, res)
 {
     throw new NotImplemented();
+}
+
+function redirect(req, res, default_url = '/')
+{
+    if (typeof req.query.return === 'string' && req.query.return.startsWith('/')) {
+        res.redirect(req.query.return);
+    }
+    else {
+        res.redirect(default_url);
+    }
 }
 
 module.exports = routes;
