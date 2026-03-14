@@ -1,6 +1,7 @@
 const NotImplemented = require('@vbarbarosh/node-helpers/src/errors/NotImplemented');
 const bcrypt = require('bcrypt');
 const config = require('../config');
+const const_providers = require('../helpers/const/const_providers');
 const db = require('../../db');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
@@ -193,21 +194,29 @@ async function google_callback_get(req, res)
     });
     console.log(userinfo);
 
-    const username = `google-${userinfo.sub}`;
+    const provider = const_providers.google;
+    const provider_user_id = userinfo.sub;
 
-    try {
+    let user_id;
+    const user_identity = await db('user_identities').where({provider, provider_user_id}).first();
+    if (user_identity) {
+        user_id = user_identity.user_id;
+    }
+    else {
+        const username = `google-${userinfo.sub}`;
         const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
-        const now = db.fn.now();
-        await db('users').insert({username, password_hash, created_at: now, updated_at: now});
-    }
-    catch (error) {
-        if (error.code !== 'ER_DUP_ENTRY' && error.code !== 'SQLITE_CONSTRAINT') {
-            throw error;
-        }
+        await db.transaction(async function (trx) {
+            const now = trx.fn.now();
+            const tmp = await trx('users').insert({username, password_hash, created_at: now, updated_at: now});
+            console.log(tmp);
+            user_id = tmp[0];
+            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
+        });
     }
 
+    const user = await db('users').where({id: user_id}).first();
     await promisify(v => req.session.regenerate(v));
-    req.session.username = username;
+    req.session.username = user.username;
     await promisify(v => req.session.save(v));
     redirect(req, res);
 }

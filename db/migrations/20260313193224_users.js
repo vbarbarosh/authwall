@@ -5,10 +5,14 @@
 exports.up = async function (knex) {
     await knex.schema.createTable('users', function (table) {
         table.increments('id');
-        table.string('username', 100).notNullable().unique();
-        table.string('password_hash', 255).notNullable();
+        table.string('username', 100).unique();
+        table.string('email', 255).unique();
+        table.boolean('email_verified').notNullable().defaultTo(false);
+        table.string('password_hash', 255);
+        table.string('display_name', 255);
+        table.string('avatar_url', 500);
         table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
-        table.timestamp('updated_at').notNullable();
+        table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
     });
 };
 
