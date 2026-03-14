@@ -19,8 +19,10 @@
 <p><a href="/">Cancel</a></p>
 
 <script type="module">
-    const response = await fetch('/auth/error');
-    document.querySelector('#error').innerText = await response.text();
+    const response = await fetch('/auth/status');
+    const status = await response.json();
+    console.log(status);
+    document.querySelector('#error').innerText = status.error;
 </script>
 
 </body>

@@ -11,8 +11,7 @@ const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const routes = [
-    {req: 'GET /auth/me', fn: me_get},
-    {req: 'GET /auth/error', fn: error_get},
+    {req: 'GET /auth/status', fn: status_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
     {req: 'GET /auth/sign-out', fn: sign_out_get},
     {req: 'GET /auth/sign-up', fn: sign_up_get},
@@ -29,18 +28,31 @@ const routes = [
     {req: 'POST /auth/change-password', fn: change_password_post},
 ];
 
-// GET /auth/me
-async function me_get(req, res)
+// GET /auth/status
+async function status_get(req, res)
 {
-    res.send({username: req.session.username});
-}
+    let user = null;
+    if (req.session.user_id) {
+        user = await db('users').where({id: req.session.user_id}).first();
+    }
 
-// GET /auth/error
-async function error_get(req, res)
-{
-    const s = req.session.error;
+    const error = req.session.error ?? null;
     delete req.session.error;
-    res.type('text').send(s);
+
+    if (!user) {
+        res.send({error, authenticated: false});
+    }
+    else {
+        res.send({
+            error,
+            authenticated: true,
+            username: user.username,
+            email: user.email,
+            email_verified: user.email_verified,
+            display_name: user.display_name,
+            avatar_url: user.avatar_url,
+        });
+    }
 }
 
 // GET /auth/sign-in
@@ -69,7 +81,7 @@ async function sign_in_post(req, res)
     }
 
     await promisify(v => req.session.regenerate(v));
-    req.session.username = user.username;
+    req.session.user_id = user.id;
     await promisify(v => req.session.save(v));
     redirect(req, res);
 }
@@ -109,9 +121,10 @@ async function sign_up_post(req, res)
     try {
         const password_hash = await bcrypt.hash(password, config.password_rounds);
         const now = db.fn.now();
-        await db('users').insert({username, password_hash, created_at: now, updated_at: now});
+        const tmp = await db('users').insert({username, password_hash, created_at: now, updated_at: now});
+        const user_id = tmp[0];
         await promisify(v => req.session.regenerate(v));
-        req.session.username = username;
+        req.session.user_id = user_id;
         await promisify(v => req.session.save(v));
         redirect(req, res);
     }
@@ -203,11 +216,20 @@ async function google_callback_get(req, res)
         user_id = user_identity.user_id;
     }
     else {
-        const username = `google-${userinfo.sub}`;
+        const username = null;
         const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
         await db.transaction(async function (trx) {
             const now = trx.fn.now();
-            const tmp = await trx('users').insert({username, password_hash, created_at: now, updated_at: now});
+            const tmp = await trx('users').insert({
+                username,
+                password_hash,
+                email: userinfo.email,
+                email_verified: userinfo.email_verified,
+                display_name: userinfo.name,
+                avatar_url: userinfo.picture,
+                created_at: now,
+                updated_at: now,
+            });
             console.log(tmp);
             user_id = tmp[0];
             await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
@@ -216,7 +238,7 @@ async function google_callback_get(req, res)
 
     const user = await db('users').where({id: user_id}).first();
     await promisify(v => req.session.regenerate(v));
-    req.session.username = user.username;
+    req.session.user_id = user.id;
     await promisify(v => req.session.save(v));
     redirect(req, res);
 }

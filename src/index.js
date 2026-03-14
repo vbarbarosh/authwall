@@ -54,8 +54,8 @@ async function main()
                 //         proxy_req.removeHeader(header);
                 //     }
                 // }
-                if (req.session.username) {
-                    proxy_req.setHeader('X-Auth-User',  req.session.username);
+                if (req.session.user_id) {
+                    proxy_req.setHeader('X-Auth-User',  req.session.user_id);
                 }
             },
         },
@@ -91,7 +91,7 @@ function sign_in_required(req, res, next)
         return;
     }
 
-    if (!req.session.username) {
+    if (!req.session.user_id) {
         console.log('auth_go_to_login', req.method, req.path);
         return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
     }

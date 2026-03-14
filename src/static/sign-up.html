@@ -30,8 +30,10 @@
 <p><a href="/auth/google">Sign in with Google</a></p>
 
 <script type="module">
-    const response = await fetch('/auth/error');
-    document.querySelector('#error').innerText = await response.text();
+    const response = await fetch('/auth/status');
+    const status = await response.json();
+    console.log(status);
+    document.querySelector('#error').innerText = status.error;
 </script>
 
 </body>
