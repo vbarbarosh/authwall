@@ -32,7 +32,7 @@ const config = {
     mysql: process.env.AUTHWALL_MYSQL,
     knexvars: {
         ...knexfile[NODE_ENV],
-        connection: process.env.AUTHWALL_MYSQL ?? knexfile[NODE_ENV].connection,
+        connection: process.env.AUTHWALL_MYSQL || knexfile[NODE_ENV].connection,
     },
     password_rounds: 12,
 
