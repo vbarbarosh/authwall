@@ -6,7 +6,8 @@ class SessionStore extends express_session.Store
 {
     async get(uid, callback) {
         try {
-            const row = await db('sessions').where({uid}).where('expires_at', '>', db.fn.now()).first();
+            const now = new Date();
+            const row = await db('sessions').where({uid}).where('expires_at', '>', now).first();
             console.log('get', uid, '-->', row);
 
             if (!row) {
@@ -24,15 +25,17 @@ class SessionStore extends express_session.Store
 
     async set(uid, data, callback) {
         try {
+            const now = new Date();
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
-                : new Date(Date.now() + (data.cookie?.maxAge || 86400000));
+                : new Date(now.getTime() + (data.cookie?.maxAge || 86400000));
 
             console.log('set', uid, '-->', data);
+            console.log('set.expires', uid, expires_at);
 
             const {user_id, ...custom} = data;
             await db('sessions')
-                .insert({uid, user_id, custom: JSON.stringify(custom), created_at: db.fn.now(), updated_at: db.fn.now(), expires_at})
+                .insert({uid, user_id, custom: JSON.stringify(custom), created_at: now, updated_at: now, expires_at})
                 .onConflict('uid')
                 .merge(['user_id', 'custom', 'updated_at', 'expires_at']);
 
@@ -57,10 +60,11 @@ class SessionStore extends express_session.Store
     async touch(uid, data, callback) {
         try {
             console.log('touch', uid, '-->', data);
+            const now = new Date();
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
-                : new Date(Date.now() + (data.cookie?.maxAge || 86400000));
-            await db('sessions').where({uid}).update({expires_at, updated_at: db.fn.now()});
+                : new Date(now.getTime() + (data.cookie?.maxAge || 86400000));
+            await db('sessions').where({uid}).update({expires_at, updated_at: now});
             callback(null);
         }
         catch (error) {

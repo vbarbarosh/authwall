@@ -131,12 +131,13 @@ async function sign_up_post(req, res)
     }
 
     try {
+        const now = new Date();
         const tmp = await db('users').insert({
             uid: random_uid_user(),
             username,
             password_hash: await bcrypt.hash(password, config.password_rounds),
-            created_at: db.fn.now(),
-            updated_at: db.fn.now(),
+            created_at: now,
+            updated_at: now,
         });
         const user_id = tmp[0];
 
@@ -181,11 +182,12 @@ async function forgot_password_post(req, res)
         const token = random_hex();
         const reset_link = urlmod(`${config.base_url}/auth/reset-password`, {token});
 
+        const now = new Date();
         await db('password_reset_tokens').insert({
             user_id: user.id,
             token_hash: crypto_hash_sha256(token),
-            created_at: db.fn.now(),
-            updated_at: db.fn.now(),
+            created_at: now,
+            updated_at: now,
             expires_at: date_add_minutes(new Date(), 10),
         });
 
@@ -204,10 +206,11 @@ async function reset_password_get(req, res)
         throw new Error('Missing token');
     }
 
+    const now = new Date();
     const reset = await db('password_reset_tokens')
         .whereNull('used_at')
         .where({token_hash: crypto_hash_sha256(token)})
-        .where('expires_at', '>', db.fn.now())
+        .where('expires_at', '>', now)
         .first();
     if (!reset) {
         throw new Error('Invalid reset token');
@@ -243,7 +246,7 @@ async function reset_password_post(req, res)
 
     const password_hash = await bcrypt.hash(password, config.password_rounds);
     await db.transaction(async function (trx) {
-        const now = trx.fn.now();
+        const now = new Date();
         await trx('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
         await trx('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
     });
@@ -289,7 +292,7 @@ async function change_password_post(req, res)
     }
 
     const password_hash = await bcrypt.hash(password, config.password_rounds);
-    const now = db.fn.now();
+    const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 
     await promisify(v => req.session.regenerate(v));
@@ -357,6 +360,7 @@ async function google_callback_get(req, res)
         const username = null;
         const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
         await db.transaction(async function (trx) {
+            const now = new Date();
             const tmp = await trx('users').insert({
                 uid: random_uid_user(),
                 username,
@@ -365,12 +369,12 @@ async function google_callback_get(req, res)
                 email_verified: userinfo.email_verified,
                 display_name: userinfo.name,
                 avatar_url: userinfo.picture,
-                created_at: trx.fn.now(),
-                updated_at: trx.fn.now(),
+                created_at: now,
+                updated_at: now,
             });
             console.log(tmp);
             user_id = tmp[0];
-            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: trx.fn.now()});
+            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
         });
     }
 
@@ -407,12 +411,13 @@ async function magic_link_post(req, res)
     const token = random_hex();
     const link = urlmod(`${config.base_url}/auth/magic-link/callback`, {token});
 
+    const now = new Date();
     await db('magic_links').insert({
         email,
         code_hash: await bcrypt.hash(code, config.password_rounds),
         token_hash: crypto_hash_sha256(token),
-        created_at: db.fn.now(),
-        updated_at: db.fn.now(),
+        created_at: now,
+        updated_at: now,
         expires_at: date_add_minutes(new Date(), 10),
     });
 
@@ -440,10 +445,11 @@ async function magic_link_sent_post(req, res)
         throw new Error('Invalid email');
     }
 
+    const now = new Date();
     const magic_link = await db('magic_links')
         .where({email})
         .whereNull('used_at')
-        .where('expires_at', '>', db.fn.now())
+        .where('expires_at', '>', now)
         .orderBy('id', 'desc')
         .first();
     if (!magic_link) {
@@ -454,7 +460,7 @@ async function magic_link_sent_post(req, res)
         throw new Error('Invalid or expired code');
     }
 
-    await db('magic_links').where({id: magic_link.id}).update({used_at: db.fn.now(), updated_at: db.fn.now()});
+    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
     let user_id;
 
@@ -469,8 +475,8 @@ async function magic_link_sent_post(req, res)
             email: email,
             email_verified: true,
             password_hash: await bcrypt.hash(random_hex(), config.password_rounds),
-            created_at: db.fn.now(),
-            updated_at: db.fn.now(),
+            created_at: now,
+            updated_at: now,
         });
         user_id = tmp[0];
     }
@@ -490,16 +496,17 @@ async function magic_link_callback_get(req, res)
         throw new Error('Missing token');
     }
 
+    const now = new Date();
     const magic_link = await db('magic_links')
         .whereNull('used_at')
         .where('token_hash', crypto_hash_sha256(token))
-        .where('expires_at', '>', db.fn.now())
+        .where('expires_at', '>', now)
         .first();
     if (!magic_link) {
         throw new Error('Invalid or expired magic link');
     }
 
-    await db('magic_links').where({id: magic_link.id}).update({used_at: db.fn.now(), updated_at: db.fn.now()});
+    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
     let user_id;
     const user = await db('users').where({email: magic_link.email}).first();
@@ -513,8 +520,8 @@ async function magic_link_callback_get(req, res)
             email: magic_link.email,
             email_verified: true,
             password_hash: await bcrypt.hash(random_hex(), config.password_rounds),
-            created_at: db.fn.now(),
-            updated_at: db.fn.now(),
+            created_at: now,
+            updated_at: now,
         });
         user_id = tmp[0];
     }
