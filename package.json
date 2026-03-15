@@ -11,6 +11,7 @@
     "migrate:rollback": "knex migrate:rollback"
   },
   "dependencies": {
+    "@paralleldrive/cuid2": "^3.3.0",
     "@vbarbarosh/express-helpers": "^2.2.1",
     "@vbarbarosh/node-helpers": "^3.74.0",
     "bcrypt": "^6.0.0",

@@ -9,8 +9,9 @@ const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const normalize_email = require('../helpers/normalize_email');
 const promisify = require('../helpers/promisify');
-const random_code = require('../helpers/random_code');
+const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const random_uid_user = require('../helpers/random/random_uid_user');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const SECOND = 1000;
@@ -83,12 +84,11 @@ async function sign_in_post(req, res)
     }
 
     const user = await db('users').where({username}).first();
-    if (!user) {
-        throw new Error('Invalid username or password');
-    }
+    const password_hash = user?.password_hash || '$2b$10$invalidinvalidinvalidinvalidinv';
 
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) {
+    // Attackers can detect if username exists by timing
+    const ok = await bcrypt.compare(password, password_hash);
+    if (!user || !ok) {
         throw new Error('Invalid username or password');
     }
 
@@ -131,10 +131,15 @@ async function sign_up_post(req, res)
     }
 
     try {
-        const password_hash = await bcrypt.hash(password, config.password_rounds);
-        const now = db.fn.now();
-        const tmp = await db('users').insert({username, password_hash, created_at: now, updated_at: now});
+        const tmp = await db('users').insert({
+            uid: random_uid_user(),
+            username,
+            password_hash: await bcrypt.hash(password, config.password_rounds),
+            created_at: db.fn.now(),
+            updated_at: db.fn.now(),
+        });
         const user_id = tmp[0];
+
         await promisify(v => req.session.regenerate(v));
         req.session.user_id = user_id;
         await promisify(v => req.session.save(v));
@@ -352,20 +357,20 @@ async function google_callback_get(req, res)
         const username = null;
         const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
         await db.transaction(async function (trx) {
-            const now = trx.fn.now();
             const tmp = await trx('users').insert({
+                uid: random_uid_user(),
                 username,
                 password_hash,
                 email: userinfo.email,
                 email_verified: userinfo.email_verified,
                 display_name: userinfo.name,
                 avatar_url: userinfo.picture,
-                created_at: now,
-                updated_at: now,
+                created_at: trx.fn.now(),
+                updated_at: trx.fn.now(),
             });
             console.log(tmp);
             user_id = tmp[0];
-            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
+            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: trx.fn.now()});
         });
     }
 
@@ -459,6 +464,7 @@ async function magic_link_sent_post(req, res)
     }
     else {
         const tmp = await db('users').insert({
+            uid: random_uid_user(),
             username: null,
             email: email,
             email_verified: true,
@@ -502,6 +508,7 @@ async function magic_link_callback_get(req, res)
     }
     else {
         const tmp = await db('users').insert({
+            uid: random_uid_user(),
             username: null,
             email: magic_link.email,
             email_verified: true,

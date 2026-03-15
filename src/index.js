@@ -11,6 +11,7 @@ const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const express_session = require('express-session');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
+const random_uid_session = require('./helpers/random/random_uid_session');
 const routes = require('./routes');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -28,6 +29,7 @@ async function main()
     app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
 
     app.use(express_session({
+        genid: random_uid_session,
         store: new SessionStore(),
         resave: false,
         saveUninitialized: false,

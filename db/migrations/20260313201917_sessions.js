@@ -4,7 +4,8 @@
  */
 exports.up = async function (knex) {
     await knex.schema.createTable('sessions', function (table) {
-        table.string('session_id', 128).primary();
+        table.increments('id');
+        table.string('uid', 32).notNullable().unique().collate('utf8mb4_bin');
         table.json('data').notNullable();
         table.bigInteger('expires').notNullable().index();
     });

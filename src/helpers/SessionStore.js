@@ -3,17 +3,17 @@ const express_session = require('express-session');
 
 class SessionStore extends express_session.Store
 {
-    async get(sid, callback) {
+    async get(uid, callback) {
         try {
-            const row = await db('sessions').where({session_id: sid}).first();
-            console.log('get', sid, '-->', row);
+            const row = await db('sessions').where({uid}).first();
+            console.log('get', uid, '-->', row);
 
             if (!row) {
                 return callback(null, null);
             }
 
             if (row.expires < Date.now()) {
-                await db('sessions').where({session_id: sid}).delete();
+                await db('sessions').where({uid}).delete();
                 return callback(null, null);
             }
 
@@ -24,15 +24,15 @@ class SessionStore extends express_session.Store
         }
     }
 
-    async set(sid, data, callback) {
+    async set(uid, data, callback) {
         try {
             const expires = data.cookie?.expires ? new Date(data.cookie.expires).getTime() : Date.now() + 86400000;
 
-            console.log('set', sid, '-->', data);
+            console.log('set', uid, '-->', data);
 
             await db('sessions')
-                .insert({session_id: sid, data: JSON.stringify(data), expires})
-                .onConflict('session_id')
+                .insert({uid, data: JSON.stringify(data), expires})
+                .onConflict('uid')
                 .merge();
 
             callback(null);
@@ -42,10 +42,10 @@ class SessionStore extends express_session.Store
         }
     }
 
-    async destroy(sid, callback) {
+    async destroy(uid, callback) {
         try {
-            console.log('destroy', sid);
-            await db('sessions').where({session_id: sid}).delete();
+            console.log('destroy', uid);
+            await db('sessions').where({uid}).delete();
             callback(null);
         }
         catch (error) {
@@ -53,11 +53,11 @@ class SessionStore extends express_session.Store
         }
     }
 
-    async touch(sid, data, callback) {
+    async touch(uid, data, callback) {
         try {
-            console.log('touch', sid, '-->', data);
+            console.log('touch', uid, '-->', data);
             const expires = data.cookie?.expires ? new Date(data.cookie.expires).getTime() : Date.now() + 86400000;
-            await db('sessions').where({session_id: sid}).update({expires});
+            await db('sessions').where({uid}).update({expires});
             callback(null);
         }
         catch (error) {

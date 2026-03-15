@@ -5,6 +5,7 @@
 exports.up = async function (knex) {
     await knex.schema.createTable('users', function (table) {
         table.increments('id');
+        table.string('uid', 32).notNullable().unique().collate('utf8mb4_bin');
         table.string('username', 100).unique();
         table.string('email', 255).unique();
         table.boolean('email_verified').notNullable().defaultTo(false);
