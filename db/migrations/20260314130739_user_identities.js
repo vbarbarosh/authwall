@@ -8,7 +8,7 @@ exports.up = async function (knex) {
         table.integer('user_id').notNullable().references('id').inTable('users').onDelete('RESTRICT');
         table.string('provider', 100).notNullable();
         table.string('provider_user_id', 100).notNullable();
-        table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
+        table.timestamp('created_at').notNullable();
         // prevent the same Google account linking to multiple users
         table.unique(['provider', 'provider_user_id'])
     });

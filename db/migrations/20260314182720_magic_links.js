@@ -8,8 +8,8 @@ exports.up = async function (knex) {
         table.string('email', 255).notNullable().index();
         table.string('code_hash', 255);
         table.string('token_hash', 64).notNullable().unique();
-        table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
-        table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
+        table.timestamp('created_at').notNullable();
+        table.timestamp('updated_at').notNullable();
         table.timestamp('expires_at').notNullable();
         table.timestamp('used_at');
         // To prevent spamming email requests: last email sent in 5 minutes

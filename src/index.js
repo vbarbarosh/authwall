@@ -23,6 +23,8 @@ async function main()
 
     const app = express();
 
+    app.set('trust proxy', true);
+
     app.use(express_log({file: config.log_file_http}));
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
@@ -37,6 +39,13 @@ async function main()
         saveUninitialized: false,
         secret: config.session_secret,
     }));
+    app.use(function (req, res, next) {
+        if (req.session && !req.session.ip) {
+            req.session.ip = req.ip;
+            req.session.user_agent = req.headers['user-agent'];
+        }
+        next();
+    });
 
     express_routes(app, routes);
 

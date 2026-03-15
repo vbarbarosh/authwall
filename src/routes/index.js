@@ -12,6 +12,7 @@ const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const multer = require('multer');
 const normalize_email = require('../helpers/normalize_email');
+const normalize_ip = require('../helpers/normalize/normalize_ip');
 const promisify = require('../helpers/promisify');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
@@ -143,9 +144,7 @@ async function profile_post(req, res)
         .update({...update, updated_at: now});
 
     // refresh session (important after credential change)
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user.id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user.id);
 
     redirect(req, res, '/auth/profile');
 }
@@ -174,9 +173,8 @@ async function sign_in_post(req, res)
         throw new Error('Invalid username or password');
     }
 
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user.id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user.id);
+
     redirect(req, res);
 }
 
@@ -224,9 +222,8 @@ async function sign_up_post(req, res)
         });
         const user_id = tmp[0];
 
-        await promisify(v => req.session.regenerate(v));
-        req.session.user_id = user_id;
-        await promisify(v => req.session.save(v));
+        await replace_session(req, user_id);
+
         redirect(req, res);
     }
     catch (error) {
@@ -378,9 +375,7 @@ async function change_password_post(req, res)
     const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user.id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user.id);
 
     redirect(req, res);
 }
@@ -462,9 +457,8 @@ async function google_callback_get(req, res)
         });
     }
 
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user_id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user_id);
+
     redirect(req, res);
 }
 
@@ -566,9 +560,7 @@ async function magic_link_sent_post(req, res)
         user_id = tmp[0];
     }
 
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user_id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user_id);
 
     redirect(req, res);
 }
@@ -612,9 +604,7 @@ async function magic_link_callback_get(req, res)
         user_id = tmp[0];
     }
 
-    await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user_id;
-    await promisify(v => req.session.save(v));
+    await replace_session(req, user_id);
 
     redirect(req, res);
 }
@@ -627,6 +617,15 @@ function redirect(req, res, default_url = '/')
     else {
         res.redirect(default_url);
     }
+}
+
+async function replace_session(req, user_id)
+{
+    await promisify(v => req.session.regenerate(v));
+    req.session.user_id = user_id;
+    req.session.ip = normalize_ip(req.ip);
+    req.session.user_agent = req.headers['user-agent'] ?? 'n/a';
+    await promisify(v => req.session.save(v));
 }
 
 module.exports = routes;
