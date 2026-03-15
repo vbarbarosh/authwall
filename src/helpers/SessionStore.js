@@ -17,7 +17,8 @@ class SessionStore extends express_session.Store
                 return callback(null, null);
             }
 
-            const out = {...decode_json_column(row.data), user_id: row.user_id};
+            const out = JSON.parse(row.custom);
+            out.user_id = row.user_id;
             callback(null, out);
         }
         catch (error) {
@@ -27,13 +28,15 @@ class SessionStore extends express_session.Store
 
     async set(uid, data, callback) {
         try {
-            const expires = data.cookie?.expires ? new Date(data.cookie.expires).getTime() : Date.now() + 86400000;
+            const expires = data.cookie?.expires
+                ? new Date(data.cookie.expires).getTime()
+                : Date.now() + (data.cookie?.maxAge || 86400000);
 
             console.log('set', uid, '-->', data);
 
-            const {user_id, ...tmp} = data;
+            const {user_id, ...custom} = data;
             await db('sessions')
-                .insert({uid, user_id, data: JSON.stringify(tmp), expires})
+                .insert({uid, user_id, custom: JSON.stringify(custom), expires})
                 .onConflict('uid')
                 .merge();
 
@@ -66,16 +69,6 @@ class SessionStore extends express_session.Store
             callback(error);
         }
     }
-}
-
-function decode_json_column(value)
-{
-    // MySQL return objects
-    // SQLite return strings
-    if (typeof value === 'string') {
-        return JSON.parse(value);
-    }
-    return value;
 }
 
 module.exports = SessionStore;

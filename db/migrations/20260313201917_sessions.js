@@ -7,7 +7,7 @@ exports.up = async function (knex) {
         table.increments('id');
         table.string('uid', 32).notNullable().unique().collate('utf8mb4_bin');
         table.integer('user_id').notNullable().references('id').inTable('users').onDelete('RESTRICT');
-        table.json('data').notNullable();
+        table.text('custom').notNullable();
         table.bigInteger('expires').notNullable().index();
     });
 };
