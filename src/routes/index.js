@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const config = require('../config');
+const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_providers = require('../helpers/const/const_providers');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
@@ -13,6 +14,8 @@ const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_url
 const multer = require('multer');
 const normalize_email = require('../helpers/normalize_email');
 const normalize_ip = require('../helpers/normalize/normalize_ip');
+const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
+const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const promisify = require('../helpers/promisify');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
@@ -99,7 +102,7 @@ async function status_get(req, res)
             email_verified: user.email_verified,
             display_name: user.display_name,
             avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
-            providers: [],
+            providers: await db('user_identities').where('user_id', req.session.user_id),
             current_session_uid: req.sessionID,
             sessions: await db('sessions').where('user_id', req.session.user_id),
             debug: {
@@ -454,9 +457,11 @@ async function change_password_post(req, res)
 // GET /auth/google
 async function google_get(req, res)
 {
-    const state = random_hex();
+    const intent = req.query.connect ? const_oauth_intent.connect : const_oauth_intent.login;
+    const state = oauth_state_from_intent(intent);
+
     req.session.oauth_state = state;
-    await promisify(v => req.session.save(v));
+    await save_session(req);
 
     res.redirect(urlmod('https://accounts.google.com/o/oauth2/v2/auth', {
         client_id: config.google_client_id,
@@ -474,7 +479,9 @@ async function google_callback_get(req, res)
 {
     const {code, state} = req.query;
     const expected_state = req.session.oauth_state;
-    delete req.session.oauth_state;
+
+    // Prevent accidentally losing state on invalid requests
+    // delete req.session.oauth_state;
 
     if (!code) {
         throw new Error('Missing OAuth code');
@@ -482,6 +489,8 @@ async function google_callback_get(req, res)
     if (!state || state !== expected_state) {
         throw new Error('Invalid OAuth state');
     }
+
+    delete req.session.oauth_state;
 
     const token = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
         code,
@@ -502,6 +511,40 @@ async function google_callback_get(req, res)
 
     let user_id;
     const user_identity = await db('user_identities').where({provider, provider_user_id}).first();
+
+    const intent = oauth_intent_from_state(state);
+
+    // Connect account flow
+    if (intent === const_oauth_intent.connect) {
+
+        if (!req.session.user_id) {
+            throw new Error('Authentication required');
+        }
+
+        if (user_identity) {
+            if (user_identity.user_id !== req.session.user_id) {
+                throw new Error('Google account already linked to another user');
+            }
+            // already connected
+            return redirect(req, res, '/auth/profile');
+        }
+
+        await db('user_identities').insert({
+            user_id: req.session.user_id,
+            provider,
+            provider_user_id,
+            created_at: new Date(),
+        });
+
+        redirect(req, res, '/auth/profile');
+        return;
+    }
+
+    if (intent !== const_oauth_intent.login) {
+        throw new Error(`Invalid OAuth intent: ${intent}`);
+    }
+
+    // Login flow
     if (user_identity) {
         user_id = user_identity.user_id;
     }
@@ -688,6 +731,11 @@ function redirect(req, res, default_url = '/')
     else {
         res.redirect(default_url);
     }
+}
+
+async function save_session(req)
+{
+    await promisify(v => req.session.save(v));
 }
 
 async function replace_session(req, user_id)
