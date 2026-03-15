@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Sessions | authwall</title>
+    <link href="/auth/static/authwall.css" rel="stylesheet">
+</head>
+<body>
+
+<h1>Sessions</h1>
+
+<div id="error"></div>
+
+<table>
+    <thead>
+    <tr>
+        <th>IP</th>
+        <th>User agent</th>
+        <th>Created</th>
+        <th>Last seen</th>
+        <th>Expires</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody id="sessions"></tbody>
+</table>
+
+<form action="/auth/sessions/revoke-all" method="POST">
+    <input type="submit" value="Revoke all other sessions">
+</form>
+
+<p><a href="/auth/profile">Profile</a></p>
+<p><a href="/auth/sign-out">Sign out</a></p>
+
+<script type="module">
+    const status = await fetch('/auth/status').then(v => v.json());
+    console.log({status});
+    document.querySelector('#error').innerText = status.error;
+
+    const tbody = document.querySelector('#sessions');
+    for (const session of status.sessions) {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+<td>${escape_html(session.ip)}</td>
+<td>${escape_html(session.user_agent)}</td>
+<td>${format_date(session.created_at)}</td>
+<td>${format_date(session.last_seen_at)}</td>
+<td>${format_date(session.expires_at)}</td>
+<td>
+${(session.uid === status.current_session_uid) ? 'Current' : `
+    <form action="/auth/sessions/revoke" method="POST" style="margin:0">
+        <input type="hidden" name="uid" value="${session.uid}">
+        <input type="submit" value="Revoke">
+    </form>
+`}
+</td>
+`;
+        tbody.appendChild(tr);
+    }
+
+    function format_date(v)
+    {
+        if (!v) {
+            return '';
+        }
+        return new Date(v).toLocaleString();
+    }
+
+    function escape_html(v)
+    {
+        const div = document.createElement('div');
+        div.innerText = v ?? '';
+        return div.innerHTML;
+    }
+</script>
+
+</body>
+</html>

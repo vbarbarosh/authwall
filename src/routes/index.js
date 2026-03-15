@@ -40,6 +40,7 @@ const upload_avatar = multer({
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
     {req: 'GET /auth/profile', fn: profile_get},
+    {req: 'GET /auth/sessions', fn: sessions_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
     {req: 'GET /auth/sign-out', fn: sign_out_get},
     {req: 'GET /auth/sign-up', fn: sign_up_get},
@@ -52,6 +53,9 @@ const routes = [
     {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
     {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
     {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), profile_post]},
+    {req: 'POST /auth/sessions', fn: sessions_post},
+    {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
+    {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
     {req: 'POST /auth/sign-in', fn: sign_in_post},
     {req: 'POST /auth/sign-out', fn: sign_out_post},
     {req: 'POST /auth/sign-up', fn: sign_up_post},
@@ -74,7 +78,17 @@ async function status_get(req, res)
     delete req.session.error;
 
     if (!user) {
-        res.send({error, authenticated: false, users: await db('users'), sessions: await db('sessions')});
+        res.send({
+            error,
+            authenticated: false,
+            users: await db('users'),
+            sessions: await db('sessions'),
+            current_session_uid: req.sessionID,
+            debug: {
+                users: await db('users'),
+                sessions: await db('sessions'),
+            },
+        });
     }
     else {
         res.send({
@@ -86,7 +100,12 @@ async function status_get(req, res)
             display_name: user.display_name,
             avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
             providers: [],
-            users: await db('users'), sessions: await db('sessions')
+            current_session_uid: req.sessionID,
+            sessions: await db('sessions').where('user_id', req.session.user_id),
+            debug: {
+                users: await db('users'),
+                sessions: await db('sessions'),
+            },
         });
     }
 }
@@ -147,6 +166,58 @@ async function profile_post(req, res)
     await replace_session(req, user.id);
 
     redirect(req, res, '/auth/profile');
+}
+
+// GET /auth/sessions
+async function sessions_get(req, res)
+{
+    if (!req.session.user_id) {
+        throw new Error('Authentication required');
+    }
+
+    res.sendFile(fs_path_resolve(__dirname, '../static/sessions.html'));
+}
+
+// POST /auth/sessions
+async function sessions_post(req, res)
+{
+}
+
+// POST /auth/sessions/revoke
+async function sessions_revoke_post(req, res)
+{
+    if (!req.session.user_id) {
+        throw new Error('Authentication required');
+    }
+
+    const {uid} = req.body;
+    if (!uid) {
+        throw new Error('Missing session uid');
+    }
+
+    // Prevent deleting current session
+    if (uid === req.sessionID) {
+        throw new Error('Cannot revoke current session');
+    }
+
+    await db('sessions').where({uid, user_id: req.session.user_id}).delete();
+
+    redirect(req, res, '/auth/sessions');
+}
+
+// POST /auth/sessions/revoke-all
+async function sessions_revoke_all_post(req, res)
+{
+    if (!req.session.user_id) {
+        throw new Error('Authentication required');
+    }
+
+    await db('sessions')
+        .where({user_id: req.session.user_id})
+        .whereNot({uid: req.sessionID})
+        .delete();
+
+    redirect(req, res, '/auth/sessions');
 }
 
 // GET /auth/sign-in
