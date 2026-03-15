@@ -17,7 +17,8 @@ class SessionStore extends express_session.Store
                 return callback(null, null);
             }
 
-            callback(null, decode_json_column(row.data));
+            const out = {...decode_json_column(row.data), user_id: row.user_id};
+            callback(null, out);
         }
         catch (error) {
             callback(error);
@@ -30,8 +31,9 @@ class SessionStore extends express_session.Store
 
             console.log('set', uid, '-->', data);
 
+            const {user_id, ...tmp} = data;
             await db('sessions')
-                .insert({uid, data: JSON.stringify(data), expires})
+                .insert({uid, user_id, data: JSON.stringify(tmp), expires})
                 .onConflict('uid')
                 .merge();
 
