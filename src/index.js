@@ -6,7 +6,7 @@ const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('./config');
 const express = require('express');
 const express_log = require('@vbarbarosh/express-helpers/src/express_log');
-const express_routes = require('@vbarbarosh/express-helpers/src/express_routes');
+const express_routes = require('./helpers/express/express_routes');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const express_session = require('express-session');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
@@ -26,7 +26,9 @@ async function main()
     app.use(express_log({file: config.log_file_http}));
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
+
     app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
+    app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
 
     app.use(express_session({
         genid: random_uid_session,

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Profile | authwall</title>
+    <link href="/auth/static/authwall.css" rel="stylesheet">
+</head>
+<body>
+
+<div id="error"></div>
+
+<section>
+    <h2>Identity</h2>
+
+    <form action="/auth/profile" method="POST">
+        <label>
+            Username
+            <input type="text" name="username" readonly>
+        </label>
+
+        <label>
+            Display name
+            <input type="text" name="display_name">
+        </label>
+
+        <input type="submit" value="Save display name">
+    </form>
+
+    <form action="/auth/profile" method="POST" enctype="multipart/form-data">
+        <label>
+            Avatar
+            <input type="file" name="avatar" accept="image/*">
+        </label>
+        <img id="avatar" style="max-width:120px;margin-top:8px">
+        <input type="submit" value="Upload avatar">
+    </form>
+</section>
+
+<section>
+    <h2>Security</h2>
+
+    <form action="/auth/profile" method="POST">
+        <label>
+            Current password
+            <input type="password" name="current_password" autocomplete="current-password" required>
+        </label>
+
+        <label>
+            New password
+            <input type="password" name="password" autocomplete="new-password" required>
+        </label>
+
+        <label>
+            Confirm password
+            <input type="password" name="password_confirm" autocomplete="new-password" required>
+        </label>
+
+        <input type="submit" value="Change password">
+    </form>
+
+    <p><a href="/auth/sessions">Manage sessions</a></p>
+</section>
+
+<section>
+    <h2>Connected accounts</h2>
+
+    <div id="providers">
+        Loading...
+    </div>
+
+    <p><a href="/auth/google">Connect Google</a></p>
+    <p><a href="/auth/github">Connect GitHub</a></p>
+</section>
+
+<section>
+    <h2>Danger zone</h2>
+
+    <form action="/auth/profile/delete" method="POST">
+        <label>
+            Type current username to confirm deletion
+            <input type="text" name="confirm_username" autocomplete="username" required>
+        </label>
+        <input type="submit" value="Delete account">
+    </form>
+</section>
+
+<p><a href="/auth/sign-out">Sign out</a></p>
+
+<script type="module">
+    const response = await fetch('/auth/status');
+    const status = await response.json();
+    console.log(status);
+    document.querySelector('#error').innerText = (status.error ?? '');
+    document.querySelector('input[name=username]').value = (status.username ?? '');
+    document.querySelector('input[name=display_name]').value = (status.display_name ?? '');
+    document.querySelector('#avatar').src = (status.avatar_url ?? '');
+
+    const div = document.querySelector('#providers');
+    if (!status.providers.length) {
+        div.innerText = 'No connected accounts';
+    }
+    else {
+        div.innerHTML = status.providers.map(function(p) {
+            return `
+                <div>
+                    ${p}
+                    <form action="/auth/profile/unlink" method="POST" style="display:inline">
+                        <input type="hidden" name="provider" value="${p}">
+                        <button type="submit">unlink</button>
+                    </form>
+                </div>
+            `;
+        }).join('');
+    }
+</script>
+
+</body>
+</html>

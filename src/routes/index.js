@@ -4,22 +4,41 @@ const const_providers = require('../helpers/const/const_providers');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const fs_mkdirp = require('@vbarbarosh/node-helpers/src/fs_mkdirp');
+const fs_path_dirname = require('@vbarbarosh/node-helpers/src/fs_path_dirname');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+const fs_rm = require('@vbarbarosh/node-helpers/src/fs_rm');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
+const multer = require('multer');
 const normalize_email = require('../helpers/normalize_email');
 const promisify = require('../helpers/promisify');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const random_slug = require('../helpers/random/random_slug');
 const random_uid_user = require('../helpers/random/random_uid_user');
+const sharp = require('sharp');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const SECOND = 1000;
-const MINUTE = 60*SECOND;
-const HOUR = 60*MINUTE;
+
+const upload_avatar = multer({
+    dest: fs_path_resolve(__dirname, '../../data/temp-uploads'),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+    fileFilter: function (req, file, callback) {
+        if (!file.mimetype.startsWith('image/')) {
+            callback(new Error('Invalid file type'));
+            return;
+        }
+        callback(null, true);
+    }
+});
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
+    {req: 'GET /auth/profile', fn: profile_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
     {req: 'GET /auth/sign-out', fn: sign_out_get},
     {req: 'GET /auth/sign-up', fn: sign_up_get},
@@ -31,6 +50,7 @@ const routes = [
     {req: 'GET /auth/magic-link', fn: magic_link_get},
     {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
     {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
+    {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), profile_post]},
     {req: 'POST /auth/sign-in', fn: sign_in_post},
     {req: 'POST /auth/sign-out', fn: sign_out_post},
     {req: 'POST /auth/sign-up', fn: sign_up_post},
@@ -53,7 +73,7 @@ async function status_get(req, res)
     delete req.session.error;
 
     if (!user) {
-        res.send({error, authenticated: false});
+        res.send({error, authenticated: false, users: await db('users'), sessions: await db('sessions')});
     }
     else {
         res.send({
@@ -63,9 +83,71 @@ async function status_get(req, res)
             email: user.email,
             email_verified: user.email_verified,
             display_name: user.display_name,
-            avatar_url: user.avatar_url,
+            avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
+            providers: [],
+            users: await db('users'), sessions: await db('sessions')
         });
     }
+}
+
+// GET /auth/profile
+async function profile_get(req, res)
+{
+    res.sendFile(fs_path_resolve(__dirname, '../static/profile.html'));
+}
+
+// POST /auth/profile
+async function profile_post(req, res)
+{
+    if (!req.session.user_id) {
+        throw new Error('Authentication required');
+    }
+
+    // const {current_password, password, password_confirm} = req.body;
+    // if (!current_password || !password || !password_confirm) {
+    //     throw new Error('Missing fields');
+    // }
+    //
+    // if (password !== password_confirm) {
+    //     throw new Error('Passwords do not match');
+    // }
+
+    const update = {};
+
+    if ('display_name' in req.body) {
+        update.display_name = String(req.body.display_name).trim() || null;
+    }
+
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    if (req.file) {
+        const avatar_path = fs_path_resolve(__dirname, `../../data/uploads/${user.slug}/avatar.webp`);
+        await fs_mkdirp(fs_path_dirname(avatar_path));
+        await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
+        await fs_rm(req.file.path)
+        update.avatar_url = `${config.base_url}/auth/uploads/${user.slug}/avatar.webp`;
+    }
+
+    // const ok = await bcrypt.compare(current_password, user.password_hash);
+    // if (!ok) {
+    //     throw new Error('Current password is incorrect');
+    // }
+    // const password_hash = await bcrypt.hash(password, config.password_rounds);
+
+    const now = new Date();
+    await db('users')
+        .where({id: user.id})
+        .update({...update, updated_at: now});
+
+    // refresh session (important after credential change)
+    await promisify(v => req.session.regenerate(v));
+    req.session.user_id = user.id;
+    await promisify(v => req.session.save(v));
+
+    redirect(req, res, '/auth/profile');
 }
 
 // GET /auth/sign-in
@@ -134,6 +216,7 @@ async function sign_up_post(req, res)
         const now = new Date();
         const tmp = await db('users').insert({
             uid: random_uid_user(),
+            slug: random_slug(),
             username,
             password_hash: await bcrypt.hash(password, config.password_rounds),
             created_at: now,
@@ -363,6 +446,7 @@ async function google_callback_get(req, res)
             const now = new Date();
             const tmp = await trx('users').insert({
                 uid: random_uid_user(),
+                slug: random_slug(),
                 username,
                 password_hash,
                 email: userinfo.email,
@@ -471,6 +555,7 @@ async function magic_link_sent_post(req, res)
     else {
         const tmp = await db('users').insert({
             uid: random_uid_user(),
+            slug: random_slug(),
             username: null,
             email: email,
             email_verified: true,
@@ -516,6 +601,7 @@ async function magic_link_callback_get(req, res)
     else {
         const tmp = await db('users').insert({
             uid: random_uid_user(),
+            slug: random_slug(),
             username: null,
             email: magic_link.email,
             email_verified: true,
