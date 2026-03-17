@@ -52,7 +52,7 @@ async function main()
     app.use(clean_headers);
     app.use(sign_in_required);
     app.use(http_proxy_middleware.createProxyMiddleware({
-        target: config.target,
+        target: config.target_url,
         changeOrigin: true,
         on: {
             proxyReq: function (proxy_req, req) {

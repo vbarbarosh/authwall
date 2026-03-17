@@ -151,7 +151,7 @@ async function profile_post(req, res)
         await fs_mkdirp(fs_path_dirname(avatar_path));
         await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
         await fs_rm(req.file.path)
-        update.avatar_url = `${config.base_url}/auth/uploads/${user.slug}/avatar.webp`;
+        update.avatar_url = `${config.public_url}/auth/uploads/${user.slug}/avatar.webp`;
     }
 
     // const ok = await bcrypt.compare(current_password, user.password_hash);
@@ -334,7 +334,7 @@ async function forgot_password_post(req, res)
     const user = await db('users').where({email}).first();
     if (user) {
         const token = random_hex();
-        const reset_link = urlmod(`${config.base_url}/auth/reset-password`, {token});
+        const reset_link = urlmod(`${config.public_url}/auth/reset-password`, {token});
 
         const now = new Date();
         await db('password_reset_tokens').insert({
@@ -601,7 +601,7 @@ async function magic_link_post(req, res)
 
     const code = random_code();
     const token = random_hex();
-    const link = urlmod(`${config.base_url}/auth/magic-link/callback`, {token});
+    const link = urlmod(`${config.public_url}/auth/magic-link/callback`, {token});
 
     const now = new Date();
     await db('magic_links').insert({

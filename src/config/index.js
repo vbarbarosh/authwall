@@ -16,7 +16,8 @@ let log_dir = null;
 const log_file = process.env.LOG_FILE ?? null;
 
 const config = {
-    base_url: process.env.AUTHWALL_BASE_URL ?? 'http://localhost:3000',
+    public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://localhost:3000',
+    target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://localhost:8080',
     log_file,
     log_file_http: log_file ?? function () {
         if (log_dir === null) {
@@ -28,7 +29,6 @@ const config = {
     listen: process.env.LISTEN ?? 'localhost',
     port: process.env.PORT ?? 3000,
     session_secret: process.env.AUTHWALL_SESSION_SECRET ?? '___AUTHWALL_SESSION_SECRET___',
-    target: process.env.AUTHWALL_TARGET ?? 'http://localhost:8080',
     mysql: process.env.AUTHWALL_MYSQL,
     knexvars: {
         ...knexfile[NODE_ENV],
