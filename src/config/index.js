@@ -28,7 +28,7 @@ const config = {
     },
     listen: process.env.LISTEN ?? 'localhost',
     port: process.env.PORT ?? 3000,
-    session_secret: process.env.AUTHWALL_SESSION_SECRET ?? '___AUTHWALL_SESSION_SECRET___',
+    session_secret: process.env.AUTHWALL_SESSION_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo',
     mysql: process.env.AUTHWALL_MYSQL,
     knexvars: {
         ...knexfile[NODE_ENV],
