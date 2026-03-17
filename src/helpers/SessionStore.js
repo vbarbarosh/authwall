@@ -1,4 +1,3 @@
-const _try = require('@vbarbarosh/node-helpers/src/_try');
 const db = require('../../db');
 const express_session = require('express-session');
 
@@ -9,19 +8,13 @@ class SessionStore extends express_session.Store
         try {
             const now = new Date();
 
-            const row = await db('sessions').where({uid}).first();
+            const row = await db('sessions').where({uid}).where('expires_at', '>', now).first();
             if (!row) {
                 callback(null, null);
                 return;
             }
 
-            await db('sessions').where({uid}).update({last_seen_at: now, updated_at: now});
-            if (new Date(row.expires_at) < now) {
-                callback(null, null);
-                return;
-            }
-
-            const out = _try(() => JSON.parse(row.custom)) || {};
+            const out = JSON.parse(row.custom);
             out.user_id = row.user_id;
             out.user_uid = row.user_uid;
             out.ip = row.ip;
@@ -72,7 +65,7 @@ console.log(`[session_touch] ${uid}`, data);
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
                 : new Date(now.getTime() + (data.cookie?.maxAge || 86400000));
-            await db('sessions').where({uid}).update({expires_at, last_seen_at: now, updated_at: now});
+            await db('sessions').where({uid}).update({expires_at, last_seen_at: now});
             callback(null);
         }
         catch (error) {
