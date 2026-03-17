@@ -23,6 +23,7 @@ class SessionStore extends express_session.Store
 
             const out = _try(() => JSON.parse(row.custom)) || {};
             out.user_id = row.user_id;
+            out.user_uid = row.user_uid;
             out.ip = row.ip;
             out.user_agent = row.user_agent;
             callback(null, out);
@@ -40,7 +41,7 @@ class SessionStore extends express_session.Store
                 ? new Date(data.cookie.expires)
                 : new Date(now.getTime() + (data.cookie?.maxAge || 86400000));
 
-            const {user_id, ip, user_agent, ...custom} = data;
+            const {user_id, user_uid, ip, user_agent, ...custom} = data;
             await db('sessions')
                 .insert({uid, user_id, ip, user_agent, custom: JSON.stringify(custom), created_at: now, updated_at: now, last_seen_at: now, expires_at})
                 .onConflict('uid')

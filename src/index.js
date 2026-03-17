@@ -67,8 +67,8 @@ async function main()
                 //         proxy_req.removeHeader(header);
                 //     }
                 // }
-                if (req.session.user_id) {
-                    proxy_req.setHeader('X-Auth-User',  req.session.user_id);
+                if (req.session.user_uid) {
+                    proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
                 }
             },
         },
