@@ -22,8 +22,8 @@ class SessionStore extends express_session.Store
             }
 
             const out = _try(() => JSON.parse(row.custom)) || {};
-            out.user_id = row.user_id;
-            out.user_uid = row.user_uid;
+            out.user_id = row.id;
+            out.user_uid = row.uid;
             out.ip = row.ip;
             out.user_agent = row.user_agent;
             callback(null, out);
