@@ -72,10 +72,13 @@ const routes = [
 // GET /auth/status
 async function status_get(req, res)
 {
+    console.log('GET /auth/status | 1', req.session);
+
     let user = null;
     if (req.session.user_id) {
         user = await db('users').where({id: req.session.user_id}).first();
     }
+    console.log('GET /auth/status | 2', {user});
 
     const error = req.session.error ?? null;
     delete req.session.error;
@@ -84,9 +87,6 @@ async function status_get(req, res)
         res.send({
             error,
             authenticated: false,
-            users: await db('users'),
-            sessions: await db('sessions'),
-            current_session_uid: req.sessionID,
             debug: {
                 users: await db('users'),
                 sessions: await db('sessions'),
@@ -161,12 +161,10 @@ async function profile_post(req, res)
     // const password_hash = await bcrypt.hash(password, config.password_rounds);
 
     const now = new Date();
-    await db('users')
-        .where({id: user.id})
-        .update({...update, updated_at: now});
+    await db('users').where({id: user.id}).update({...update, updated_at: now});
 
     // refresh session (important after credential change)
-    await replace_session(req, user.id);
+    await replace_session(req, user);
 
     redirect(req, res, '/auth/profile');
 }
@@ -247,7 +245,7 @@ async function sign_in_post(req, res)
         throw new Error('Invalid username or password');
     }
 
-    await replace_session(req, user.id);
+    await replace_session(req, user);
 
     redirect(req, res);
 }
@@ -286,7 +284,7 @@ async function sign_up_post(req, res)
 
     try {
         const now = new Date();
-        const tmp = await db('users').insert({
+        const [user_id] = await db('users').insert({
             uid: random_uid_user(),
             slug: random_slug(),
             username,
@@ -294,9 +292,9 @@ async function sign_up_post(req, res)
             created_at: now,
             updated_at: now,
         });
-        const user_id = tmp[0];
+        const user = await db('users').where({id: user_id}).first();
 
-        await replace_session(req, user_id);
+        await replace_session(req, user);
 
         redirect(req, res);
     }
@@ -449,7 +447,7 @@ async function change_password_post(req, res)
     const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 
-    await replace_session(req, user.id);
+    await replace_session(req, user);
 
     redirect(req, res);
 }
@@ -553,7 +551,7 @@ async function google_callback_get(req, res)
         const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
         await db.transaction(async function (trx) {
             const now = new Date();
-            const tmp = await trx('users').insert({
+            [user_id] = await trx('users').insert({
                 uid: random_uid_user(),
                 slug: random_slug(),
                 username,
@@ -565,13 +563,12 @@ async function google_callback_get(req, res)
                 created_at: now,
                 updated_at: now,
             });
-            console.log(tmp);
-            user_id = tmp[0];
             await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
         });
     }
 
-    await replace_session(req, user_id);
+    const user = await db('users').where({id: user_id}).first();
+    await replace_session(req, user);
 
     redirect(req, res);
 }
@@ -654,14 +651,9 @@ async function magic_link_sent_post(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    let user_id;
-
-    const user = await db('users').where({email}).first();
-    if (user) {
-        user_id = user.id;
-    }
-    else {
-        const tmp = await db('users').insert({
+    let user = await db('users').where({email}).first();
+    if (!user) {
+        const [user_id] = await db('users').insert({
             uid: random_uid_user(),
             slug: random_slug(),
             username: null,
@@ -671,10 +663,10 @@ async function magic_link_sent_post(req, res)
             created_at: now,
             updated_at: now,
         });
-        user_id = tmp[0];
+        user = await db('users').where('id', user_id).first();
     }
 
-    await replace_session(req, user_id);
+    await replace_session(req, user);
 
     redirect(req, res);
 }
@@ -699,13 +691,10 @@ async function magic_link_callback_get(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    let user_id;
-    const user = await db('users').where({email: magic_link.email}).first();
-    if (user) {
-        user_id = user.id;
-    }
-    else {
-        const tmp = await db('users').insert({
+
+    let user = await db('users').where({email: magic_link.email}).first();
+    if (!user) {
+        const [user_id] = await db('users').insert({
             uid: random_uid_user(),
             slug: random_slug(),
             username: null,
@@ -715,10 +704,10 @@ async function magic_link_callback_get(req, res)
             created_at: now,
             updated_at: now,
         });
-        user_id = tmp[0];
+        user = await db('users').where('id', user_id).first();
     }
 
-    await replace_session(req, user_id);
+    await replace_session(req, user);
 
     redirect(req, res);
 }
@@ -738,10 +727,11 @@ async function save_session(req)
     await promisify(v => req.session.save(v));
 }
 
-async function replace_session(req, user_id)
+async function replace_session(req, user)
 {
     await promisify(v => req.session.regenerate(v));
-    req.session.user_id = user_id;
+    req.session.user_id = user.id;
+    req.session.user_uid = user.uid;
     req.session.ip = normalize_ip(req.ip);
     req.session.user_agent = req.headers['user-agent'] ?? 'n/a';
     await promisify(v => req.session.save(v));
