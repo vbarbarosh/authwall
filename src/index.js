@@ -26,11 +26,12 @@ async function main()
     app.set('trust proxy', true);
 
     app.use(express_log({file: config.log_file_http}));
-    app.use('/auth', express.json());
-    app.use('/auth', express.urlencoded({extended: false}));
 
     app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
     app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
+
+    app.use('/auth', express.json());
+    app.use('/auth', express.urlencoded({extended: false}));
 
     app.use('/auth', express_session({
         genid: random_uid_session,
