@@ -53,7 +53,7 @@ if (!process.env.AUTHWALL_SESSION_SECRET) {
 
 function secret_hkdf(namespace)
 {
-    return crypto.hkdfSync('sha256', secret, 'authwall', namespace, 32);
+    return Buffer.from(crypto.hkdfSync('sha256', secret, 'authwall', namespace, 32)).toString('hex');
 }
 
 module.exports = config;

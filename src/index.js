@@ -33,21 +33,21 @@ async function main()
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
 
-    app.use('/auth', express_session({
+    app.use(express_session({
         genid: random_uid_session,
         store: new SessionStore(),
         resave: false,
         saveUninitialized: false,
         secret: config.secrets.express_session,
         cookie: {
-            path: '/auth',
+            path: '/',
             httpOnly: true,
             sameSite: 'lax',
             secure: config.public_url.startsWith('https://'),
             maxAge: 30 * 24 * 60 * 60 * 1000,
         },
     }));
-    app.use('/auth', function (req, res, next) {
+    app.use(function (req, res, next) {
         if (req.session && !req.session.ip) {
             req.session.ip = req.ip;
             req.session.user_agent = req.headers['user-agent'];

@@ -4,7 +4,7 @@ const express_session = require('express-session');
 class SessionStore extends express_session.Store
 {
     async get(uid, callback) {
-        console.log(`[session_get] ${uid}`);
+        console.log(`[session_get] [uid=${uid}]`);
         try {
             const now = new Date();
 
@@ -27,7 +27,7 @@ class SessionStore extends express_session.Store
     }
 
     async set(uid, data, callback) {
-        console.log(`[session_set] ${uid}`, data);
+        console.log(`[session_set] [uid=${uid}]`, data);
         try {
             const now = new Date();
             const expires_at = data.cookie?.expires
@@ -48,7 +48,7 @@ class SessionStore extends express_session.Store
     }
 
     async destroy(uid, callback) {
-console.log('[session_destroy]', uid);
+console.log(`[session_destroy] [uid=${uid}]`);
         try {
             await db('sessions').where({uid}).delete();
             callback(null);
@@ -60,7 +60,7 @@ console.log('[session_destroy]', uid);
 
     async touch(uid, data, callback) {
         try {
-console.log(`[session_touch] ${uid}`, data);
+console.log(`[session_touch] [uid=${uid}]`, data);
             const now = new Date();
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
