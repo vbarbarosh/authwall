@@ -26,20 +26,27 @@ async function main()
     app.set('trust proxy', true);
 
     app.use(express_log({file: config.log_file_http}));
-    app.use(express.json());
-    app.use(express.urlencoded({extended: false}));
+    app.use('/auth', express.json());
+    app.use('/auth', express.urlencoded({extended: false}));
 
     app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
     app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
 
-    app.use(express_session({
+    app.use('/auth', express_session({
         genid: random_uid_session,
         store: new SessionStore(),
         resave: false,
         saveUninitialized: false,
-        secret: config.session_secret,
+        secret: config.secret_session,
+        cookie: {
+            path: '/auth',
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: config.public_url.startsWith('https://'),
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+        },
     }));
-    app.use(function (req, res, next) {
+    app.use('/auth', function (req, res, next) {
         if (req.session && !req.session.ip) {
             req.session.ip = req.ip;
             req.session.user_agent = req.headers['user-agent'];
@@ -54,6 +61,9 @@ async function main()
     app.use(http_proxy_middleware.createProxyMiddleware({
         target: config.target_url,
         changeOrigin: true,
+        pathFilter: function (pathname) {
+            return !(pathname === '/auth' || pathname.startsWith('/auth/'));
+        },
         on: {
             proxyReq: function (proxy_req, req) {
                 // // ⚠️ Beware that headers are proxied too

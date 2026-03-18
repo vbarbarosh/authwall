@@ -14,6 +14,7 @@ if (knexfile[NODE_ENV].connection?.filename) {
 
 let log_dir = null;
 const log_file = process.env.LOG_FILE ?? null;
+const secret = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
 const config = {
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://localhost:3000',
@@ -28,7 +29,10 @@ const config = {
     },
     listen: process.env.LISTEN ?? 'localhost',
     port: process.env.PORT ?? 3000,
-    session_secret: process.env.AUTHWALL_SESSION_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo',
+    secrets: {
+        csrf_token: secret_hkdf('csrf_token'),
+        express_session: secret_hkdf('express_session'),
+    },
     mysql: process.env.AUTHWALL_MYSQL,
     knexvars: {
         ...knexfile[NODE_ENV],
@@ -44,6 +48,11 @@ const config = {
 
 if (!process.env.AUTHWALL_SESSION_SECRET) {
     console.warn('\n⚠️ Missing required env var: AUTHWALL_SESSION_SECRET\n');
+}
+
+function secret_hkdf(namespace)
+{
+    return crypto.hkdfSync('sha256', secret, 'authwall', namespace, 32);
 }
 
 module.exports = config;
