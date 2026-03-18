@@ -38,7 +38,7 @@ async function main()
         store: new SessionStore(),
         resave: false,
         saveUninitialized: false,
-        secret: config.secret_session,
+        secret: config.secrets.express_session,
         cookie: {
             path: '/auth',
             httpOnly: true,
