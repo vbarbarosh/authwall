@@ -18,6 +18,7 @@
     <p>Check your email for a login link or enter the code below.</p>
 
     <form action="/auth/magic-link-sent" method="POST">
+        <input type="hidden" name="_csrf">
         <label>
             Email
             <input type="email" name="email" autocomplete="email" required disabled>
@@ -60,6 +61,7 @@
 <script type="module">
     const status = await fetch('/auth/status').then(v => v.json());
     document.querySelector('#error').textContent = status.error;
+    document.querySelector('input[name=_csrf]').value = (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
     document.querySelector('[name=email]').value = (new URLSearchParams(location.search).get('email') || '');
 </script>
 

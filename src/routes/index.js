@@ -3,6 +3,7 @@ const config = require('../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_providers = require('../helpers/const/const_providers');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
+const csrf_middleware = require('../helpers/csrf/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const fs_mkdirp = require('@vbarbarosh/node-helpers/src/fs_mkdirp');
@@ -42,6 +43,8 @@ const upload_avatar = multer({
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
+    {req: 'GET /auth/google', fn: google_get},
+    {req: 'GET /auth/google/callback', fn: google_callback_get},
     {req: 'GET /auth/profile', fn: profile_get},
     {req: 'GET /auth/sessions', fn: sessions_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
@@ -50,23 +53,23 @@ const routes = [
     {req: 'GET /auth/forgot-password', fn: forgot_password_get},
     {req: 'GET /auth/reset-password', fn: reset_password_get},
     {req: 'GET /auth/change-password', fn: change_password_get},
-    {req: 'GET /auth/google', fn: google_get},
-    {req: 'GET /auth/google/callback', fn: google_callback_get},
     {req: 'GET /auth/magic-link', fn: magic_link_get},
     {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
     {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
-    {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), profile_post]},
-    {req: 'POST /auth/sessions', fn: sessions_post},
-    {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
-    {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
-    {req: 'POST /auth/sign-in', fn: sign_in_post},
-    {req: 'POST /auth/sign-out', fn: sign_out_post},
-    {req: 'POST /auth/sign-up', fn: sign_up_post},
-    {req: 'POST /auth/forgot-password', fn: forgot_password_post},
-    {req: 'POST /auth/reset-password', fn: reset_password_post},
-    {req: 'POST /auth/change-password', fn: change_password_post},
-    {req: 'POST /auth/magic-link', fn: magic_link_post},
-    {req: 'POST /auth/magic-link-sent', fn: magic_link_sent_post},
+    {prepend: [csrf_middleware], routes: [
+        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), profile_post]},
+        {req: 'POST /auth/sessions', fn: sessions_post},
+        {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
+        {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
+        {req: 'POST /auth/sign-in', fn: sign_in_post},
+        {req: 'POST /auth/sign-out', fn: sign_out_post},
+        {req: 'POST /auth/sign-up', fn: sign_up_post},
+        {req: 'POST /auth/forgot-password', fn: forgot_password_post},
+        {req: 'POST /auth/reset-password', fn: reset_password_post},
+        {req: 'POST /auth/change-password', fn: change_password_post},
+        {req: 'POST /auth/magic-link', fn: magic_link_post},
+        {req: 'POST /auth/magic-link-sent', fn: magic_link_sent_post},
+    ]},
 ];
 
 // GET /auth/status
@@ -734,6 +737,7 @@ async function replace_session(req, user)
     req.session.user_uid = user.uid;
     req.session.ip = normalize_ip(req.ip);
     req.session.user_agent = req.headers['user-agent'] ?? 'n/a';
+    req.session.token = random_hex();
     await promisify(v => req.session.save(v));
 }
 

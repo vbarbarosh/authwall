@@ -19,6 +19,7 @@
         <h2>Identity</h2>
 
         <form action="/auth/profile" method="POST">
+            <input type="hidden" name="_csrf">
             <label>
                 Username
                 <input type="text" name="username" disabled>
@@ -46,6 +47,7 @@
         <h2>Security</h2>
 
         <form action="/auth/profile" method="POST">
+            <input type="hidden" name="_csrf">
             <label>
                 Current password
                 <input type="password" name="current_password" autocomplete="current-password" required>
@@ -82,6 +84,7 @@
         <h2>Danger zone</h2>
 
         <form action="/auth/profile/delete" method="POST">
+            <input type="hidden" name="_csrf">
             <label>
                 Type current username to confirm deletion
                 <input type="text" name="confirm_username" autocomplete="username" required>
@@ -121,9 +124,13 @@
 <script type="module">
     const status = await fetch('/auth/status').then(v => v.json());
     document.querySelector('#error').textContent = (status.error ?? '');
+    document.querySelector('#avatar').src = (status.avatar_url ?? '');
     document.querySelector('input[name=username]').value = (status.username ?? '');
     document.querySelector('input[name=display_name]').value = (status.display_name ?? '');
-    document.querySelector('#avatar').src = (status.avatar_url ?? '');
+
+    for (const elem of document.querySelectorAll('input[name=_csrf]')) {
+        elem.value = (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
+    }
 
     const div = document.querySelector('#providers');
     if (!status.providers.length) {

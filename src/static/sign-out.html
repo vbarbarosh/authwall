@@ -18,6 +18,7 @@
     <p>You are about to sign out.</p>
 
     <form action="/auth/sign-out" method="POST">
+        <input type="hidden" name="_csrf">
         <button type="submit">Sign out</button>
     </form>
 
@@ -54,6 +55,7 @@
 <script type="module">
     const status = await fetch('/auth/status').then(v => v.json());
     document.querySelector('#error').textContent = status.error;
+    document.querySelector('input[name=_csrf]').value = (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
 </script>
 
 </body>

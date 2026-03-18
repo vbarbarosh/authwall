@@ -4,6 +4,7 @@ const SessionStore = require('./helpers/SessionStore');
 const bootstrap_database = require('./helpers/bootstrap_database');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('./config');
+const csrf_token = require('./helpers/csrf/csrf_token');
 const express = require('express');
 const express_log = require('@vbarbarosh/express-helpers/src/express_log');
 const express_routes = require('./helpers/express/express_routes');
@@ -47,10 +48,19 @@ async function main()
             maxAge: 30 * 24 * 60 * 60 * 1000,
         },
     }));
-    app.use(function (req, res, next) {
+    app.use('/auth', function (req, res, next) {
         if (req.session && !req.session.ip) {
             req.session.ip = req.ip;
             req.session.user_agent = req.headers['user-agent'];
+        }
+        if (req.sessionID) {
+            res.cookie('csrf_token', csrf_token(req.sessionID), {
+                path: '/auth',
+                httpOnly: false,
+                sameSite: 'lax',
+                secure: config.public_url.startsWith('https://'),
+                maxAge: 30 * 24 * 60 * 60 * 1000,
+            });
         }
         next();
     });
