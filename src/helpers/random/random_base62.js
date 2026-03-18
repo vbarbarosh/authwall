@@ -1,10 +1,10 @@
 const crypto = require('crypto');
 
-const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const base = alphabet.length;
 const max = Math.floor(256 / base) * base;
 
-function random_slug(len = 16)
+function random_base62(len = 24)
 {
     let out = '';
     while (out.length < len) {
@@ -22,4 +22,4 @@ function random_slug(len = 16)
     return out;
 }
 
-module.exports = random_slug;
+module.exports = random_base62;
