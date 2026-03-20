@@ -1,11 +1,25 @@
 const config = require('../../config');
 const crypto = require('crypto');
+const csrf_token = require('./csrf_token');
 
 function csrf_middleware(req, res, next)
 {
-    const token = req.body._csrf || req.headers['x-csrf-token'];
-    const cookie = String(req.headers.cookie).match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '';
-    if (token && token === cookie && verify(token, req.sessionID)) {
+    const raw_cookie = String(req.headers.cookie).match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '';
+
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+        res.cookie('csrf_token', raw_cookie || csrf_token(req.sessionID), {
+            path: '/auth',
+            httpOnly: false,
+            sameSite: 'lax',
+            secure: config.public_url.startsWith('https://'),
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        next();
+        return;
+    }
+
+    const token = req.headers['x-csrf-token'] || req.body._csrf;
+    if (token && token === raw_cookie && verify(token, req.sessionID)) {
         next();
     }
     else {
