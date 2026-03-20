@@ -4,7 +4,6 @@ const SessionStore = require('./helpers/SessionStore');
 const bootstrap_database = require('./helpers/bootstrap_database');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('./config');
-const csrf_token = require('./helpers/csrf/csrf_token');
 const express = require('express');
 const express_log = require('@vbarbarosh/express-helpers/src/express_log');
 const express_routes = require('./helpers/express/express_routes');
@@ -12,6 +11,7 @@ const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const express_session = require('express-session');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
+const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const routes = require('./routes');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
@@ -53,14 +53,8 @@ async function main()
             req.session.ip = req.ip;
             req.session.user_agent = req.headers['user-agent'];
         }
-        if (req.sessionID) {
-            res.cookie('csrf_token', csrf_token(req.sessionID), {
-                path: '/auth',
-                httpOnly: false,
-                sameSite: 'lax',
-                secure: config.public_url.startsWith('https://'),
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-            });
+        if (req.session && !req.session.csrf_token) {
+            req.session.csrf_token = random_base62();
         }
         next();
     });

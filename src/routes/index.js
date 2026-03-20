@@ -3,7 +3,6 @@ const config = require('../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_providers = require('../helpers/const/const_providers');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
-const csrf_middleware = require('../helpers/csrf/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const fs_mkdirp = require('@vbarbarosh/node-helpers/src/fs_mkdirp');
@@ -18,6 +17,7 @@ const normalize_ip = require('../helpers/normalize/normalize_ip');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const promisify = require('../helpers/promisify');
+const random_base62 = require('../helpers/random/random_base62');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_slug = require('../helpers/random/random_slug');
@@ -72,6 +72,16 @@ const routes = [
     ]},
 ];
 
+async function csrf_middleware(req, res, next)
+{
+    if (req.body._csrf !== req.session.csrf_token) {
+        next(new Error('[403] Invalid CSRF Token'));
+    }
+    else {
+        next();
+    }
+}
+
 // GET /auth/status
 async function status_get(req, res)
 {
@@ -90,6 +100,7 @@ async function status_get(req, res)
         res.send({
             error,
             authenticated: false,
+            csrf_token: req.session.csrf_token,
             debug: {
                 users: await db('users'),
                 sessions: await db('sessions'),
@@ -100,6 +111,7 @@ async function status_get(req, res)
         res.send({
             error,
             authenticated: true,
+            csrf_token: req.session.csrf_token,
             username: user.username,
             email: user.email,
             email_verified: user.email_verified,
@@ -694,7 +706,6 @@ async function magic_link_callback_get(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-
     let user = await db('users').where({email: magic_link.email}).first();
     if (!user) {
         const [user_id] = await db('users').insert({
@@ -737,7 +748,7 @@ async function replace_session(req, user)
     req.session.user_uid = user.uid;
     req.session.ip = normalize_ip(req.ip);
     req.session.user_agent = req.headers['user-agent'] ?? 'n/a';
-    req.session.token = random_hex();
+    req.session.csrf_token = random_base62();
     await promisify(v => req.session.save(v));
 }
 

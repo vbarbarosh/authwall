@@ -129,7 +129,7 @@
     document.querySelector('input[name=display_name]').value = (status.display_name ?? '');
 
     for (const elem of document.querySelectorAll('input[name=_csrf]')) {
-        elem.value = (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
+        elem.value = status.csrf_token; // (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
     }
 
     const div = document.querySelector('#providers');

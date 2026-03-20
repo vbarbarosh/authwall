@@ -59,7 +59,7 @@
 <script type="module">
     const status = await fetch('/auth/status').then(v => v.json());
     document.querySelector('#error').textContent = status.error;
-    document.querySelector('input[name=_csrf]').value = (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
+    document.querySelector('input[name=_csrf]').value = status.csrf_token; // (document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)?.[1] ?? '');
 </script>
 
 </body>
