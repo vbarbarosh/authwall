@@ -45,32 +45,43 @@ const routes = [
     {req: 'GET /auth/status', fn: status_get},
     {req: 'GET /auth/google', fn: google_get},
     {req: 'GET /auth/google/callback', fn: google_callback_get},
-    {req: 'GET /auth/profile', fn: profile_get},
-    {req: 'GET /auth/sessions', fn: sessions_get},
     {req: 'GET /auth/sign-in', fn: sign_in_get},
-    {req: 'GET /auth/sign-out', fn: sign_out_get},
     {req: 'GET /auth/sign-up', fn: sign_up_get},
     {req: 'GET /auth/forgot-password', fn: forgot_password_get},
     {req: 'GET /auth/reset-password', fn: reset_password_get},
-    {req: 'GET /auth/change-password', fn: change_password_get},
     {req: 'GET /auth/magic-link', fn: magic_link_get},
     {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
     {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
     {prepend: [csrf_middleware], routes: [
-        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), profile_post]},
-        {req: 'POST /auth/sessions', fn: sessions_post},
-        {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
-        {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
         {req: 'POST /auth/sign-in', fn: sign_in_post},
-        {req: 'POST /auth/sign-out', fn: sign_out_post},
         {req: 'POST /auth/sign-up', fn: sign_up_post},
         {req: 'POST /auth/forgot-password', fn: forgot_password_post},
         {req: 'POST /auth/reset-password', fn: reset_password_post},
-        {req: 'POST /auth/change-password', fn: change_password_post},
         {req: 'POST /auth/magic-link', fn: magic_link_post},
         {req: 'POST /auth/magic-link-sent', fn: magic_link_sent_post},
     ]},
+    {prepend: [auth_middleware], routes: [
+        {req: 'GET /auth/profile', fn: profile_get},
+        {req: 'GET /auth/sessions', fn: sessions_get},
+        {req: 'GET /auth/sign-out', fn: sign_out_get},
+        {req: 'GET /auth/change-password', fn: change_password_get},
+        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), csrf_middleware, profile_post]},
+        {prepend: [csrf_middleware], routes: [
+            {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
+            {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
+            {req: 'POST /auth/sign-out', fn: sign_out_post},
+            {req: 'POST /auth/change-password', fn: change_password_post},
+        ]},
+    ]},
 ];
+
+async function auth_middleware(req, res, next)
+{
+    if (!req.session.user_id) {
+        next(new Error('Authentication required'));
+    }
+    next();
+}
 
 async function csrf_middleware(req, res, next)
 {
@@ -137,10 +148,6 @@ async function profile_get(req, res)
 // POST /auth/profile
 async function profile_post(req, res)
 {
-    if (!req.session.user_id) {
-        throw new Error('Authentication required');
-    }
-
     // const {current_password, password, password_confirm} = req.body;
     // if (!current_password || !password || !password_confirm) {
     //     throw new Error('Missing fields');
@@ -187,25 +194,12 @@ async function profile_post(req, res)
 // GET /auth/sessions
 async function sessions_get(req, res)
 {
-    if (!req.session.user_id) {
-        throw new Error('Authentication required');
-    }
-
     res.sendFile(fs_path_resolve(__dirname, '../static/sessions.html'));
-}
-
-// POST /auth/sessions
-async function sessions_post(req, res)
-{
 }
 
 // POST /auth/sessions/revoke
 async function sessions_revoke_post(req, res)
 {
-    if (!req.session.user_id) {
-        throw new Error('Authentication required');
-    }
-
     const {uid} = req.body;
     if (!uid) {
         throw new Error('Missing session uid');
@@ -224,10 +218,6 @@ async function sessions_revoke_post(req, res)
 // POST /auth/sessions/revoke-all
 async function sessions_revoke_all_post(req, res)
 {
-    if (!req.session.user_id) {
-        throw new Error('Authentication required');
-    }
-
     await db('sessions')
         .where({user_id: req.session.user_id})
         .whereNot({uid: req.sessionID})
@@ -434,10 +424,6 @@ async function change_password_get(req, res)
 // POST /auth/change-password
 async function change_password_post(req, res)
 {
-    if (!req.session.user_id) {
-        throw new Error('Authentication required');
-    }
-
     const {current_password, password, password_confirm} = req.body;
 
     if (!current_password || !password || !password_confirm) {

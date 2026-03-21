@@ -34,6 +34,7 @@
         </form>
 
         <form action="/auth/profile" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf">
             <label>
                 Avatar
                 <input type="file" name="avatar" accept="image/*">
