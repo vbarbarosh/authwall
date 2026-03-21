@@ -47,8 +47,8 @@ const config = {
     google_redirect_url: process.env.AUTHWALL_GOOGLE_REDIRECT_URL,
 };
 
-if (!process.env.AUTHWALL_SESSION_SECRET) {
-    console.warn('\n⚠️ Missing required env var: AUTHWALL_SESSION_SECRET\n');
+if (!process.env.AUTHWALL_SECRET) {
+    console.warn('\n⚠️ Missing required env var: AUTHWALL_SECRET\n');
 }
 
 function secret_hkdf(namespace)
