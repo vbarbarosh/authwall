@@ -117,6 +117,11 @@ async function main()
 
 function sign_in_required(req, res, next)
 {
+    if (config.public_paths.includes(req.path)) {
+        next();
+        return;
+    }
+
     if (req.path.startsWith('/bypass/')) {
         next();
         return;
