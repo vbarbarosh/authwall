@@ -18,9 +18,9 @@ const LOG_FILE = process.env.LOG_FILE ?? null;
 const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
 const config = {
-    public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://localhost:3000',
+    public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
     public_paths: fs.readFileSync(fs_path_resolve(__dirname, 'public_paths.txt'), {encoding: 'utf8'}).split('\n').map(v => v.trim()).filter(v => v && v[0] === '/'),
-    target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://localhost:8080',
+    target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
     log_file: LOG_FILE,
     log_file_http: LOG_FILE ?? function () {
         if (LOG_DIR === null) {
@@ -29,7 +29,7 @@ const config = {
         }
         return `${LOG_DIR}/http-${new Date().toJSON().substring(0, 10)}.log`;
     },
-    listen: process.env.LISTEN ?? 'localhost',
+    listen: process.env.LISTEN ?? '127.0.0.1',
     port: process.env.PORT ?? 3000,
     secrets: {
         csrf_token: secret_hkdf('csrf_token'),
