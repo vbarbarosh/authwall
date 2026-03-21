@@ -1,4 +1,4 @@
-const config = require('../../config2');
+const config = require('../../config');
 const db = require('../../db');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_read_lines = require('@vbarbarosh/node-helpers/src/fs_read_lines');
