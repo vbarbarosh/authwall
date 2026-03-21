@@ -6,7 +6,7 @@ exports.up = async function (knex) {
     await knex.schema.createTable('sessions', function (table) {
         table.increments('id');
         table.string('uid', 32).notNullable().unique().collate('utf8mb4_bin');
-        table.integer('user_id').nullable().references('id').inTable('users').onDelete('RESTRICT');
+        table.integer('user_id').unsigned().nullable().references('id').inTable('users').onDelete('RESTRICT');
         table.string('user_uid', 32).nullable().collate('utf8mb4_bin');
         table.string('ip', 64).notNullable();
         table.string('user_agent', 512).notNullable();
