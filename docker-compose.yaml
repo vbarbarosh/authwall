@@ -8,7 +8,7 @@ services:
     environment:
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
       AUTHWALL_TARGET: http://echo-server:8080
-      AUTHWALL_SESSION_SECRET: hello
+      AUTHWALL_SECRET: hello
     ports:
       - '3000:3000'
     volumes:

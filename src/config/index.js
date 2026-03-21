@@ -13,20 +13,20 @@ if (knexfile[NODE_ENV].connection?.filename) {
     fs.mkdirSync(fs_path_resolve(__dirname, '../../data'), {recursive: true});
 }
 
-let log_dir = null;
-const log_file = process.env.LOG_FILE ?? null;
-const secret = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
+let LOG_DIR = null;
+const LOG_FILE = process.env.LOG_FILE ?? null;
+const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
 const config = {
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://localhost:3000',
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://localhost:8080',
-    log_file,
-    log_file_http: log_file ?? function () {
-        if (log_dir === null) {
-            log_dir = fs_path_resolve(__dirname, '../../data/logs');
-            fs.mkdirSync(log_dir, {recursive: true});
+    log_file: LOG_FILE,
+    log_file_http: LOG_FILE ?? function () {
+        if (LOG_DIR === null) {
+            LOG_DIR = fs_path_resolve(__dirname, '../../data/logs');
+            fs.mkdirSync(LOG_DIR, {recursive: true});
         }
-        return `${log_dir}/http-${new Date().toJSON().substring(0, 10)}.log`;
+        return `${LOG_DIR}/http-${new Date().toJSON().substring(0, 10)}.log`;
     },
     listen: process.env.LISTEN ?? 'localhost',
     port: process.env.PORT ?? 3000,
@@ -53,7 +53,7 @@ if (!process.env.AUTHWALL_SESSION_SECRET) {
 
 function secret_hkdf(namespace)
 {
-    return Buffer.from(crypto.hkdfSync('sha256', secret, 'authwall', namespace, 32)).toString('hex');
+    return Buffer.from(crypto.hkdfSync('sha256', SECRET, 'authwall', namespace, 32)).toString('hex');
 }
 
 module.exports = config;
