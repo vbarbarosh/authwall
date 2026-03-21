@@ -57,4 +57,6 @@ function secret_hkdf(namespace)
     return Buffer.from(crypto.hkdfSync('sha256', SECRET, 'authwall', namespace, 32)).toString('hex');
 }
 
+console.log(config);
+
 module.exports = config;
