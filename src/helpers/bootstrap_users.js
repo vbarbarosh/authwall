@@ -26,13 +26,13 @@ async function bootstrap_users()
 
         if (email) {
             if (await db('users').where({email}).first()) {
-                console.log(`🙈 Skipping existing user username=[${username}] email=[${email}]`);
+                console.log(`ℹ️ Skipping existing user username=[${username}] email=[${email}]`);
                 continue;
             }
         }
         if (username) {
             if (await db('users').where({username}).first()) {
-                console.log(`🙈 Skipping existing user username=[${username}] email=[${email}]`);
+                console.log(`ℹ️ Skipping existing user username=[${username}] email=[${email}]`);
                 continue;
             }
         }
