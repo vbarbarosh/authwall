@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const config = require('../../config2');
+const config = require('../../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_providers = require('../helpers/const/const_providers');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
