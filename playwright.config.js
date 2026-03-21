@@ -81,5 +81,8 @@ module.exports = defineConfig({
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',
+        env: {
+            LISTEN: 'localhost',
+        },
     },
 });
