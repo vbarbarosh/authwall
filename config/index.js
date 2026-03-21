@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
-const knexfile = require('../../knexfile');
+const knexfile = require('../knexfile');
 
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
