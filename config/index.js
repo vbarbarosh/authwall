@@ -29,8 +29,8 @@ const config = {
         }
         return `${LOG_DIR}/http-${new Date().toJSON().substring(0, 10)}.log`;
     },
-    listen: process.env.LISTEN || 'localhost',
-    port: process.env.PORT || 3000,
+    listen: process.env.LISTEN ?? 'localhost',
+    port: process.env.PORT ?? 3000,
     secrets: {
         csrf_token: secret_hkdf('csrf_token'),
         express_session: secret_hkdf('express_session'),
