@@ -3,14 +3,12 @@ const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
 
-const NODE_ENV = process.env.NODE_ENV ?? 'development';
+const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
 
-if (!knexfile[NODE_ENV]) {
-    throw new Error(`Invalid NODE_ENV: ${NODE_ENV}`);
-}
+const knexvars = AUTHWALL_MYSQL ? knexfile.production : knexfile.development;
 
-if (knexfile[NODE_ENV].connection?.filename) {
-    fs.mkdirSync(fs_path_resolve(__dirname, '../../data'), {recursive: true});
+if (knexvars.connection?.filename) {
+    fs.mkdirSync(fs_path_resolve(__dirname, '../data'), {recursive: true});
 }
 
 let LOG_DIR = null;
@@ -37,10 +35,7 @@ const config = {
         express_session: secret_hkdf('express_session'),
     },
     mysql: process.env.AUTHWALL_MYSQL,
-    knexvars: {
-        ...knexfile[NODE_ENV],
-        connection: process.env.AUTHWALL_MYSQL || knexfile[NODE_ENV].connection,
-    },
+    knexvars,
     password_rounds: 12,
 
     // Google Login
