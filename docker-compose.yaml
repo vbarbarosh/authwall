@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     environment:
-      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_PUBLIC_URL: http://127.0.0.1:3000
       AUTHWALL_TARGET_URL: http://echo-server:8080
       AUTHWALL_SECRET: hello
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
