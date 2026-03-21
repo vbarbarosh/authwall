@@ -5,7 +5,7 @@ const knexfile = require('../knexfile');
 
 const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
 
-const knexvars = AUTHWALL_MYSQL ? knexfile.production : knexfile.development;
+const knexvars = AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
 
 if (knexvars.connection?.filename) {
     fs.mkdirSync(fs_path_resolve(__dirname, '../data'), {recursive: true});

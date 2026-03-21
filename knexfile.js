@@ -1,6 +1,6 @@
 module.exports = {
 
-    development: {
+    sqlite: {
         client: 'better-sqlite3',
         connection: {
             filename: './data/db.sqlite3'
@@ -15,7 +15,7 @@ module.exports = {
         },
     },
 
-    production: {
+    mysql: {
         client: 'mysql2',
         connection: null,
         pool: {
