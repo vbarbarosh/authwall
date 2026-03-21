@@ -11,8 +11,8 @@ exports.up = async function (knex) {
         table.string('email', 255).unique();
         table.boolean('email_verified').notNullable().defaultTo(false);
         table.string('password_hash', 255);
-        table.string('display_name', 255);
-        table.string('avatar_url', 500);
+        table.string('display_name', 255).nullable();
+        table.string('avatar_url', 500).nullable();
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();
     });

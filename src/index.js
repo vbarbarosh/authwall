@@ -2,6 +2,7 @@
 
 const SessionStore = require('./helpers/SessionStore');
 const bootstrap_database = require('./helpers/bootstrap_database');
+const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config2');
 const express = require('express');
@@ -21,6 +22,7 @@ cli(main);
 async function main()
 {
     await bootstrap_database();
+    await bootstrap_users();
 
     const app = express();
 

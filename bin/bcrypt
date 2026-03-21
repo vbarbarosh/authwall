@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+const bcrypt = require('bcrypt');
+const cli = require('@vbarbarosh/node-helpers/src/cli');
+const config = require('../config2');
+
+cli(main);
+
+async function main()
+{
+    const password = process.argv[2];
+    if (!password) {
+        console.error('Usage: bin/bcrypt {{password}}');
+        process.exit(1);
+    }
+
+    const hash = await bcrypt.hash(password, config.password_rounds);
+    console.log(hash);
+}

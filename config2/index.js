@@ -18,6 +18,7 @@ const LOG_FILE = process.env.LOG_FILE ?? null;
 const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
 const config = {
+    users_file: fs_path_resolve(__dirname, 'users.txt'),
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
     public_paths: fs.readFileSync(fs_path_resolve(__dirname, 'public_paths.txt'), {encoding: 'utf8'}).split('\n').map(v => v.trim()).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
