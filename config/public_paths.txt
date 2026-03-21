@@ -1,3 +1,8 @@
 /
 /foo
 /bar
+/favicon.ico
+/robots.txt
+/humans.txt
+/site.webmanifest
+/.well-known/appspecific/com.chrome.devtools.json
