@@ -1,4 +1,8 @@
-/
+# Only paths listed here are publicly accessible.
+# Avoid exposing the root path (/), as it often pulls in additional
+# resources (CSS, images, fonts) that would also need to be exposed.
+# Default: all paths are private.
+# /
 /foo
 /bar
 /favicon.ico
