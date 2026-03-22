@@ -1,0 +1,27 @@
+public_paths:
+  # Only paths listed here are publicly accessible.
+  # Default: all paths are private.
+  #
+  # Avoid exposing the root path (/), as it may implicitly expose
+  # dependent assets (CSS, images, fonts).
+  - /foo
+  - /bar
+
+  # common public files
+  - /favicon.ico
+  - /robots.txt
+  - /humans.txt
+  - /site.webmanifest
+
+  # well-known endpoints
+  - /.well-known/appspecific/com.chrome.devtools.json
+
+users:
+
+  - username: foo
+    display_name: Foo
+    password_hash: $2b$12$HjdTGILq./Cak9R9pTQqxODQSkmuS.vnOWVpQxo14R0tSQiqGBE0G
+
+  - username: bar
+    display_name: Bar
+    password_hash: $2b$12$jxYJroE/c89SnJ8kKUwhmOpWFluDIffN5vwTZNnm26xFrTAP.Mi1y

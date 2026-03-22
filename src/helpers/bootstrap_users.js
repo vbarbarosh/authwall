@@ -1,8 +1,6 @@
 const config = require('../../config');
 const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
-const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
-const fs_read_lines = require('@vbarbarosh/node-helpers/src/fs_read_lines');
 const normalize_email = require('./normalize/normalize_email');
 const normalize_username = require('./normalize/normalize_username');
 const random_slug = require('./random/random_slug');
@@ -10,20 +8,16 @@ const random_uid_user = require('./random/random_uid_user');
 
 async function bootstrap_users()
 {
-    if (!await fs_exists(config.users_file)) {
+    if (!config.seed_users.length) {
         console.log('👤 No users file, skipping');
         return;
     }
 
-    console.log('👤 Seeding users from users.txt...');
-    for (const line of await fs_read_lines(config.users_file)) {
-        const expr = line.trim();
-        if (!expr || expr[0] === '#') {
-            continue;
-        }
-        const [username, email, password_hash, display_name] = expr.split('|').map(v => v.trim() || null);
+    console.log('👤 Seeding users...');
+    for (const user_seed of config.seed_users) {
+        const {username, email, password_hash, display_name} = user_seed;
         if (!email && !username) {
-            console.log(`⚠️ Skipping invalid line: [${JSON.stringify(line).slice(1, -1)}]`);
+            console.log(`⚠️ Skipping invalid user seed: [${JSON.stringify(user_seed).slice(1, -1)}]`);
             continue;
         }
 

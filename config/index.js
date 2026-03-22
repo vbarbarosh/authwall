@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
+const yaml = require('yaml');
 
 const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
 
@@ -15,10 +16,12 @@ let LOG_DIR = null;
 const LOG_FILE = process.env.LOG_FILE ?? null;
 const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
+const settings = yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'}));
+
 const config = {
-    users_file: fs_path_resolve(__dirname, 'users.txt'),
+    seed_users: Array.from(settings.users||[]),
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
-    public_paths: fs.readFileSync(fs_path_resolve(__dirname, 'public_paths.txt'), {encoding: 'utf8'}).split('\n').map(v => v.trim()).filter(v => v && v[0] === '/'),
+    public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
     log_file: LOG_FILE,
     log_file_http: LOG_FILE ?? function () {
