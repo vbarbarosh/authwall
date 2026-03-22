@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const config = require('../../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
-const const_providers = require('../helpers/const/const_providers');
+const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
@@ -14,6 +14,7 @@ const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_url
 const multer = require('multer');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_ip = require('../helpers/normalize/normalize_ip');
+const normalize_username = require('../helpers/normalize/normalize_username');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const promisify = require('../helpers/promisify');
@@ -24,8 +25,6 @@ const random_slug = require('../helpers/random/random_slug');
 const random_uid_user = require('../helpers/random/random_uid_user');
 const sharp = require('sharp');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
-const const_user_identity = require('../helpers/const/const_user_identity');
-const normalize_username = require('../helpers/normalize/normalize_username');
 
 const SECOND = 1000;
 
@@ -125,9 +124,6 @@ async function status_get(req, res)
             error,
             authenticated: true,
             csrf_token: req.session.csrf_token,
-            username: user.username,
-            email: user.email,
-            email_verified: user.email_verified,
             display_name: user.display_name,
             avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
             providers: await db('user_identities').where('user_id', req.session.user_id),
@@ -534,7 +530,7 @@ async function google_callback_get(req, res)
     console.log(userinfo);
 
     const ident = await db('user_identities').where({
-        type: const_user_identity.google_oauth,
+        type: const_user_identity.oauth_google,
         value_normalized: userinfo.sub,
     }).first();
 
@@ -558,7 +554,7 @@ async function google_callback_get(req, res)
         const now = new Date();
         await db('user_identities').insert({
             user_id: req.session.user_id,
-            type: const_user_identity.google_oauth,
+            type: const_user_identity.oauth_google,
             value: userinfo.sub,
             value_normalized: userinfo.sub,
             created_at: now,
@@ -592,7 +588,7 @@ async function google_callback_get(req, res)
             });
             await trx('user_identities').insert({
                 user_id,
-                type: const_user_identity.google_oauth,
+                type: const_user_identity.oauth_google,
                 value: null,
                 value_normalized: userinfo.sub,
                 created_at: now,
