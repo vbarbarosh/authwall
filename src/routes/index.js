@@ -557,7 +557,7 @@ async function google_callback_get(req, res)
         await db('user_identities').insert({
             user_id: req.session.user_id,
             type: const_user_identity.oauth_google,
-            value: userinfo.sub,
+            value: null,
             value_normalized: userinfo.sub,
             created_at: now,
             updated_at: now,
