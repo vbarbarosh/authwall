@@ -561,6 +561,7 @@ async function google_callback_get(req, res)
             value_normalized: userinfo.sub,
             created_at: now,
             updated_at: now,
+            verified_at: now,
         });
 
         redirect(req, res, '/auth/profile');
