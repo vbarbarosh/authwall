@@ -19,7 +19,7 @@ const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_dem
 const settings = yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'}));
 
 const config = {
-    seed_users: Array.from(settings.users||[]),
+    seed_users: Array.from(settings.seed_users||[]),
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',

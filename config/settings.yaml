@@ -16,7 +16,7 @@ public_paths:
   # well-known endpoints
   - /.well-known/appspecific/com.chrome.devtools.json
 
-users:
+seed_users:
 
   - username: foo
     display_name: Foo
