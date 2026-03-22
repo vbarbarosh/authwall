@@ -12,7 +12,7 @@ const fs_rm = require('@vbarbarosh/node-helpers/src/fs_rm');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const multer = require('multer');
-const normalize_email = require('../helpers/normalize_email');
+const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_ip = require('../helpers/normalize/normalize_ip');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
@@ -24,6 +24,8 @@ const random_slug = require('../helpers/random/random_slug');
 const random_uid_user = require('../helpers/random/random_uid_user');
 const sharp = require('sharp');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const const_user_identity = require('../helpers/const/const_user_identity');
+const normalize_username = require('../helpers/normalize/normalize_username');
 
 const SECOND = 1000;
 
@@ -241,7 +243,17 @@ async function sign_in_post(req, res)
         throw new Error('Missing fields');
     }
 
-    const user = await db('users').where({username}).first();
+    const username_normalized = normalize_username(username);
+    if (!username_normalized) {
+        throw new Error('Invalid username or password');
+    }
+
+    const ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
+    if (!ident) {
+        throw new Error('Invalid username or password');
+    }
+
+    const user = await db('users').where({id: ident.user_id}).first();
     const password_hash = user?.password_hash || '$2b$10$invalidinvalidinvalidinvalidinv';
 
     // Attackers can detect if username exists by timing
@@ -287,15 +299,31 @@ async function sign_up_post(req, res)
         throw new Error('Passwords do not match')
     }
 
+    const username_normalized = normalize_username(username);
+    if (!username_normalized) {
+        throw new Error('Invalid username')
+    }
+
     try {
         const now = new Date();
-        const [user_id] = await db('users').insert({
-            uid: random_uid_user(),
-            slug: random_slug(),
-            username,
-            password_hash: await bcrypt.hash(password, config.password_rounds),
-            created_at: now,
-            updated_at: now,
+        let user_id;
+        await db.transaction(async function (trx) {
+            [user_id] = await trx('users').insert({
+                uid: random_uid_user(),
+                slug: random_slug(),
+                password_hash: await bcrypt.hash(password, config.password_rounds),
+                created_at: now,
+                updated_at: now,
+            });
+            await trx('user_identities').insert({
+                user_id,
+                type: const_user_identity.username,
+                value: username,
+                value_normalized: username_normalized,
+                created_at: now,
+                updated_at: now,
+                verified_at: now,
+            });
         });
         const user = await db('users').where({id: user_id}).first();
 
@@ -329,19 +357,19 @@ async function forgot_password_post(req, res)
     if (!req.body.email) {
         throw new Error('Missing email');
     }
-    const email = normalize_email(req.body.email);
-    if (!email) {
+    const email_normalized = normalize_email(req.body.email);
+    if (!email_normalized) {
         throw new Error('Invalid email');
     }
 
-    const user = await db('users').where({email}).first();
-    if (user) {
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
         const token = random_hex();
         const reset_link = urlmod(`${config.public_url}/auth/reset-password`, {token});
 
         const now = new Date();
         await db('password_reset_tokens').insert({
-            user_id: user.id,
+            user_id: ident.user_id,
             token_hash: crypto_hash_sha256(token),
             created_at: now,
             updated_at: now,
@@ -505,66 +533,87 @@ async function google_callback_get(req, res)
     });
     console.log(userinfo);
 
-    const provider = const_providers.google;
-    const provider_user_id = userinfo.sub;
+    const ident = await db('user_identities').where({
+        type: const_user_identity.google_oauth,
+        value_normalized: userinfo.sub,
+    }).first();
 
-    let user_id;
-    const user_identity = await db('user_identities').where({provider, provider_user_id}).first();
-
-    const intent = oauth_intent_from_state(state);
+    const oauth_intent = oauth_intent_from_state(state);
 
     // Connect account flow
-    if (intent === const_oauth_intent.connect) {
+    if (oauth_intent === const_oauth_intent.connect) {
 
         if (!req.session.user_id) {
             throw new Error('Authentication required');
         }
 
-        if (user_identity) {
-            if (user_identity.user_id !== req.session.user_id) {
+        if (ident) {
+            if (ident.user_id !== req.session.user_id) {
                 throw new Error('Google account already linked to another user');
             }
             // already connected
             return redirect(req, res, '/auth/profile');
         }
 
+        const now = new Date();
         await db('user_identities').insert({
             user_id: req.session.user_id,
-            provider,
-            provider_user_id,
-            created_at: new Date(),
+            type: const_user_identity.google_oauth,
+            value: userinfo.sub,
+            value_normalized: userinfo.sub,
+            created_at: now,
+            updated_at: now,
         });
 
         redirect(req, res, '/auth/profile');
         return;
     }
 
-    if (intent !== const_oauth_intent.login) {
-        throw new Error(`Invalid OAuth intent: ${intent}`);
+    if (oauth_intent !== const_oauth_intent.login) {
+        throw new Error(`Invalid OAuth intent: ${oauth_intent}`);
     }
 
+    let user_id;
+
     // Login flow
-    if (user_identity) {
-        user_id = user_identity.user_id;
+    if (ident) {
+        user_id = ident.user_id;
     }
     else {
-        const username = null;
-        const password_hash = await bcrypt.hash(random_hex(), config.password_rounds);
         await db.transaction(async function (trx) {
             const now = new Date();
             [user_id] = await trx('users').insert({
                 uid: random_uid_user(),
                 slug: random_slug(),
-                username,
-                password_hash,
-                email: userinfo.email,
-                email_verified: userinfo.email_verified,
                 display_name: userinfo.name,
                 avatar_url: userinfo.picture,
                 created_at: now,
                 updated_at: now,
             });
-            await trx('user_identities').insert({user_id, provider, provider_user_id, created_at: now});
+            await trx('user_identities').insert({
+                user_id,
+                type: const_user_identity.google_oauth,
+                value: null,
+                value_normalized: userinfo.sub,
+                created_at: now,
+                updated_at: now,
+                verified_at: now,
+            });
+            if (userinfo.email_verified) {
+                const email = userinfo.email;
+                const email_normalized = normalize_email(userinfo.email);
+                if (email_normalized) {
+                    await trx('user_identities').insert({
+                        user_id,
+                        type: const_user_identity.email,
+                        value: email,
+                        value_normalized: email_normalized,
+                        created_at: now,
+                        updated_at: now,
+                        verified_at: now,
+                    }).onConflict(['type', 'value_normalized']).ignore();
+                }
+            }
         });
     }
 
@@ -630,14 +679,15 @@ async function magic_link_sent_post(req, res)
         throw new Error('Missing fields');
     }
 
-    const email = normalize_email(req.body.email);
-    if (!email) {
+    const email = req.body.email;
+    const email_normalized = normalize_email(email);
+    if (!email_normalized) {
         throw new Error('Invalid email');
     }
 
     const now = new Date();
     const magic_link = await db('magic_links')
-        .where({email})
+        .where({email: email_normalized})
         .whereNull('used_at')
         .where('expires_at', '>', now)
         .orderBy('id', 'desc')
@@ -652,21 +702,30 @@ async function magic_link_sent_post(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    let user = await db('users').where({email}).first();
-    if (!user) {
-        const [user_id] = await db('users').insert({
+    let user_id;
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
+        user_id = ident.user_id;
+    }
+    else {
+        [user_id] = await db('users').insert({
             uid: random_uid_user(),
             slug: random_slug(),
-            username: null,
-            email: email,
-            email_verified: true,
-            password_hash: await bcrypt.hash(random_hex(), config.password_rounds),
             created_at: now,
             updated_at: now,
         });
-        user = await db('users').where('id', user_id).first();
+        await db('user_identities').insert({
+            user_id,
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
     }
 
+    const user = await db('users').where({id: user_id}).first();
     await replace_session(req, user);
 
     redirect(req, res);
@@ -692,21 +751,33 @@ async function magic_link_callback_get(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    let user = await db('users').where({email: magic_link.email}).first();
-    if (!user) {
+    const email = magic_link.email;
+    const email_normalized = normalize_email(magic_link.email);
+
+    let user_id;
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
+        user_id = ident.user_id;
+    }
+    else {
         const [user_id] = await db('users').insert({
             uid: random_uid_user(),
             slug: random_slug(),
-            username: null,
-            email: magic_link.email,
-            email_verified: true,
-            password_hash: await bcrypt.hash(random_hex(), config.password_rounds),
             created_at: now,
             updated_at: now,
         });
-        user = await db('users').where('id', user_id).first();
+        await db('user_identities').insert({
+            user_id,
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
     }
 
+    const user = await db('users').where({id: user_id}).first();
     await replace_session(req, user);
 
     redirect(req, res);
