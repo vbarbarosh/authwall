@@ -21,10 +21,9 @@ const promisify = require('../helpers/promisify');
 const random_base62 = require('../helpers/random/random_base62');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
-const random_slug = require('../helpers/random/random_slug');
-const random_uid_user = require('../helpers/random/random_uid_user');
 const sharp = require('sharp');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
 
@@ -304,17 +303,11 @@ async function sign_up_post(req, res)
 
     try {
         const now = new Date();
-        let user_id;
+        let user;
         await db.transaction(async function (trx) {
-            [user_id] = await trx('users').insert({
-                uid: random_uid_user(),
-                slug: random_slug(),
-                password_hash: await bcrypt.hash(password, config.password_rounds),
-                created_at: now,
-                updated_at: now,
-            });
+            user = await users_create({trx, password});
             await trx('user_identities').insert({
-                user_id,
+                user_id: user.id,
                 type: const_user_identity.username,
                 value: username,
                 value_normalized: username_normalized,
@@ -323,7 +316,6 @@ async function sign_up_post(req, res)
                 verified_at: now,
             });
         });
-        const user = await db('users').where({id: user_id}).first();
 
         await replace_session(req, user);
 
@@ -581,14 +573,10 @@ async function google_callback_get(req, res)
     else {
         await db.transaction(async function (trx) {
             const now = new Date();
-            [user_id] = await trx('users').insert({
-                uid: random_uid_user(),
-                slug: random_slug(),
-                display_name: userinfo.name,
-                avatar_url: userinfo.picture,
-                created_at: now,
-                updated_at: now,
-            });
+            const display_name = userinfo.name;
+            const avatar_url = userinfo.picture;
+            const user = await users_create({trx, display_name, avatar_url});
+            user_id = user.id;
             await trx('user_identities').insert({
                 user_id,
                 type: const_user_identity.oauth_google,
@@ -707,12 +695,8 @@ async function magic_link_sent_post(req, res)
         user_id = ident.user_id;
     }
     else {
-        [user_id] = await db('users').insert({
-            uid: random_uid_user(),
-            slug: random_slug(),
-            created_at: now,
-            updated_at: now,
-        });
+        const user = await users_create();
+        user_id = user.id;
         await db('user_identities').insert({
             user_id,
             type: const_user_identity.email,
@@ -759,12 +743,8 @@ async function magic_link_callback_get(req, res)
         user_id = ident.user_id;
     }
     else {
-        const [user_id] = await db('users').insert({
-            uid: random_uid_user(),
-            slug: random_slug(),
-            created_at: now,
-            updated_at: now,
-        });
+        const user = await users_create();
+        user_id = user.id;
         await db('user_identities').insert({
             user_id,
             type: const_user_identity.email,

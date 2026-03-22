@@ -5,6 +5,7 @@ const normalize_email = require('./normalize/normalize_email');
 const normalize_username = require('./normalize/normalize_username');
 const random_slug = require('./random/random_slug');
 const random_uid_user = require('./random/random_uid_user');
+const users_create = require('./models/users_create');
 
 async function bootstrap_users()
 {
@@ -46,15 +47,8 @@ async function bootstrap_users()
             user_id = ident.user_id;
         }
         else {
-            const now = new Date();
-            [user_id] = await db('users').insert({
-                uid: random_uid_user(),
-                slug: random_slug(),
-                password_hash,
-                display_name,
-                created_at: now,
-                updated_at: now,
-            });
+            const user = await users_create({password_hash, display_name});
+            user_id = user.id;
         }
 
         const idents1 = await db('user_identities').where({user_id}).count();
