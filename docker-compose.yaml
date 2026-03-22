@@ -11,7 +11,7 @@ services:
       AUTHWALL_SECRET: hello
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
     ports:
-      - '3000:3000'
+      - 3000:3000
     volumes:
       - ./data/authwall:/app/data
     depends_on:
@@ -19,6 +19,7 @@ services:
 
   mysql:
     image: mysql:8.4.8
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: authwall
       MYSQL_USER: authwall
