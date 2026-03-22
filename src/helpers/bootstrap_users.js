@@ -9,7 +9,7 @@ const random_uid_user = require('./random/random_uid_user');
 async function bootstrap_users()
 {
     if (!config.seed_users.length) {
-        console.log('👤 No users file, skipping');
+        console.log('👤 No users_seed defined, skipping');
         return;
     }
 
