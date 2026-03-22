@@ -78,19 +78,21 @@ const routes = [
 
 async function auth_middleware(req, res, next)
 {
-    if (!req.session.user_id) {
+    if (req.session.user_id) {
+        next();
+    }
+    else {
         next(new Error('Authentication required'));
     }
-    next();
 }
 
 async function csrf_middleware(req, res, next)
 {
-    if (req.body._csrf !== req.session.csrf_token) {
-        next(new Error('[403] Invalid CSRF Token'));
+    if (req.body._csrf === req.session.csrf_token) {
+        next();
     }
     else {
-        next();
+        next(new Error('[403] Invalid CSRF Token'));
     }
 }
 
