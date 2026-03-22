@@ -1,3 +1,4 @@
+const config = require('../../config');
 const db = require('../../db');
 const express_session = require('express-session');
 
@@ -19,6 +20,13 @@ class SessionStore extends express_session.Store
             out.user_uid = row.user_uid;
             out.ip = row.ip;
             out.ua = row.ua;
+            out.cookie = new express_session.Cookie({
+                path: '/',
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: config.public_url.startsWith('https://'),
+                maxAge: new Date(row.expires_at).getTime() - Date.now(),
+            });
             callback(null, out);
         }
         catch (error) {
@@ -34,7 +42,7 @@ class SessionStore extends express_session.Store
                 ? new Date(data.cookie.expires)
                 : new Date(now.getTime() + (data.cookie?.maxAge || 86400000));
 
-            const {user_id, user_uid, ip, ua, ...custom} = data;
+            const {user_id, user_uid, ip, ua, cookie, ...custom} = data;
             await db('sessions')
                 .insert({uid, user_id, user_uid, ip, ua, custom: JSON.stringify(custom), created_at: now, updated_at: now, last_seen_at: now, expires_at})
                 .onConflict('uid')
