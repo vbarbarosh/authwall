@@ -88,7 +88,7 @@ async function auth_middleware(req, res, next)
 
 async function csrf_middleware(req, res, next)
 {
-    if (req.body._csrf === req.session.csrf_token) {
+    if (req.body && req.body._csrf === req.session.csrf_token) {
         next();
     }
     else {
