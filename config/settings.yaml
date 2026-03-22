@@ -25,3 +25,6 @@ seed_users:
   - username: bar
     display_name: Bar
     password_hash: $2b$12$jxYJroE/c89SnJ8kKUwhmOpWFluDIffN5vwTZNnm26xFrTAP.Mi1y
+    email:
+    - bar1@authwall.test
+    - bar2@authwall.test
