@@ -9,7 +9,7 @@ exports.up = async function (knex) {
         table.integer('user_id').unsigned().nullable().index().references('id').inTable('users').onDelete('RESTRICT');
         table.string('user_uid', 32).nullable().collate('utf8mb4_bin');
         table.string('ip', 64).notNullable();
-        table.string('user_agent', 512).notNullable();
+        table.string('ua', 512).notNullable().comment('User Agent');
         table.text('custom').notNullable();
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();

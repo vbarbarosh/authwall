@@ -803,7 +803,7 @@ async function replace_session(req, user)
     req.session.user_id = user.id;
     req.session.user_uid = user.uid;
     req.session.ip = normalize_ip(req.ip);
-    req.session.user_agent = req.headers['user-agent'] ?? 'n/a';
+    req.session.ua = req.headers['user-agent'] ?? 'n/a';
     req.session.csrf_token = random_base62();
     await promisify(v => req.session.save(v));
 }
