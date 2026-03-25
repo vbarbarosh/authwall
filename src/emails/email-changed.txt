@@ -1,1 +1,16 @@
 Subject: Your email address was changed
+
+Hi,
+
+The email address on your account was changed on {{date}} from IP address {{ip}}.
+
+New email: {{new_email}}
+
+If you made this change, no action is needed. A verification email has been
+sent to your new address.
+
+If you did not make this change, contact support immediately or reset your
+password to secure your account:
+{{reset_link}}
+
+— Authwall

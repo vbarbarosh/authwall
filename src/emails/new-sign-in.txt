@@ -1,0 +1,19 @@
+Subject: New sign-in to your account
+
+Hi,
+
+A new sign-in to your account was detected on {{date}}.
+
+  IP address: {{ip}}
+  Browser:    {{ua}}
+
+If this was you, no action is needed.
+
+If you do not recognize this sign-in, reset your password immediately to
+secure your account:
+{{reset_link}}
+
+You can also review and revoke active sessions:
+{{sessions_link}}
+
+— Authwall

@@ -1,1 +1,15 @@
-Subject: Verify your email
+Subject: Confirm your new email address
+
+Hi,
+
+Please confirm your new email address by clicking the link below.
+
+Confirm email:
+{{link}}
+
+This link expires in 24 hours. Until confirmed, your previous email address
+remains active.
+
+If you did not request this change, you can safely ignore this email.
+
+— Authwall

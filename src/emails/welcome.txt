@@ -1,0 +1,8 @@
+Subject: Welcome
+
+Hi {{display_name}},
+
+Your account has been created. You can sign in at:
+{{sign_in_link}}
+
+— Authwall

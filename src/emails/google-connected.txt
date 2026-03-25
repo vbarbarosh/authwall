@@ -1,0 +1,13 @@
+Subject: Google account connected
+
+Hi,
+
+Your Google account ({{google_email}}) was connected to your account on
+{{date}} from IP address {{ip}}.
+
+If you made this change, no action is needed.
+
+If you did not connect a Google account, reset your password immediately:
+{{reset_link}}
+
+— Authwall

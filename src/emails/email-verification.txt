@@ -1,1 +1,13 @@
-Subject: Verify your email
+Subject: Verify your email address
+
+Hi,
+
+Please verify your email address to complete your registration.
+
+Verify email:
+{{link}}
+
+This link expires in 24 hours. If you did not create an account,
+you can safely ignore this email.
+
+— Authwall
