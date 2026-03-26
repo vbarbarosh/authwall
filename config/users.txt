@@ -1,4 +1,0 @@
-# users.txt
-# username|email|password_hash|display_name
-foo||$2b$12$HjdTGILq./Cak9R9pTQqxODQSkmuS.vnOWVpQxo14R0tSQiqGBE0G|Foo
-bar||$2b$12$jxYJroE/c89SnJ8kKUwhmOpWFluDIffN5vwTZNnm26xFrTAP.Mi1y|Bar
