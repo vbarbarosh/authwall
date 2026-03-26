@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authwall — Interactive Demo</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --text: #e6edf3; --muted: #7d8590; --accent: #6e40c9; --accent2: #818cf8;
+  --green: #238636; --green2: #2ea043; --red: #da3633; --yellow: #9e6a03;
+  --blue: #1f6feb; --cyan: #388bfd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--text); height: 100vh; display: flex;
+  flex-direction: column; overflow: hidden; font-size: 14px; }
+
+/* Layout */
+header { background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+header .logo { font-weight: 700; font-size: 15px; color: var(--accent2); letter-spacing: -.3px; }
+header .logo span { color: var(--muted); font-weight: 400; }
+header nav { display: flex; gap: 4px; margin-left: auto; }
+header nav a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px;
+  font-size: 13px; cursor: pointer; transition: all .15s; }
+header nav a:hover, header nav a.active { color: var(--text); background: var(--border); }
+.session-badge { margin-left: 8px; background: var(--green); color: #fff; padding: 2px 8px;
+  border-radius: 12px; font-size: 11px; font-weight: 600; }
+.session-badge.out { background: var(--red); }
+
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Auth UI panel */
+.auth-panel { width: 55%; border-right: 1px solid var(--border); display: flex;
+  flex-direction: column; overflow: hidden; }
+.url-bar { background: var(--surface2); border-bottom: 1px solid var(--border);
+  padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.url-bar .method { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  font-family: monospace; }
+.method.get { background: #0d419d; color: #79c0ff; }
+.method.post { background: #1a3a1f; color: #56d364; }
+.method.redirect { background: #3d2a00; color: #e3b341; }
+.url-bar input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; outline: none; }
+.url-bar input:focus { border-color: var(--accent2); }
+.url-bar button { background: var(--border); border: none; color: var(--muted); padding: 4px 10px;
+  border-radius: 6px; cursor: pointer; font-size: 12px; }
+.url-bar button:hover { background: var(--accent); color: #fff; }
+
+.page-area { flex: 1; overflow-y: auto; display: flex; align-items: flex-start;
+  justify-content: center; padding: 32px 24px; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 28px; width: 100%; max-width: 400px; }
+.card h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.card .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.card .links { margin-top: 16px; text-align: center; font-size: 13px; color: var(--muted); }
+.card .links a { color: var(--accent2); cursor: pointer; text-decoration: none; }
+.card .links a:hover { text-decoration: underline; }
+
+/* Forms */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.field input { width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 14px; outline: none;
+  transition: border-color .15s; }
+.field input:focus { border-color: var(--accent2); }
+.field input::placeholder { color: var(--muted); }
+.btn { width: 100%; padding: 9px; background: var(--accent); border: none; color: #fff;
+  border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+  margin-top: 4px; }
+.btn:hover { background: var(--accent2); }
+.btn.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn.secondary:hover { background: var(--border); }
+.btn.danger { background: #da3633; }
+.btn.danger:hover { background: #ff7b72; }
+.btn.google { background: #fff; color: #374151; display: flex; align-items: center;
+  justify-content: center; gap: 8px; border: 1px solid #d1d5db; }
+.btn.google:hover { background: #f9fafb; }
+
+.alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+.alert.error { background: #2d1117; border: 1px solid var(--red); color: #ff7b72; }
+.alert.success { background: #0d2818; border: 1px solid var(--green2); color: #56d364; }
+.alert.info { background: #0c1f3f; border: 1px solid var(--blue); color: #79c0ff; }
+
+.divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted);
+  font-size: 12px; }
+.divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+
+/* Profile page */
+.profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700;
+  color: #fff; flex-shrink: 0; }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.identity-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 12px;
+  margin: 3px; }
+.identity-tag .type { color: var(--muted); }
+
+/* Sessions */
+.session-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.session-item.current { border-color: var(--accent2); }
+.session-meta { font-size: 12px; color: var(--muted); }
+.session-meta strong { color: var(--text); display: block; margin-bottom: 2px; }
+.current-badge { background: var(--accent); color: #fff; font-size: 10px; padding: 2px 6px;
+  border-radius: 10px; font-weight: 600; }
+
+/* Proxy simulation */
+.proxy-card { background: var(--surface); border: 1px solid var(--green2); border-radius: 12px;
+  padding: 24px; width: 100%; max-width: 500px; }
+.proxy-card h2 { color: #56d364; }
+.proxy-header { background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; margin: 8px 0; font-family: monospace; font-size: 12px; }
+.proxy-header .key { color: var(--muted); }
+.proxy-header .val { color: #79c0ff; }
+
+/* Debug panel */
+.debug-panel { width: 45%; display: flex; flex-direction: column; overflow: hidden; }
+.debug-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  background: var(--surface); overflow-x: auto; }
+.debug-tabs button { background: none; border: none; color: var(--muted); padding: 10px 14px;
+  cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent;
+  transition: all .15s; }
+.debug-tabs button:hover { color: var(--text); }
+.debug-tabs button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.debug-content { flex: 1; overflow-y: auto; padding: 12px; font-family: monospace; font-size: 12px; }
+
+/* DB Tables */
+.db-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.db-table th { background: var(--surface2); color: var(--muted); padding: 6px 8px; text-align: left;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border: 1px solid var(--border); }
+.db-table td { padding: 6px 8px; border: 1px solid var(--border); color: var(--text);
+  vertical-align: top; word-break: break-all; max-width: 150px; }
+.db-table tr:hover td { background: var(--surface2); }
+.null { color: var(--muted); font-style: italic; }
+.section-title { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 1px;
+  margin: 12px 0 6px; }
+.json-val { color: #79c0ff; }
+.json-key { color: var(--muted); }
+
+/* Request log */
+.log-panel { height: 160px; border-top: 1px solid var(--border); background: var(--surface);
+  display: flex; flex-direction: column; flex-shrink: 0; }
+.log-header { padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; }
+.log-header button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.log-header button:hover { color: var(--text); }
+.log-list { flex: 1; overflow-y: auto; padding: 4px 0; font-family: monospace; font-size: 11px; }
+.log-entry { padding: 3px 12px; display: flex; gap: 8px; align-items: flex-start; }
+.log-entry:hover { background: var(--surface2); }
+.log-ts { color: var(--muted); flex-shrink: 0; }
+.log-method { font-weight: 700; flex-shrink: 0; width: 48px; }
+.log-path { flex: 1; color: var(--text); }
+.log-detail { color: var(--muted); font-size: 10px; }
+.log-get .log-method { color: #388bfd; }
+.log-post .log-method { color: #56d364; }
+.log-redirect .log-method { color: #e3b341; }
+.log-error .log-method { color: #ff7b72; }
+.log-sys .log-method { color: var(--muted); }
+
+/* Config panel */
+.config-section { margin-bottom: 14px; }
+.config-row { display: flex; justify-content: space-between; padding: 4px 0;
+  border-bottom: 1px solid var(--border); }
+.config-row .ck { color: var(--muted); }
+.config-row .cv { color: #79c0ff; font-weight: 500; }
+.cv.enabled { color: #56d364; }
+.cv.disabled { color: #ff7b72; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; margin: 2px; }
+.badge.username { background: #0d2818; color: #56d364; border: 1px solid var(--green); }
+.badge.email { background: #0c1f3f; color: #79c0ff; border: 1px solid var(--blue); }
+.badge.google { background: #2d1117; color: #ff7b72; border: 1px solid var(--red); }
+.badge.public { background: #1c2128; color: var(--muted); border: 1px solid var(--border); }
+
+/* Magic link sent / email simulation */
+.email-preview { background: #fff; color: #111; border-radius: 8px; padding: 16px; margin: 12px 0; }
+.email-preview .email-from { font-size: 11px; color: #666; margin-bottom: 4px; }
+.email-preview .email-subject { font-weight: 700; margin-bottom: 12px; }
+.email-preview .email-body { font-size: 13px; line-height: 1.6; }
+.email-preview .email-code { font-size: 28px; font-weight: 700; letter-spacing: 6px;
+  color: #6e40c9; margin: 12px 0; text-align: center; }
+.email-preview .magic-btn { display: inline-block; background: #6e40c9; color: #fff;
+  padding: 10px 24px; border-radius: 6px; text-decoration: none; cursor: pointer;
+  font-weight: 600; margin: 8px 0; }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Flow info tooltip */
+.flow-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.flow-info strong { color: var(--text); }
+
+.wide { max-width: 520px; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🔐 Authwall <span>/ Interactive Demo</span></div>
+  <nav>
+    <a id="nav-app" onclick="navTo('/dashboard')">Protected App</a>
+    <a id="nav-profile" onclick="navTo('/auth/profile')">Profile</a>
+    <a id="nav-sessions" onclick="navTo('/auth/sessions')">Sessions</a>
+    <a id="nav-signout" onclick="navTo('/auth/sign-out')">Sign out</a>
+  </nav>
+  <div id="session-badge" class="session-badge out">Not signed in</div>
+</header>
+
+<div class="main">
+  <div class="auth-panel">
+    <div class="url-bar">
+      <span id="req-method" class="method get">GET</span>
+      <input id="url-input" type="text" value="/auth/sign-in" onkeydown="if(event.key==='Enter')navigate()">
+      <button onclick="navigate()">Go</button>
+    </div>
+    <div class="page-area" id="page-area"></div>
+  </div>
+
+  <div class="debug-panel">
+    <div class="debug-tabs">
+      <button class="active" onclick="showTab('session', this)">Session</button>
+      <button onclick="showTab('users', this)">Users</button>
+      <button onclick="showTab('identities', this)">Identities</button>
+      <button onclick="showTab('sessions-db', this)">Sessions DB</button>
+      <button onclick="showTab('links', this)">Tokens</button>
+      <button onclick="showTab('config', this)">Config</button>
+    </div>
+    <div class="debug-content" id="debug-content"></div>
+  </div>
+</div>
+
+<div class="log-panel">
+  <div class="log-header">
+    Request Log
+    <button onclick="clearLog()">Clear</button>
+  </div>
+  <div class="log-list" id="log-list"></div>
+</div>
+
+<script>
+// ─── Config (from settings.yaml) ────────────────────────────────────────────
+const CONFIG = {
+  public_url: 'http://127.0.0.1:3000',
+  target_url: 'http://127.0.0.1:8080',
+  public_paths: ['/foo', '/bar', '/favicon.ico', '/robots.txt', '/humans.txt', '/site.webmanifest', '/.well-known/appspecific/com.chrome.devtools.json'],
+  registration: { policy: 'enabled', allowed_domains: ['company.com'] },
+  session: { max_age_days: 30 },
+  flows: {
+    password: { allow_username: true, allow_email: true, min_password_length: 8 },
+    magic_link: { mode: 'link_and_code' },
+    google: { enabled: true },
+  },
+};
+
+// ─── Simulated DB ────────────────────────────────────────────────────────────
+// Passwords are plain for demo (real app uses bcrypt). Seed users from settings.yaml.
+const DB = {
+  users: [
+    { id: 1, uid: 'usr_foo01', slug: 'foo', display_name: 'Foo', avatar_url: null,
+      _password: 'foo12345', created_at: '2025-01-01T00:00:00Z' },
+    { id: 2, uid: 'usr_bar02', slug: 'bar', display_name: 'Bar', avatar_url: null,
+      _password: 'bar12345', created_at: '2025-01-01T00:00:00Z' },
+  ],
+  user_identities: [
+    { id: 1, user_id: 1, type: 'username', value: 'foo', value_normalized: 'foo', verified_at: '2025-01-01' },
+    { id: 2, user_id: 2, type: 'username', value: 'bar', value_normalized: 'bar', verified_at: '2025-01-01' },
+    { id: 3, user_id: 2, type: 'email', value: 'bar1@authwall.test', value_normalized: 'bar1@authwall.test', verified_at: '2025-01-01' },
+    { id: 4, user_id: 2, type: 'email', value: 'bar2@authwall.test', value_normalized: 'bar2@authwall.test', verified_at: '2025-01-01' },
+  ],
+  sessions: [],
+  magic_links: [],
+  password_reset_tokens: [],
+  _id: 100,
+};
+
+// ─── Session state ───────────────────────────────────────────────────────────
+let SESSION = { id: null, user_id: null, user_uid: null, csrf_token: randB62(), ip: '127.0.0.1', ua: 'demo-browser' };
+
+function randB62(n=24) {
+  const c = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  return Array.from({length: n}, () => c[Math.floor(Math.random()*62)]).join('');
+}
+function randHex(n=32) {
+  return Array.from({length: n}, () => Math.floor(Math.random()*16).toString(16)).join('');
+}
+function randCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+function now() { return new Date().toISOString(); }
+function ts() { return new Date().toLocaleTimeString('en', {hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
+function nextId() { return ++DB._id; }
+
+function normalizeEmail(e) {
+  if (!e) return null;
+  const m = e.trim().toLowerCase().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  return m ? e.trim().toLowerCase() : null;
+}
+function normalizeUsername(u) {
+  if (!u) return null;
+  const n = u.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+  return n.length >= 2 ? n : null;
+}
+
+// ─── Session helpers ─────────────────────────────────────────────────────────
+function startSession(user) {
+  const sid = randB62(32);
+  SESSION = { id: sid, user_id: user.id, user_uid: user.uid, csrf_token: randB62(), ip: '127.0.0.1', ua: 'demo-browser' };
+  DB.sessions.push({ id: nextId(), uid: sid, user_id: user.id, ip: '127.0.0.1', ua: 'demo-browser', created_at: now(), expires_at: new Date(Date.now() + 30*24*3600*1000).toISOString(), updated_at: now() });
+  updateBadge();
+  updateDebug();
+}
+function destroySession() {
+  DB.sessions = DB.sessions.filter(s => s.uid !== SESSION.id);
+  SESSION = { id: null, user_id: null, user_uid: null, csrf_token: randB62(), ip: '127.0.0.1', ua: 'demo-browser' };
+  updateBadge();
+  updateDebug();
+}
+function currentUser() {
+  return SESSION.user_id ? DB.users.find(u => u.id === SESSION.user_id) : null;
+}
+
+// ─── Log ─────────────────────────────────────────────────────────────────────
+const LOGS = [];
+function log(method, path, detail = '', type = 'get') {
+  LOGS.unshift({ ts: ts(), method, path, detail, type });
+  if (LOGS.length > 50) LOGS.pop();
+  renderLog();
+}
+function renderLog() {
+  const el = document.getElementById('log-list');
+  el.innerHTML = LOGS.map(e => `
+    <div class="log-entry log-${e.type}">
+      <span class="log-ts">${e.ts}</span>
+      <span class="log-method">${e.method}</span>
+      <span class="log-path">${e.path}</span>
+      <span class="log-detail">${e.detail}</span>
+    </div>`).join('');
+}
+function clearLog() { LOGS.length = 0; renderLog(); }
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+let currentTab = 'session';
+let pendingMagicLink = null;   // { email, code, token }
+let pendingReset = null;       // { user_id, token }
+let pendingReturn = null;
+
+function navTo(path) {
+  document.getElementById('url-input').value = path;
+  navigate();
+}
+
+function navigate() {
+  const raw = document.getElementById('url-input').value.trim() || '/';
+  const [pathPart, qs] = raw.split('?');
+  const params = Object.fromEntries(new URLSearchParams(qs || ''));
+  route(pathPart, params);
+}
+
+function route(path, params = {}) {
+  document.getElementById('url-input').value = params && Object.keys(params).length
+    ? path + '?' + new URLSearchParams(params).toString() : path;
+  setMethod('GET');
+
+  log('GET', path, '', 'get');
+
+  // Auth routes
+  if (path === '/auth/' || path === '/auth') return render('index');
+  if (path === '/auth/sign-in') return render('sign-in', { error: params.error });
+  if (path === '/auth/sign-up') return render('sign-up', { error: params.error });
+  if (path === '/auth/forgot-password') {
+    if (SESSION.user_id) { log('REDIRECT', '/auth/forgot-password → /', '', 'redirect'); return navTo('/'); }
+    return render('forgot-password', { error: params.error });
+  }
+  if (path === '/auth/reset-password') {
+    const tok = DB.password_reset_tokens.find(t => t.token === params.token && !t.used_at && new Date(t.expires_at) > new Date());
+    if (!tok) { log('ERROR', path, 'Invalid/expired reset token', 'error'); return render('error', { msg: 'Invalid or expired reset token' }); }
+    return render('reset-password', { token: params.token });
+  }
+  if (path === '/auth/magic-link') return render('magic-link', { error: params.error });
+  if (path === '/auth/magic-link-sent') return render('magic-link-sent', { email: params.email });
+  if (path === '/auth/magic-link/callback') {
+    const ml = DB.magic_links.find(m => m.token === params.token && !m.used_at && new Date(m.expires_at) > new Date());
+    if (!ml) { log('ERROR', path, 'Invalid/expired magic link', 'error'); return render('error', { msg: 'Invalid or expired magic link' }); }
+    ml.used_at = now();
+    let user = resolveOrCreateEmailUser(ml.email);
+    startSession(user);
+    log('REDIRECT', path + ' → /', `Signed in as ${user.display_name || user.uid}`, 'redirect');
+    return navTo(pendingReturn || '/');
+  }
+  if (path === '/auth/google') {
+    log('REDIRECT', path + ' → [Google OAuth]', 'OAuth flow initiated', 'redirect');
+    return render('google-oauth', { connect: params.connect });
+  }
+  if (path === '/auth/profile') {
+    if (!SESSION.user_id) { pendingReturn = path; log('REDIRECT', path + ' → /auth/sign-in', 'Auth required', 'redirect'); return navTo('/auth/sign-in'); }
+    return render('profile');
+  }
+  if (path === '/auth/sessions') {
+    if (!SESSION.user_id) { pendingReturn = path; log('REDIRECT', path + ' → /auth/sign-in', 'Auth required', 'redirect'); return navTo('/auth/sign-in'); }
+    return render('sessions');
+  }
+  if (path === '/auth/change-password') {
+    if (!SESSION.user_id) { pendingReturn = path; log('REDIRECT', path + ' → /auth/sign-in', 'Auth required', 'redirect'); return navTo('/auth/sign-in'); }
+    return render('change-password');
+  }
+  if (path === '/auth/sign-out') {
+    if (!SESSION.user_id) { return navTo('/auth/sign-in'); }
+    return render('sign-out');
+  }
+
+  // Non-auth routes → proxy or public
+  if (CONFIG.public_paths.includes(path) || path.startsWith('/bypass/')) {
+    log('PROXY', path, 'Public path → proxy (no auth check)', 'sys');
+    return render('proxy', { path, auth: false });
+  }
+  if (!SESSION.user_id) {
+    pendingReturn = path;
+    log('REDIRECT', path + ' → /auth/sign-in', 'Not authenticated', 'redirect');
+    return navTo('/auth/sign-in?return=' + encodeURIComponent(path));
+  }
+  log('PROXY', path, `X-Auth-User: ${SESSION.user_uid}`, 'sys');
+  render('proxy', { path, auth: true });
+}
+
+function setMethod(m) {
+  const el = document.getElementById('req-method');
+  el.textContent = m;
+  el.className = 'method ' + m.toLowerCase();
+}
+
+// ─── User helpers ─────────────────────────────────────────────────────────────
+function resolveOrCreateEmailUser(email) {
+  const norm = normalizeEmail(email);
+  const ident = DB.user_identities.find(i => i.type === 'email' && i.value_normalized === norm);
+  if (ident) return DB.users.find(u => u.id === ident.user_id);
+  const user = { id: nextId(), uid: 'usr_' + randB62(6), slug: randB62(8), display_name: null, avatar_url: null, _password: null, created_at: now() };
+  DB.users.push(user);
+  DB.user_identities.push({ id: nextId(), user_id: user.id, type: 'email', value: email, value_normalized: norm, verified_at: now() });
+  log('SYS', 'CREATE USER', `New user via email: ${email}`, 'sys');
+  return user;
+}
+
+// ─── Form submissions ─────────────────────────────────────────────────────────
+function submitSignIn() {
+  setMethod('POST');
+  const username = document.getElementById('f-username').value.trim();
+  const password = document.getElementById('f-password').value;
+  log('POST', '/auth/sign-in', `username=${username}`, 'post');
+
+  if (!username || !password) return render('sign-in', { error: 'Missing fields' });
+
+  // Try username
+  const norm = normalizeUsername(username);
+  let ident = DB.user_identities.find(i => i.type === 'username' && i.value_normalized === norm);
+  // Try email if username not found and email allowed
+  if (!ident && CONFIG.flows.password.allow_email) {
+    const normE = normalizeEmail(username);
+    ident = DB.user_identities.find(i => i.type === 'email' && i.value_normalized === normE);
+  }
+  const user = ident ? DB.users.find(u => u.id === ident.user_id) : null;
+
+  if (!user || user._password !== password) {
+    log('ERROR', '/auth/sign-in', 'Invalid username or password', 'error');
+    return render('sign-in', { error: 'Invalid username or password' });
+  }
+
+  startSession(user);
+  log('REDIRECT', '/auth/sign-in → ' + (pendingReturn || '/'), `Signed in as ${user.display_name || user.uid}`, 'redirect');
+  const ret = pendingReturn || '/';
+  pendingReturn = null;
+  navTo(ret);
+}
+
+function submitSignUp() {
+  setMethod('POST');
+  const username = document.getElementById('f-username').value.trim();
+  const password = document.getElementById('f-password').value;
+  const password_confirm = document.getElementById('f-password-confirm').value;
+  log('POST', '/auth/sign-up', `username=${username}`, 'post');
+
+  if (!username || !password) return render('sign-up', { error: 'Missing fields' });
+  if (password !== password_confirm) return render('sign-up', { error: 'Passwords do not match' });
+  if (password.length < CONFIG.flows.password.min_password_length) return render('sign-up', { error: `Password must be at least ${CONFIG.flows.password.min_password_length} characters` });
+
+  const norm = normalizeUsername(username);
+  if (!norm) return render('sign-up', { error: 'Invalid username' });
+  if (DB.user_identities.find(i => i.type === 'username' && i.value_normalized === norm))
+    return render('sign-up', { error: 'Username already exists' });
+
+  const user = { id: nextId(), uid: 'usr_' + randB62(6), slug: norm, display_name: username, avatar_url: null, _password: password, created_at: now() };
+  DB.users.push(user);
+  DB.user_identities.push({ id: nextId(), user_id: user.id, type: 'username', value: username, value_normalized: norm, verified_at: now() });
+  log('SYS', 'CREATE USER', `New user: ${username}`, 'sys');
+
+  startSession(user);
+  log('REDIRECT', '/auth/sign-up → /', `Signed up as ${username}`, 'redirect');
+  pendingReturn = null;
+  navTo('/');
+}
+
+function submitForgotPassword() {
+  setMethod('POST');
+  const email = document.getElementById('f-email').value.trim();
+  log('POST', '/auth/forgot-password', `email=${email}`, 'post');
+
+  if (!email) return render('forgot-password', { error: 'Missing email' });
+  const norm = normalizeEmail(email);
+  if (!norm) return render('forgot-password', { error: 'Invalid email' });
+
+  const ident = DB.user_identities.find(i => i.type === 'email' && i.value_normalized === norm);
+  if (ident) {
+    const token = randHex();
+    DB.password_reset_tokens.push({ id: nextId(), user_id: ident.user_id, token, created_at: now(), expires_at: new Date(Date.now() + 10*60*1000).toISOString(), used_at: null });
+    pendingReset = { token, email };
+    log('SYS', 'EMAIL', `Reset link generated for ${email}`, 'sys');
+    updateDebug();
+  } else {
+    log('SYS', 'NOOP', `Email not found (silent) for ${email}`, 'sys');
+  }
+  // Never reveal if email exists
+  log('REDIRECT', '/auth/forgot-password → /auth/sign-in', 'Silent redirect', 'redirect');
+  render('sign-in', { info: 'If that email is registered, a reset link has been sent.' });
+}
+
+function submitResetPassword(token) {
+  setMethod('POST');
+  const password = document.getElementById('f-password').value;
+  const password_confirm = document.getElementById('f-password-confirm').value;
+  log('POST', '/auth/reset-password', '', 'post');
+
+  if (!password || !password_confirm) return render('reset-password', { token, error: 'Missing fields' });
+  if (password !== password_confirm) return render('reset-password', { token, error: 'Passwords do not match' });
+
+  const tok = DB.password_reset_tokens.find(t => t.token === token && !t.used_at);
+  if (!tok) return render('error', { msg: 'Invalid reset token' });
+
+  const user = DB.users.find(u => u.id === tok.user_id);
+  user._password = password;
+  tok.used_at = now();
+  log('SYS', 'PASSWORD', `Password updated for user ${user.uid}`, 'sys');
+  log('REDIRECT', '/auth/reset-password → /auth/sign-in', 'Password reset', 'redirect');
+  render('sign-in', { info: 'Password updated. Please sign in.' });
+}
+
+function submitMagicLink() {
+  setMethod('POST');
+  const email = document.getElementById('f-email').value.trim();
+  log('POST', '/auth/magic-link', `email=${email}`, 'post');
+
+  if (!email) return render('magic-link', { error: 'Missing email' });
+  const norm = normalizeEmail(email);
+  if (!norm) return render('magic-link', { error: 'Invalid email' });
+
+  // Spam check: last magic link within 60s
+  const last = DB.magic_links.filter(m => m.email === norm).sort((a,b) => b.id-a.id)[0];
+  if (last && (Date.now() - new Date(last.created_at).getTime()) < 60000)
+    return render('magic-link', { error: 'Magic link already sent. Please wait.' });
+
+  const code = randCode();
+  const token = randHex();
+  DB.magic_links.push({ id: nextId(), email: norm, code, token, created_at: now(), expires_at: new Date(Date.now() + 10*60*1000).toISOString(), used_at: null });
+  pendingMagicLink = { email: norm, code, token };
+  log('SYS', 'EMAIL', `Magic link sent to ${email} [code: ${code}]`, 'sys');
+  updateDebug();
+  log('REDIRECT', '/auth/magic-link → /auth/magic-link-sent', '', 'redirect');
+  navTo('/auth/magic-link-sent?email=' + encodeURIComponent(norm));
+}
+
+function submitMagicCode(email) {
+  setMethod('POST');
+  const code = document.getElementById('f-code').value.trim();
+  log('POST', '/auth/magic-link-sent', `email=${email} code=***`, 'post');
+
+  const norm = normalizeEmail(email);
+  const ml = DB.magic_links.filter(m => m.email === norm && !m.used_at && new Date(m.expires_at) > new Date())
+    .sort((a,b) => b.id-a.id)[0];
+  if (!ml || ml.code !== code) {
+    log('ERROR', '/auth/magic-link-sent', 'Invalid or expired code', 'error');
+    return render('magic-link-sent', { email, error: 'Invalid or expired code' });
+  }
+  ml.used_at = now();
+  const user = resolveOrCreateEmailUser(email);
+  startSession(user);
+  log('REDIRECT', '/auth/magic-link-sent → /', `Signed in as ${user.display_name || user.uid}`, 'redirect');
+  pendingReturn = null;
+  navTo('/');
+}
+
+function useMagicLink(token) {
+  const ml = DB.magic_links.find(m => m.token === token && !m.used_at && new Date(m.expires_at) > new Date());
+  if (!ml) return alert('Invalid or expired magic link');
+  ml.used_at = now();
+  const user = resolveOrCreateEmailUser(ml.email);
+  startSession(user);
+  log('GET', '/auth/magic-link/callback', `token → signed in as ${user.display_name || user.uid}`, 'get');
+  log('REDIRECT', '/auth/magic-link/callback → /', '', 'redirect');
+  pendingReturn = null;
+  navTo('/');
+}
+
+function submitGoogleLogin(isMock) {
+  // Simulate Google returning user info
+  const googleUser = { sub: 'google_123456', name: 'Google User', email: 'googleuser@gmail.com', email_verified: true, picture: null };
+  log('SYS', 'OAUTH', `Google returned: ${googleUser.email}`, 'sys');
+
+  const connect = document.getElementById('google-connect-mode')?.value === '1';
+
+  if (connect) {
+    if (!SESSION.user_id) return render('error', { msg: 'Authentication required for connect' });
+    const already = DB.user_identities.find(i => i.type === 'oauth_google' && i.value_normalized === googleUser.sub);
+    if (already && already.user_id !== SESSION.user_id) return render('error', { msg: 'Google account already linked to another user' });
+    if (!already) {
+      DB.user_identities.push({ id: nextId(), user_id: SESSION.user_id, type: 'oauth_google', value: null, value_normalized: googleUser.sub, verified_at: now() });
+      log('SYS', 'LINK', `Google account linked to user ${SESSION.user_uid}`, 'sys');
+    }
+    log('REDIRECT', '/auth/google/callback → /auth/profile', 'Account linked', 'redirect');
+    return navTo('/auth/profile');
+  }
+
+  let ident = DB.user_identities.find(i => i.type === 'oauth_google' && i.value_normalized === googleUser.sub);
+  let userId;
+  if (ident) {
+    userId = ident.user_id;
+  } else {
+    const user = { id: nextId(), uid: 'usr_' + randB62(6), slug: randB62(8), display_name: googleUser.name, avatar_url: null, _password: null, created_at: now() };
+    DB.users.push(user);
+    userId = user.id;
+    DB.user_identities.push({ id: nextId(), user_id: userId, type: 'oauth_google', value: null, value_normalized: googleUser.sub, verified_at: now() });
+    if (googleUser.email_verified) {
+      const norm = normalizeEmail(googleUser.email);
+      if (!DB.user_identities.find(i => i.type === 'email' && i.value_normalized === norm)) {
+        DB.user_identities.push({ id: nextId(), user_id: userId, type: 'email', value: googleUser.email, value_normalized: norm, verified_at: now() });
+      }
+    }
+    log('SYS', 'CREATE USER', `New user via Google: ${googleUser.name}`, 'sys');
+  }
+  const user = DB.users.find(u => u.id === userId);
+  startSession(user);
+  log('REDIRECT', '/auth/google/callback → /', `Signed in as ${user.display_name}`, 'redirect');
+  pendingReturn = null;
+  navTo('/');
+}
+
+function submitProfile() {
+  setMethod('POST');
+  const display_name = document.getElementById('f-display-name').value.trim();
+  log('POST', '/auth/profile', `display_name=${display_name}`, 'post');
+  const user = currentUser();
+  if (!user) return;
+  user.display_name = display_name || null;
+  log('REDIRECT', '/auth/profile → /auth/profile', 'Profile updated', 'redirect');
+  updateBadge();
+  render('profile', { success: 'Profile updated.' });
+}
+
+function submitChangePassword() {
+  setMethod('POST');
+  const current = document.getElementById('f-current-password').value;
+  const pass = document.getElementById('f-password').value;
+  const confirm = document.getElementById('f-password-confirm').value;
+  log('POST', '/auth/change-password', '', 'post');
+  const user = currentUser();
+  if (!user) return navTo('/auth/sign-in');
+  if (!current || !pass || !confirm) return render('change-password', { error: 'Missing fields' });
+  if (pass !== confirm) return render('change-password', { error: 'Passwords do not match' });
+  if (user._password !== current) return render('change-password', { error: 'Current password is incorrect' });
+  user._password = pass;
+  log('SYS', 'PASSWORD', `Password changed for ${user.uid}`, 'sys');
+  log('REDIRECT', '/auth/change-password → /', 'Password updated', 'redirect');
+  navTo('/');
+}
+
+function submitSignOut() {
+  setMethod('POST');
+  log('POST', '/auth/sign-out', '', 'post');
+  destroySession();
+  log('REDIRECT', '/auth/sign-out → /auth/sign-in', 'Signed out', 'redirect');
+  navTo('/auth/sign-in');
+}
+
+function revokeSession(uid) {
+  if (uid === SESSION.id) return alert('Cannot revoke current session');
+  DB.sessions = DB.sessions.filter(s => s.uid !== uid);
+  log('POST', '/auth/sessions/revoke', `uid=${uid.slice(0,8)}...`, 'post');
+  updateDebug();
+  render('sessions', { success: 'Session revoked.' });
+}
+
+function revokeAllSessions() {
+  DB.sessions = DB.sessions.filter(s => s.uid === SESSION.id);
+  log('POST', '/auth/sessions/revoke-all', '', 'post');
+  updateDebug();
+  render('sessions', { success: 'All other sessions revoked.' });
+}
+
+// ─── Renders ──────────────────────────────────────────────────────────────────
+function render(page, data = {}) {
+  const area = document.getElementById('page-area');
+  area.innerHTML = pages[page] ? pages[page](data) : `<div class="card"><h2>404</h2><p>Page not found: ${page}</p></div>`;
+  updateNav();
+  updateDebug();
+}
+
+function updateBadge() {
+  const el = document.getElementById('session-badge');
+  const user = currentUser();
+  if (user) { el.textContent = user.display_name || user.uid; el.className = 'session-badge'; }
+  else { el.textContent = 'Not signed in'; el.className = 'session-badge out'; }
+}
+
+function updateNav() {
+  const auth = !!SESSION.user_id;
+  ['nav-profile','nav-sessions','nav-signout','nav-app'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = auth ? '' : 'none';
+  });
+}
+
+const pages = {
+  'sign-in': (d) => `
+    <div class="card">
+      <h2>Sign in</h2>
+      <p class="subtitle">to continue to the protected app</p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      ${d.info ? `<div class="alert info">${d.info}</div>` : ''}
+      <div class="flow-info"><strong>Config:</strong> password.allow_username=true · password.allow_email=true · min_length=${CONFIG.flows.password.min_password_length} · session.max_age=${CONFIG.session.max_age_days}d</div>
+      <div class="field"><label>Username or email</label><input id="f-username" placeholder="e.g. foo or bar12345" autocomplete="off"></div>
+      <div class="field"><label>Password</label><input id="f-password" type="password" placeholder="Seed passwords: foo→foo12345, bar→bar12345"></div>
+      <button class="btn" onclick="submitSignIn()">Sign in</button>
+      ${CONFIG.flows.google.enabled ? `<div class="divider">or</div>
+      <button class="btn google" onclick="navTo('/auth/google')">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>` : ''}
+      <div class="divider">or</div>
+      <button class="btn secondary" onclick="navTo('/auth/magic-link')">Send magic link / code</button>
+      <div class="links">
+        <a onclick="navTo('/auth/forgot-password')">Forgot password?</a>
+        ${CONFIG.registration.policy === 'enabled' ? ' · <a onclick="navTo(\'\/auth\/sign-up\')">Create account</a>' : ''}
+      </div>
+    </div>`,
+
+  'sign-up': (d) => `
+    <div class="card">
+      <h2>Create account</h2>
+      <p class="subtitle">Registration is <strong>${CONFIG.registration.policy}</strong></p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      <div class="flow-info"><strong>Config:</strong> registration.policy=${CONFIG.registration.policy} · min_password_length=${CONFIG.flows.password.min_password_length}</div>
+      <div class="field"><label>Username</label><input id="f-username" placeholder="alphanumeric, 2+ chars" autocomplete="off"></div>
+      <div class="field"><label>Password</label><input id="f-password" type="password" placeholder="min ${CONFIG.flows.password.min_password_length} characters"></div>
+      <div class="field"><label>Confirm password</label><input id="f-password-confirm" type="password"></div>
+      <button class="btn" onclick="submitSignUp()">Create account</button>
+      <div class="links"><a onclick="navTo('/auth/sign-in')">Already have an account? Sign in</a></div>
+    </div>`,
+
+  'forgot-password': (d) => `
+    <div class="card">
+      <h2>Reset password</h2>
+      <p class="subtitle">Enter your email to receive a reset link</p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      <div class="flow-info"><strong>Note:</strong> Response never reveals whether email exists. Token expires in <strong>10 minutes</strong>. Check the Tokens tab →</div>
+      <div class="field"><label>Email</label><input id="f-email" placeholder="bar1@authwall.test" type="email"></div>
+      <button class="btn" onclick="submitForgotPassword()">Send reset link</button>
+      <div class="links"><a onclick="navTo('/auth/sign-in')">Back to sign in</a></div>
+    </div>`,
+
+  'reset-password': (d) => `
+    <div class="card">
+      <h2>Set new password</h2>
+      <p class="subtitle">Token: <code style="color:var(--accent2);font-size:11px">${d.token?.slice(0,16)}…</code></p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      <div class="field"><label>New password</label><input id="f-password" type="password"></div>
+      <div class="field"><label>Confirm password</label><input id="f-password-confirm" type="password"></div>
+      <button class="btn" onclick="submitResetPassword('${d.token}')">Update password</button>
+    </div>`,
+
+  'magic-link': (d) => `
+    <div class="card">
+      <h2>Magic link / code</h2>
+      <p class="subtitle">Sign in without a password</p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      <div class="flow-info"><strong>Config:</strong> magic_link.mode=<strong>${CONFIG.flows.magic_link.mode}</strong> · expires in 10 min · 60s cooldown between sends</div>
+      <div class="field"><label>Email address</label><input id="f-email" placeholder="any email" type="email"></div>
+      <button class="btn" onclick="submitMagicLink()">Send magic link</button>
+      <div class="links"><a onclick="navTo('/auth/sign-in')">Back to sign in</a></div>
+    </div>`,
+
+  'magic-link-sent': (d) => {
+    const ml = pendingMagicLink;
+    return `<div class="card wide">
+      <h2>Check your email</h2>
+      <p class="subtitle">Sent to: <strong>${d.email || ''}</strong></p>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      ${ml ? `
+      <div class="email-preview">
+        <div class="email-from">From: noreply@authwall · To: ${ml.email}</div>
+        <div class="email-subject">Your sign-in code</div>
+        <div class="email-body">
+          Your one-time code is:<br>
+          <div class="email-code">${ml.code}</div>
+          Or click the link below to sign in instantly:<br>
+          <span class="magic-btn" onclick="useMagicLink('${ml.token}')">Sign in →</span>
+        </div>
+      </div>` : '<div class="alert info">No pending magic link. Go back and send one.</div>'}
+      <div class="field"><label>Enter code manually</label><input id="f-code" placeholder="6-digit code" maxlength="6" style="letter-spacing:4px;font-size:20px;text-align:center"></div>
+      <button class="btn" onclick="submitMagicCode('${d.email || ''}')">Verify code</button>
+      <div class="links"><a onclick="navTo('/auth/magic-link')">Try a different email</a></div>
+    </div>`;
+  },
+
+  'google-oauth': (d) => `
+    <div class="card">
+      <h2 style="color:#4285F4">Google Sign In</h2>
+      <p class="subtitle">Simulated OAuth consent screen</p>
+      <div class="flow-info">
+        <strong>Flow:</strong> ${d.connect ? 'Connect Google to existing account' : 'Login / register via Google'}<br>
+        <strong>Scope:</strong> openid email profile<br>
+        <strong>State:</strong> CSRF token stored in session, verified on callback
+      </div>
+      <input type="hidden" id="google-connect-mode" value="${d.connect ? '1' : '0'}">
+      <div style="background:#fff;border-radius:8px;padding:16px;text-align:center;margin:12px 0">
+        <div style="color:#111;font-size:14px;margin-bottom:8px">Signing in as:</div>
+        <div style="color:#111;font-weight:700">Google User</div>
+        <div style="color:#666;font-size:12px">googleuser@gmail.com</div>
+      </div>
+      <button class="btn google" onclick="submitGoogleLogin(true)">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Allow access
+      </button>
+      <button class="btn secondary" style="margin-top:8px" onclick="navTo('/auth/sign-in')">Cancel</button>
+    </div>`,
+
+  'profile': (d) => {
+    const user = currentUser();
+    if (!user) return pages['sign-in']({});
+    const identities = DB.user_identities.filter(i => i.user_id === user.id);
+    return `<div class="card wide">
+      ${d.success ? `<div class="alert success">${d.success}</div>` : ''}
+      <div class="profile-header">
+        <div class="avatar">${(user.display_name || '?')[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:18px;font-weight:600">${user.display_name || '<em style="color:var(--muted)">No name</em>'}</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:2px">${user.uid}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        ${identities.map(i => `<span class="identity-tag"><span class="type">${i.type}:</span> ${i.value || i.value_normalized}</span>`).join('')}
+      </div>
+      <div class="field"><label>Display name</label><input id="f-display-name" value="${user.display_name || ''}"></div>
+      <button class="btn" onclick="submitProfile()">Save profile</button>
+      ${CONFIG.flows.google.enabled ? `<button class="btn secondary" style="margin-top:8px" onclick="navTo('/auth/google?connect=1')">Connect Google account</button>` : ''}
+      <button class="btn secondary" style="margin-top:8px" onclick="navTo('/auth/change-password')">Change password</button>
+    </div>`;
+  },
+
+  'sessions': (d) => {
+    const user = currentUser();
+    if (!user) return pages['sign-in']({});
+    const userSessions = DB.sessions.filter(s => s.user_id === user.id);
+    return `<div class="card wide">
+      <h2>Active sessions</h2>
+      <p class="subtitle">${userSessions.length} session(s) · max_age: ${CONFIG.session.max_age_days} days</p>
+      ${d.success ? `<div class="alert success">${d.success}</div>` : ''}
+      ${userSessions.map(s => `
+        <div class="session-item ${s.uid === SESSION.id ? 'current' : ''}">
+          <div class="session-meta">
+            <strong>${s.uid.slice(0,12)}… ${s.uid === SESSION.id ? '<span class="current-badge">current</span>' : ''}</strong>
+            IP: ${s.ip} · ${s.ua.slice(0,30)}
+          </div>
+          ${s.uid !== SESSION.id ? `<button class="btn danger" style="width:auto;padding:4px 10px;font-size:12px" onclick="revokeSession('${s.uid}')">Revoke</button>` : ''}
+        </div>`).join('')}
+      ${userSessions.length > 1 ? `<button class="btn danger" onclick="revokeAllSessions()">Revoke all other sessions</button>` : ''}
+      <button class="btn secondary" style="margin-top:8px" onclick="navTo('/auth/profile')">← Back to profile</button>
+    </div>`;
+  },
+
+  'change-password': (d) => `
+    <div class="card">
+      <h2>Change password</h2>
+      ${d.error ? `<div class="alert error">${d.error}</div>` : ''}
+      <div class="field"><label>Current password</label><input id="f-current-password" type="password"></div>
+      <div class="field"><label>New password</label><input id="f-password" type="password" placeholder="min ${CONFIG.flows.password.min_password_length} chars"></div>
+      <div class="field"><label>Confirm new password</label><input id="f-password-confirm" type="password"></div>
+      <button class="btn" onclick="submitChangePassword()">Update password</button>
+      <div class="links"><a onclick="navTo('/auth/profile')">Cancel</a></div>
+    </div>`,
+
+  'sign-out': (d) => `
+    <div class="card" style="text-align:center">
+      <h2>Sign out</h2>
+      <p class="subtitle" style="margin-bottom:20px">Are you sure you want to sign out?</p>
+      <button class="btn danger" onclick="submitSignOut()">Sign out</button>
+      <button class="btn secondary" style="margin-top:8px" onclick="navTo('/')">Cancel</button>
+    </div>`,
+
+  'proxy': (d) => {
+    const user = currentUser();
+    return `<div class="proxy-card">
+      <h2>🔀 ${d.auth ? 'Proxied Request' : 'Public Path'}</h2>
+      <p style="color:var(--muted);font-size:13px;margin:6px 0 16px">
+        ${d.auth ? `Authenticated request proxied to <code style="color:#79c0ff">${CONFIG.target_url}</code>` : `Public path — proxied without auth check`}
+      </p>
+      <div class="section-title">Request headers sent to target</div>
+      ${d.auth ? `
+      <div class="proxy-header"><span class="key">X-Auth-User: </span><span class="val">${SESSION.user_uid}</span></div>` : ''}
+      <div class="proxy-header"><span class="key">Host: </span><span class="val">${CONFIG.target_url.replace('http://','')}</span></div>
+      <div class="proxy-header"><span class="key">X-Forwarded-For: </span><span class="val">127.0.0.1</span></div>
+      <div class="proxy-header"><span class="key">X-Forwarded-Host: </span><span class="val">127.0.0.1:3000</span></div>
+      <div style="margin-top:14px;padding:14px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted)">
+        <strong style="color:var(--text)">Target app response:</strong><br><br>
+        <span style="color:#56d364">HTTP/1.1 200 OK</span><br>
+        Hello from echo-server!<br>
+        Path: <strong style="color:#79c0ff">${d.path}</strong><br>
+        ${d.auth ? `Auth user: <strong style="color:#79c0ff">${SESSION.user_uid}</strong>` : 'No auth header (public path)'}
+      </div>
+      <div class="section-title" style="margin-top:14px">X-Auth-* headers cleaned from incoming request</div>
+      <div style="font-size:12px;color:var(--muted)">Any <code>X-Auth-*</code> headers sent by the client are stripped before proxying to prevent spoofing.</div>
+    </div>`;
+  },
+
+  'error': (d) => `
+    <div class="card">
+      <div class="alert error" style="margin-bottom:16px">⚠️ ${d.msg}</div>
+      <button class="btn secondary" onclick="navTo('/auth/sign-in')">← Back to sign in</button>
+    </div>`,
+
+  'index': () => `
+    <div class="card" style="max-width:500px">
+      <h2>Authwall</h2>
+      <p class="subtitle">Authentication gateway — interactive demo</p>
+      <div class="flow-info">
+        Navigate to any path to trigger the auth flow. Type a URL in the bar above, or use the nav links.<br><br>
+        Try: <code style="color:#79c0ff">/dashboard</code> · <code style="color:#79c0ff">/api/data</code> · <code style="color:#79c0ff">/foo</code> (public)
+      </div>
+      <button class="btn" onclick="navTo('/auth/sign-in')">Sign in</button>
+      <button class="btn secondary" style="margin-top:8px" onclick="navTo('/dashboard')">Access protected app</button>
+    </div>`,
+};
+
+// ─── Debug panel ──────────────────────────────────────────────────────────────
+function showTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.debug-tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateDebug();
+}
+
+function updateDebug() {
+  const el = document.getElementById('debug-content');
+  if (!el) return;
+
+  if (currentTab === 'session') {
+    el.innerHTML = `
+      <div class="section-title">Current Session</div>
+      ${jsonBlock({ id: SESSION.id ? SESSION.id.slice(0,16)+'…' : null, user_id: SESSION.user_id, user_uid: SESSION.user_uid, csrf_token: SESSION.csrf_token ? SESSION.csrf_token.slice(0,12)+'…' : null, ip: SESSION.ip, ua: SESSION.ua })}
+      <div class="section-title" style="margin-top:12px">Middleware Pipeline</div>
+      <div style="color:var(--muted);font-size:11px;line-height:2">
+        1. <span style="color:#79c0ff">express_log</span> — log request<br>
+        2. <span style="color:#79c0ff">/auth/static</span> — serve static assets<br>
+        3. <span style="color:#79c0ff">express_session</span> — load session from DB<br>
+        4. <span style="color:#79c0ff">csrf_token init</span> — generate if missing<br>
+        5. <span style="color:#79c0ff">express_routes</span> — /auth/* handlers<br>
+        6. <span style="color:#79c0ff">clean_headers</span> — strip X-Auth-* from req<br>
+        7. <span style="color:#79c0ff">sign_in_required</span> — check session<br>
+        8. <span style="color:#79c0ff">proxy_middleware</span> — forward to target<br>
+        9. <span style="color:#79c0ff">error_handler</span> — redirect on error
+      </div>`;
+  }
+
+  else if (currentTab === 'users') {
+    el.innerHTML = `<div class="section-title">users (${DB.users.length} rows)</div>` +
+      tableOf(DB.users.map(u => ({ id: u.id, uid: u.uid, display_name: u.display_name, slug: u.slug, '🔑 demo_pass': u._password || '—', created_at: u.created_at.slice(0,10) })));
+  }
+
+  else if (currentTab === 'identities') {
+    el.innerHTML = `<div class="section-title">user_identities (${DB.user_identities.length} rows)</div>` +
+      tableOf(DB.user_identities.map(i => ({ id: i.id, user_id: i.user_id, type: i.type, value_normalized: i.value_normalized, verified: i.verified_at ? '✓' : '✗' })));
+  }
+
+  else if (currentTab === 'sessions-db') {
+    el.innerHTML = `<div class="section-title">sessions (${DB.sessions.length} rows)</div>` +
+      tableOf(DB.sessions.map(s => ({ id: s.id, uid: s.uid.slice(0,12)+'…', user_id: s.user_id, ip: s.ip, current: s.uid === SESSION.id ? '★' : '' })));
+  }
+
+  else if (currentTab === 'links') {
+    const resets = DB.password_reset_tokens;
+    const magics = DB.magic_links;
+    el.innerHTML = `<div class="section-title">magic_links (${magics.length} rows)</div>` +
+      (magics.length ? tableOf(magics.map(m => ({ id: m.id, email: m.email, code: m.code, used: m.used_at ? '✓' : '—', exp: m.expires_at.slice(11,19) }))) : '<div style="color:var(--muted);font-size:12px;padding:4px 0">empty</div>') +
+      `<div class="section-title" style="margin-top:12px">password_reset_tokens (${resets.length} rows)</div>` +
+      (resets.length ? tableOf(resets.map(t => { const u = DB.users.find(u=>u.id===t.user_id); return { id: t.id, user: u?.slug||t.user_id, token: t.token.slice(0,12)+'…', used: t.used_at ? '✓' : '—', exp: t.expires_at.slice(11,19) }; })) : '<div style="color:var(--muted);font-size:12px;padding:4px 0">empty</div>') +
+      (pendingReset ? `<div class="alert info" style="margin-top:12px;font-size:11px">
+        Pending reset link for ${pendingReset.email}:<br>
+        <span style="cursor:pointer;color:#79c0ff;text-decoration:underline" onclick="navTo('/auth/reset-password?token=${pendingReset.token}')">/auth/reset-password?token=${pendingReset.token.slice(0,20)}…</span>
+      </div>` : '');
+  }
+
+  else if (currentTab === 'config') {
+    el.innerHTML = `
+      <div class="config-section">
+        <div class="section-title">settings.yaml</div>
+        <div class="config-row"><span class="ck">registration.policy</span><span class="cv enabled">${CONFIG.registration.policy}</span></div>
+        <div class="config-row"><span class="ck">session.max_age_days</span><span class="cv">${CONFIG.session.max_age_days}</span></div>
+        <div class="config-row"><span class="ck">flows.password.allow_username</span><span class="cv enabled">true</span></div>
+        <div class="config-row"><span class="ck">flows.password.allow_email</span><span class="cv enabled">true</span></div>
+        <div class="config-row"><span class="ck">flows.password.min_length</span><span class="cv">${CONFIG.flows.password.min_password_length}</span></div>
+        <div class="config-row"><span class="ck">flows.magic_link.mode</span><span class="cv">${CONFIG.flows.magic_link.mode}</span></div>
+        <div class="config-row"><span class="ck">flows.google.enabled</span><span class="cv enabled">true</span></div>
+      </div>
+      <div class="section-title">public_paths</div>
+      <div>${CONFIG.public_paths.map(p => `<span class="badge public">${p}</span>`).join('')}</div>
+      <div class="section-title" style="margin-top:12px">seed_users (from settings.yaml)</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">
+        <strong style="color:var(--text)">foo</strong> — display_name: Foo · identities: <span class="badge username">username:foo</span><br>
+        <strong style="color:var(--text)">bar</strong> — display_name: Bar · identities: <span class="badge username">username:bar</span> <span class="badge email">bar1@authwall.test</span> <span class="badge email">bar2@authwall.test</span>
+      </div>
+      <div class="section-title" style="margin-top:12px">secrets (derived via HKDF)</div>
+      <div style="font-size:11px;color:var(--muted)">Master secret → HKDF → express_session secret, csrf seed, etc.<br>Set via <code style="color:#79c0ff">AUTHWALL_SECRET</code> env var.</div>`;
+  }
+}
+
+function jsonBlock(obj) {
+  return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;line-height:1.8">' +
+    Object.entries(obj).map(([k,v]) => `<span class="json-key">${k}: </span><span class="json-val">${v === null ? '<span style="color:var(--muted)">null</span>' : v}</span>`).join('<br>') + '</div>';
+}
+
+function tableOf(rows) {
+  if (!rows.length) return '<div style="color:var(--muted);font-size:12px;padding:4px 0">empty</div>';
+  const keys = Object.keys(rows[0]);
+  return `<table class="db-table"><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>` +
+    rows.map(r => `<tr>${keys.map(k => `<td>${r[k] === null || r[k] === undefined ? '<span class="null">null</span>' : r[k]}</td>`).join('')}</tr>`).join('') +
+    '</tbody></table>';
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+log('SYS', 'BOOT', 'DB migrations done · Seed users loaded', 'sys');
+log('SYS', 'BOOT', 'Express listening on :3000', 'sys');
+updateBadge();
+updateNav();
+render('sign-in');
+updateDebug();
+</script>
+</body>
+</html>
