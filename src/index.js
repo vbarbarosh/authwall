@@ -15,6 +15,7 @@ const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const routes = require('./routes');
+const routes_dev = require('./routes/dev');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 cli(main);
@@ -61,6 +62,7 @@ async function main()
         next();
     });
 
+    express_routes(app, routes_dev);
     express_routes(app, routes);
 
     app.use(clean_headers);
@@ -113,6 +115,24 @@ async function main()
             res.redirect(req.originalUrl);
         }
     }
+
+    function dumpRoutes(stack, prefix = '') {
+        for (const layer of stack) {
+            if (layer.route) {
+                const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
+                console.log(methods.join(','), prefix + layer.route.path);
+            }
+            else if (layer.name === 'router' && layer.handle.stack) {
+                const prefix = layer.regexp.source
+                    .replace('^\\/', '')
+                    .replace('\\/?(?=\\/|$)', '')
+                    .replace(/\\\//g, '/');
+                dumpRoutes(layer.handle.stack, '/' + prefix);
+            }
+        }
+    }
+
+    dumpRoutes(app._router.stack);
 
     await express_run(app, config.port, config.listen);
 }

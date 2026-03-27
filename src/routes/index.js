@@ -114,10 +114,6 @@ async function status_get(req, res)
             error,
             authenticated: false,
             csrf_token: req.session.csrf_token,
-            debug: {
-                users: await db('users'),
-                sessions: await db('sessions'),
-            },
         });
     }
     else {
@@ -130,10 +126,6 @@ async function status_get(req, res)
             providers: await db('user_identities').where('user_id', req.session.user_id),
             current_session_uid: req.sessionID,
             sessions: await db('sessions').where('user_id', req.session.user_id),
-            debug: {
-                users: await db('users'),
-                sessions: await db('sessions'),
-            },
         });
     }
 }
