@@ -116,24 +116,6 @@ async function main()
         }
     }
 
-    function dumpRoutes(stack, prefix = '') {
-        for (const layer of stack) {
-            if (layer.route) {
-                const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
-                console.log(methods.join(','), prefix + layer.route.path);
-            }
-            else if (layer.name === 'router' && layer.handle.stack) {
-                const prefix = layer.regexp.source
-                    .replace('^\\/', '')
-                    .replace('\\/?(?=\\/|$)', '')
-                    .replace(/\\\//g, '/');
-                dumpRoutes(layer.handle.stack, '/' + prefix);
-            }
-        }
-    }
-
-    dumpRoutes(app._router.stack);
-
     await express_run(app, config.port, config.listen);
 }
 
