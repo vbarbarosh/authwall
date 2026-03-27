@@ -16,9 +16,9 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
 
 const routes = [
-    {req: 'GET /auth/sign-in', fn: sign_in_get},
-    {req: 'GET /auth/sign-up', fn: sign_up_get},
-    {req: 'GET /auth/forgot-password', fn: forgot_password_get},
+    // {req: 'GET /auth/sign-in', fn: sign_in_get},
+    // {req: 'GET /auth/sign-up', fn: sign_up_get},
+    // {req: 'GET /auth/forgot-password', fn: forgot_password_get},
     {req: 'GET /auth/reset-password', fn: reset_password_get},
     {prepend: [csrf_middleware], routes: [
         {req: 'POST /auth/sign-in', fn: sign_in_post},
@@ -34,11 +34,29 @@ const routes = [
     ]},
 ];
 
-// GET /auth/sign-in
-async function sign_in_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/sign-in.html'));
-}
+// // GET /auth/sign-in
+// async function sign_in_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/sign-in.html'));
+// }
+//
+// // GET /auth/sign-up
+// async function sign_up_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/sign-up.html'));
+// }
+//
+// // GET /auth/forgot-password
+// async function forgot_password_get(req, res)
+// {
+//     if (req.session.user_id) {
+//         // If a user is already authenticated, the forgot-password page probably shouldn't be used.
+//         redirect(req, res);
+//         return;
+//     }
+//
+//     res.sendFile(fs_path_resolve(__dirname, '../static/forgot-password.html'));
+// }
 
 // POST /auth/sign-in
 async function sign_in_post(req, res)
@@ -71,12 +89,6 @@ async function sign_in_post(req, res)
     await replace_session(req, user);
 
     redirect(req, res);
-}
-
-// GET /auth/sign-up
-async function sign_up_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/sign-up.html'));
 }
 
 // POST /auth/sign-up
@@ -123,18 +135,6 @@ async function sign_up_post(req, res)
         }
         throw error;
     }
-}
-
-// GET /auth/forgot-password
-async function forgot_password_get(req, res)
-{
-    if (req.session.user_id) {
-        // If a user is already authenticated, the forgot-password page probably shouldn't be used.
-        redirect(req, res);
-        return;
-    }
-
-    res.sendFile(fs_path_resolve(__dirname, '../static/forgot-password.html'));
 }
 
 // POST /auth/forgot-password

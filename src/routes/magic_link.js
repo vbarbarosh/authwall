@@ -1,10 +1,5 @@
-const auth_middleware = require('../helpers/middleware/auth_middleware');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
-const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const normalize_email = require('../helpers/normalize/normalize_email');
-const normalize_ip = require('../helpers/normalize/normalize_ip');
-const promisify = require('../helpers/promisify');
-const random_base62 = require('../helpers/random/random_base62');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
@@ -21,8 +16,6 @@ const redirect = require('../helpers/redirect');
 const SECOND = 1000;
 
 const routes = [
-    {req: 'GET /auth/magic-link', fn: magic_link_get},
-    {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
     {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
     {prepend: [csrf_middleware], routes: [
         {req: 'POST /auth/magic-link', fn: magic_link_post},
@@ -30,11 +23,17 @@ const routes = [
     ]},
 ];
 
-// GET /auth/magic-link
-async function magic_link_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/magic-link.html'));
-}
+// // GET /auth/magic-link
+// async function magic_link_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/magic-link.html'));
+// }
+//
+// // GET /auth/magic-link-sent
+// async function magic_link_sent_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/magic-link-sent.html'));
+// }
 
 // POST /auth/magic-link
 async function magic_link_post(req, res)
@@ -70,12 +69,6 @@ async function magic_link_post(req, res)
     console.log(`Magic link for ${email}: [${code}] ${link}`);
 
     redirect(req, res, urlmod('/auth/magic-link-sent', {email}));
-}
-
-// GET /auth/magic-link-sent
-async function magic_link_sent_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/magic-link-sent.html'));
 }
 
 // POST /auth/magic-link-sent
