@@ -81,7 +81,7 @@ async function profile_post(req, res)
     // refresh session (important after credential change)
     await replace_session(req, user);
 
-    redirect(req, res, '/auth/profile');
+    redirect(req, res, config.pages.profile);
 }
 
 module.exports = routes;

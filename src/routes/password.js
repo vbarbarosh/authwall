@@ -23,8 +23,8 @@ const routes = [
     {prepend: [csrf_middleware], routes: [
         {req: 'POST /auth/sign-in', fn: sign_in_post},
         {req: 'POST /auth/sign-up', fn: sign_up_post},
-        {req: 'POST /auth/forgot-password', fn: forgot_password_post},
-        {req: 'POST /auth/reset-password', fn: reset_password_post},
+        {req: 'POST /auth/password-reset/request', fn: password_reset_request_post},
+        {req: 'POST /auth/password-reset/confirm', fn: password_reset_confirm_post},
     ]},
     {prepend: [auth_middleware], routes: [
         // {req: 'GET /auth/change-password', fn: change_password_get},
@@ -168,8 +168,8 @@ async function sign_up_post(req, res)
     }
 }
 
-// POST /auth/forgot-password
-async function forgot_password_post(req, res)
+// POST /auth/password-reset/request
+async function password_reset_request_post(req, res)
 {
     if (!req.body.email) {
         throw new Error('Missing email');
@@ -182,7 +182,7 @@ async function forgot_password_post(req, res)
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         const token = random_hex();
-        const reset_link = urlmod(`${config.public_url}/auth/reset-password`, {token});
+        const reset_link = config.public_url + urlmod(config.pages.password_reset_confirm, {token});
 
         const now = new Date();
         await db('password_reset_tokens').insert({
@@ -197,11 +197,11 @@ async function forgot_password_post(req, res)
     }
 
     // never reveal whether email exists
-    redirect(req, res, '/auth/sign-in');
+    redirect(req, res, config.pages.password_reset_notice);
 }
 
-// POST /auth/reset-password
-async function reset_password_post(req, res)
+// POST /auth/password-reset/confirm
+async function password_reset_confirm_post(req, res)
 {
     const {token, password, password_confirm} = req.body;
 
@@ -232,7 +232,7 @@ async function reset_password_post(req, res)
         await trx('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
     });
 
-    redirect(req, res, '/auth/sign-in');
+    redirect(req, res, config.pages.sign_in);
 }
 
 // POST /auth/change-password

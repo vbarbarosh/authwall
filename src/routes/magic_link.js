@@ -1,42 +1,30 @@
+const bcrypt = require('bcrypt');
+const config = require('../../config');
+const const_user_identity = require('../helpers/const/const_user_identity');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
+const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
+const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
-const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
-const db = require('../../db');
-const bcrypt = require('bcrypt');
-const config = require('../../config');
-const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
-const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
-const const_user_identity = require('../helpers/const/const_user_identity');
-const users_create = require('../helpers/models/users_create');
-const replace_session = require('../helpers/replace_session');
 const redirect = require('../helpers/redirect');
+const replace_session = require('../helpers/replace_session');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
 
 const routes = [
-    {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
+    {req: `GET ${config.pages.magic_link_confirm}`, fn: magic_link_confirm_get},
     {prepend: [csrf_middleware], routes: [
-        {req: 'POST /auth/magic-link', fn: magic_link_post},
-        {req: 'POST /auth/magic-link-sent', fn: magic_link_sent_post},
+        {req: 'POST /auth/magic-link/request', fn: magic_link_request_post},
+        {req: 'POST /auth/magic-link/confirm', fn: magic_link_confirm_post},
     ]},
 ];
 
-// // GET /auth/magic-link
-// async function magic_link_get(req, res)
-// {
-//     res.sendFile(fs_path_resolve(__dirname, '../static/magic-link.html'));
-// }
-//
-// // GET /auth/magic-link-sent
-// async function magic_link_sent_get(req, res)
-// {
-//     res.sendFile(fs_path_resolve(__dirname, '../static/magic-link-sent.html'));
-// }
-
-// POST /auth/magic-link
-async function magic_link_post(req, res)
+// POST /auth/magic-link/request
+async function magic_link_request_post(req, res)
 {
     if (!req.body.email) {
         throw new Error('Missing email');
@@ -54,7 +42,7 @@ async function magic_link_post(req, res)
 
     const code = random_code();
     const token = random_hex();
-    const link = urlmod(`${config.public_url}/auth/magic-link/callback`, {token});
+    const link = config.public_url + urlmod(config.pages.magic_link_confirm, {token});
 
     const now = new Date();
     await db('magic_links').insert({
@@ -68,11 +56,59 @@ async function magic_link_post(req, res)
 
     console.log(`Magic link for ${email}: [${code}] ${link}`);
 
-    redirect(req, res, urlmod('/auth/magic-link-sent', {email}));
+    redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
 }
 
-// POST /auth/magic-link-sent
-async function magic_link_sent_post(req, res)
+// GET /auth/magic-link/confirm
+async function magic_link_confirm_get(req, res)
+{
+    const {token} = req.query;
+    if (!token) {
+        throw new Error('Missing token');
+    }
+
+    const now = new Date();
+    const magic_link = await db('magic_links')
+        .whereNull('used_at')
+        .where('token_hash', crypto_hash_sha256(token))
+        .where('expires_at', '>', now)
+        .first();
+    if (!magic_link) {
+        throw new Error('Invalid or expired magic link');
+    }
+
+    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
+
+    const email = magic_link.email;
+    const email_normalized = normalize_email(magic_link.email);
+
+    let user_id;
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
+        user_id = ident.user_id;
+    }
+    else {
+        const user = await users_create();
+        user_id = user.id;
+        await db('user_identities').insert({
+            user_id,
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
+    }
+
+    const user = await db('users').where({id: user_id}).first();
+    await replace_session(req, user);
+
+    redirect(req, res);
+}
+
+// POST /auth/magic-link/confirm
+async function magic_link_confirm_post(req, res)
 {
     const {code} = req.body;
     if (!req.body.email || !code) {
@@ -101,54 +137,6 @@ async function magic_link_sent_post(req, res)
     }
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
-
-    let user_id;
-    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
-    if (ident) {
-        user_id = ident.user_id;
-    }
-    else {
-        const user = await users_create();
-        user_id = user.id;
-        await db('user_identities').insert({
-            user_id,
-            type: const_user_identity.email,
-            value: email,
-            value_normalized: email_normalized,
-            created_at: now,
-            updated_at: now,
-            verified_at: now,
-        });
-    }
-
-    const user = await db('users').where({id: user_id}).first();
-    await replace_session(req, user);
-
-    redirect(req, res);
-}
-
-// GET /auth/magic-link/callback
-async function magic_link_callback_get(req, res)
-{
-    const {token} = req.query;
-    if (!token) {
-        throw new Error('Missing token');
-    }
-
-    const now = new Date();
-    const magic_link = await db('magic_links')
-        .whereNull('used_at')
-        .where('token_hash', crypto_hash_sha256(token))
-        .where('expires_at', '>', now)
-        .first();
-    if (!magic_link) {
-        throw new Error('Invalid or expired magic link');
-    }
-
-    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
-
-    const email = magic_link.email;
-    const email_normalized = normalize_email(magic_link.email);
 
     let user_id;
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();

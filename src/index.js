@@ -70,6 +70,13 @@ async function main()
     // Support for mountable design
     app.use('/auth/', express.static(fs_path_resolve(__dirname, 'ui'), {extensions: ['html']}));
 
+    for (const key in config.pages) {
+        const path = config.pages[key];
+        app.get(path, function (req, res) {
+            res.type('text').send(`Empty page\n\n${key}: GET ${path}`);
+        });
+    }
+
     app.use(clean_headers);
     app.use(sign_in_required);
     app.use(http_proxy_middleware.createProxyMiddleware({

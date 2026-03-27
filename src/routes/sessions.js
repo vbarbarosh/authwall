@@ -1,4 +1,5 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
+const config = require('../../config');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const destroy_session = require('../helpers/destroy_session');
@@ -44,7 +45,7 @@ async function sessions_revoke_post(req, res)
 
     await db('sessions').where({uid, user_id: req.session.user_id}).delete();
 
-    redirect(req, res, '/auth/sessions');
+    redirect(req, res, config.pages.sessions);
 }
 
 // POST /auth/sessions/revoke-all
@@ -55,14 +56,14 @@ async function sessions_revoke_all_post(req, res)
         .whereNot({uid: req.sessionID})
         .delete();
 
-    redirect(req, res, '/auth/sessions');
+    redirect(req, res, config.pages.sessions);
 }
 
 // POST /auth/sign-out
 async function sign_out_post(req, res)
 {
     await destroy_session(req);
-    redirect(req, res, '/auth/sign-in');
+    redirect(req, res, config.pages.sign_in);
 }
 
 module.exports = routes;

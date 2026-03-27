@@ -23,6 +23,35 @@ const config = {
     public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
+
+    pages: {
+        // unauthenticated entry
+        sign_in: '/auth/sign-in',
+        sign_up: '/auth/sign-up',
+
+        // password flows
+        // password_reset_request: '/forgot-password',
+        // password_reset_confirm: '/reset-password',
+        password_reset_request: '/auth/password-reset',
+        password_reset_confirm: '/auth/password-reset/confirm',
+        password_reset_notice: '/auth/password-reset/sent',
+
+        // magic link flow
+        magic_link_request: '/auth/magic-link',
+        magic_link_confirm: '/auth/magic-link/confirm',
+        // **Check your email**
+        // A magic link has been sent to foo@bar.com
+        // Use the link or enter the code to sign in
+        magic_link_notice: '/auth/magic-link/sent',
+
+        // authenticated area
+        profile: '/auth/profile',
+        sessions: '/auth/sessions',
+
+        // destructive / confirmation
+        sign_out: '/auht/sign-out',
+    },
+
     log_file: LOG_FILE,
     log_file_http: LOG_FILE ?? function () {
         if (LOG_DIR === null) {
