@@ -7,8 +7,8 @@ const redirect = require('../helpers/redirect');
 
 const routes = [
     {prepend: [auth_middleware], routes: [
-        {req: 'GET /auth/sessions', fn: sessions_get},
-        {req: 'GET /auth/sign-out', fn: sign_out_get},
+        // {req: 'GET /auth/sessions', fn: sessions_get},
+        // {req: 'GET /auth/sign-out', fn: sign_out_get},
         {prepend: [csrf_middleware], routes: [
             {req: 'POST /auth/sessions/revoke', fn: sessions_revoke_post},
             {req: 'POST /auth/sessions/revoke-all', fn: sessions_revoke_all_post},
@@ -17,11 +17,17 @@ const routes = [
     ]},
 ];
 
-// GET /auth/sessions
-async function sessions_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/sessions.html'));
-}
+// // GET /auth/sessions
+// async function sessions_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/sessions.html'));
+// }
+//
+// // GET /auth/sign-out
+// async function sign_out_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/sign-out.html'));
+// }
 
 // POST /auth/sessions/revoke
 async function sessions_revoke_post(req, res)
@@ -50,12 +56,6 @@ async function sessions_revoke_all_post(req, res)
         .delete();
 
     redirect(req, res, '/auth/sessions');
-}
-
-// GET /auth/sign-out
-async function sign_out_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/sign-out.html'));
 }
 
 // POST /auth/sign-out

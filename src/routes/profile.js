@@ -27,16 +27,16 @@ const upload_avatar = multer({
 
 const routes = [
     {prepend: [auth_middleware], routes: [
-        {req: 'GET /auth/profile', fn: profile_get},
+        // {req: 'GET /auth/profile', fn: profile_get},
         {req: 'POST /auth/profile', fn: [csrf_middleware, upload_avatar.single('avatar'), profile_post]},
     ]},
 ];
 
-// GET /auth/profile
-async function profile_get(req, res)
-{
-    res.sendFile(fs_path_resolve(__dirname, '../static/profile.html'));
-}
+// // GET /auth/profile
+// async function profile_get(req, res)
+// {
+//     res.sendFile(fs_path_resolve(__dirname, '../static/profile.html'));
+// }
 
 // POST /auth/profile
 async function profile_post(req, res)

@@ -29,7 +29,7 @@ async function main()
 
     app.use(express_log({file: config.log_file_http}));
 
-    app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
+    // app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
     app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
 
     app.use('/auth', express.json());
