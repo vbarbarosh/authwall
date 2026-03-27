@@ -51,7 +51,7 @@ async function main()
     app.use('/auth', function (req, res, next) {
         if (req.session && !req.session.ip) {
             req.session.ip = req.ip;
-            req.session.ua = req.headers['user-agent'];
+            req.session.ua = req.headers['user-agent'] ?? 'n/a';
         }
         if (req.session && !req.session.csrf_token) {
             req.session.csrf_token = random_base62();
