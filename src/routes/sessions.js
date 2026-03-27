@@ -1,10 +1,9 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
+const db = require('../../db');
+const destroy_session = require('../helpers/destroy_session');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const redirect = require('../helpers/redirect');
-const db = require('../../db');
-const {promisify} = require('node:util');
-const destroy_session = require('../helpers/destroy_session');
 
 const routes = [
     {prepend: [auth_middleware], routes: [
