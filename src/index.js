@@ -14,8 +14,6 @@ const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
-const routes = require('./routes');
-const routes_dev = require('./routes/dev');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 cli(main);
@@ -62,8 +60,13 @@ async function main()
         next();
     });
 
-    express_routes(app, routes_dev);
-    express_routes(app, routes);
+    express_routes(app, require('./routes/dev'));
+    express_routes(app, require('./routes/magic_link'));
+    express_routes(app, require('./routes/oauth_google'));
+    express_routes(app, require('./routes/password'));
+    express_routes(app, require('./routes/profile'));
+    express_routes(app, require('./routes/sessions'));
+    express_routes(app, require('./routes/status'));
 
     app.use(clean_headers);
     app.use(sign_in_required);

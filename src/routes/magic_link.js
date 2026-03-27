@@ -1,0 +1,185 @@
+const auth_middleware = require('../helpers/middleware/auth_middleware');
+const csrf_middleware = require('../helpers/middleware/csrf_middleware');
+const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+const normalize_email = require('../helpers/normalize/normalize_email');
+const normalize_ip = require('../helpers/normalize/normalize_ip');
+const promisify = require('../helpers/promisify');
+const random_base62 = require('../helpers/random/random_base62');
+const random_code = require('../helpers/random/random_code');
+const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const db = require('../../db');
+const bcrypt = require('bcrypt');
+const config = require('../../config');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
+const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
+const const_user_identity = require('../helpers/const/const_user_identity');
+const users_create = require('../helpers/models/users_create');
+const replace_session = require('../helpers/replace_session');
+const redirect = require('../helpers/redirect');
+
+const SECOND = 1000;
+
+const routes = [
+    {req: 'GET /auth/magic-link', fn: magic_link_get},
+    {req: 'GET /auth/magic-link-sent', fn: magic_link_sent_get},
+    {req: 'GET /auth/magic-link/callback', fn: magic_link_callback_get},
+    {prepend: [csrf_middleware], routes: [
+        {req: 'POST /auth/magic-link', fn: magic_link_post},
+        {req: 'POST /auth/magic-link-sent', fn: magic_link_sent_post},
+    ]},
+];
+
+// GET /auth/magic-link
+async function magic_link_get(req, res)
+{
+    res.sendFile(fs_path_resolve(__dirname, '../static/magic-link.html'));
+}
+
+// POST /auth/magic-link
+async function magic_link_post(req, res)
+{
+    if (!req.body.email) {
+        throw new Error('Missing email');
+    }
+    const email = normalize_email(req.body.email);
+    if (!email) {
+        throw new Error('Invalid email');
+    }
+
+    // prevent spamming
+    const magic_link = await db('magic_links').where({email}).orderBy('id', 'desc').first();
+    if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
+        throw new Error('Magic link already sent. Please wait.');
+    }
+
+    const code = random_code();
+    const token = random_hex();
+    const link = urlmod(`${config.public_url}/auth/magic-link/callback`, {token});
+
+    const now = new Date();
+    await db('magic_links').insert({
+        email,
+        code_hash: await bcrypt.hash(code, config.password_rounds),
+        token_hash: crypto_hash_sha256(token),
+        created_at: now,
+        updated_at: now,
+        expires_at: date_add_minutes(new Date(), 10),
+    });
+
+    console.log(`Magic link for ${email}: [${code}] ${link}`);
+
+    redirect(req, res, urlmod('/auth/magic-link-sent', {email}));
+}
+
+// GET /auth/magic-link-sent
+async function magic_link_sent_get(req, res)
+{
+    res.sendFile(fs_path_resolve(__dirname, '../static/magic-link-sent.html'));
+}
+
+// POST /auth/magic-link-sent
+async function magic_link_sent_post(req, res)
+{
+    const {code} = req.body;
+    if (!req.body.email || !code) {
+        throw new Error('Missing fields');
+    }
+
+    const email = req.body.email;
+    const email_normalized = normalize_email(email);
+    if (!email_normalized) {
+        throw new Error('Invalid email');
+    }
+
+    const now = new Date();
+    const magic_link = await db('magic_links')
+        .where({email: email_normalized})
+        .whereNull('used_at')
+        .where('expires_at', '>', now)
+        .orderBy('id', 'desc')
+        .first();
+    if (!magic_link) {
+        throw new Error('Invalid or expired code');
+    }
+    const ok = await bcrypt.compare(code, magic_link.code_hash);
+    if (!ok) {
+        throw new Error('Invalid or expired code');
+    }
+
+    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
+
+    let user_id;
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
+        user_id = ident.user_id;
+    }
+    else {
+        const user = await users_create();
+        user_id = user.id;
+        await db('user_identities').insert({
+            user_id,
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
+    }
+
+    const user = await db('users').where({id: user_id}).first();
+    await replace_session(req, user);
+
+    redirect(req, res);
+}
+
+// GET /auth/magic-link/callback
+async function magic_link_callback_get(req, res)
+{
+    const {token} = req.query;
+    if (!token) {
+        throw new Error('Missing token');
+    }
+
+    const now = new Date();
+    const magic_link = await db('magic_links')
+        .whereNull('used_at')
+        .where('token_hash', crypto_hash_sha256(token))
+        .where('expires_at', '>', now)
+        .first();
+    if (!magic_link) {
+        throw new Error('Invalid or expired magic link');
+    }
+
+    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
+
+    const email = magic_link.email;
+    const email_normalized = normalize_email(magic_link.email);
+
+    let user_id;
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (ident) {
+        user_id = ident.user_id;
+    }
+    else {
+        const user = await users_create();
+        user_id = user.id;
+        await db('user_identities').insert({
+            user_id,
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
+    }
+
+    const user = await db('users').where({id: user_id}).first();
+    await replace_session(req, user);
+
+    redirect(req, res);
+}
+
+module.exports = routes;
