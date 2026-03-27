@@ -29,7 +29,6 @@ async function main()
 
     app.use(express_log({file: config.log_file_http}));
 
-    // app.use('/auth/static', express.static(fs_path_resolve(__dirname, 'static')));
     app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
 
     app.use('/auth', express.json());
@@ -67,6 +66,9 @@ async function main()
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
     express_routes(app, require('./routes/status'));
+
+    // Support for mountable design
+    app.use('/auth/', express.static(fs_path_resolve(__dirname, 'ui'), {extensions: ['html']}));
 
     app.use(clean_headers);
     app.use(sign_in_required);
