@@ -1,6 +1,7 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_sign_in = require('../actions/complete_sign_in');
+const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
@@ -123,9 +124,9 @@ async function sign_in_post(req, res)
 // POST /auth/sign-up
 async function sign_up_post(req, res)
 {
-    const {username, password, password_confirm} = req.body;
+    const {email, username, password, password_confirm} = req.body;
 
-    if (!username || !password) {
+    if ((!email && !username) || !password) {
         throw new Error('Missing fields');
     }
 
@@ -133,9 +134,25 @@ async function sign_up_post(req, res)
         throw new Error('Passwords do not match')
     }
 
+    const email_normalized = normalize_email(email);
     const username_normalized = normalize_username(username);
-    if (!username_normalized) {
-        throw new Error('Invalid username')
+
+    if (email && !email_normalized) {
+        throw new Error('Invalid email');
+    }
+    if (username && !username_normalized) {
+        throw new Error('Invalid username');
+    }
+
+    if (email_normalized) {
+        if (await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first()) {
+            throw new Error('Email already exists');
+        }
+    }
+    if (username_normalized) {
+        if (await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first()) {
+            throw new Error('Username already exists');
+        }
     }
 
     try {
@@ -143,24 +160,37 @@ async function sign_up_post(req, res)
         let user;
         await db.transaction(async function (trx) {
             user = await users_create({trx, password});
-            await trx('user_identities').insert({
-                user_id: user.id,
-                type: const_user_identity.username,
-                value: username,
-                value_normalized: username_normalized,
-                created_at: now,
-                updated_at: now,
-                verified_at: now,
-            });
+            const insert = [];
+            if (email_normalized) {
+                insert.push({
+                    user_id: user.id,
+                    type: const_user_identity.email,
+                    value: email,
+                    value_normalized: email_normalized,
+                    created_at: now,
+                    updated_at: now,
+                    verified_at: null,
+                });
+            }
+            if (username_normalized) {
+                insert.push({
+                    user_id: user.id,
+                    type: const_user_identity.username,
+                    value: username,
+                    value_normalized: username_normalized,
+                    created_at: now,
+                    updated_at: now,
+                    verified_at: now,
+                });
+            }
+            await trx('user_identities').insert(insert);
         });
 
-        await replace_session(req, user);
-
-        redirect(req, res);
+        await complete_sign_up(req, res, user);
     }
     catch (error) {
         if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {
-            throw new Error('Username already exists')
+            throw new Error('Identity already exists')
         }
         throw error;
     }
