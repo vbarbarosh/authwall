@@ -77,16 +77,13 @@
     .viewport {
       flex: 1; display: flex; align-items: flex-start;
       justify-content: center; padding: 48px 16px 64px;
-      opacity: 0; transition: opacity 200ms ease;
     }
-    .viewport.ready { opacity: 1; }
 
     /* ── Auth Card ── */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); box-shadow: var(--shadow);
       width: 100%; max-width: 420px; overflow: hidden;
-      animation: fadeIn 220ms ease;
     }
     .card.wide { max-width: 480px; }
     .card-header { padding: 32px 32px 0; text-align: center; }
@@ -299,7 +296,6 @@
     .w-full { width: 100%; }
     [data-view] { display: none; min-width: 500px; }
     [data-view].active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 480px) {
       .card-header, .card-body, .card-footer { padding-left: 20px; padding-right: 20px; }
       .otp-input { width: 40px !important; height: 48px !important; font-size: 18px !important; }
@@ -833,7 +829,6 @@ function renderView(name) {
   document.querySelectorAll('.demo-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.goto === name);
   });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function showView(name, pushState = true) {
@@ -841,8 +836,8 @@ function showView(name, pushState = true) {
   if (pushState && path && window.location.pathname !== path) {
     history.pushState({ view: name }, '', path);
   }
+  window.scrollTo(0, 0);
   renderView(name);
-  // refresh page-specific data when entering authenticated views
   if (name === 'profile' || name === 'sessions' || name === 'sign-out') {
     api_status().then(s => s.authenticated && render_user_data(s));
   }
@@ -850,6 +845,7 @@ function showView(name, pushState = true) {
 
 window.addEventListener('popstate', e => {
   const name = (e.state && e.state.view) || viewFromPath(window.location.pathname);
+  window.scrollTo(0, 0);
   renderView(name);
 });
 
@@ -1389,10 +1385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (pr) pr.value = email_param;
   }
 
-  // 2. Fade in the viewport now that the correct view is painted
-  requestAnimationFrame(() => document.querySelector('.viewport').classList.add('ready'));
-
-  // 3. Fetch status in parallel — update UI when it arrives
+  // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
   render_user_data(status);
 });
