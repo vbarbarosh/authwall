@@ -1,5 +1,6 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
+const complete_password_reset_confirm = require('../actions/complete_password_reset_confirm');
 const complete_password_reset_request = require('../actions/complete_password_reset_request');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
@@ -271,7 +272,7 @@ async function password_reset_confirm_post(req, res)
         await trx('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
     });
 
-    redirect(req, res, config.pages.sign_in);
+    await complete_password_reset_confirm(req, res, reset.user_id);
 }
 
 // POST /auth/change-password

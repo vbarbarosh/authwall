@@ -8,11 +8,11 @@ let client = null;
 
 async function send_email(params)
 {
-    const {to, user, path, placeholders} = params;
+    const {to, user_id, user, path, placeholders} = params;
 
-    const email_and_name = to ?? await get_user_email_and_name(user.id);
+    const email_and_name = to ?? await get_user_email_and_name(user_id ?? user.id);
     if (!email_and_name) {
-        console.log(`User ${user.uid} has now associated email`);
+        console.log(`User user_id=${user_id ?? user.id} has no associated email`);
         return;
     }
 
