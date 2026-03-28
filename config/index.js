@@ -49,7 +49,7 @@ const config = {
         sessions: '/auth/sessions',
 
         // destructive / confirmation
-        sign_out: '/auht/sign-out',
+        sign_out: '/auth/sign-out',
     },
 
     log_file: LOG_FILE,
