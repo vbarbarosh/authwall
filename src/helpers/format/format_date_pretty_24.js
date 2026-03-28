@@ -5,7 +5,7 @@ const months = [
 
 function format_date_pretty_24(date)
 {
-    const d = (date instanceof Date ? date : new Date(date));
+    const d = !date ? new Date() : (date instanceof Date ? date : new Date(date));
 
     const month = months[d.getMonth()];
     const day = d.getDate();
