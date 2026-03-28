@@ -1,3 +1,4 @@
+const complete_sign_in = require('../actions/complete_sign_in');
 const config = require('../../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_user_identity = require('../helpers/const/const_user_identity');
@@ -8,7 +9,6 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const redirect = require('../helpers/redirect');
-const replace_session = require('../helpers/replace_session');
 const save_session = require('../helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
@@ -152,9 +152,7 @@ async function google_callback_get(req, res)
     }
 
     const user = await db('users').where({id: user_id}).first();
-    await replace_session(req, user);
-
-    redirect(req, res);
+    await complete_sign_in(req, res, user);
 }
 
 module.exports = routes;

@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const complete_sign_in = require('../actions/complete_sign_in');
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
@@ -9,7 +10,6 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
-const replace_session = require('../helpers/replace_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
 
@@ -102,9 +102,7 @@ async function magic_link_confirm_get(req, res)
     }
 
     const user = await db('users').where({id: user_id}).first();
-    await replace_session(req, user);
-
-    redirect(req, res);
+    await complete_sign_in(req, res, user);
 }
 
 // POST /auth/magic-link/confirm
@@ -158,9 +156,7 @@ async function magic_link_confirm_post(req, res)
     }
 
     const user = await db('users').where({id: user_id}).first();
-    await replace_session(req, user);
-
-    redirect(req, res);
+    await complete_sign_in(req, res, user);
 }
 
 module.exports = routes;

@@ -5,6 +5,7 @@ const db = require('../../db');
 const destroy_session = require('../helpers/destroy_session');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const redirect = require('../helpers/redirect');
+const complete_sign_out = require('../actions/complete_sign_out');
 
 const routes = [
     {prepend: [auth_middleware], routes: [
@@ -62,8 +63,7 @@ async function sessions_revoke_all_post(req, res)
 // POST /auth/sign-out
 async function sign_out_post(req, res)
 {
-    await destroy_session(req);
-    redirect(req, res, config.pages.sign_in);
+    await complete_sign_out(req, res);
 }
 
 module.exports = routes;

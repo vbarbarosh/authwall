@@ -1,12 +1,12 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
+const complete_sign_in = require('../actions/complete_sign_in');
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
-const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
@@ -117,9 +117,7 @@ async function sign_in_post(req, res)
         throw new Error('Invalid username or password');
     }
 
-    await replace_session(req, user);
-
-    redirect(req, res);
+    await complete_sign_in(req, res, user);
 }
 
 // POST /auth/sign-up

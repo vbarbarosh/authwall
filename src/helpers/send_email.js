@@ -8,12 +8,12 @@ async function send_email(params)
 {
     client ??= new resend.Resend(config.resend_key);
 
-    const {to, path, placeholders} = params;
+    const {user, path, placeholders} = params;
     const {subject, body} = await parse_email_file(path, placeholders);
 
     const response = await client.emails.send({
         from: config.resend_from,
-        to,
+        to: user.email,
         subject,
         text: body,
     });
