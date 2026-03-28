@@ -28,7 +28,10 @@ const upload_avatar = multer({
 const routes = [
     {prepend: [auth_middleware], routes: [
         // {req: 'GET /auth/profile', fn: profile_get},
-        {req: 'POST /auth/profile', fn: [csrf_middleware, upload_avatar.single('avatar'), profile_post]},
+        // ⚠️ upload_avatar must run before csrf_middleware:
+        // multer parses the multipart body and populates req.body,
+        // which csrf_middleware reads
+        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), csrf_middleware, profile_post]},
     ]},
 ];
 
