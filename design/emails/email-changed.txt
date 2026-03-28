@@ -1,6 +1,6 @@
 Subject: Your email address was changed
 
-Hi,
+Hi {{display_name}},
 
 The email address on your account was changed on {{date}} from IP address {{ip}}.
 

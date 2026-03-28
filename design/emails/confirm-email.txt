@@ -1,6 +1,6 @@
 Subject: Confirm your new email address
 
-Hi,
+Hi {{display_name}},
 
 Please confirm your new email address by clicking the link below.
 

@@ -22,7 +22,7 @@ function parse_email_template(template, placeholders = {})
     const subject = match[1].trim();
     return {
         subject: render(subject, placeholders),
-        body: render(body, placeholders),
+        body: render(body, placeholders).replace(/Hi\s*,/, 'Hi,'),
     };
 }
 

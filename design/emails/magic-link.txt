@@ -1,6 +1,6 @@
 Subject: Your sign-in link
 
-Hi,
+Hi {{display_name}},
 
 Use the link or code below to sign in. Both expire in 10 minutes.
 

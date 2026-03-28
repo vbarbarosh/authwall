@@ -1,6 +1,6 @@
 Subject: Google account connected
 
-Hi,
+Hi {{display_name}},
 
 Your Google account ({{google_email}}) was connected to your account on
 {{date}} from IP address {{ip}}.

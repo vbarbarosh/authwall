@@ -1,8 +1,8 @@
 Subject: New sign-in to your account
 
-Hi,
+Hi {{display_name}},
 
-A new sign-in to your account was detected on {{date}}.
+A new sign-in to your account was detected on {{date}}
 
   IP address: {{ip}}
   Browser:    {{ua}}
