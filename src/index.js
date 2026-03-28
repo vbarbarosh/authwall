@@ -74,7 +74,7 @@ async function main()
     for (const key in config.pages) {
         const path = config.pages[key];
         app.get(path, async function (req, res) {
-            const spa = fs_path_resolve(__dirname, '../design/public_html/index.html');
+            const spa = fs_path_resolve(__dirname, '../design/public_html/spa.html');
             if (await fs_exists(spa)) {
                 res.sendFile(spa);
             }

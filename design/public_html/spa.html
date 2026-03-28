@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authwall</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f1f3f7;
+      --surface:     #ffffff;
+      --surface-2:   #f8f9fb;
+      --border:      #e2e6ed;
+      --border-focus:#4f46e5;
+      --primary:     #4f46e5;
+      --primary-h:   #4338ca;
+      --primary-t:   #ffffff;
+      --danger:      #dc2626;
+      --danger-h:    #b91c1c;
+      --success:     #16a34a;
+      --warning:     #d97706;
+      --text:        #111827;
+      --text-2:      #374151;
+      --text-muted:  #6b7280;
+      --text-subtle: #9ca3af;
+      --radius:      10px;
+      --radius-sm:   6px;
+      --shadow:      0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      --font:        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --mono:        ui-monospace, "SFMono-Regular", Menlo, monospace;
+      --transition:  180ms ease;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Demo Bar ── */
+    .demo-bar {
+      background: #1e1b4b;
+      color: #c7d2fe;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 46px;
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .demo-bar strong { color: #a5b4fc; font-size: 13px; }
+    .demo-bar .sep { opacity: .3; margin: 0 4px; }
+    .demo-bar-nav { display: flex; gap: 2px; margin-left: 12px; flex-wrap: wrap; }
+    .demo-btn {
+      background: transparent; border: none; color: #a5b4fc;
+      font: inherit; font-size: 11px; padding: 3px 9px; border-radius: 4px;
+      cursor: pointer; transition: background var(--transition), color var(--transition);
+      white-space: nowrap;
+    }
+    .demo-btn:hover { background: rgba(165,180,252,.15); color: #e0e7ff; }
+    .demo-btn.active { background: rgba(165,180,252,.25); color: #e0e7ff; font-weight: 600; }
+    .demo-spacer { flex: 1; }
+    .demo-tag {
+      font-size: 10px; background: rgba(165,180,252,.18); color: #a5b4fc;
+      padding: 2px 7px; border-radius: 20px; letter-spacing: .03em;
+    }
+
+    /* ── Viewport ── */
+    .viewport {
+      flex: 1; display: flex; align-items: flex-start;
+      justify-content: center; padding: 48px 16px 64px;
+    }
+
+    /* ── Auth Card ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      width: 100%; max-width: 420px; overflow: hidden;
+      animation: fadeIn 220ms ease;
+    }
+    .card.wide { max-width: 480px; }
+    .card-header { padding: 32px 32px 0; text-align: center; }
+    .card-body { padding: 28px 32px 32px; }
+
+    /* ── Brand ── */
+    .brand {
+      display: inline-flex; align-items: center; gap: 9px;
+      margin-bottom: 24px; text-decoration: none;
+    }
+    .brand-icon {
+      width: 38px; height: 38px; background: var(--primary); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .brand-icon svg { width: 20px; height: 20px; }
+    .brand-name { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+
+    /* ── Headings ── */
+    .page-title { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--text); margin-bottom: 6px; }
+    .page-sub { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 4px; }
+    .page-sub strong { color: var(--text-2); font-weight: 600; }
+
+    /* ── Forms ── */
+    .form { display: flex; flex-direction: column; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    label { font-size: 13px; font-weight: 500; color: var(--text-2); }
+    .label-row { display: flex; align-items: center; justify-content: space-between; }
+    .label-link { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500; cursor: pointer; }
+    .label-link:hover { text-decoration: underline; }
+
+    input[type=text], input[type=email], input[type=password], input[type=tel] {
+      height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 0 12px; font: inherit; font-size: 14px; color: var(--text);
+      background: var(--surface); outline: none; width: 100%;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+    input::placeholder { color: var(--text-subtle); }
+
+    .help-text { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 40px; padding: 0 16px; border-radius: var(--radius-sm); border: none;
+      font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+      text-decoration: none; white-space: nowrap;
+    }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    .btn-primary { background: var(--primary); color: var(--primary-t); width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-h); box-shadow: 0 2px 8px rgba(79,70,229,.35); }
+
+    .btn-outline { background: transparent; color: var(--text-2); border: 1px solid var(--border); width: 100%; }
+    .btn-outline:hover:not(:disabled) { background: var(--surface-2); border-color: #c8cdd6; }
+
+    .btn-danger { background: var(--danger); color: #fff; width: 100%; }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-h); }
+
+    .btn-ghost { background: transparent; color: var(--text-muted); height: 32px; padding: 0 10px; font-size: 13px; font-weight: 500; }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+
+    .btn-sm { height: 32px; font-size: 13px; padding: 0 12px; }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .btn-google { background: #fff; color: #374151; border: 1px solid var(--border); font-weight: 500; }
+    .btn-google:hover:not(:disabled) { background: #f9fafb; border-color: #c8cdd6; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+      border-radius: 50%; animation: spin .65s linear infinite; flex-shrink: 0;
+    }
+    .btn-outline .spinner, .btn-ghost .spinner {
+      border-color: rgba(0,0,0,.15); border-top-color: var(--text-2);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 12px; color: var(--text-subtle); font-weight: 500;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Alert ── */
+    .alert {
+      border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px;
+      display: flex; gap: 10px; align-items: flex-start; line-height: 1.5;
+    }
+    .alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .alert-warn    { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .alert-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* ── Card footer ── */
+    .card-footer {
+      border-top: 1px solid var(--border); padding: 16px 32px; text-align: center;
+      font-size: 13px; color: var(--text-muted); background: var(--surface-2);
+    }
+    .card-footer a, .text-link {
+      color: var(--primary); text-decoration: none; font-weight: 500; cursor: pointer;
+    }
+    .card-footer a:hover, .text-link:hover { text-decoration: underline; }
+
+    /* ── OTP ── */
+    .otp-group { display: flex; gap: 8px; justify-content: center; }
+    .otp-input {
+      width: 48px !important; height: 54px !important; text-align: center;
+      font-size: 22px !important; font-weight: 700; letter-spacing: -.02em;
+      padding: 0 !important; border-radius: 8px !important;
+    }
+
+    /* ── Notice ── */
+    .notice-icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+    }
+    .notice-icon.success { background: #dcfce7; }
+    .notice-icon.info    { background: #e0e7ff; }
+    .notice-icon.danger  { background: #fee2e2; }
+    .notice-icon svg { width: 26px; height: 26px; }
+
+    /* ── Profile ── */
+    .avatar-upload {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    }
+    .avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-info { flex: 1; min-width: 0; }
+    .avatar-name { font-weight: 600; font-size: 15px; }
+    .avatar-uid { font-size: 11px; color: var(--text-subtle); font-family: var(--mono); }
+    .avatar-actions { display: flex; flex-direction: column; gap: 6px; }
+
+    /* ── Sessions ── */
+    .session-item {
+      padding: 14px 16px; background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); display: flex; align-items: center; gap: 12px;
+    }
+    .session-item + .session-item { margin-top: 8px; }
+    .session-icon {
+      width: 36px; height: 36px; background: #e0e7ff; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--primary);
+    }
+    .session-icon svg { width: 18px; height: 18px; }
+    .session-info { flex: 1; min-width: 0; }
+    .session-ua { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .session-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; flex-shrink: 0;
+    }
+    .session-badge.current { background: #e0e7ff; color: #4338ca; }
+
+    /* ── Connections ── */
+    .connection-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+    }
+    .connection-item + .connection-item { margin-top: 8px; }
+    .connection-logo {
+      width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .connection-logo.google { background: #fff; border: 1px solid var(--border); }
+    .connection-logo svg { width: 18px; height: 18px; }
+    .connection-detail { flex: 1; min-width: 0; }
+    .connection-label { font-size: 13px; font-weight: 600; }
+    .connection-value { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .connection-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+    .connection-status.linked { background: #dcfce7; color: #15803d; }
+    .connection-status.unlinked { background: #f3f4f6; color: var(--text-muted); }
+
+    /* ── Misc ── */
+    .section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-subtle); margin-bottom: 10px; margin-top: 4px;
+    }
+    .strength-bar { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; margin-top: 6px; }
+    .strength-fill { height: 100%; border-radius: 2px; transition: width .3s ease, background .3s ease; }
+    .strength-fill.weak   { width: 33%; background: var(--danger); }
+    .strength-fill.fair   { width: 66%; background: var(--warning); }
+    .strength-fill.strong { width: 100%; background: var(--success); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    .mt-4  { margin-top: 4px; }
+    .mt-8  { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-20 { margin-top: 20px; }
+    .mt-24 { margin-top: 24px; }
+    .gap-8 { gap: 8px; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 13px; }
+    .text-muted { color: var(--text-muted); }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .w-full { width: 100%; }
+    [data-view] { display: none; min-width: 500px; }
+    [data-view].active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 480px) {
+      .card-header, .card-body, .card-footer { padding-left: 20px; padding-right: 20px; }
+      .otp-input { width: 40px !important; height: 48px !important; font-size: 18px !important; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+    .signout-layout { text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- ── Demo Bar ── -->
+<div class="demo-bar">
+  <strong>authwall</strong>
+  <span class="sep">·</span>
+  <nav class="demo-bar-nav" id="demoNav">
+    <button class="demo-btn active" data-goto="sign-in">Sign In</button>
+    <button class="demo-btn" data-goto="sign-up">Sign Up</button>
+    <button class="demo-btn" data-goto="pw-reset-req">Reset Request</button>
+    <button class="demo-btn" data-goto="pw-reset-sent">Reset Sent</button>
+    <button class="demo-btn" data-goto="pw-reset-confirm">Reset Confirm</button>
+    <button class="demo-btn" data-goto="magic-req">Magic Link</button>
+    <button class="demo-btn" data-goto="magic-sent">Magic Sent</button>
+    <button class="demo-btn" data-goto="magic-confirm">Magic Confirm</button>
+    <button class="demo-btn" data-goto="profile">Profile</button>
+    <button class="demo-btn" data-goto="sessions">Sessions</button>
+    <button class="demo-btn" data-goto="sign-out">Sign Out</button>
+  </nav>
+  <div class="demo-spacer"></div>
+  <span class="demo-tag" id="auth-badge">checking…</span>
+</div>
+
+<div class="viewport">
+
+  <!-- ── 1. SIGN IN ── -->
+  <div data-view="sign-in" class="active">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Welcome back</h1>
+        <p class="page-sub mt-4">Sign in to continue to your application.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <a class="btn btn-google" href="/auth/google">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </a>
+          <div class="divider">or</div>
+          <div class="field">
+            <label for="si-user">Username or email</label>
+            <input type="text" id="si-user" placeholder="you@example.com" autocomplete="username">
+          </div>
+          <div class="field">
+            <div class="label-row">
+              <label for="si-pass">Password</label>
+              <span class="label-link" onclick="showView('pw-reset-req')">Forgot password?</span>
+            </div>
+            <input type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div id="si-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="si-error-msg"></span>
+          </div>
+          <button id="si-submit" class="btn btn-primary mt-4">Sign in</button>
+          <div class="divider">or sign in without a password</div>
+          <button class="btn btn-outline" onclick="showView('magic-req')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Send me a magic link
+          </button>
+        </div>
+      </div>
+      <div class="card-footer">Don't have an account? <a href="#" onclick="showView('sign-up')">Create one</a></div>
+    </div>
+  </div>
+
+  <!-- ── 2. SIGN UP ── -->
+  <div data-view="sign-up">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Create an account</h1>
+        <p class="page-sub mt-4">Join to access your application.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <a class="btn btn-google" href="/auth/google">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Sign up with Google
+          </a>
+          <div class="divider">or</div>
+          <div class="field">
+            <label for="su-user">Username</label>
+            <input type="text" id="su-user" placeholder="jsmith" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="su-pass">Password</label>
+            <input type="password" id="su-pass" placeholder="Choose a strong password" autocomplete="new-password">
+            <div class="strength-bar"><div class="strength-fill" id="su-strength"></div></div>
+          </div>
+          <div class="field">
+            <label for="su-pass2">Confirm password</label>
+            <input type="password" id="su-pass2" placeholder="Repeat password" autocomplete="new-password">
+          </div>
+          <div id="su-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="su-error-msg"></span>
+          </div>
+          <button id="su-submit" class="btn btn-primary mt-4">Create account</button>
+        </div>
+      </div>
+      <div class="card-footer">Already have an account? <a href="#" onclick="showView('sign-in')">Sign in</a></div>
+    </div>
+  </div>
+
+  <!-- ── 3. PASSWORD RESET — REQUEST ── -->
+  <div data-view="pw-reset-req">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Reset your password</h1>
+        <p class="page-sub mt-4">Enter the email linked to your account and we'll send you a reset link.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div class="field">
+            <label for="pr-email">Email address</label>
+            <input type="email" id="pr-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div id="pr-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="pr-error-msg"></span>
+          </div>
+          <button id="pr-submit" class="btn btn-primary mt-4">Send reset link</button>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 4. PASSWORD RESET — SENT ── -->
+  <div data-view="pw-reset-sent">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body text-center">
+        <div class="notice-icon success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h1 class="page-title">Check your email</h1>
+        <p class="page-sub mt-8">We've sent a password reset link to <strong id="pr-sent-email">your email</strong>. The link expires in <strong>10 minutes</strong>.</p>
+        <div class="alert alert-info mt-20" style="text-align:left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Didn't get an email? Check your spam folder or <span class="text-link" onclick="showView('pw-reset-req')">try again</span>.</span>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 5. PASSWORD RESET — CONFIRM ── -->
+  <div data-view="pw-reset-confirm">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Set new password</h1>
+        <p class="page-sub mt-4">Choose a new password for your account.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div class="field">
+            <label for="rc-pass">New password</label>
+            <input type="password" id="rc-pass" placeholder="Choose a strong password" autocomplete="new-password">
+            <div class="strength-bar"><div class="strength-fill" id="rc-strength"></div></div>
+          </div>
+          <div class="field">
+            <label for="rc-pass2">Confirm new password</label>
+            <input type="password" id="rc-pass2" placeholder="Repeat password" autocomplete="new-password">
+          </div>
+          <div class="alert alert-warn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>All active sessions will be signed out after reset.</span>
+          </div>
+          <div id="rc-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="rc-error-msg"></span>
+          </div>
+          <button id="rc-submit" class="btn btn-primary mt-4">Update password</button>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 6. MAGIC LINK — REQUEST ── -->
+  <div data-view="magic-req">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Passwordless sign in</h1>
+        <p class="page-sub mt-4">We'll email you a one-time link and code. No password needed.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div class="field">
+            <label for="ml-email">Email address</label>
+            <input type="email" id="ml-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div id="ml-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="ml-error-msg"></span>
+          </div>
+          <button id="ml-submit" class="btn btn-primary mt-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send magic link
+          </button>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 7. MAGIC LINK — SENT ── -->
+  <div data-view="magic-sent">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body text-center">
+        <div class="notice-icon info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h1 class="page-title">Check your email</h1>
+        <p class="page-sub mt-8">A magic link and 6-digit code have been sent to <strong id="ml-sent-email">your email</strong>. Both expire in <strong>10 minutes</strong>.</p>
+        <div class="flex flex-col gap-8 mt-20">
+          <button class="btn btn-primary" onclick="showView('magic-confirm')">Enter the code</button>
+          <button class="btn btn-ghost" onclick="showView('magic-req')">Use a different email</button>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 8. MAGIC LINK — CONFIRM ── -->
+  <div data-view="magic-confirm">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Enter your code</h1>
+        <p class="page-sub mt-4">We sent a 6-digit code to <strong id="mc-email-display">your email</strong>.<br>Or click the link in the email to sign in instantly.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div class="otp-group mt-8">
+            <input class="otp-input" type="tel" maxlength="1">
+            <input class="otp-input" type="tel" maxlength="1">
+            <input class="otp-input" type="tel" maxlength="1">
+            <input class="otp-input" type="tel" maxlength="1">
+            <input class="otp-input" type="tel" maxlength="1">
+            <input class="otp-input" type="tel" maxlength="1">
+          </div>
+          <div id="mc-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="mc-error-msg"></span>
+          </div>
+          <button id="mc-submit" class="btn btn-primary mt-16">Verify code</button>
+          <p class="text-center text-sm text-muted mt-8">
+            Didn't get a code? <span class="text-link" onclick="showView('magic-req')">Resend</span>
+          </p>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
+    </div>
+  </div>
+
+  <!-- ── 9. PROFILE ── -->
+  <div data-view="profile">
+    <div class="card wide">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Your profile</h1>
+        <p class="page-sub mt-4">Manage your identity and connected accounts.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+
+          <!-- Avatar + name block -->
+          <div class="avatar-upload">
+            <div class="avatar" id="p-avatar"><span id="p-avatar-initials">?</span></div>
+            <div class="avatar-info">
+              <div class="avatar-name" id="p-display-name">—</div>
+              <div class="avatar-uid" id="p-uid"></div>
+            </div>
+            <div class="avatar-actions">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer">
+                Upload photo
+                <input type="file" id="p-avatar-file" accept="image/*" style="display:none">
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="p-name">Display name</label>
+            <input type="text" id="p-name" placeholder="Your name">
+          </div>
+          <div id="p-save-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="p-save-error-msg"></span>
+          </div>
+          <div id="p-save-ok" class="alert alert-success" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Profile saved.</span>
+          </div>
+          <button id="p-save" class="btn btn-primary">Save changes</button>
+
+          <hr>
+
+          <div class="section-title">Connected identities</div>
+          <div id="p-connections">
+            <div class="text-sm text-muted" style="padding:8px 0">Loading…</div>
+          </div>
+
+          <hr>
+
+          <div class="section-title">Change password</div>
+          <div class="field">
+            <label for="p-curpass">Current password</label>
+            <input type="password" id="p-curpass" placeholder="••••••••">
+          </div>
+          <div class="field">
+            <label for="p-newpass">New password</label>
+            <input type="password" id="p-newpass" placeholder="Choose a strong password">
+          </div>
+          <div class="field">
+            <label for="p-newpass2">Confirm new password</label>
+            <input type="password" id="p-newpass2" placeholder="Repeat password">
+          </div>
+          <div id="p-chpw-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="p-chpw-error-msg"></span>
+          </div>
+          <div id="p-chpw-ok" class="alert alert-success" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Password updated.</span>
+          </div>
+          <button id="p-chpw" class="btn btn-outline">Update password</button>
+
+          <hr>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-muted">Manage active sessions</span>
+            <button class="btn btn-ghost btn-sm" onclick="showView('sessions')">View sessions →</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="text-link" onclick="showView('sign-out')">Sign out</span>
+        &nbsp;·&nbsp;
+        <span class="text-link" onclick="showView('sessions')">Sessions</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10. SESSIONS ── -->
+  <div data-view="sessions">
+    <div class="card wide">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Active sessions</h1>
+        <p class="page-sub mt-4">Manage where you're signed in. Revoke any session you don't recognize.</p>
+      </div>
+      <div class="card-body">
+        <div class="section-title">Current session</div>
+        <div id="sessions-current"><div class="text-sm text-muted" style="padding:8px 0">Loading…</div></div>
+
+        <div class="section-title mt-20">Other sessions</div>
+        <div id="sessions-others"><div class="text-sm text-muted" style="padding:8px 0">None</div></div>
+
+        <div id="sess-error" class="alert alert-error mt-16" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="sess-error-msg"></span>
+        </div>
+
+        <div class="alert alert-warn mt-20">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>If you see an unfamiliar session, revoke it and change your password immediately.</span>
+        </div>
+        <button id="sess-revoke-all" class="btn btn-danger mt-16">Revoke all other sessions</button>
+      </div>
+      <div class="card-footer">
+        <span class="text-link" onclick="showView('profile')">← Back to profile</span>
+        &nbsp;·&nbsp;
+        <span class="text-link" onclick="showView('sign-out')">Sign out</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 11. SIGN OUT ── -->
+  <div data-view="sign-out">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body signout-layout">
+        <div class="notice-icon danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <h1 class="page-title">Sign out?</h1>
+        <p class="page-sub mt-8">You're signed in as <strong id="so-user-display">—</strong>. This will end your current session.</p>
+        <div class="flex flex-col gap-8 mt-20">
+          <button id="so-submit" class="btn btn-danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+          <button class="btn btn-outline" onclick="showView('profile')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /viewport -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING
+// ═══════════════════════════════════════════════════════════════════════════════
+const ROUTES = {
+  '/auth/sign-in':               'sign-in',
+  '/auth/sign-up':               'sign-up',
+  '/auth/password-reset':        'pw-reset-req',
+  '/auth/password-reset/sent':   'pw-reset-sent',
+  '/auth/password-reset/confirm':'pw-reset-confirm',
+  '/auth/magic-link':            'magic-req',
+  '/auth/magic-link/sent':       'magic-sent',
+  '/auth/magic-link/confirm':    'magic-confirm',
+  '/auth/profile':               'profile',
+  '/auth/sessions':              'sessions',
+  '/auth/sign-out':              'sign-out',
+};
+const PATH_FOR = Object.fromEntries(Object.entries(ROUTES).map(([p, v]) => [v, p]));
+
+function viewFromPath(pathname) {
+  // strip query string if any
+  return ROUTES[pathname.split('?')[0]] || 'sign-in';
+}
+
+function renderView(name) {
+  document.querySelectorAll('[data-view]').forEach(el => el.classList.remove('active'));
+  const target = document.querySelector('[data-view="' + name + '"]');
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.demo-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.goto === name);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showView(name, pushState = true) {
+  const path = PATH_FOR[name];
+  if (pushState && path && window.location.pathname !== path) {
+    history.pushState({ view: name }, '', path);
+  }
+  renderView(name);
+  // refresh page-specific data when entering authenticated views
+  if (name === 'profile' || name === 'sessions' || name === 'sign-out') {
+    api_status().then(s => s.authenticated && render_user_data(s));
+  }
+}
+
+window.addEventListener('popstate', e => {
+  const name = (e.state && e.state.view) || viewFromPath(window.location.pathname);
+  renderView(name);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════════════════════════════
+let _csrf = null;
+let _status = null;
+
+async function api_status() {
+  const r = await fetch('/auth/status');
+  _status = await r.json();
+  _csrf = _status.csrf_token;
+  return _status;
+}
+
+async function api_post(path, fields) {
+  if (!_csrf) await api_status();
+  const body = new URLSearchParams({ ...fields, _csrf });
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+    redirect: 'follow',
+  });
+  const status = await api_status();
+  return { final_url: res.url, error: status.error };
+}
+
+async function api_post_form(path, form_data) {
+  if (!_csrf) await api_status();
+  form_data.append('_csrf', _csrf);
+  const res = await fetch(path, { method: 'POST', body: form_data, redirect: 'follow' });
+  const status = await api_status();
+  return { final_url: res.url, error: status.error };
+}
+
+// After a successful POST, figure out where to go based on the redirect URL
+function navigate_after(final_url) {
+  try {
+    const pathname = new URL(final_url).pathname;
+    if (ROUTES[pathname]) {
+      showView(ROUTES[pathname], true);
+    } else {
+      window.location.href = final_url;
+    }
+  } catch {
+    window.location.href = final_url;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function set_loading(btn_id, loading) {
+  const btn = document.getElementById(btn_id);
+  if (!btn) return;
+  if (loading) {
+    btn.dataset.origHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Please wait…';
+    btn.disabled = true;
+  } else {
+    btn.innerHTML = btn.dataset.origHtml || btn.innerHTML;
+    btn.disabled = false;
+  }
+}
+
+function show_error(msg_id, err_id, msg) {
+  const el = document.getElementById(err_id);
+  const msg_el = document.getElementById(msg_id);
+  if (msg_el) msg_el.textContent = msg;
+  if (el) el.style.display = 'flex';
+}
+
+function hide_error(err_id) {
+  const el = document.getElementById(err_id);
+  if (el) el.style.display = 'none';
+}
+
+function show_ok(ok_id) {
+  const el = document.getElementById(ok_id);
+  if (el) { el.style.display = 'flex'; setTimeout(() => { el.style.display = 'none'; }, 3000); }
+}
+
+function password_strength(pw) {
+  if (!pw) return '';
+  if (pw.length < 6) return 'weak';
+  if (pw.length < 10) return 'fair';
+  return 'strong';
+}
+
+function initials(name, fallback) {
+  if (!name) return fallback || '?';
+  return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function parse_ua(ua) {
+  if (!ua || ua === 'n/a') return { name: 'Unknown browser', icon: 'desktop' };
+  const s = ua.toLowerCase();
+  let name = 'Browser';
+  let icon = 'desktop';
+  if (s.includes('iphone') || s.includes('android') || s.includes('mobile')) icon = 'mobile';
+  if (s.includes('edg/'))       name = 'Edge';
+  else if (s.includes('chrome'))name = 'Chrome';
+  else if (s.includes('safari'))name = 'Safari';
+  else if (s.includes('firefox'))name = 'Firefox';
+  if (s.includes('iphone'))     name += ' on iPhone';
+  else if (s.includes('ipad'))  name += ' on iPad';
+  else if (s.includes('android'))name += ' on Android';
+  else if (s.includes('windows'))name += ' on Windows';
+  else if (s.includes('mac os'))name += ' on macOS';
+  else if (s.includes('linux')) name += ' on Linux';
+  return { name, icon };
+}
+
+function fmt_date(d) {
+  if (!d) return 'Unknown';
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 2)  return 'just now';
+  if (m < 60) return m + ' minutes ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' hour' + (h > 1 ? 's' : '') + ' ago';
+  const day = Math.floor(h / 24);
+  return day + ' day' + (day > 1 ? 's' : '') + ' ago';
+}
+
+const ICON_DESKTOP = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+const ICON_MOBILE  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RENDER USER DATA (profile + sessions + sign-out)
+// ═══════════════════════════════════════════════════════════════════════════════
+function render_user_data(s) {
+  // Avatar
+  const av = document.getElementById('p-avatar');
+  const av_init = document.getElementById('p-avatar-initials');
+  const display = s.display_name || '';
+  if (av) {
+    if (s.avatar_url) {
+      av.innerHTML = `<img src="${s.avatar_url}" alt="">`;
+    } else {
+      av.innerHTML = `<span>${initials(display, '?')}</span>`;
+    }
+  }
+  if (document.getElementById('p-display-name'))
+    document.getElementById('p-display-name').textContent = display || '(no name)';
+  const uid_el = document.getElementById('p-uid');
+  if (uid_el && s.providers) {
+    const email = s.providers.find(p => p.type === 'email');
+    const user = s.providers.find(p => p.type === 'username');
+    uid_el.textContent = email?.value || user?.value || '';
+  }
+  const name_input = document.getElementById('p-name');
+  if (name_input) name_input.value = display;
+
+  // Connections
+  const conn_el = document.getElementById('p-connections');
+  if (conn_el && s.providers) {
+    conn_el.innerHTML = s.providers.map(p => {
+      const labels = {
+        username: { label: 'Username', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, bg: '#e0e7ff' },
+        email: { label: 'Email', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, bg: '#e0e7ff' },
+        oauth_google: { label: 'Google', icon: `<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`, bg: '#fff', cls: 'google' },
+      };
+      const meta = labels[p.type] || { label: p.type, icon: '', bg: '#e0e7ff' };
+      const status_label = p.type === 'email' ? (p.verified_at ? 'Verified' : 'Unverified') : 'Linked';
+      const status_cls = p.verified_at ? 'linked' : 'unlinked';
+      return `<div class="connection-item">
+        <div class="connection-logo ${meta.cls || ''}" style="background:${meta.bg}">${meta.icon}</div>
+        <div class="connection-detail">
+          <div class="connection-label">${meta.label}</div>
+          <div class="connection-value">${p.value || ''}</div>
+        </div>
+        <span class="connection-status ${status_cls}">${status_label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Sessions
+  const current_uid = s.current_session_uid;
+  const sessions = s.sessions || [];
+  const current = sessions.find(s => s.uid === current_uid);
+  const others  = sessions.filter(s => s.uid !== current_uid);
+
+  const render_session = (sess, is_current) => {
+    const { name, icon } = parse_ua(sess.ua || '');
+    const device_icon = icon === 'mobile' ? ICON_MOBILE : ICON_DESKTOP;
+    const meta = [sess.ip, fmt_date(sess.last_seen_at)].filter(Boolean).join(' · ');
+    const right = is_current
+      ? `<span class="session-badge current">This device</span>`
+      : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" data-revoke="${sess.uid}">Revoke</button>`;
+    return `<div class="session-item">
+      <div class="session-icon">${device_icon}</div>
+      <div class="session-info">
+        <div class="session-ua">${name}</div>
+        <div class="session-meta">${meta}</div>
+      </div>
+      ${right}
+    </div>`;
+  };
+
+  const cur_el = document.getElementById('sessions-current');
+  if (cur_el) cur_el.innerHTML = current ? render_session(current, true) : '<div class="text-sm text-muted" style="padding:8px 0">—</div>';
+
+  const oth_el = document.getElementById('sessions-others');
+  if (oth_el) {
+    oth_el.innerHTML = others.length
+      ? others.map(s => render_session(s, false)).join('')
+      : '<div class="text-sm text-muted" style="padding:8px 0">No other active sessions.</div>';
+    // wire revoke buttons
+    oth_el.querySelectorAll('[data-revoke]').forEach(btn => {
+      btn.addEventListener('click', () => handle_revoke(btn.dataset.revoke));
+    });
+  }
+
+  // Sign-out page
+  const so_el = document.getElementById('so-user-display');
+  if (so_el) {
+    const uname = s.providers?.find(p => p.type === 'username');
+    so_el.textContent = display || uname?.value || 'your account';
+  }
+
+  // Demo badge
+  const badge = document.getElementById('auth-badge');
+  if (badge) {
+    if (s.authenticated) {
+      badge.textContent = 'signed in';
+      badge.style.background = 'rgba(34,197,94,.25)';
+      badge.style.color = '#86efac';
+    } else {
+      badge.textContent = 'not signed in';
+      badge.style.background = 'rgba(165,180,252,.18)';
+      badge.style.color = '#a5b4fc';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORM HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Sign In ──────────────────────────────────────────────────────────────────
+document.getElementById('si-submit').addEventListener('click', async () => {
+  hide_error('si-error');
+  const username = document.getElementById('si-user').value.trim();
+  const password = document.getElementById('si-pass').value;
+  if (!username || !password) return show_error('si-error-msg', 'si-error', 'Please fill in all fields.');
+  set_loading('si-submit', true);
+  const { final_url, error } = await api_post('/auth/sign-in', { username, password });
+  set_loading('si-submit', false);
+  if (error) return show_error('si-error-msg', 'si-error', error);
+  navigate_after(final_url);
+});
+
+// ── Sign Up ──────────────────────────────────────────────────────────────────
+document.getElementById('su-submit').addEventListener('click', async () => {
+  hide_error('su-error');
+  const username = document.getElementById('su-user').value.trim();
+  const password = document.getElementById('su-pass').value;
+  const password_confirm = document.getElementById('su-pass2').value;
+  if (!username || !password) return show_error('su-error-msg', 'su-error', 'Please fill in all fields.');
+  if (password !== password_confirm) return show_error('su-error-msg', 'su-error', 'Passwords do not match.');
+  set_loading('su-submit', true);
+  const { final_url, error } = await api_post('/auth/sign-up', { username, password, password_confirm });
+  set_loading('su-submit', false);
+  if (error) return show_error('su-error-msg', 'su-error', error);
+  navigate_after(final_url);
+});
+
+// Password strength meter for sign-up
+document.getElementById('su-pass').addEventListener('input', function () {
+  const fill = document.getElementById('su-strength');
+  if (!fill) return;
+  const s = password_strength(this.value);
+  fill.className = 'strength-fill ' + s;
+});
+
+// ── Password Reset — Request ─────────────────────────────────────────────────
+document.getElementById('pr-submit').addEventListener('click', async () => {
+  hide_error('pr-error');
+  const email = document.getElementById('pr-email').value.trim();
+  if (!email) return show_error('pr-error-msg', 'pr-error', 'Please enter your email address.');
+  set_loading('pr-submit', true);
+  const { final_url, error } = await api_post('/auth/password-reset/request', { email });
+  set_loading('pr-submit', false);
+  if (error) return show_error('pr-error-msg', 'pr-error', error);
+  // Show sent email on confirmation screen
+  const el = document.getElementById('pr-sent-email');
+  if (el) el.textContent = email;
+  navigate_after(final_url);
+});
+
+// ── Password Reset — Confirm ─────────────────────────────────────────────────
+document.getElementById('rc-submit').addEventListener('click', async () => {
+  hide_error('rc-error');
+  const token = new URLSearchParams(window.location.search).get('token') || '';
+  const password = document.getElementById('rc-pass').value;
+  const password_confirm = document.getElementById('rc-pass2').value;
+  if (!token) return show_error('rc-error-msg', 'rc-error', 'Missing reset token. Please use the link from your email.');
+  if (!password) return show_error('rc-error-msg', 'rc-error', 'Please enter a new password.');
+  if (password !== password_confirm) return show_error('rc-error-msg', 'rc-error', 'Passwords do not match.');
+  set_loading('rc-submit', true);
+  const { final_url, error } = await api_post('/auth/password-reset/confirm', { token, password, password_confirm });
+  set_loading('rc-submit', false);
+  if (error) return show_error('rc-error-msg', 'rc-error', error);
+  navigate_after(final_url);
+});
+
+// Password strength meter for reset confirm
+document.getElementById('rc-pass').addEventListener('input', function () {
+  const fill = document.getElementById('rc-strength');
+  if (!fill) return;
+  const s = password_strength(this.value);
+  fill.className = 'strength-fill ' + s;
+});
+
+// ── Magic Link — Request ─────────────────────────────────────────────────────
+let _magic_email = '';
+document.getElementById('ml-submit').addEventListener('click', async () => {
+  hide_error('ml-error');
+  const email = document.getElementById('ml-email').value.trim();
+  if (!email) return show_error('ml-error-msg', 'ml-error', 'Please enter your email address.');
+  set_loading('ml-submit', true);
+  const { final_url, error } = await api_post('/auth/magic-link/request', { email });
+  set_loading('ml-submit', false);
+  if (error) return show_error('ml-error-msg', 'ml-error', error);
+  _magic_email = email;
+  const el = document.getElementById('ml-sent-email');
+  if (el) el.textContent = email;
+  const mc = document.getElementById('mc-email-display');
+  if (mc) mc.textContent = email;
+  navigate_after(final_url);
+});
+
+// ── Magic Link — Confirm (code) ──────────────────────────────────────────────
+document.getElementById('mc-submit').addEventListener('click', async () => {
+  hide_error('mc-error');
+  const code = [...document.querySelectorAll('.otp-input')].map(i => i.value).join('');
+  if (code.length < 6) return show_error('mc-error-msg', 'mc-error', 'Please enter all 6 digits of the code.');
+  if (!_magic_email) return show_error('mc-error-msg', 'mc-error', 'Session expired. Please request a new magic link.');
+  set_loading('mc-submit', true);
+  const { final_url, error } = await api_post('/auth/magic-link/confirm', { email: _magic_email, code });
+  set_loading('mc-submit', false);
+  if (error) return show_error('mc-error-msg', 'mc-error', error);
+  navigate_after(final_url);
+});
+
+// ── Profile — Save display name / avatar ─────────────────────────────────────
+document.getElementById('p-save').addEventListener('click', async () => {
+  hide_error('p-save-error');
+  const display_name = document.getElementById('p-name').value;
+  const file_input = document.getElementById('p-avatar-file');
+  set_loading('p-save', true);
+  let result;
+  if (file_input && file_input.files.length > 0) {
+    const fd = new FormData();
+    fd.append('display_name', display_name);
+    fd.append('avatar', file_input.files[0]);
+    result = await api_post_form('/auth/profile', fd);
+  } else {
+    result = await api_post('/auth/profile', { display_name });
+  }
+  set_loading('p-save', false);
+  const { error } = result;
+  if (error) return show_error('p-save-error-msg', 'p-save-error', error);
+  show_ok('p-save-ok');
+  // refresh displayed name
+  if (_status) render_user_data(_status);
+});
+
+// Avatar preview
+document.getElementById('p-avatar-file').addEventListener('change', function () {
+  if (!this.files.length) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const av = document.getElementById('p-avatar');
+    if (av) av.innerHTML = `<img src="${e.target.result}" alt="">`;
+  };
+  reader.readAsDataURL(this.files[0]);
+});
+
+// ── Profile — Change password ────────────────────────────────────────────────
+document.getElementById('p-chpw').addEventListener('click', async () => {
+  hide_error('p-chpw-error');
+  const current_password = document.getElementById('p-curpass').value;
+  const password = document.getElementById('p-newpass').value;
+  const password_confirm = document.getElementById('p-newpass2').value;
+  if (!current_password || !password) return show_error('p-chpw-error-msg', 'p-chpw-error', 'Please fill in all fields.');
+  if (password !== password_confirm) return show_error('p-chpw-error-msg', 'p-chpw-error', 'New passwords do not match.');
+  set_loading('p-chpw', true);
+  const { error } = await api_post('/auth/change-password', { current_password, password, password_confirm });
+  set_loading('p-chpw', false);
+  if (error) return show_error('p-chpw-error-msg', 'p-chpw-error', error);
+  show_ok('p-chpw-ok');
+  document.getElementById('p-curpass').value = '';
+  document.getElementById('p-newpass').value = '';
+  document.getElementById('p-newpass2').value = '';
+});
+
+// ── Sessions — Revoke one ────────────────────────────────────────────────────
+async function handle_revoke(uid) {
+  hide_error('sess-error');
+  const { error } = await api_post('/auth/sessions/revoke', { uid });
+  if (error) return show_error('sess-error-msg', 'sess-error', error);
+  const s = await api_status();
+  if (s.authenticated) render_user_data(s);
+}
+
+// ── Sessions — Revoke all ────────────────────────────────────────────────────
+document.getElementById('sess-revoke-all').addEventListener('click', async () => {
+  hide_error('sess-error');
+  set_loading('sess-revoke-all', true);
+  const { error } = await api_post('/auth/sessions/revoke-all', {});
+  set_loading('sess-revoke-all', false);
+  if (error) return show_error('sess-error-msg', 'sess-error', error);
+  const s = await api_status();
+  if (s.authenticated) render_user_data(s);
+});
+
+// ── Sign Out ─────────────────────────────────────────────────────────────────
+document.getElementById('so-submit').addEventListener('click', async () => {
+  set_loading('so-submit', true);
+  const { final_url } = await api_post('/auth/sign-out', {});
+  set_loading('so-submit', false);
+  navigate_after(final_url);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DEMO BAR
+// ═══════════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.demo-btn[data-goto]').forEach(btn => {
+  btn.addEventListener('click', () => showView(btn.dataset.goto));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OTP INPUT — auto advance / backspace
+// ═══════════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.otp-input').forEach((input, i, all) => {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '').slice(0, 1);
+    if (input.value && i < all.length - 1) all[i + 1].focus();
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !input.value && i > 0) all[i - 1].focus();
+  });
+  input.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    [...text].slice(0, 6).forEach((ch, j) => { if (all[i + j]) all[i + j].value = ch; });
+    const next = all[Math.min(i + text.length, all.length - 1)];
+    if (next) next.focus();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  const status = await api_status();
+  const initial = viewFromPath(window.location.pathname);
+  history.replaceState({ view: initial }, '', PATH_FOR[initial] || window.location.pathname);
+  renderView(initial);
+  render_user_data(status);
+
+  // Read ?email= param for magic-link-sent/confirm pages (deep link support)
+  const params = new URLSearchParams(window.location.search);
+  const email_param = params.get('email');
+  if (email_param) {
+    _magic_email = email_param;
+    const el = document.getElementById('ml-sent-email');
+    if (el) el.textContent = email_param;
+    const mc = document.getElementById('mc-email-display');
+    if (mc) mc.textContent = email_param;
+  }
+});
+</script>
+</body>
+</html>
