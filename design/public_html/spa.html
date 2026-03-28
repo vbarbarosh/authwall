@@ -1371,11 +1371,11 @@ document.querySelectorAll('.otp-input').forEach((input, i, all) => {
 document.addEventListener('DOMContentLoaded', async () => {
   const status = await api_status();
   const initial = viewFromPath(window.location.pathname);
-  history.replaceState({ view: initial }, '', PATH_FOR[initial] || window.location.pathname);
+  history.replaceState({ view: initial }, '', (PATH_FOR[initial] || window.location.pathname) + window.location.search);
   renderView(initial);
   render_user_data(status);
 
-  // Read ?email= param for magic-link-sent/confirm pages (deep link support)
+  // Read ?email= param for pre-filling forms (deep link support)
   const params = new URLSearchParams(window.location.search);
   const email_param = params.get('email');
   if (email_param) {
@@ -1384,6 +1384,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (el) el.textContent = email_param;
     const mc = document.getElementById('mc-email-display');
     if (mc) mc.textContent = email_param;
+    const pr = document.getElementById('pr-email');
+    if (pr) pr.value = email_param;
   }
 });
 </script>

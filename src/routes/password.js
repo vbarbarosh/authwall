@@ -1,5 +1,6 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
+const complete_password_reset_request = require('../actions/complete_password_reset_request');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
@@ -13,7 +14,6 @@ const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
-const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
 
 const routes = [
@@ -99,12 +99,23 @@ async function sign_in_post(req, res)
         throw new Error('Missing fields');
     }
 
-    const username_normalized = normalize_username(username);
-    if (!username_normalized) {
-        throw new Error('Invalid username or password');
+    const is_email = username.includes('@');
+    let ident;
+    if (is_email) {
+        const email_normalized = normalize_email(username);
+        if (!email_normalized) {
+            throw new Error('Invalid username or password');
+        }
+        ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    }
+    else {
+        const username_normalized = normalize_username(username);
+        if (!username_normalized) {
+            throw new Error('Invalid username or password');
+        }
+        ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
     }
 
-    const ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
     if (!ident) {
         throw new Error('Invalid username or password');
     }
@@ -210,7 +221,6 @@ async function password_reset_request_post(req, res)
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         const token = random_hex();
-        const reset_link = config.public_url + urlmod(config.pages.password_reset_confirm, {token});
 
         const now = new Date();
         await db('password_reset_tokens').insert({
@@ -221,10 +231,11 @@ async function password_reset_request_post(req, res)
             expires_at: date_add_minutes(new Date(), 10),
         });
 
-        console.log(`Reset link: ${reset_link}`);
+        await complete_password_reset_request(req, res, ident.user_id, ident.value, token);
+        return;
     }
 
-    // never reveal whether email exists
+    // Never reveal whether email exists
     redirect(req, res, config.pages.password_reset_notice);
 }
 
