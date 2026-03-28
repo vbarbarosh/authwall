@@ -12,6 +12,8 @@ const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
+const complete_magic_link_request = require('../actions/complete_magic_link_request');
+const complete_sign_up = require('../actions/complete_sign_up');
 
 const SECOND = 1000;
 
@@ -29,7 +31,9 @@ async function magic_link_request_post(req, res)
     if (!req.body.email) {
         throw new Error('Missing email');
     }
-    const email = normalize_email(req.body.email);
+
+    const email = req.body.email;
+    const email_normalized = normalize_email(email);
     if (!email) {
         throw new Error('Invalid email');
     }
@@ -42,11 +46,11 @@ async function magic_link_request_post(req, res)
 
     const code = random_code();
     const token = random_hex();
-    const link = config.public_url + urlmod(config.pages.magic_link_confirm, {token});
 
     const now = new Date();
     await db('magic_links').insert({
         email,
+        email_normalized,
         code_hash: await bcrypt.hash(code, config.password_rounds),
         token_hash: crypto_hash_sha256(token),
         created_at: now,
@@ -54,9 +58,7 @@ async function magic_link_request_post(req, res)
         expires_at: date_add_minutes(new Date(), 10),
     });
 
-    console.log(`Magic link for ${email}: [${code}] ${link}`);
-
-    redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
+    await complete_magic_link_request(req, res, email, code, token);
 }
 
 // GET /auth/magic-link/confirm
@@ -80,18 +82,17 @@ async function magic_link_confirm_get(req, res)
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
     const email = magic_link.email;
-    const email_normalized = normalize_email(magic_link.email);
+    const email_normalized = magic_link.email_normalized;
 
-    let user_id;
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
-        user_id = ident.user_id;
+        const user = await db('users').where({id: ident.user_id}).first();
+        await complete_sign_in(req, res, user);
     }
     else {
         const user = await users_create();
-        user_id = user.id;
         await db('user_identities').insert({
-            user_id,
+            user_id: user.id,
             type: const_user_identity.email,
             value: email,
             value_normalized: email_normalized,
@@ -99,10 +100,8 @@ async function magic_link_confirm_get(req, res)
             updated_at: now,
             verified_at: now,
         });
+        await complete_sign_up(req, res, user);
     }
-
-    const user = await db('users').where({id: user_id}).first();
-    await complete_sign_in(req, res, user);
 }
 
 // POST /auth/magic-link/confirm
@@ -121,7 +120,7 @@ async function magic_link_confirm_post(req, res)
 
     const now = new Date();
     const magic_link = await db('magic_links')
-        .where({email: email_normalized})
+        .where({email_normalized})
         .whereNull('used_at')
         .where('expires_at', '>', now)
         .orderBy('id', 'desc')
@@ -136,16 +135,15 @@ async function magic_link_confirm_post(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    let user_id;
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
-        user_id = ident.user_id;
+        const user = await db('users').where({id: ident.user_id}).first();
+        await complete_sign_in(req, res, user);
     }
     else {
         const user = await users_create();
-        user_id = user.id;
         await db('user_identities').insert({
-            user_id,
+            user_id: user.id,
             type: const_user_identity.email,
             value: email,
             value_normalized: email_normalized,
@@ -153,10 +151,8 @@ async function magic_link_confirm_post(req, res)
             updated_at: now,
             verified_at: now,
         });
+        await complete_sign_up(req, res, user);
     }
-
-    const user = await db('users').where({id: user_id}).first();
-    await complete_sign_in(req, res, user);
 }
 
 module.exports = routes;
