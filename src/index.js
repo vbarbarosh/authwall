@@ -10,6 +10,7 @@ const express_log = require('@vbarbarosh/express-helpers/src/express_log');
 const express_routes = require('./helpers/express/express_routes');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const express_session = require('express-session');
+const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
@@ -68,12 +69,18 @@ async function main()
     express_routes(app, require('./routes/status'));
 
     // Support for mountable design
-    app.use('/auth/', express.static(fs_path_resolve(__dirname, 'ui'), {extensions: ['html']}));
+    app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
 
     for (const key in config.pages) {
         const path = config.pages[key];
-        app.get(path, function (req, res) {
-            res.type('text').send(`Empty page\n\n${key}: GET ${path}`);
+        app.get(path, async function (req, res) {
+            const spa = fs_path_resolve(__dirname, '../design/public_html/index.html');
+            if (await fs_exists(spa)) {
+                res.sendFile(spa);
+            }
+            else {
+                res.type('text').send(`Empty page\n\n${key}: GET ${path}`);
+            }
         });
     }
 
