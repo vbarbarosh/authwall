@@ -3,6 +3,12 @@ pages:
   sign_in: /auth/sign-in
   sign_up: /auth/sign-up
 
+  # email verification
+  email_verify_request: /auth/email-verify
+  email_verify_confirm: /auth/email-verify/confirm
+  email_verify_notice: /auth/email-verify/sent
+  email_verify_success: /auth/email-verify/success
+
   # password flows
   password_reset_request: /auth/password-reset
   password_reset_confirm: /auth/password-reset/confirm

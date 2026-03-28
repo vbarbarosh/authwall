@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node .",
     "watch": "nodemon -r dotenv/config .",
-    "migrate": "knex migrate:latest",
-    "migrate:make": "knex migrate:make",
-    "migrate:rollback": "knex migrate:rollback"
+    "migrate": "knex migrate:latest --env=sqlite",
+    "migrate:make": "knex migrate:make --env=sqlite",
+    "migrate:rollback": "knex migrate:rollback --env=sqlite"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",

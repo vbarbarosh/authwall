@@ -1,0 +1,14 @@
+Subject: Welcome!
+
+Hi {{display_name}},
+
+Your account has been created.
+
+Please verify your email address to finish setup:
+
+{{link}}
+
+This link expires in 24 hours. If you did not create this account,
+you can safely ignore this email.
+
+— Authwall

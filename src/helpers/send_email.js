@@ -8,9 +8,9 @@ let client = null;
 
 async function send_email(params)
 {
-    const {user, path, placeholders} = params;
+    const {to, user, path, placeholders} = params;
 
-    const email_and_name = await get_user_email_and_name(user.id);
+    const email_and_name = to ?? await get_user_email_and_name(user.id);
     if (!email_and_name) {
         console.log(`User ${user.uid} has now associated email`);
         return;
