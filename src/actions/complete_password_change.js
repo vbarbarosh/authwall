@@ -9,10 +9,11 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function complete_password_change(req, res, user_id)
 {
+    const user = await db('users').where({id: user_id}).first();
+
     await replace_session(req, user);
     redirect(req, res, config.pages.profile);
 
-    const user = await db('users').where({id: user_id}).first();
     await send_email({
         user,
         path: fs_path_resolve(__dirname, '../../design/emails/password-changed-from-profile.txt'),
