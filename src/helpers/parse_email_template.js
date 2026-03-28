@@ -32,7 +32,7 @@ function render(str, placeholders)
         if (!(key in placeholders)) {
             throw new Error(`Missing placeholder: ${key}`);
         }
-        return String(placeholders[key]);
+        return String(placeholders[key] ?? '');
     });
 }
 

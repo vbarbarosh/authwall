@@ -1,4 +1,4 @@
-Subject: Welcome
+Subject: Welcome!
 
 Hi {{display_name}},
 
