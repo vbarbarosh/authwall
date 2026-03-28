@@ -315,6 +315,9 @@
   <nav class="demo-bar-nav" id="demoNav">
     <button class="demo-btn active" data-goto="sign-in">Sign In</button>
     <button class="demo-btn" data-goto="sign-up">Sign Up</button>
+    <button class="demo-btn" data-signup-mode="email-username" title="Sign Up: email + username + password" style="font-size:10px;opacity:.75">⚙ email+user</button>
+    <button class="demo-btn" data-signup-mode="email" title="Sign Up: email + password" style="font-size:10px;opacity:.75">⚙ email</button>
+    <button class="demo-btn" data-signup-mode="username" title="Sign Up: username + password" style="font-size:10px;opacity:.75">⚙ username</button>
     <button class="demo-btn" data-goto="pw-reset-req">Reset Request</button>
     <button class="demo-btn" data-goto="pw-reset-sent">Reset Sent</button>
     <button class="demo-btn" data-goto="pw-reset-confirm">Reset Confirm</button>
@@ -374,7 +377,8 @@
   </div>
 
   <!-- ── 2. SIGN UP ── -->
-  <div data-view="sign-up">
+  <!-- data-signup-mode: "username" | "email" | "email-username" -->
+  <div data-view="sign-up" data-signup-mode="email-username">
     <div class="card">
       <div class="card-header">
         <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
@@ -388,7 +392,11 @@
             Sign up with Google
           </a>
           <div class="divider">or</div>
-          <div class="field">
+          <div class="field" id="su-email-field">
+            <label for="su-email">Email address</label>
+            <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div class="field" id="su-user-field">
             <label for="su-user">Username</label>
             <input type="text" id="su-user" placeholder="jsmith" autocomplete="username">
           </div>
@@ -1023,15 +1031,63 @@ document.getElementById('si-submit').addEventListener('click', async () => {
 });
 
 // ── Sign Up ──────────────────────────────────────────────────────────────────
+function su_get_mode() {
+  const view = document.querySelector('[data-view="sign-up"]');
+  return (view && view.dataset.signupMode) || 'email-username';
+}
+
+function su_apply_mode(mode) {
+  const view = document.querySelector('[data-view="sign-up"]');
+  if (view) view.dataset.signupMode = mode;
+  const emailField = document.getElementById('su-email-field');
+  const userField  = document.getElementById('su-user-field');
+  if (mode === 'email') {
+    emailField.style.display = '';
+    userField.style.display  = 'none';
+  } else if (mode === 'username') {
+    emailField.style.display = 'none';
+    userField.style.display  = '';
+  } else { // email-username
+    emailField.style.display = '';
+    userField.style.display  = '';
+  }
+  // highlight active mode button
+  document.querySelectorAll('[data-signup-mode]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.signupMode === mode);
+  });
+}
+
+// wire demo-bar mode toggle buttons
+document.querySelectorAll('[data-signup-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    su_apply_mode(btn.dataset.signupMode);
+    showView('sign-up');
+  });
+});
+
+// apply initial mode on load
+su_apply_mode(su_get_mode());
+
 document.getElementById('su-submit').addEventListener('click', async () => {
   hide_error('su-error');
+  const mode = su_get_mode();
+  const email    = document.getElementById('su-email').value.trim();
   const username = document.getElementById('su-user').value.trim();
   const password = document.getElementById('su-pass').value;
   const password_confirm = document.getElementById('su-pass2').value;
-  if (!username || !password) return show_error('su-error-msg', 'su-error', 'Please fill in all fields.');
-  if (password !== password_confirm) return show_error('su-error-msg', 'su-error', 'Passwords do not match.');
+
+  if (mode === 'email' && !email)              return show_error('su-error-msg', 'su-error', 'Please enter your email address.');
+  if (mode === 'username' && !username)         return show_error('su-error-msg', 'su-error', 'Please enter a username.');
+  if (mode === 'email-username' && (!email || !username)) return show_error('su-error-msg', 'su-error', 'Please fill in all fields.');
+  if (!password)                                return show_error('su-error-msg', 'su-error', 'Please enter a password.');
+  if (password !== password_confirm)            return show_error('su-error-msg', 'su-error', 'Passwords do not match.');
+
+  const payload = { password, password_confirm };
+  if (mode === 'email' || mode === 'email-username') payload.email = email;
+  if (mode === 'username' || mode === 'email-username') payload.username = username;
+
   set_loading('su-submit', true);
-  const { final_url, error } = await api_post('/auth/sign-up', { username, password, password_confirm });
+  const { final_url, error } = await api_post('/auth/sign-up', payload);
   set_loading('su-submit', false);
   if (error) return show_error('su-error-msg', 'su-error', error);
   navigate_after(final_url);
