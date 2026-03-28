@@ -1,5 +1,6 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
+const complete_password_change = require('../actions/complete_password_change');
 const complete_password_reset_confirm = require('../actions/complete_password_reset_confirm');
 const complete_password_reset_request = require('../actions/complete_password_reset_request');
 const complete_sign_in = require('../actions/complete_sign_in');
@@ -14,7 +15,6 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
-const replace_session = require('../helpers/replace_session');
 const users_create = require('../helpers/models/users_create');
 
 const routes = [
@@ -302,9 +302,7 @@ async function change_password_post(req, res)
     const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 
-    await replace_session(req, user);
-
-    redirect(req, res);
+    await complete_password_change(req, res, user.id);
 }
 
 module.exports = routes;
