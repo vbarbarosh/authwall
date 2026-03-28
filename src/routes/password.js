@@ -18,10 +18,6 @@ const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
 
 const routes = [
-    // {req: 'GET /auth/sign-in', fn: sign_in_get},
-    // {req: 'GET /auth/sign-up', fn: sign_up_get},
-    // {req: 'GET /auth/forgot-password', fn: forgot_password_get},
-    // {req: 'GET /auth/reset-password', fn: reset_password_get},
     {prepend: [csrf_middleware], routes: [
         {req: 'POST /auth/sign-in', fn: sign_in_post},
         {req: 'POST /auth/sign-up', fn: sign_up_post},
@@ -35,61 +31,6 @@ const routes = [
         ]},
     ]},
 ];
-
-// // GET /auth/sign-in
-// async function sign_in_get(req, res)
-// {
-//     res.sendFile(fs_path_resolve(__dirname, '../static/sign-in.html'));
-// }
-//
-// // GET /auth/sign-up
-// async function sign_up_get(req, res)
-// {
-//     res.sendFile(fs_path_resolve(__dirname, '../static/sign-up.html'));
-// }
-//
-// // GET /auth/forgot-password
-// async function forgot_password_get(req, res)
-// {
-//     if (req.session.user_id) {
-//         // If a user is already authenticated, the forgot-password page probably shouldn't be used.
-//         redirect(req, res);
-//         return;
-//     }
-//
-//     res.sendFile(fs_path_resolve(__dirname, '../static/forgot-password.html'));
-// }
-//
-// // GET /auth/reset-password
-// async function reset_password_get(req, res)
-// {
-//     const {token} = req.query;
-//     if (!token) {
-//         throw new Error('Missing token');
-//     }
-//
-//     const now = new Date();
-//     const reset = await db('password_reset_tokens')
-//         .whereNull('used_at')
-//         .where({token_hash: crypto_hash_sha256(token)})
-//         .where('expires_at', '>', now)
-//         .first();
-//     if (!reset) {
-//         throw new Error('Invalid reset token');
-//     }
-//
-//     res.sendFile(fs_path_resolve(__dirname, '../static/reset-password.html'));
-// }
-//
-// // GET /auth/change-password
-// async function change_password_get(req, res)
-// {
-//     if (!req.session.user_id) {
-//         return redirect(req, res, '/auth/sign-in');
-//     }
-//
-//     res.sendFile(fs_path_resolve(__dirname, '../static/change-password.html'));
-// }
 
 // POST /auth/sign-in
 async function sign_in_post(req, res)
