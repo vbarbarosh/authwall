@@ -60,6 +60,15 @@ async function main()
         next();
     });
 
+    app.get('/auth', function (req, res) {
+        if (req.session?.user_id) {
+            res.redirect(config.pages.profile);
+        }
+        else {
+            res.redirect(config.pages.sign_in);
+        }
+    });
+
     express_routes(app, require('./routes/dev'));
     express_routes(app, require('./routes/magic_link'));
     express_routes(app, require('./routes/oauth_google'));
