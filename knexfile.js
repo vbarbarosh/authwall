@@ -3,15 +3,15 @@ module.exports = {
     sqlite: {
         client: 'better-sqlite3',
         connection: {
-            filename: './data/db.sqlite3'
+            filename: `${__dirname}/data/db.sqlite3`
         },
         useNullAsDefault: true,
         migrations: {
-            directory: './db/migrations',
+            directory: `${__dirname}/db/migrations`,
             tableName: 'knex_migrations'
         },
         seeds: {
-            directory: './db/seeds',
+            directory: `${__dirname}/db/seeds`,
         },
     },
 
@@ -23,11 +23,11 @@ module.exports = {
             max: 10
         },
         migrations: {
-            directory: './db/migrations',
+            directory: `${__dirname}/db/migrations`,
             tableName: 'knex_migrations'
         },
         seeds: {
-            directory: './db/seeds',
+            directory: `${__dirname}/db/seeds`,
         },
     },
 
