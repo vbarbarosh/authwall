@@ -6,8 +6,6 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function complete_magic_link_request(req, res, email, code, token)
 {
-    redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
-
     await send_email({
         to: {email},
         path: fs_path_resolve(__dirname, '../../design/emails/magic-link.txt'),
@@ -17,6 +15,8 @@ async function complete_magic_link_request(req, res, email, code, token)
             link: config.public_url + urlmod(config.pages.magic_link_confirm, {token}),
         },
     });
+
+    redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
 }
 
 module.exports = complete_magic_link_request;

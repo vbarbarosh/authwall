@@ -7,8 +7,6 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function complete_email_verify_request(req, res, user_id, email, token)
 {
-    redirect(req, res, config.pages.email_verify_notice);
-
     const user = await db('users').where('id', user_id).first();
 
     await send_email({
@@ -19,6 +17,8 @@ async function complete_email_verify_request(req, res, user_id, email, token)
             link: config.public_url + urlmod(config.pages.email_verify_confirm, {token}),
         },
     });
+
+    redirect(req, res, config.pages.email_verify_notice);
 }
 
 module.exports = complete_email_verify_request;

@@ -4,7 +4,7 @@ const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
-const send_email = require('../helpers/send_email');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function complete_sign_in(req, res, user)
@@ -14,7 +14,7 @@ async function complete_sign_in(req, res, user)
     redirect(req, res);
 
     const email_and_name = await get_user_email_and_name(user.id);
-    await send_email({
+    await send_email_nothrow({
         user,
         path: fs_path_resolve(__dirname, '../../design/emails/new-sign-in.txt'),
         placeholders: {

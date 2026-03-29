@@ -39,7 +39,7 @@ async function magic_link_request_post(req, res)
     }
 
     // prevent spamming
-    const magic_link = await db('magic_links').where({email}).orderBy('id', 'desc').first();
+    const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
     if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
         throw new Error('Magic link already sent. Please wait.');
     }
