@@ -69,9 +69,9 @@ async function email_verify_confirm_get(req, res)
         throw new Error('Invalid or expired verification link');
     }
 
-    await db.transaction(async function (trx) {
-        await trx('email_verify_tokens').where({id: record.id}).update({used_at: now, updated_at: now});
-        await trx('user_identities')
+    await db.transaction(async function () {
+        await db('email_verify_tokens').where({id: record.id}).update({used_at: now, updated_at: now});
+        await db('user_identities')
             .where({
                 user_id: record.user_id,
                 type: const_user_identity.email,

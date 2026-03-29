@@ -1,6 +1,38 @@
-const knex = require('knex');
+const async_hooks = require('async_hooks');
 const config = require('../config');
+const knex = require('knex');
 
-const db = knex(config.knexvars);
+const als = new async_hooks.AsyncLocalStorage();
+const inst = knex(config.knexvars);
+
+function current()
+{
+    return als.getStore() ?? inst;
+}
+
+const db = new Proxy((...args) => current()(...args), {
+    get(_, prop) {
+        if (prop === 'destroy') {
+            return inst.destroy.bind(inst);
+        }
+        if (prop === 'transaction') {
+            return async function (fn) {
+                if (!fn) {
+                    throw new Error('db.transaction(fn) requires a callback');
+                }
+                if (fn.length > 0) {
+                    throw new Error('db.transaction(fn) must not accept arguments');
+                }
+                return current().transaction(trx => als.run(trx, fn));
+            };
+        }
+        const target = current();
+        const value = target[prop];
+        if (typeof value === 'function') {
+            return value.bind(target);
+        }
+        return value;
+    }
+});
 
 module.exports = db;

@@ -118,13 +118,13 @@ async function google_callback_get(req, res)
         user_id = ident.user_id;
     }
     else {
-        await db.transaction(async function (trx) {
+        await db.transaction(async function () {
             const now = new Date();
             const display_name = userinfo.name;
             const avatar_url = userinfo.picture;
-            const user = await users_create({trx, display_name, avatar_url});
+            const user = await users_create({display_name, avatar_url});
             user_id = user.id;
-            await trx('user_identities').insert({
+            await db('user_identities').insert({
                 user_id,
                 type: const_user_identity.oauth_google,
                 value: null,
@@ -137,7 +137,7 @@ async function google_callback_get(req, res)
                 const email = userinfo.email;
                 const email_normalized = normalize_email(userinfo.email);
                 if (email_normalized) {
-                    await trx('user_identities').insert({
+                    await db('user_identities').insert({
                         user_id,
                         type: const_user_identity.email,
                         value: email,

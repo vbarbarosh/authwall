@@ -111,8 +111,8 @@ async function sign_up_post(req, res)
     try {
         const now = new Date();
         let user;
-        await db.transaction(async function (trx) {
-            user = await users_create({trx, password});
+        await db.transaction(async function () {
+            user = await users_create({password});
             const insert = [];
             if (email_normalized) {
                 insert.push({
@@ -136,7 +136,7 @@ async function sign_up_post(req, res)
                     verified_at: now,
                 });
             }
-            await trx('user_identities').insert(insert);
+            await db('user_identities').insert(insert);
         });
 
         await complete_sign_up(req, res, user);
@@ -207,10 +207,10 @@ async function password_reset_confirm_post(req, res)
     }
 
     const password_hash = await bcrypt.hash(password, config.password_rounds);
-    await db.transaction(async function (trx) {
+    await db.transaction(async function () {
         const now = new Date();
-        await trx('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
-        await trx('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
+        await db('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
+        await db('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
     });
 
     await complete_password_reset_confirm(req, res, reset.user_id);

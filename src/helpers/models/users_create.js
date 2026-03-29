@@ -6,7 +6,6 @@ const random_uid_user = require('../random/random_uid_user');
 
 async function users_create(params = {})
 {
-    const trx = params.trx ?? db;
     const uid = params.uid ?? random_uid_user();
     const slug = params.slug ?? random_slug();
     const password_hash = params.password_hash
@@ -18,7 +17,7 @@ async function users_create(params = {})
     const avatar_url = params.avatar_url ?? null;
 
     const now = new Date();
-    await trx('users').insert({
+    await db('users').insert({
         uid,
         slug,
         password_hash,
@@ -28,7 +27,7 @@ async function users_create(params = {})
         updated_at: now,
     });
 
-    return trx('users').where('uid', uid).first();
+    return db('users').where('uid', uid).first();
 }
 
 module.exports = users_create;
