@@ -10,4 +10,4 @@ scriptname=`basename $script`
 
 cd $scriptdir/..
 
-npx playwright test "$@"
+npm run test
