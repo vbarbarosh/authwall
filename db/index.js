@@ -10,7 +10,10 @@ function current()
     return als.getStore() ?? inst;
 }
 
-const db = new Proxy((...args) => current()(...args), {
+const db = new Proxy(function () {}, {
+    apply(_, __, args) {
+        return current()(...args);
+    },
     get(_, prop) {
         if (prop === 'destroy') {
             return inst.destroy.bind(inst);
