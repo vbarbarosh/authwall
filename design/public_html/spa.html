@@ -1153,13 +1153,13 @@ document.getElementById('su-submit').addEventListener('click', async () => {
 
   if (mode === 'email' && !email)              return show_error('su-error-msg', 'su-error', 'Please enter your email address.');
   if (mode === 'username' && !username)         return show_error('su-error-msg', 'su-error', 'Please enter a username.');
-  if (mode === 'email-username' && (!email || !username)) return show_error('su-error-msg', 'su-error', 'Please fill in all fields.');
+  if (mode === 'email-username' && !email && !username) return show_error('su-error-msg', 'su-error', 'Please enter an email or username.');
   if (!password)                                return show_error('su-error-msg', 'su-error', 'Please enter a password.');
   if (password !== password_confirm)            return show_error('su-error-msg', 'su-error', 'Passwords do not match.');
 
   const payload = { password, password_confirm };
   if (mode === 'email' || mode === 'email-username') payload.email = email;
-  if (mode === 'username' || mode === 'email-username') payload.username = username;
+  if (mode === 'username' || (mode === 'email-username' && username)) payload.username = username;
 
   set_loading('su-submit', true);
   const { final_url, error } = await api_post('/auth/sign-up', payload);
