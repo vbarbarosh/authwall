@@ -16,6 +16,7 @@ const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
+const validate_email_sign_up = require('../helpers/validate/validate_email_sign_up');
 
 const routes = [
     {prepend: [csrf_middleware], routes: [
@@ -101,6 +102,7 @@ async function sign_up_post(req, res)
         if (await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first()) {
             throw new Error('Email already exists');
         }
+        await validate_email_sign_up(email_normalized);
     }
     if (username_normalized) {
         if (await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first()) {

@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
+const parse_domains = require('../src/helpers/parse_domains');
+const resolve_env_vars = require('../src/helpers/resolve_env_vars');
 const yaml = require('yaml');
 
 const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
@@ -16,7 +18,7 @@ let LOG_DIR = null;
 const LOG_FILE = process.env.LOG_FILE ?? null;
 const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
 
-const settings = yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'}));
+const settings = resolve_env_vars(yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'})));
 
 const config = {
     seed_users: Array.from(settings.seed_users||[]),
@@ -56,6 +58,11 @@ const config = {
 
         // destructive / confirmation
         sign_out: '/auth/sign-out',
+    },
+
+    registration: {
+        denied_domains: parse_domains(settings.registration.denied_domains),
+        allowed_domains: parse_domains(settings.registration.allowed_domains),
     },
 
     log_file: LOG_FILE,

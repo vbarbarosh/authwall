@@ -12,6 +12,7 @@ const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
+const validate_email_sign_up = require('../helpers/validate/validate_email_sign_up');
 
 const routes = [
     {req: 'GET /auth/google', fn: google_get},
@@ -136,6 +137,7 @@ async function google_callback_get(req, res)
             if (userinfo.email_verified) {
                 const email = userinfo.email;
                 const email_normalized = normalize_email(userinfo.email);
+                await validate_email_sign_up(email_normalized);
                 if (email_normalized) {
                     await db('user_identities').insert({
                         user_id,

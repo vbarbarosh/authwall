@@ -1,5 +1,7 @@
 const bcrypt = require('bcrypt');
+const complete_magic_link_request = require('../actions/complete_magic_link_request');
 const complete_sign_in = require('../actions/complete_sign_in');
+const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
@@ -9,11 +11,8 @@ const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
-const redirect = require('../helpers/redirect');
-const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
-const complete_magic_link_request = require('../actions/complete_magic_link_request');
-const complete_sign_up = require('../actions/complete_sign_up');
+const validate_email_sign_up = require('../helpers/validate/validate_email_sign_up');
 
 const SECOND = 1000;
 
@@ -37,6 +36,7 @@ async function magic_link_request_post(req, res)
     if (!email) {
         throw new Error('Invalid email');
     }
+    await validate_email_sign_up(email_normalized);
 
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
@@ -83,6 +83,7 @@ async function magic_link_confirm_get(req, res)
 
     const email = magic_link.email;
     const email_normalized = magic_link.email_normalized;
+    await validate_email_sign_up(email_normalized);
 
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
@@ -117,6 +118,7 @@ async function magic_link_confirm_post(req, res)
     if (!email_normalized) {
         throw new Error('Invalid email');
     }
+    await validate_email_sign_up(email_normalized);
 
     const now = new Date();
     const magic_link = await db('magic_links')
