@@ -52,7 +52,7 @@ async function send_email(params)
     //     }
     // }
     if (response.error) {
-        throw new Error(response.error.message);
+        throw new Error(`Email delivery failed: ${response.error.message}`);
     }
 }
 
