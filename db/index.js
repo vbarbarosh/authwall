@@ -26,7 +26,8 @@ const db = new Proxy(function () {}, {
                 if (fn.length > 0) {
                     throw new Error('db.transaction(fn) must not accept arguments');
                 }
-                return current().transaction(trx => als.run(trx, () => fn()));
+                // Nested transactions: always create a savepoint
+                return current().transaction(trx => als.run(trx, fn));
             };
         }
         const target = current();
