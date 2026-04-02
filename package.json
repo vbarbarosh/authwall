@@ -9,14 +9,16 @@
     "migrate": "knex migrate:latest --env=sqlite",
     "migrate:make": "knex migrate:make --env=sqlite",
     "migrate:rollback": "knex migrate:rollback --env=sqlite",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "npm run test:unit && npm run test:api && npm run test:e2e",
     "test:unit": "mocha",
+    "test:api": "mocha --no-config --timeout 10000 'tests/api/**/*.test.js'",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
     "@vbarbarosh/express-helpers": "^2.2.1",
     "@vbarbarosh/node-helpers": "^3.74.0",
+    "axios": "^1.14.0",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.8.0",
     "bluebird": "^3.7.2",
