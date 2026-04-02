@@ -1,5 +1,6 @@
 const axios = require('axios');
 const config = require('../config');
+const cookie_signature = require('cookie-signature');
 const create_app = require('../src/create_app');
 const db = require('../db');
 const http = require('http');
@@ -24,7 +25,7 @@ function setup_servers()
         const app = await create_app();
         server = http.createServer(app);
         await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-        this.client = create_client(`http://127.0.0.1:${server.address().port}`);
+        this.client = create_client(`http://127.0.0.1:${server.address().port}`, trx);
     });
 
     afterEach(async function () {
@@ -51,7 +52,7 @@ async function create_echo_server()
     });
 }
 
-function create_client(base_url)
+function create_client(base_url, trx)
 {
     const map = new Map();
 
@@ -62,7 +63,41 @@ function create_client(base_url)
         post_json(url, data) {
             return request('post', url, data);
         },
+        get_session() {
+            return load_session();
+        },
     };
+
+    async function load_session() {
+        const pair = map.get('connect.sid');
+        if (!pair) {
+            return null;
+        }
+
+        const signed = decodeURIComponent(pair.slice('connect.sid='.length));
+        if (!signed.startsWith('s:')) {
+            throw new Error('Invalid session cookie');
+        }
+
+        const uid = cookie_signature.unsign(signed.slice(2), config.secrets.express_session);
+        if (!uid) {
+            throw new Error('Invalid session signature');
+        }
+
+        const row = await trx('sessions').where({uid}).first();
+        if (!row) {
+            return null;
+        }
+
+        return {
+            uid: row.uid,
+            user_id: row.user_id,
+            user_uid: row.user_uid,
+            ip: row.ip,
+            ua: row.ua,
+            ...JSON.parse(row.custom),
+        };
+    }
 
     async function request(method, url, data) {
         let current_method = method;

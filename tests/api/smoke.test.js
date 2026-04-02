@@ -6,12 +6,13 @@ describe('smoke tests', function () {
     setup_server();
 
     it('GET /auth/status', async function () {
+        await this.client.get_json('/auth/status');
         const status = await this.client.get_json('/auth/status');
-        status.csrf_token = typeof status.csrf_token;
+        const session = await this.client.get_session();
         assert.deepStrictEqual(status, {
             error: null,
             authenticated: false,
-            csrf_token: 'string',
+            csrf_token: session.csrf_token,
         });
     });
 
