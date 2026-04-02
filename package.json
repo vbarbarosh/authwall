@@ -11,7 +11,7 @@
     "migrate:rollback": "knex migrate:rollback --env=sqlite",
     "test": "npm run test:unit && npm run test:api && npm run test:e2e",
     "test:unit": "mocha",
-    "test:api": "mocha --no-config --timeout 10000 'tests/api/**/*.test.js'",
+    "test:api": "mocha --no-config --no-package --timeout 10000 'tests/api/**/*.test.js'",
     "test:e2e": "playwright test"
   },
   "dependencies": {
