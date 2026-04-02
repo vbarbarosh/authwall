@@ -6,6 +6,7 @@ const resend = require('resend');
 
 let client = null;
 
+// ⚠️ Do not send emails to non-verified email addresses.
 async function send_email(params)
 {
     const {to, user_id, user, path, placeholders} = params;
