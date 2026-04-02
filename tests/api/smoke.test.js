@@ -1,7 +1,7 @@
 const assert = require('assert');
 const setup_server = require('../setup_servers');
 
-describe('basic', function () {
+describe('smoke tests', function () {
 
     setup_server();
 

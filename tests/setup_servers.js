@@ -1,15 +1,21 @@
 const axios = require('axios');
 const config = require('../config');
 const create_app = require('../src/create_app');
-const http = require('http');
 const db = require('../db');
+const http = require('http');
 
 function setup_servers()
 {
+    let trx;
     let server;
     let echo_server;
 
     beforeEach(async function () {
+
+        const db_internals = await db.__mocha__;
+        trx = await db_internals.inst.transaction();
+        db_internals.als.enterWith(trx);
+
         echo_server = await create_echo_server();
         await new Promise(resolve => echo_server.listen(0, '127.0.0.1', resolve));
         this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
@@ -22,6 +28,7 @@ function setup_servers()
     });
 
     afterEach(async function () {
+        await trx.rollback();
         await new Promise((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
         await new Promise((resolve, reject) => echo_server.close(err => err ? reject(err) : resolve()));
     });

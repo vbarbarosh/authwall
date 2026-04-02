@@ -5,9 +5,11 @@ const knex = require('knex');
 const als = new async_hooks.AsyncLocalStorage();
 const inst = knex(config.knexvars);
 
+als.enterWith(inst);
+
 function current()
 {
-    return als.getStore() ?? inst;
+    return als.getStore();// ?? inst;
 }
 
 const db = new Proxy(function () {}, {
@@ -15,6 +17,9 @@ const db = new Proxy(function () {}, {
         return current()(...args);
     },
     get(_, prop) {
+        if (prop === '__mocha__') {
+            return {als, inst};
+        }
         if (prop === 'destroy') {
             return inst.destroy.bind(inst);
         }
