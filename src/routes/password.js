@@ -1,4 +1,5 @@
 const auth_middleware = require('../helpers/middleware/auth_middleware');
+const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
 const complete_password_change = require('../actions/complete_password_change');
 const complete_password_reset_confirm = require('../actions/complete_password_reset_confirm');
@@ -16,7 +17,6 @@ const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
-const validate_email_sign_up = require('../helpers/validate/validate_email_sign_up');
 
 const routes = [
     {prepend: [csrf_middleware], routes: [
@@ -49,6 +49,7 @@ async function sign_in_post(req, res)
         if (!email_normalized) {
             throw new Error('Invalid username or password');
         }
+        await authorize_email(email_normalized);
         ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     }
     else {
@@ -102,7 +103,7 @@ async function sign_up_post(req, res)
         if (await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first()) {
             throw new Error('Email already exists');
         }
-        await validate_email_sign_up(email_normalized);
+        await authorize_email(email_normalized);
     }
     if (username_normalized) {
         if (await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first()) {

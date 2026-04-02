@@ -1,3 +1,4 @@
+const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
 const complete_magic_link_request = require('../actions/complete_magic_link_request');
 const complete_sign_in = require('../actions/complete_sign_in');
@@ -12,7 +13,6 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const users_create = require('../helpers/models/users_create');
-const validate_email_sign_up = require('../helpers/validate/validate_email_sign_up');
 
 const SECOND = 1000;
 
@@ -36,7 +36,7 @@ async function magic_link_request_post(req, res)
     if (!email) {
         throw new Error('Invalid email');
     }
-    await validate_email_sign_up(email_normalized);
+    await authorize_email(email_normalized);
 
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
@@ -83,7 +83,7 @@ async function magic_link_confirm_get(req, res)
 
     const email = magic_link.email;
     const email_normalized = magic_link.email_normalized;
-    await validate_email_sign_up(email_normalized);
+    await authorize_email(email_normalized);
 
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
@@ -118,7 +118,7 @@ async function magic_link_confirm_post(req, res)
     if (!email_normalized) {
         throw new Error('Invalid email');
     }
-    await validate_email_sign_up(email_normalized);
+    await authorize_email(email_normalized);
 
     const now = new Date();
     const magic_link = await db('magic_links')

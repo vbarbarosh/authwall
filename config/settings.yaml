@@ -16,8 +16,16 @@ public_paths:
   # well-known endpoints
   - /.well-known/appspecific/com.chrome.devtools.json
 
-registration:
-  # policy: enabled # enabled | disabled | domain_allowlist | invite_only
+access:
+  # (1) denied_emails -> deny
+  # (2) allowed_emails -> allow
+  # (3) denied_domains -> deny
+  # (4) allowed_domains -> allow
+  # - Empty fields are ignored
+  # - If neither allowed_emails nor allowed_domains is set, the default action is allow
+  # - If either is set, the default action is deny
+  allowed_emails: ${AUTHWALL_ALLOWED_EMAILS}
+  denied_emails: ${AUTHWALL_DENIED_EMAILS}
   denied_domains: ${AUTHWALL_DENIED_DOMAINS}
   allowed_domains: ${AUTHWALL_ALLOWED_DOMAINS}
 

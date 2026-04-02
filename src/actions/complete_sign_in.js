@@ -14,6 +14,9 @@ async function complete_sign_in(req, res, user)
     redirect(req, res);
 
     const email_and_name = await get_user_email_and_name(user.id);
+    if (!email_and_name) {
+        return;
+    }
     await send_email_nothrow({
         user,
         path: fs_path_resolve(__dirname, '../../design/emails/new-sign-in.txt'),

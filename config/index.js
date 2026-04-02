@@ -60,9 +60,11 @@ const config = {
         sign_out: '/auth/sign-out',
     },
 
-    registration: {
-        denied_domains: parse_domains(settings.registration.denied_domains),
-        allowed_domains: parse_domains(settings.registration.allowed_domains),
+    access: {
+        denied_emails: parse_domains(settings.access.denied_emails),
+        allowed_emails: parse_domains(settings.access.allowed_emails),
+        denied_domains: parse_domains(settings.access.denied_domains),
+        allowed_domains: parse_domains(settings.access.allowed_domains),
     },
 
     log_file: LOG_FILE,
