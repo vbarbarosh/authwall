@@ -4,6 +4,7 @@ const cookie_signature = require('cookie-signature');
 const create_app = require('../src/create_app');
 const db = require('../db');
 const http = require('http');
+const promisify = require('../src/helpers/promisify');
 
 function setup_servers()
 {
@@ -30,8 +31,8 @@ function setup_servers()
 
     afterEach(async function () {
         await trx.rollback();
-        await new Promise((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
-        await new Promise((resolve, reject) => echo_server.close(err => err ? reject(err) : resolve()));
+        await promisify(cb => server.close(cb));
+        await promisify(cb => echo_server.close(cb));
     });
 
     after(async function () {
