@@ -35,7 +35,8 @@ function setup_servers()
     });
 
     after(async function () {
-        await db.destroy();
+        // moved to tests/api/_mocha.setup.js
+        // await db.destroy();
     });
 }
 
