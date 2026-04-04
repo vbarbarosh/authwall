@@ -1,10 +1,10 @@
+/.claude
 /.env
 /data
 /node_modules
 
 # Playwright
 /blob-report/
-/node_modules/
 /playwright-report/
 /playwright/.auth/
 /playwright/.cache/
