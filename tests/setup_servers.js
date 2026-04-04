@@ -28,10 +28,8 @@ function setup_servers()
         trx = await db_internals.inst.transaction();
         db_internals.als.enterWith(trx);
 
-        const m_db_als = function (fn) {
-            return function (...args) {
-                return db_internals.als.run(trx, () => fn.apply(this, args));
-            };
+        this.__db_als__ = function (fn, args) {
+            return db_internals.als.run(trx, () => fn.apply(this, args));
         };
 
         echo_server = await create_echo_server();
@@ -44,10 +42,11 @@ function setup_servers()
         await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
         this.base_url = `http://127.0.0.1:${server.address().port}`;
         config.public_url = this.base_url;
-        this.client = create_client(this.base_url, m_db_als);
+        this.client = create_client(this.base_url);
 
-        this.add_user = m_db_als(add_user);
-        this.sign_in = m_db_als(sign_in.bind(this));
+        this.add_user = add_user;
+        this.sign_in = sign_in;
+
     });
 
     afterEach(async function () {
@@ -75,7 +74,7 @@ async function create_echo_server()
     });
 }
 
-function create_client(base_url, m_db_als)
+function create_client(base_url)
 {
     const map = new Map();
 
@@ -95,9 +94,9 @@ function create_client(base_url, m_db_als)
 
             return request('post', url, form);
         },
-        get_session: m_db_als(function () {
+        get_session() {
             return load_session();
-        }),
+        },
     };
 
     async function load_session() {
