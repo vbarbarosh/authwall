@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const bootstrap_database = require('./helpers/bootstrap_database');
+const bootstrap_services = require('./helpers/bootstrap_services');
 const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
@@ -11,6 +12,7 @@ cli(main);
 
 async function main()
 {
+    await bootstrap_services();
     await bootstrap_database();
     await bootstrap_users();
 

@@ -4,7 +4,9 @@ const cookie_signature = require('cookie-signature');
 const create_app = require('../src/create_app');
 const db = require('../db');
 const http = require('http');
+const make_mailer_fake = require('../src/services/mailer/make_mailer_fake');
 const promisify = require('../src/helpers/promisify');
+const services = require('../src/services');
 
 function setup_servers()
 {
@@ -13,6 +15,9 @@ function setup_servers()
     let echo_server;
 
     beforeEach(async function () {
+
+        this.sent_emails = [];
+        services.mailer = make_mailer_fake(this.sent_emails);
 
         const db_internals = await db.__mocha__;
         trx = await db_internals.inst.transaction();
