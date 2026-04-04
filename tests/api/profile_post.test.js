@@ -1,5 +1,5 @@
+const assert = require('assert');
 const setup_server = require('../setup_servers');
-const assert = require('node:assert');
 
 describe('POST /auth/profile', function () {
 

@@ -21,8 +21,8 @@ async function send_email(params)
         text: body,
     });
 
-    console.log(`[send_email_request] ${JSON.stringify(request)}`);
-    console.log(`[send_email_response] ${JSON.stringify(response)}`);
+    // console.log(`[send_email_request] ${JSON.stringify(request)}`);
+    // console.log(`[send_email_response] ${JSON.stringify(response)}`);
 }
 
 module.exports = send_email;

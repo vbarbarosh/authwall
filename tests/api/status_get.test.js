@@ -1,0 +1,27 @@
+const assert = require('assert');
+const setup_servers = require('../setup_servers');
+
+describe('GET /auth/status', function () {
+
+    setup_servers();
+
+    it('returns unauthenticated status for anonymous user', async function () {
+        const status = await this.client.get_json('/auth/status');
+        assert.deepStrictEqual(status.authenticated, false);
+    });
+
+    it('returns authenticated status with user info', async function () {
+        await this.sign_in();
+        const status = await this.client.get_json('/auth/status');
+        assert.deepStrictEqual(status.authenticated, true);
+    });
+
+    it('clears error from session after returning it', async function () {
+        await this.client.post_json('/auth/sign-in')
+        const status = await this.client.get_json('/auth/status');
+        assert.deepStrictEqual(status.error, '[403] Invalid CSRF Token');
+        const status2 = await this.client.get_json('/auth/status');
+        assert.deepStrictEqual(status2.error, null);
+    });
+
+});

@@ -11,6 +11,7 @@ const normalize_username = require('../src/helpers/normalize/normalize_username'
 const promisify = require('../src/helpers/promisify');
 const services = require('../src/services');
 const users_create = require('../src/helpers/models/users_create');
+const normalize_email = require('../src/helpers/normalize/normalize_email');
 
 function setup_servers()
 {
@@ -45,6 +46,7 @@ function setup_servers()
         config.public_url = this.base_url;
         this.client = create_client(this.base_url, m_db_als);
 
+        this.add_user = m_db_als(add_user);
         this.sign_in = m_db_als(sign_in.bind(this));
     });
 
@@ -219,20 +221,37 @@ async function append_form_value(form, key, value)
     form.append(key, String(value));
 }
 
-async function sign_in()
+async function add_user(params = {})
 {
-    const username = 'mocha';
-    const password = 'mocha';
+    const password = params.password ?? 'mocha';
+
+    const username = params.username ?? 'mocha';
     const username_normalized = normalize_username(username);
+
+    const email = params.email ?? 'mocha@authwall.test';
+    const email_normalized = normalize_email(email);
 
     const user = await users_create({password});
     const now = new Date();
     const base = {user_id: user.id, created_at: now, updated_at: now, verified_at: now};
-    const rows = [{...base, type: const_user_identity.username, value: username, value_normalized: username_normalized}];
+    const rows = [];
+    if (username_normalized) {
+        rows.push({...base, type: const_user_identity.username, value: username, value_normalized: username_normalized});
+    }
+    if (email_normalized) {
+        rows.push({...base, type: const_user_identity.email, value: email, value_normalized: email_normalized});
+    }
     await db('user_identities').insert(rows);
 
+    return {email, username, password};
+}
+
+async function sign_in(params)
+{
+    const tmp = await add_user(params);
+
     const status = await this.client.get_json('/auth/status');
-    await this.client.post_json('/auth/sign-in', {username, password, _csrf: status.csrf_token});
+    await this.client.post_json('/auth/sign-in', {username: tmp.username ?? tmp.email, password: tmp.password, _csrf: status.csrf_token});
 }
 
 module.exports = setup_servers;
