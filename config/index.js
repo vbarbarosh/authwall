@@ -70,7 +70,7 @@ const config = {
     log_file: LOG_FILE,
     log_file_http: LOG_FILE ?? function () {
         if (LOG_DIR === null) {
-            LOG_DIR = fs_path_resolve(__dirname, '../../data/logs');
+            LOG_DIR = fs_path_resolve(__dirname, '../data/logs');
             fs.mkdirSync(LOG_DIR, {recursive: true});
         }
         return `${LOG_DIR}/http-${new Date().toJSON().substring(0, 10)}.log`;
