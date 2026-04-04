@@ -10,8 +10,8 @@
     "migrate:make": "knex migrate:make --env=sqlite",
     "migrate:rollback": "knex migrate:rollback --env=sqlite",
     "test": "npm run test:unit && npm run test:api && npm run test:e2e",
-    "test:unit": "mocha",
-    "test:api": "mocha --no-config --no-package --require tests/api/_mocha.setup.js --timeout 10000 'tests/api/**/*.test.js'",
+    "test:unit": "mocha --no-package --config mocha.unit.js",
+    "test:api": "mocha --no-package --config mocha.api.js",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -39,8 +39,10 @@
     "mocha": "^11.7.5",
     "nodemon": "^3.1.14"
   },
+  "__mocha__": "The following is just for PhpStorm",
   "mocha": {
-    "spec": "src/**/*.test.js",
-    "timeout": 5000
+    "require": [
+      "mocha.api.js"
+    ]
   }
 }

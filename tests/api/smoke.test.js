@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_server = require('../setup_servers');
 
 describe('smoke tests', function () {
-
-    setup_server();
 
     it('GET /auth/status', async function () {
         await this.client.get_json('/auth/status');

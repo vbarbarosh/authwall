@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('POST /auth/password-reset/confirm', function () {
-
-    setup_servers();
 
     it('resets password with valid token', async function () {
         await this.add_user({email: 'mocha@authwall.test'});

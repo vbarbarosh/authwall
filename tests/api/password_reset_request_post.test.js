@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('POST /auth/password-reset/request', function () {
-
-    setup_servers();
 
     it('sends reset email for known email', async function () {
         const user = await this.add_user();

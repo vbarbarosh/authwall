@@ -1,5 +1,6 @@
 const Runnable = require('mocha/lib/runnable');
-const db = require('../../db');
+const db = require('./db');
+const setup_servers = require('./tests/setup_servers');
 
 const original_run = Runnable.prototype.run;
 
@@ -18,7 +19,16 @@ Runnable.prototype.run = function (fn) {
 };
 
 module.exports = {
+    spec: 'tests/api/**/*.test.js',
+    timeout: 10000,
+    require: [__filename],
     mochaHooks: {
+        beforeEach: async function () {
+            await setup_servers.setup_servers_before_each.call(this);
+        },
+        afterEach: async function () {
+            await setup_servers.setup_servers_after_each.call(this);
+        },
         afterAll: async function () {
             await db.destroy();
         },

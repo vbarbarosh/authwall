@@ -7,58 +7,54 @@ const db = require('../db');
 const fs = require('fs/promises');
 const http = require('http');
 const make_mailer_fake = require('../src/services/mailer/make_mailer_fake');
+const normalize_email = require('../src/helpers/normalize/normalize_email');
 const normalize_username = require('../src/helpers/normalize/normalize_username');
 const promisify = require('../src/helpers/promisify');
 const services = require('../src/services');
 const users_create = require('../src/helpers/models/users_create');
-const normalize_email = require('../src/helpers/normalize/normalize_email');
 
-function setup_servers()
+async function setup_servers_before_each()
 {
-    let trx;
-    let server;
-    let echo_server;
+    this.sent_emails = [];
+    services.mailer = make_mailer_fake(this.sent_emails);
 
-    beforeEach(async function () {
+    const db_internals = await db.__mocha__;
+    const trx = await db_internals.inst.transaction();
+    db_internals.als.enterWith(trx);
 
-        this.sent_emails = [];
-        services.mailer = make_mailer_fake(this.sent_emails);
+    this.__db_als__ = function (fn, args) {
+        return db_internals.als.run(trx, () => fn.apply(this, args));
+    };
 
-        const db_internals = await db.__mocha__;
-        trx = await db_internals.inst.transaction();
-        db_internals.als.enterWith(trx);
+    const echo_server = await create_echo_server();
+    await new Promise(resolve => echo_server.listen(0, '127.0.0.1', resolve));
+    this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
+    config.target_url = this.echo_url;
 
-        this.__db_als__ = function (fn, args) {
-            return db_internals.als.run(trx, () => fn.apply(this, args));
-        };
+    const app = await create_app();
+    const server = http.createServer(app);
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    this.base_url = `http://127.0.0.1:${server.address().port}`;
+    config.public_url = this.base_url;
+    this.client = create_client(this.base_url);
 
-        echo_server = await create_echo_server();
-        await new Promise(resolve => echo_server.listen(0, '127.0.0.1', resolve));
-        this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
-        config.target_url = this.echo_url;
+    this.add_user = add_user;
+    this.sign_in = sign_in;
 
-        const app = await create_app();
-        server = http.createServer(app);
-        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-        this.base_url = `http://127.0.0.1:${server.address().port}`;
-        config.public_url = this.base_url;
-        this.client = create_client(this.base_url);
+    this.__trx = trx;
+    this.__server = server;
+    this.__echo_server = echo_server;
+}
 
-        this.add_user = add_user;
-        this.sign_in = sign_in;
+async function setup_servers_after_each()
+{
+    const trx = this.__trx;
+    const server = this.__server;
+    const echo_server= this.__echo_server;
 
-    });
-
-    afterEach(async function () {
-        await trx.rollback();
-        await promisify(cb => server.close(cb));
-        await promisify(cb => echo_server.close(cb));
-    });
-
-    after(async function () {
-        // moved to tests/api/_mocha.setup.js
-        // await db.destroy();
-    });
+    await trx.rollback();
+    await promisify(cb => server.close(cb));
+    await promisify(cb => echo_server.close(cb));
 }
 
 async function create_echo_server()
@@ -253,4 +249,7 @@ async function sign_in(params)
     await this.client.post_json('/auth/sign-in', {username: tmp.username ?? tmp.email, password: tmp.password, _csrf: status.csrf_token});
 }
 
-module.exports = setup_servers;
+module.exports = {
+    setup_servers_before_each,
+    setup_servers_after_each,
+};

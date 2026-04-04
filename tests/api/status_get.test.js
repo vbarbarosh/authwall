@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('GET /auth/status', function () {
-
-    setup_servers();
 
     it('returns unauthenticated status for anonymous user', async function () {
         const status = await this.client.get_json('/auth/status');

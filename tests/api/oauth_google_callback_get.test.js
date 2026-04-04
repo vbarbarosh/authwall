@@ -1,8 +1,4 @@
-const setup_servers = require('../setup_servers');
-
 describe('GET /auth/google/callback', function () {
-
-    setup_servers();
 
     it('signs in existing google user');
     it('signs up new google user');

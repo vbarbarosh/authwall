@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('POST /auth/sign-up', function () {
-
-    setup_servers();
 
     it('signs up with username and password', async function () {
         const status = await this.client.get_json('/auth/status');

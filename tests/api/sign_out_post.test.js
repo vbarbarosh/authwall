@@ -1,9 +1,6 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('POST /auth/sign-out', function () {
-
-    setup_servers();
 
     it('requires authentication', async function () {
     });

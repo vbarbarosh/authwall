@@ -3,8 +3,6 @@ const setup_servers = require('../setup_servers');
 
 describe('POST /auth/change-password', function () {
 
-    setup_servers();
-
     it('requires authentication');
 
     it('changes password for authenticated user', async function () {
