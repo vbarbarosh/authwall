@@ -1,18 +1,5 @@
 const setup_server = require('../setup_servers');
 
-describe('POST /auth/sign-in', function () {
-
-    setup_server();
-
-    it('signs in with email and password');
-    it('signs in with username and password');
-    it('fails with missing fields');
-    it('fails with invalid email');
-    it('fails with wrong password');
-    it('fails with unknown username');
-
-});
-
 describe('POST /auth/sign-up', function () {
 
     setup_server();
@@ -91,16 +78,6 @@ describe('POST /auth/change-password', function () {
     it('fails with missing fields');
     it('fails when passwords do not match');
     it('fails with wrong current password');
-    it('requires authentication');
-
-});
-
-describe('POST /auth/profile', function () {
-
-    setup_server();
-
-    it('updates display name');
-    it('uploads avatar image');
     it('requires authentication');
 
 });

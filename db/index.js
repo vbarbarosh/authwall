@@ -5,11 +5,18 @@ const knex = require('knex');
 const als = new async_hooks.AsyncLocalStorage();
 const inst = knex(config.knexvars);
 
-als.enterWith(inst);
-
 function current()
 {
-    return als.getStore();// ?? inst;
+    const out = als.getStore();
+    if (out) {
+        return out;
+    }
+    throw new Error('db out of AsyncLocalStorage');
+}
+
+function root_als(fn)
+{
+    return als.run(inst, fn);
 }
 
 const db = new Proxy(function () {}, {
@@ -22,6 +29,9 @@ const db = new Proxy(function () {}, {
         }
         if (prop === 'destroy') {
             return inst.destroy.bind(inst);
+        }
+        if (prop === 'root_als') {
+            return root_als;
         }
         if (prop === 'transaction') {
             return async function (fn) {

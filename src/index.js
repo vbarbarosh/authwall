@@ -6,9 +6,10 @@ const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
 const create_app = require('./create_app');
+const db = require('../db');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 
-cli(main);
+cli(() => db.root_als(main));
 
 async function main()
 {

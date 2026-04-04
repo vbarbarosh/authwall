@@ -27,6 +27,8 @@ async function status_get(req, res)
     res.send({
         error,
         authenticated: true,
+        user_uid: user.uid,
+        user_slug: user.slug,
         csrf_token: req.session.csrf_token,
         display_name: user.display_name,
         avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',

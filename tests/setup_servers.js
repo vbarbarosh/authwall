@@ -1,12 +1,16 @@
 const axios = require('axios');
 const config = require('../config');
+const const_user_identity = require('../src/helpers/const/const_user_identity');
 const cookie_signature = require('cookie-signature');
 const create_app = require('../src/create_app');
 const db = require('../db');
+const fs = require('fs/promises');
 const http = require('http');
 const make_mailer_fake = require('../src/services/mailer/make_mailer_fake');
+const normalize_username = require('../src/helpers/normalize/normalize_username');
 const promisify = require('../src/helpers/promisify');
 const services = require('../src/services');
+const users_create = require('../src/helpers/models/users_create');
 
 function setup_servers()
 {
@@ -23,6 +27,12 @@ function setup_servers()
         trx = await db_internals.inst.transaction();
         db_internals.als.enterWith(trx);
 
+        const m_db_als = function (fn) {
+            return function (...args) {
+                return db_internals.als.run(trx, () => fn.apply(this, args));
+            };
+        };
+
         echo_server = await create_echo_server();
         await new Promise(resolve => echo_server.listen(0, '127.0.0.1', resolve));
         this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
@@ -31,7 +41,11 @@ function setup_servers()
         const app = await create_app();
         server = http.createServer(app);
         await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-        this.client = create_client(`http://127.0.0.1:${server.address().port}`, trx);
+        this.base_url = `http://127.0.0.1:${server.address().port}`;
+        config.public_url = this.base_url;
+        this.client = create_client(this.base_url, m_db_als);
+
+        this.sign_in = m_db_als(sign_in.bind(this));
     });
 
     afterEach(async function () {
@@ -59,7 +73,7 @@ async function create_echo_server()
     });
 }
 
-function create_client(base_url, trx)
+function create_client(base_url, m_db_als)
 {
     const map = new Map();
 
@@ -70,9 +84,18 @@ function create_client(base_url, trx)
         post_json(url, data) {
             return request('post', url, data);
         },
-        get_session() {
-            return load_session();
+        async post_multipart(url, data) {
+            const form = new FormData();
+
+            for (const [key, value] of Object.entries(data || {})) {
+                await append_form_value(form, key, value);
+            }
+
+            return request('post', url, form);
         },
+        get_session: m_db_als(function () {
+            return load_session();
+        }),
     };
 
     async function load_session() {
@@ -91,7 +114,7 @@ function create_client(base_url, trx)
             throw new Error('Invalid session signature');
         }
 
-        const row = await trx('sessions').where({uid}).first();
+        const row = await db('sessions').where({uid}).first();
         if (!row) {
             return null;
         }
@@ -118,7 +141,7 @@ function create_client(base_url, trx)
                 headers.Cookie = Array.from(map.values()).join('; ');
             }
 
-            if (current_data) {
+            if (current_data && !(current_data instanceof FormData)) {
                 headers['content-type'] = 'application/json';
             }
 
@@ -151,6 +174,65 @@ function create_client(base_url, trx)
             return res.data;
         }
     }
+}
+
+async function append_form_value(form, key, value)
+{
+    if (value === undefined) {
+        return;
+    }
+
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            await append_form_value(form, key, item);
+        }
+        return;
+    }
+
+    if (value instanceof Blob || value instanceof File) {
+        form.append(key, value);
+        return;
+    }
+
+    if (Buffer.isBuffer(value)) {
+        form.append(key, new Blob([value]), 'upload.bin');
+        return;
+    }
+
+    if (value && typeof value === 'object') {
+        const filename = value.filename ?? value.name ?? 'upload.bin';
+        const contentType = value.contentType ?? value.type ?? 'application/octet-stream';
+
+        if ('path' in value) {
+            const buffer = await fs.readFile(value.path);
+            form.append(key, new Blob([buffer], {type: contentType}), filename);
+            return;
+        }
+
+        const content = value.buffer ?? value.contents ?? value.content ?? value.value;
+        if (content !== undefined && (Buffer.isBuffer(content) || typeof content === 'string')) {
+            form.append(key, new Blob([content], {type: contentType}), filename);
+            return;
+        }
+    }
+
+    form.append(key, String(value));
+}
+
+async function sign_in()
+{
+    const username = 'mocha';
+    const password = 'mocha';
+    const username_normalized = normalize_username(username);
+
+    const user = await users_create({password});
+    const now = new Date();
+    const base = {user_id: user.id, created_at: now, updated_at: now, verified_at: now};
+    const rows = [{...base, type: const_user_identity.username, value: username, value_normalized: username_normalized}];
+    await db('user_identities').insert(rows);
+
+    const status = await this.client.get_json('/auth/status');
+    await this.client.post_json('/auth/sign-in', {username, password, _csrf: status.csrf_token});
 }
 
 module.exports = setup_servers;
