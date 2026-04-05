@@ -1,5 +1,4 @@
 const assert = require('assert');
-const setup_servers = require('../setup_servers');
 
 describe('POST /auth/change-password', function () {
 
