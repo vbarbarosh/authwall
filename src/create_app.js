@@ -1,26 +1,45 @@
 const SessionStore = require('./helpers/SessionStore');
 const config = require('../config');
 const express = require('express');
-const express_log = require('@vbarbarosh/express-helpers/src/express_log');
+const express_fingerprint = require('@vbarbarosh/express-helpers/src/express_fingerprint');
 const express_routes = require('./helpers/express/express_routes');
 const express_session = require('express-session');
+const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
+const make_logger_daily = require('./services/logger/make_logger_daily');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-async function create_app()
+async function create_app(log = make_logger_daily())
 {
     const app = express();
 
     app.set('trust proxy', true);
 
-    app.use(express_log({file: config.log_file_http}));
+    let pending = 0;
+    app.use(function (req, res, next) {
 
-    app.use('/auth/uploads', express.static(fs_path_resolve(__dirname, '../data/uploads')));
+        pending++;
+        const hrtime0 = process.hrtime();
 
+        req.log = log.spawn({decorate: s => `[+${format_hrtime0(hrtime0, 4)}] ${s}`});
+
+        req.log(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(req.headers)}`);
+        res.on('close', function () {
+            pending--;
+            req.log(`[res_close] ${res.statusCode} ${JSON.stringify(res.statusMessage)} pending=${pending}`);
+        });
+        req.on('error', function (error) {
+            req.log(`[req_error] ${JSON.stringify({...error, message: error.message, stack: error.stack && error.stack.split(/\n\s*/)}, null, 4)}`);
+        });
+
+        next();
+    });
+
+    app.use('/auth/uploads', express.static(config.uploads_dir));
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
 

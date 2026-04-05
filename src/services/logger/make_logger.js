@@ -59,8 +59,8 @@ function make_logger(params = {})
     };
     log.group_uid = inst();
     log.parent_uid = parent_uid;
-    log.spawn = function () {
-        return make_logger({parent_uid: log.group_uid, decorate, append});
+    log.spawn = function (params) {
+        return make_logger({parent_uid: log.group_uid, decorate, append, ...params});
     };
 
     if (parent_uid) {

@@ -10,9 +10,11 @@ const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
 
 const knexvars = AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
 
-if (knexvars.connection?.filename) {
-    fs.mkdirSync(fs_path_resolve(__dirname, '../data'), {recursive: true});
-}
+const logs_dir = fs_path_resolve(__dirname, '../data/logs');
+const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
+
+fs.mkdirSync(logs_dir, {recursive: true});
+fs.mkdirSync(uploads_dir, {recursive: true});
 
 let LOG_DIR = null;
 const LOG_FILE = process.env.LOG_FILE ?? null;
@@ -67,6 +69,9 @@ const config = {
         allowed_domains: parse_domains(settings.access.allowed_domains),
     },
 
+    logs_dir,
+    uploads_dir,
+
     log_file: LOG_FILE,
     log_file_http: LOG_FILE ?? function () {
         if (LOG_DIR === null) {
@@ -86,7 +91,7 @@ const config = {
     password_rounds: 12,
 
     session: {
-        max_age_days: parseInt(settings.session?.max_age_days) ?? 30,
+        max_age_days: parseInt(settings.session?.max_age_days) || 30,
     },
 
     // Google Login
