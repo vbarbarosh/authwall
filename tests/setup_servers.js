@@ -6,6 +6,7 @@ const create_app = require('../src/create_app');
 const db = require('../db');
 const fs = require('fs/promises');
 const http = require('http');
+const make_logger_fake = require('../src/services/logger/make_logger_fake');
 const make_mailer_fake = require('../src/services/mailer/make_mailer_fake');
 const normalize_email = require('../src/helpers/normalize/normalize_email');
 const normalize_username = require('../src/helpers/normalize/normalize_username');
@@ -16,6 +17,8 @@ const users_create = require('../src/helpers/models/users_create');
 async function setup_servers_before_each()
 {
     this.sent_emails = [];
+    this.written_logs = [];
+
     services.mailer = make_mailer_fake(this.sent_emails);
 
     const db_internals = await db.__mocha__;
@@ -31,7 +34,7 @@ async function setup_servers_before_each()
     this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
     config.target_url = this.echo_url;
 
-    const app = await create_app();
+    const app = await create_app(make_logger_fake(this.written_logs));
     const server = http.createServer(app);
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     this.base_url = `http://127.0.0.1:${server.address().port}`;

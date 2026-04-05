@@ -19,6 +19,7 @@ describe('smoke tests', function () {
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.authenticated, true);
         assert.strictEqual(this.sent_emails[0].subject, 'New sign-in to your account');
+        assert.ok(this.written_logs.length > 0);
     });
 
 });
