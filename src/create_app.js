@@ -35,7 +35,7 @@ async function create_app()
             httpOnly: true,
             sameSite: 'lax',
             secure: config.public_url.startsWith('https://'),
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            maxAge: config.session.max_age_days*86400000,
         },
     }));
     app.use('/auth', function (req, res, next) {

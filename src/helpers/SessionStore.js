@@ -19,13 +19,10 @@ class SessionStore extends express_session.Store
             out.user_uid = row.user_uid;
             out.ip = row.ip;
             out.ua = row.ua;
-            out.cookie = new express_session.Cookie({
-                path: '/',
-                httpOnly: true,
-                sameSite: 'lax',
-                secure: config.public_url.startsWith('https://'),
+            out.cookie = {
+                expires: new Date(row.expires_at),
                 maxAge: new Date(row.expires_at).getTime() - Date.now(),
-            });
+            };
             callback(null, out);
         }
         catch (error) {
