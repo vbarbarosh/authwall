@@ -85,6 +85,10 @@ const config = {
     knexvars,
     password_rounds: 12,
 
+    session: {
+        max_age_days: parseInt(settings.session?.max_age_days) ?? 30,
+    },
+
     // Google Login
     google_client_id: process.env.AUTHWALL_GOOGLE_CLIENT_ID,
     google_client_secret: process.env.AUTHWALL_GOOGLE_CLIENT_SECRET,
