@@ -9,6 +9,7 @@ const create_app = require('./create_app');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const knex = require('knex');
 const make_logger_daily = require('./services/logger/make_logger_daily');
+const make_mailer_fake = require('./services/mailer/make_mailer_fake');
 const make_mailer_resend = require('./services/mailer/make_mailer_resend');
 
 cli(main);
@@ -19,7 +20,7 @@ async function main()
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     await using logger = make_logger_daily();
-    await using mailer = make_mailer_resend();
+    await using mailer = make_mailer();
 
     await als.run({db, logger, mailer}, async function () {
         await bootstrap_database();
@@ -27,4 +28,13 @@ async function main()
         const app = await create_app();
         await express_run(app, config.port, config.listen);
     });
+}
+
+function make_mailer()
+{
+    if (config.resend_key && config.resend_from) {
+        return make_mailer_resend();
+    }
+
+    return make_mailer_fake();
 }
