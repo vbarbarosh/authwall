@@ -53,21 +53,25 @@ function make_logger(params = {})
     const parent_uid = params.parent_uid ?? null;
     const decorate = params.decorate ?? (s => s);
     const append = params.append ?? (s => console.log(s));
+    const group_uid = inst();
 
-    const log = function (message) {
-        append(format_line(log.group_uid, decorate(message)));
-    };
-    log.group_uid = inst();
-    log.parent_uid = parent_uid;
-    log.spawn = function (params) {
-        return make_logger({parent_uid: log.group_uid, decorate, append, ...params});
+    const out = {
+        group_uid,
+        parent_uid,
+        write: function (s) {
+            append(format_line(group_uid, decorate(s)));
+        },
+        spawn: function (params) {
+            return make_logger({parent_uid: group_uid, decorate, append, ...params});
+        },
+        [Symbol.dispose]: function () {},
     };
 
     if (parent_uid) {
-        log(`[parent] ${parent_uid}`);
+        out.write(`[parent] ${parent_uid}`);
     }
 
-    return log;
+    return out;
 }
 
 // function format_line(group_uid, message)

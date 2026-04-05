@@ -1,3 +1,5 @@
+const ignore = require('@vbarbarosh/node-helpers/src/ignore');
+
 function make_mailer_fake(sent_emails)
 {
     return {
@@ -5,6 +7,7 @@ function make_mailer_fake(sent_emails)
             sent_emails.push(params);
             return {id: sent_emails.length};
         },
+        [Symbol.dispose]: ignore,
     };
 }
 

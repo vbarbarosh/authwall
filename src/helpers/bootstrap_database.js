@@ -1,9 +1,10 @@
 const Promise = require('bluebird');
+const als = require('./als');
 const db = require('../../db');
 
 async function bootstrap_database()
 {
-    console.log('📡 Connecting to database...');
+    als.logger.write('📡 Connecting to database...');
 
     const max_attempts = 30;
     const delay_ms = 1000;
@@ -18,17 +19,17 @@ async function bootstrap_database()
                 console.error('❌ Database initialization failed');
                 throw error;
             }
-            console.log(`⏳ MySQL not ready (attempt ${attempt}/${max_attempts})`);
+            als.logger.write(`⏳ MySQL not ready (attempt ${attempt}/${max_attempts})`);
             await Promise.delay(delay_ms);
         }
     }
 
     const [batch, migrations] = await db.migrate.latest();
     if (migrations.length) {
-        console.log(`Applied ${migrations.length} migration(s)`);
+        als.logger.write(`Applied ${migrations.length} migration(s)`);
     }
 
-    console.log('✅ Database ready');
+    als.logger.write('✅ Database ready');
 }
 
 module.exports = bootstrap_database;

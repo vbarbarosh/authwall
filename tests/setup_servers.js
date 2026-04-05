@@ -1,3 +1,4 @@
+const als = require('../src/helpers/als');
 const axios = require('axios');
 const config = require('../config');
 const const_user_identity = require('../src/helpers/const/const_user_identity');
@@ -6,58 +7,36 @@ const create_app = require('../src/create_app');
 const db = require('../db');
 const fs = require('fs/promises');
 const http = require('http');
-const make_logger_fake = require('../src/services/logger/make_logger_fake');
-const make_mailer_fake = require('../src/services/mailer/make_mailer_fake');
 const normalize_email = require('../src/helpers/normalize/normalize_email');
 const normalize_username = require('../src/helpers/normalize/normalize_username');
 const promisify = require('../src/helpers/promisify');
-const services = require('../src/services');
 const users_create = require('../src/helpers/models/users_create');
 
-async function setup_servers_before_each()
+async function spin(ctx, _this, fn)
 {
-    this.sent_emails = [];
-    this.written_logs = [];
+    await als.run(ctx, async function () {
 
-    services.mailer = make_mailer_fake(this.sent_emails);
+        const echo_server = await create_echo_server();
+        await promisify(cb => echo_server.listen(0, '127.0.0.1', cb));
+        config.target_url = `http://127.0.0.1:${echo_server.address().port}`;
 
-    const db_internals = await db.__mocha__;
-    const trx = await db_internals.inst.transaction();
-    db_internals.als.enterWith(trx);
+        const app = await create_app();
+        const server = http.createServer(app);
+        await promisify(cb => server.listen(0, '127.0.0.1', cb));
+        config.public_url = `http://127.0.0.1:${server.address().port}`;
 
-    this.__db_als__ = function (fn, args) {
-        return db_internals.als.run(trx, () => fn.apply(this, args));
-    };
+        _this.client = create_client(config.public_url);
+        _this.add_user = add_user;
+        _this.sign_in = sign_in;
 
-    const echo_server = await create_echo_server();
-    await new Promise(resolve => echo_server.listen(0, '127.0.0.1', resolve));
-    this.echo_url = `http://127.0.0.1:${echo_server.address().port}`;
-    config.target_url = this.echo_url;
-
-    const app = await create_app(make_logger_fake(this.written_logs));
-    const server = http.createServer(app);
-    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    this.base_url = `http://127.0.0.1:${server.address().port}`;
-    config.public_url = this.base_url;
-    this.client = create_client(this.base_url);
-
-    this.add_user = add_user;
-    this.sign_in = sign_in;
-
-    this.__trx = trx;
-    this.__server = server;
-    this.__echo_server = echo_server;
-}
-
-async function setup_servers_after_each()
-{
-    const trx = this.__trx;
-    const server = this.__server;
-    const echo_server= this.__echo_server;
-
-    await trx.rollback();
-    await promisify(cb => server.close(cb));
-    await promisify(cb => echo_server.close(cb));
+        try {
+            await fn();
+        }
+        finally {
+            await promisify(cb => server.close(cb));
+            await promisify(cb => echo_server.close(cb));
+        }
+    });
 }
 
 async function create_echo_server()
@@ -253,6 +232,5 @@ async function sign_in(params)
 }
 
 module.exports = {
-    setup_servers_before_each,
-    setup_servers_after_each,
+    spin,
 };

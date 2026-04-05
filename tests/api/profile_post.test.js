@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../../config');
 
 describe('POST /auth/profile', function () {
 
@@ -27,7 +28,7 @@ describe('POST /auth/profile', function () {
             },
         });
         const status2 = await this.client.get_json('/auth/status');
-        assert.strictEqual(status2.avatar_url, `${this.base_url}/auth/uploads/${status.user_slug}/avatar.webp`);
+        assert.strictEqual(status2.avatar_url, `${config.public_url}/auth/uploads/${status.user_slug}/avatar.webp`);
     });
 
 });

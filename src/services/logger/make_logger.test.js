@@ -5,79 +5,79 @@ describe('make_logger', function () {
 
     it('logs a message', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(s)});
+        using logger = make_logger({append: s => lines.push(s)});
 
-        log('hello');
+        logger.write('hello');
 
         assert.deepStrictEqual(lines, [
-            `[${log.group_uid}] hello`,
+            `[${logger.group_uid}] hello`,
         ]);
     });
 
     it('spawn creates new group_uid', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(s)});
+        using logger = make_logger({append: s => lines.push(s)});
 
-        log('a');
-        const child = log.spawn();
-        child('b');
+        logger.write('a');
+        using child = logger.spawn();
+        child.write('b');
 
         assert.deepStrictEqual(lines, [
-            `[${log.group_uid}] a`,
-            `[${child.group_uid}][parent] ${log.group_uid}`,
+            `[${logger.group_uid}] a`,
+            `[${child.group_uid}][parent] ${logger.group_uid}`,
             `[${child.group_uid}] b`
         ]);
     });
 
     it('decorate modifies message', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(s), decorate: s => s + '!'});
+        using logger = make_logger({append: s => lines.push(s), decorate: s => s + '!'});
 
-        log('hello');
+        logger.write('hello');
 
         assert.deepStrictEqual(lines, [
-            `[${log.group_uid}] hello!`,
+            `[${logger.group_uid}] hello!`,
         ]);
     });
 
     it('does not add extra space if message starts with [', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(s)});
+        using logger = make_logger({append: s => lines.push(s)});
 
-        log('[x]');
+        logger.write('[x]');
 
         assert.deepStrictEqual(lines, [
-            `[${log.group_uid}][x]`,
+            `[${logger.group_uid}][x]`,
         ]);
     });
 
     it('adds timestamp to each line', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(`[2021/01/01 01:01:01]${s}`)});
+        using logger = make_logger({append: s => lines.push(`[2021/01/01 01:01:01]${s}`)});
 
-        log('foo');
-        log('bar');
+        logger.write('foo');
+        logger.write('bar');
 
         assert.deepStrictEqual(lines, [
-            `[2021/01/01 01:01:01][${log.group_uid}] foo`,
-            `[2021/01/01 01:01:01][${log.group_uid}] bar`,
+            `[2021/01/01 01:01:01][${logger.group_uid}] foo`,
+            `[2021/01/01 01:01:01][${logger.group_uid}] bar`,
         ]);
     });
 
     it('adds delta to each line', function () {
         const lines = [];
-        const log = make_logger({append: s => lines.push(s), decorate: s => `[+0.1234s]${s}`});
+        const logger = make_logger({append: s => lines.push(s), decorate: s => `[+0.1234s]${s}`});
 
-        log('foo');
-        log('bar');
-        log('[checkpoint1] foo');
-        log('[checkpoint2] bar');
+        logger.write('foo');
+        logger.write('bar');
+        logger.write('[checkpoint1] foo');
+        logger.write('[checkpoint2] bar');
 
         assert.deepStrictEqual(lines, [
-            `[${log.group_uid}][+0.1234s] foo`,
-            `[${log.group_uid}][+0.1234s] bar`,
-            `[${log.group_uid}][+0.1234s][checkpoint1] foo`,
-            `[${log.group_uid}][+0.1234s][checkpoint2] bar`,
+            `[${logger.group_uid}][+0.1234s] foo`,
+            `[${logger.group_uid}][+0.1234s] bar`,
+            `[${logger.group_uid}][+0.1234s][checkpoint1] foo`,
+            `[${logger.group_uid}][+0.1234s][checkpoint2] bar`,
         ]);
     });
 

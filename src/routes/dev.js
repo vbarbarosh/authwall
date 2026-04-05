@@ -25,8 +25,6 @@ async function auth_dev_get(req, res)
 function express_routes_dump(stack, prefix = '', out = [])
 {
     for (const layer of stack) {
-        console.log(layer);
-
         if (layer.route) {
             const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase());
             out.push(methods.join(',') + ' ' + prefix + layer.route.path);

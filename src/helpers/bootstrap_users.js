@@ -1,20 +1,19 @@
+const als = require('./als');
 const config = require('../../config');
 const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
 const normalize_email = require('./normalize/normalize_email');
 const normalize_username = require('./normalize/normalize_username');
-const random_slug = require('./random/random_slug');
-const random_uid_user = require('./random/random_uid_user');
 const users_create = require('./models/users_create');
 
 async function bootstrap_users()
 {
     if (!config.seed_users.length) {
-        console.log('👤 No seed_users defined, skipping');
+        als.logger.write('👤 No seed_users defined, skipping');
         return;
     }
 
-    console.log('👤 Seeding users...');
+    als.logger.write('👤 Seeding users...');
     for (const user_seed of config.seed_users) {
         const {username, email, password_hash, display_name} = user_seed;
         const emails = Array.isArray(email) ? email : [email].filter(Boolean);
@@ -22,7 +21,7 @@ async function bootstrap_users()
         const username_normalized = normalize_username(username);
         const emails_normalized = emails.map(normalize_email).filter(v => v);
         if (!username_normalized && !emails_normalized.length) {
-            console.log(`⚠️ Skipping invalid user seed: [${JSON.stringify(user_seed).slice(1, -1)}]`);
+            als.logger.write(`⚠️ Skipping invalid user seed: [${JSON.stringify(user_seed).slice(1, -1)}]`);
             continue;
         }
 
@@ -64,17 +63,17 @@ async function bootstrap_users()
         const idents2 = await db('user_identities').where({user_id}).count();
 
         if (user_created) {
-            console.log(`👤 Created user username=[${username}] email=[${email}]`);
+            als.logger.write(`👤 Created user username=[${username}] email=[${email}]`);
         }
         else if (idents1 < idents2) {
-            console.log(`➕ Added identities username=[${username}] email=[${email}]`);
+            als.logger.write(`➕ Added identities username=[${username}] email=[${email}]`);
         }
         else {
-            console.log(`⏭️ No changes username=[${username}] email=[${email}]`);
+            als.logger.write(`⏭️ No changes username=[${username}] email=[${email}]`);
         }
     }
 
-    console.log('✅ Users seeding complete');
+    als.logger.write('✅ Users seeding complete');
 }
 
 module.exports = bootstrap_users;

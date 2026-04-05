@@ -1,23 +1,30 @@
 #!/usr/bin/env node
 
+const als = require('./helpers/als');
 const bootstrap_database = require('./helpers/bootstrap_database');
-const bootstrap_services = require('./helpers/bootstrap_services');
 const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
 const create_app = require('./create_app');
-const db = require('../db');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
+const knex = require('knex');
+const make_logger_daily = require('./services/logger/make_logger_daily');
+const make_mailer_resend = require('./services/mailer/make_mailer_resend');
 
-cli(() => db.root_als(main));
+cli(main);
 
 async function main()
 {
-    await bootstrap_services();
-    await bootstrap_database();
-    await bootstrap_users();
+    const db = knex(config.knexvars);
+    await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
-    const app = await create_app();
+    await using logger = make_logger_daily();
+    await using mailer = make_mailer_resend();
 
-    await express_run(app, config.port, config.listen);
+    await als.run({db, logger, mailer}, async function () {
+        await bootstrap_database();
+        await bootstrap_users();
+        const app = await create_app();
+        await express_run(app, config.port, config.listen);
+    });
 }

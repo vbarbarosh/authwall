@@ -1,4 +1,5 @@
 const SessionStore = require('./helpers/SessionStore');
+const als = require('./helpers/als');
 const config = require('../config');
 const express = require('express');
 const express_fingerprint = require('@vbarbarosh/express-helpers/src/express_fingerprint');
@@ -8,12 +9,11 @@ const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
-const make_logger_daily = require('./services/logger/make_logger_daily');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-async function create_app(log = make_logger_daily())
+async function create_app()
 {
     const app = express();
 
@@ -24,19 +24,19 @@ async function create_app(log = make_logger_daily())
 
         pending++;
         const hrtime0 = process.hrtime();
+        const logger = als.logger.spawn({decorate: s => `[+${format_hrtime0(hrtime0, 4)}] ${s}`});
 
-        req.log = log.spawn({decorate: s => `[+${format_hrtime0(hrtime0, 4)}] ${s}`});
+        logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(req.headers)}`);
 
-        req.log(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(req.headers)}`);
         res.on('close', function () {
             pending--;
-            req.log(`[res_close] ${res.statusCode} ${JSON.stringify(res.statusMessage)} pending=${pending}`);
+            logger.write(`[res_close] ${res.statusCode} ${JSON.stringify(res.statusMessage)} pending=${pending}`);
         });
         req.on('error', function (error) {
-            req.log(`[req_error] ${JSON.stringify({...error, message: error.message, stack: error.stack && error.stack.split(/\n\s*/)}, null, 4)}`);
+            logger.write(`[req_error] ${JSON.stringify({...error, message: error.message, stack: error.stack && error.stack.split(/\n\s*/)}, null, 4)}`);
         });
 
-        next();
+        als.run({logger}, () => next());
     });
 
     app.use('/auth/uploads', express.static(config.uploads_dir));
@@ -137,8 +137,7 @@ async function create_app(log = make_logger_daily())
 
 function error_handler(error, req, res, next)
 {
-    console.log('⚠️ error_handler', req.url, req.originalUrl);
-    console.error(error);
+    als.logger.write(`[error_handler] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
 
     if (req.session) {
         req.session.error = error.message;
@@ -163,16 +162,12 @@ function sign_in_required(req, res, next)
         return;
     }
 
-    if (req.path.startsWith('/bypass/')) {
-        next();
-        return;
-    }
-
     if (!req.session.user_id) {
-        console.log('auth_go_to_login', req.method, req.path);
+        als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
         return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
     }
-    console.log('auth_next', req.method, req.path);
+
+    als.logger.write(`[auth_next] ${req.method} ${req.path}`);
     next();
 }
 

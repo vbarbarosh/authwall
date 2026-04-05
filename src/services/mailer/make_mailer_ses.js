@@ -1,4 +1,5 @@
 const NotImplemented = require('@vbarbarosh/node-helpers/src/errors/NotImplemented');
+const ignore = require('@vbarbarosh/node-helpers/src/ignore');
 
 function make_mailer_ses()
 {
@@ -6,6 +7,7 @@ function make_mailer_ses()
         send: async function ({to, subject, text}) {
             throw new NotImplemented();
         },
+        [Symbol.dispose]: ignore,
     };
 }
 

@@ -1,7 +1,7 @@
+const als = require('./als');
 const format_email_address = require('./format/format_email_address');
 const get_user_email_and_name = require('./models/get_user_email_and_name');
 const parse_email_file = require('./parse_email_file');
-const services = require('../services');
 
 // ⚠️ Do not send emails to non-verified email addresses.
 async function send_email(params)
@@ -15,7 +15,7 @@ async function send_email(params)
 
     const {subject, body} = await parse_email_file(path, placeholders);
 
-    const response = await services.mailer.send({
+    const response = await als.mailer.send({
         to: format_email_address(email_and_name),
         subject,
         text: body,

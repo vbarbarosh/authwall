@@ -64,12 +64,10 @@ async function google_callback_get(req, res)
         redirect_uri: config.google_redirect_url,
         grant_type: 'authorization_code',
     });
-    console.log(token);
 
     const userinfo = await http_get_json('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {Authorization: `Bearer ${token.access_token}`},
     });
-    console.log(userinfo);
 
     const ident = await db('user_identities').where({
         type: const_user_identity.oauth_google,

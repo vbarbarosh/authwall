@@ -3,13 +3,11 @@ const resend = require('resend');
 
 function make_mailer_resend()
 {
-    const client = new resend.Resend(config.resend_key);
+    let client = new resend.Resend(config.resend_key);
 
     return {
         send: async function ({to, subject, text}) {
-
             const out = await client.emails.send({from: config.resend_from, to, subject, text});
-
             // {
             //     "data": null,
             //     "error": {
@@ -34,8 +32,10 @@ function make_mailer_resend()
             if (out.error) {
                 throw new Error(`Email delivery failed: ${out.error.message}\n\n${JSON.stringify(out)}`);
             }
-
             return out;
+        },
+        [Symbol.dispose]: async function () {
+            client = null;
         },
     };
 }
