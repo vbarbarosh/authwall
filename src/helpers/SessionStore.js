@@ -35,7 +35,7 @@ class SessionStore extends express_session.Store
             const now = new Date();
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
-                : new Date(now.getTime() + (data.cookie?.maxAge || config.session.max_age_days*86400000));
+                : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
 
             const {user_id, user_uid, ip, ua, cookie, ...custom} = data;
             await db('sessions')
@@ -65,7 +65,7 @@ class SessionStore extends express_session.Store
             const now = new Date();
             const expires_at = data.cookie?.expires
                 ? new Date(data.cookie.expires)
-                : new Date(now.getTime() + (data.cookie?.maxAge || config.session.max_age_days*86400000));
+                : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
             await db('sessions').where({uid}).update({expires_at, last_seen_at: now});
             callback(null);
         }

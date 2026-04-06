@@ -29,7 +29,11 @@ access:
   denied_domains: ${AUTHWALL_DENIED_DOMAINS}
   allowed_domains: ${AUTHWALL_ALLOWED_DOMAINS}
 
-session:
+cookie:
+  domain: ${AUTHWALL_COOKIE_DOMAIN}
+  path: ${AUTHWALL_COOKIE_PATH}
+  secure: ${AUTHWALL_COOKIE_SECURE}
+  same_site: ${AUTHWALL_COOKIE_SAMESITE}
   max_age_days: 30
 
 flows:

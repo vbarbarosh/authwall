@@ -50,11 +50,12 @@ async function create_app()
         saveUninitialized: false,
         secret: config.secrets.express_session,
         cookie: {
-            path: '/',
             httpOnly: true,
-            sameSite: 'lax',
-            secure: config.public_url.startsWith('https://'),
-            maxAge: config.session.max_age_days*86400000,
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: config.cookie.same_site,
+            secure: config.cookie.secure,
+            maxAge: config.cookie.max_age_days*86400000,
         },
     }));
     app.use('/auth', function (req, res, next) {

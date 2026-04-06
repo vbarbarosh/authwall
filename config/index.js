@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
+const make = require('@vbarbarosh/type-helpers');
 const parse_domains = require('../src/helpers/parse_domains');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
@@ -25,9 +26,11 @@ const settings = resolve_yaml_vars(
     process.env
 );
 
+const public_url = process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000';
+
 const config = {
     seed_users: Array.from(settings.seed_users||[]),
-    public_url: process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000',
+    public_url,
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
 
@@ -93,9 +96,13 @@ const config = {
     knexvars,
     password_rounds: 12,
 
-    session: {
-        max_age_days: parseInt(settings.session?.max_age_days) || 30,
-    },
+    cookie: make(settings.cookie, {
+        domain: {type: 'str', after: v => v.trim() || undefined},
+        path: {type: 'str', after: v => v.startsWith('/') ? v : '/'},
+        same_site: {type: 'enum', options: ['lax', 'strict', 'none']},
+        secure: {type: 'bool', default: public_url.startsWith('https://'), before: v => ({yes: 1, no: 0, true: 1, false: 0}[v] ?? v)},
+        max_age_days: {type: 'int', min: 1, max: 365, default: 30},
+    }),
 
     // Google Login
     google_client_id: process.env.AUTHWALL_GOOGLE_CLIENT_ID,
@@ -106,6 +113,10 @@ const config = {
     resend_key: process.env.AUTHWALL_RESEND_KEY,
     resend_from: process.env.AUTHWALL_RESEND_FROM,
 };
+
+if (config.cookie.same_site === 'none' && !config.cookie.secure) {
+    throw new Error('cookie.same_site=none requires cookie.secure=true');
+}
 
 if (!process.env.AUTHWALL_SECRET) {
     console.warn('\n⚠️ Missing required env var: AUTHWALL_SECRET\n');
