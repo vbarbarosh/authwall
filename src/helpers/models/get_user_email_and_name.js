@@ -9,7 +9,7 @@ async function get_user_email_and_name(user_id)
     }
 
     const user = await db('users').where({id: user_id}).first();
-    return {name: user.display_name, email: ident.value};
+    return {name: user.display_name, email: ident.value, is_verified: ident.is_verified};
 }
 
 module.exports = get_user_email_and_name;

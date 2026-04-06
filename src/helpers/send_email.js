@@ -14,15 +14,17 @@ async function send_email(params)
     }
 
     const {subject, body} = await parse_email_file(path, placeholders);
-
-    const response = await als.mailer.send({
+    const request = {
         to: format_email_address(email_and_name),
         subject,
         text: body,
-    });
+    };
 
-    // console.log(`[send_email_request] ${JSON.stringify(request)}`);
-    // console.log(`[send_email_response] ${JSON.stringify(response)}`);
+    als.logger.write(`[send_email_request] ${JSON.stringify(request)}`);
+
+    const response = await als.mailer.send(request);
+
+    als.logger.write(`[send_email_response] ${JSON.stringify(response)}`);
 }
 
 module.exports = send_email;
