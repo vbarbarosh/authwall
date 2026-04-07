@@ -1099,7 +1099,7 @@ document.getElementById('si-submit').addEventListener('click', async () => {
   const password = document.getElementById('si-pass').value;
   if (!username || !password) return show_error('si-error-msg', 'si-error', 'Please fill in all fields.');
   set_loading('si-submit', true);
-  const { final_url, error } = await api_post('/auth/sign-in', { username, password });
+  const { final_url, error } = await api_post('/auth/sign-in' + window.location.search, { username, password });
   set_loading('si-submit', false);
   if (error) return show_error('si-error-msg', 'si-error', error);
   navigate_after(final_url);
@@ -1162,7 +1162,7 @@ document.getElementById('su-submit').addEventListener('click', async () => {
   if (mode === 'username' || (mode === 'email-username' && username)) payload.username = username;
 
   set_loading('su-submit', true);
-  const { final_url, error } = await api_post('/auth/sign-up', payload);
+  const { final_url, error } = await api_post('/auth/sign-up' + window.location.search, payload);
   set_loading('su-submit', false);
   if (error) return show_error('su-error-msg', 'su-error', error);
   navigate_after(final_url);
@@ -1240,7 +1240,7 @@ document.getElementById('mc-submit').addEventListener('click', async () => {
   if (code.length < 6) return show_error('mc-error-msg', 'mc-error', 'Please enter all 6 digits of the code.');
   if (!_magic_email) return show_error('mc-error-msg', 'mc-error', 'Session expired. Please request a new magic link.');
   set_loading('mc-submit', true);
-  const { final_url, error } = await api_post('/auth/magic-link/confirm', { email: _magic_email, code });
+  const { final_url, error } = await api_post('/auth/magic-link/confirm' + window.location.search, { email: _magic_email, code });
   set_loading('mc-submit', false);
   if (error) return show_error('mc-error-msg', 'mc-error', error);
   navigate_after(final_url);
