@@ -33,6 +33,7 @@ const config = {
     public_url,
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
+    target_mode: make(process.env.AUTHWALL_TARGET_MODE, {type: 'enum', options: ['direct', 'proxy']}),
 
     pages: {
         // unauthenticated entry

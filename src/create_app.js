@@ -107,7 +107,8 @@ async function create_app()
     app.use(sign_in_required);
     app.use(http_proxy_middleware.createProxyMiddleware({
         target: config.target_url,
-        changeOrigin: true,
+        xfwd: (config.target_mode === 'proxy'),
+        changeOrigin: (config.target_mode === 'direct'),
         pathFilter: function (pathname) {
             return !(pathname === '/auth' || pathname.startsWith('/auth/'));
         },
