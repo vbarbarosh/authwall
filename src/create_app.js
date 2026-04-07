@@ -129,6 +129,10 @@ async function create_app()
                     proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
                 }
             },
+            error: function (error, req, res) {
+                console.error('PROXY ERROR:', error);
+                res.status(502).send(error.message);
+            },
         },
     }));
 
