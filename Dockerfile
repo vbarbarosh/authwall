@@ -12,6 +12,8 @@ WORKDIR /app
 ENV LISTEN=0.0.0.0
 ENV LOG_FILE=/dev/stdout
 ENV NODE_ENV=production
+# node -e "require('https').get('https://example.com', v => console.log('OK', v.statusCode)).on('error', e => console.error(e))"
+ENV NODE_OPTIONS=--use-openssl-ca
 
 COPY --chown=node:node package*.json .
 RUN npm ci --omit=dev
