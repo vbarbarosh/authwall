@@ -350,22 +350,25 @@
             Continue with Google
           </a>
           <div class="divider">or</div>
-          <div class="field">
-            <label for="si-user">Username or email</label>
-            <input type="text" id="si-user" placeholder="you@example.com" autocomplete="username">
-          </div>
-          <div class="field">
-            <div class="label-row">
-              <label for="si-pass">Password</label>
-              <span class="label-link" onclick="showView('pw-reset-req')">Forgot password?</span>
+          <form id="si-form" method="post" class="form">
+            <input type="hidden" id="si-csrf" name="_csrf">
+            <div class="field">
+              <label for="si-user">Username or email</label>
+              <input type="text" id="si-user" name="username" placeholder="you@example.com" autocomplete="username" required>
             </div>
-            <input type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password">
-          </div>
-          <div id="si-error" class="alert alert-error" style="display:none">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span id="si-error-msg"></span>
-          </div>
-          <button id="si-submit" class="btn btn-primary mt-4">Sign in</button>
+            <div class="field">
+              <div class="label-row">
+                <label for="si-pass">Password</label>
+                <span class="label-link" onclick="showView('pw-reset-req')">Forgot password?</span>
+              </div>
+              <input type="password" id="si-pass" name="password" placeholder="••••••••" autocomplete="current-password" required>
+            </div>
+            <div id="si-error" class="alert alert-error" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span id="si-error-msg"></span>
+            </div>
+            <button id="si-submit" type="submit" class="btn btn-primary mt-4">Sign in</button>
+          </form>
           <div class="divider">or sign in without a password</div>
           <button class="btn btn-outline" onclick="showView('magic-req')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -1092,19 +1095,6 @@ function render_user_data(s) {
 // FORM HANDLERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ── Sign In ──────────────────────────────────────────────────────────────────
-document.getElementById('si-submit').addEventListener('click', async () => {
-  hide_error('si-error');
-  const username = document.getElementById('si-user').value.trim();
-  const password = document.getElementById('si-pass').value;
-  if (!username || !password) return show_error('si-error-msg', 'si-error', 'Please fill in all fields.');
-  set_loading('si-submit', true);
-  const { final_url, error } = await api_post('/auth/sign-in' + window.location.search, { username, password });
-  set_loading('si-submit', false);
-  if (error) return show_error('si-error-msg', 'si-error', error);
-  navigate_after(final_url);
-});
-
 // ── Sign Up ──────────────────────────────────────────────────────────────────
 function su_get_mode() {
   const view = document.querySelector('[data-view="sign-up"]');
@@ -1387,6 +1377,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
+  const si_csrf = document.getElementById('si-csrf');
+  if (si_csrf) si_csrf.value = status.csrf_token || '';
+  if (status.error && viewFromPath(window.location.pathname) === 'sign-in') {
+    show_error('si-error-msg', 'si-error', status.error);
+  }
   render_user_data(status);
 });
 </script>
