@@ -63,6 +63,9 @@ function create_client(base_url)
         post_json(url, data) {
             return request('post', url, data);
         },
+        post_json_no_redirects(url, data) {
+            return request('post', url, data, true);
+        },
         async post_multipart(url, data) {
             const form = new FormData();
 
@@ -108,7 +111,7 @@ function create_client(base_url)
         };
     }
 
-    async function request(method, url, data) {
+    async function request(method, url, data, no_redirects = false) {
         let current_method = method;
         let current_url = url;
         let current_data = data;
@@ -141,6 +144,10 @@ function create_client(base_url)
                     const [name] = pair.split('=');
                     map.set(name, pair);
                 }
+            }
+
+            if (no_redirects) {
+                return res;
             }
 
             if (res.status >= 300 && res.status < 400 && res.headers.location) {

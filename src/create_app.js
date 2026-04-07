@@ -12,6 +12,7 @@ const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const urlparts = require('./helpers/urlparts');
 
 async function create_app()
 {
@@ -149,15 +150,13 @@ function error_handler(error, req, res, next)
         req.session.error = error.message;
     }
 
-    // Prevent infinite redirects
-    if (req.url === req.originalUrl) {
-        res.redirect('/auth/sign-in');
+    // ⚠️ TODO Take care of infinite redirects
+
+    if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
+        res.redirect(config.pages.sign_in);
     }
-        // if (req.originalUrl.startsWith('/auth/google')) {
-        //     res.redirect('/auth/sign-in');
-    // }
     else {
-        res.redirect(req.originalUrl);
+        res.redirect(req.url);
     }
 }
 
