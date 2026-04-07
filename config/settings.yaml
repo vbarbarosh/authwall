@@ -54,6 +54,11 @@ flows:
     client_secret: ${AUTHWALL_GOOGLE_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_GOOGLE_REDIRECT_URL}
 
+targets:
+  apps.authwall.test: http://apps:8080
+  echo.authwall.test: http://echo:8080
+  notes.authwall.test: http://notes:8080
+
 seed_users:
 
   - username: foo
