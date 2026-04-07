@@ -2,6 +2,7 @@ const db = require('../../db');
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
+    {req: 'GET /auth/sidecar', fn: sidecar_get},
 ];
 
 // GET /auth/status
@@ -36,6 +37,24 @@ async function status_get(req, res)
         current_session_uid: req.sessionID,
         sessions: await db('sessions').where('user_id', req.session.user_id),
     });
+}
+
+// GET /auth/sidecar
+async function sidecar_get(req, res)
+{
+    if (!req.session.user_id) {
+        res.status(401).send();
+        return;
+    }
+
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (!user) {
+        res.status(401).send();
+        return;
+    }
+
+    res.setHeader('X-Auth-User',  user.uid);
+    res.status(200).send();
 }
 
 module.exports = routes;
