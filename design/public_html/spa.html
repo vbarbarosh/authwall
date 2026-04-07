@@ -350,7 +350,7 @@
             Continue with Google
           </a>
           <div class="divider">or</div>
-          <form id="si-form" method="post" class="form">
+          <form id="si-form" method="post" class="form" action="/auth/sign-in">
             <input type="hidden" id="si-csrf" name="_csrf">
             <div class="field">
               <label for="si-user">Username or email</label>
@@ -1377,6 +1377,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
+  const si_form = document.getElementById('si-form');
+  if (si_form) si_form.action = window.location.pathname + window.location.search;
   const si_csrf = document.getElementById('si-csrf');
   if (si_csrf) si_csrf.value = status.csrf_token || '';
   if (status.error && viewFromPath(window.location.pathname) === 'sign-in') {
