@@ -21,8 +21,6 @@ describe('sign up via email | scenarios', function () {
 
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/sign-up', {email, password, password_confirm: password, _csrf: status.csrf_token});
-
-        console.log(this.sent_emails);
     });
 
 });
