@@ -38,6 +38,7 @@
     "@types/node": "^25.5.0",
     "dotenv": "^17.3.1",
     "mocha": "^11.7.5",
+    "nock": "^14.0.12",
     "nodemon": "^3.1.14"
   },
   "__mocha__": "The following is just for PhpStorm",
