@@ -47,7 +47,7 @@ async function create_echo_server()
         req.on('end', () => {
             const body = Buffer.concat(chunks).toString();
             res.writeHead(200, {'content-type': 'application/json'});
-            res.end(JSON.stringify({method: req.method, url: req.url, body}));
+            res.end(JSON.stringify({echo_server: 'grep_aich7deHie7eej2woic3', method: req.method, url: req.url, body}));
         });
     });
 }
@@ -59,6 +59,9 @@ function create_client(base_url)
     return {
         get_json(url) {
             return request('get', url);
+        },
+        get_json_no_redirects(url) {
+            return request('get', url, null, true);
         },
         post_json(url, data) {
             return request('post', url, data);
