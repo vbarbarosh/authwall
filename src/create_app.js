@@ -80,6 +80,7 @@ async function create_app()
     });
 
     express_routes(app, require('./routes/dev'));
+    express_routes(app, require('./routes/email_change'));
     express_routes(app, require('./routes/email_verify'));
     express_routes(app, require('./routes/magic_link'));
     express_routes(app, require('./routes/oauth_google'));

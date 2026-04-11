@@ -1,6 +1,6 @@
 const config = require('../../config');
+const const_email = require('../helpers/const/const_email');
 const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
-const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
@@ -18,8 +18,8 @@ async function complete_sign_in(req, res, user)
         return;
     }
     await send_email_nothrow({
+        name: const_email.new_sign_in,
         user,
-        path: fs_path_resolve(__dirname, '../../design/emails/new-sign-in.txt'),
         placeholders: {
             display_name: user.display_name,
             date: format_date_pretty_24(new Date()),

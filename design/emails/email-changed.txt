@@ -2,9 +2,11 @@ Subject: Your email address was changed
 
 Hi {{display_name}},
 
-The email address on your account was changed on {{date}} from IP address {{ip}}.
+The email address on your account was changed on {{date}}:
 
-New email: {{new_email}}
+  IP address: {{ip}}
+  Browser:    {{ua}}
+  New email:  {{new_email}}
 
 If you made this change, no action is needed. A verification email has been
 sent to your new address.

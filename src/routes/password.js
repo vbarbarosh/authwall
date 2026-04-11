@@ -142,7 +142,21 @@ async function sign_up_post(req, res)
             await db('user_identities').insert(insert);
         });
 
-        await complete_sign_up(req, res, user);
+        if (!email_normalized) {
+            await complete_sign_up(req, res, user);
+        }
+        else {
+            const token = random_hex();
+            await db('email_verify_tokens').insert({
+                user_id: user.id,
+                email_normalized,
+                token_hash: crypto_hash_sha256(token),
+                created_at: now,
+                updated_at: now,
+                expires_at: date_add_minutes(new Date(), 30),
+            });
+            await complete_sign_up(req, res, user, token);
+        }
     }
     catch (error) {
         if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {

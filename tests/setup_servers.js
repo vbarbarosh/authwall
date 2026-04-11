@@ -210,6 +210,7 @@ async function append_form_value(form, key, value)
 
 async function add_user(params = {})
 {
+    const verified = Boolean(params.verified ?? true);
     const password = params.password ?? 'mocha';
 
     const username = params.username ?? 'mocha';
@@ -226,7 +227,7 @@ async function add_user(params = {})
         rows.push({...base, type: const_user_identity.username, value: username, value_normalized: username_normalized});
     }
     if (email_normalized) {
-        rows.push({...base, type: const_user_identity.email, value: email, value_normalized: email_normalized});
+        rows.push({...base, type: const_user_identity.email, value: email, value_normalized: email_normalized, verified_at: (verified ? now : null)});
     }
     await db('user_identities').insert(rows);
 

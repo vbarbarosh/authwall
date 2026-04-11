@@ -1,3 +1,4 @@
+const const_email = require('../src/helpers/const/const_email');
 const crypto = require('crypto');
 const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
@@ -26,6 +27,8 @@ const settings = resolve_yaml_vars(
     process.env
 );
 
+const design_dir = fs_path_resolve(__dirname, '../design');
+const emails_dir = fs_path_resolve(__dirname, '../design/emails');
 const public_url = process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000';
 
 const config = {
@@ -34,6 +37,25 @@ const config = {
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
     target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
     target_mode: make(process.env.AUTHWALL_TARGET_MODE, {type: 'enum', options: ['direct', 'proxy']}),
+
+    emails: {
+        [const_email.welcome]: `${emails_dir}/welcome.txt`,
+        [const_email.welcome_and_confirm_email]: `${emails_dir}/welcome-and-confirm-email.txt`,
+
+        [const_email.magic_link]: `${emails_dir}/magic-link.txt`,
+        [const_email.password_reset]: `${emails_dir}/password-reset.txt`,
+
+        [const_email.confirm_email]: `${emails_dir}/confirm-email.txt`,
+        [const_email.email_change_requested]: `${emails_dir}/email-change-request.txt`, // sent to new email with confirm link
+        [const_email.email_changed]: `${emails_dir}/email-changed.txt`, // sent to old email: "your email is being changed"
+
+        // notifications
+        [const_email.new_sign_in]: `${emails_dir}/new-sign-in.txt`,
+        [const_email.google_connected]: `${emails_dir}/google-connected.txt`,
+        [const_email.google_disconnected]: `${emails_dir}/google-disconnected.txt`,
+        [const_email.password_changed_from_profile]: `${emails_dir}/password-changed-from-profile.txt`,
+        [const_email.password_changed_via_reset_link]: `${emails_dir}/password-changed-via-reset-link.txt`,
+    },
 
     pages: {
         // unauthenticated entry
@@ -45,6 +67,11 @@ const config = {
         email_verify_confirm: '/auth/email-verify/confirm',
         email_verify_notice: '/auth/email-verify/sent',
         email_verify_success: '/auth/email-verify/success',
+
+        email_change_request: '/auth/email-change/request',
+        email_change_confirm: '/auth/email-change/confirm',
+        email_change_notice: '/auth/email-change/sent',
+        email_change_success: '/auth/email-change/success',
 
         // password flows
         // password_reset_request: '/forgot-password',

@@ -13,6 +13,7 @@ const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
+const complete_sign_up = require('../actions/complete_sign_up');
 
 const routes = [
     {req: 'GET /auth/google', fn: google_get},
@@ -152,7 +153,13 @@ async function google_callback_get(req, res)
     }
 
     const user = await db('users').where({id: user_id}).first();
-    await complete_sign_in(req, res, user);
+
+    if (ident) {
+        await complete_sign_in(req, res, user);
+    }
+    else {
+        await complete_sign_up(req, res, user);
+    }
 }
 
 module.exports = routes;
