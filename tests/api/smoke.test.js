@@ -14,6 +14,7 @@ describe('smoke tests', function () {
     });
 
     it('POST /auth/sign-in', async function () {
+        await this.add_user({username: 'bar', password: 'bar'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'bar', password: 'bar', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
