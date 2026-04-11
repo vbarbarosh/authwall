@@ -3,18 +3,18 @@ const assert = require('assert');
 describe('POST /auth/sign-in', function () {
 
     it('signs in with username and password', async function () {
-        await this.add_user({username: 'foo', password: 'foo'});
+        await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'foo', password: 'foo', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
     });
 
     it('signs in with email and password', async function () {
-        await this.add_user({email: 'bar1@authwall.test', password: 'bar'});
+        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'bar1@authwall.test', password: 'bar', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
@@ -22,16 +22,17 @@ describe('POST /auth/sign-in', function () {
     });
 
     it('redirects to the return url', async function () {
-        await this.add_user({username: 'foo', password: 'foo'});
+        await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'foo', password: 'foo', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
         assert.strictEqual(r.headers.location, 'https://foo.local.test');
     });
 
     it('failure should redirect to the same url', async function () {
+        await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'foo', password: 'foo2', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'mocha', password: 'pass12345', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
         assert.strictEqual(r.headers.location, '/auth/sign-in?return=https://foo.local.test');
     });
@@ -45,24 +46,27 @@ describe('POST /auth/sign-in', function () {
     });
 
     it('fails with invalid username', async function () {
+        await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'xxx', password: 'xxx', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'xxx', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);
     });
 
     it('fails with invalid email', async function () {
+        await this.add_user({username: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'foo@bar.com', password: 'xxx', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'xxx@authwall.test', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);
     });
 
     it('fails with wrong password', async function () {
+        await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'foo', password: 'xxx', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'xxx', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);
