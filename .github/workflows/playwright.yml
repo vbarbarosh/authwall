@@ -25,7 +25,7 @@ jobs:
 #    - name: Run Playwright tests
 #      run: npx playwright test
     - name: Run all tests
-      run: npm test
+      run: bin/migrate && npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
