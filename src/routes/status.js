@@ -1,4 +1,6 @@
 const db = require('../../db');
+const frontend_sessions = require('../helpers/models/frontend_sessions');
+const frontend_user_identities = require('../helpers/models/frontend_user_identities');
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
@@ -33,9 +35,9 @@ async function status_get(req, res)
         csrf_token: req.session.csrf_token,
         display_name: user.display_name,
         avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
-        providers: await db('user_identities').where('user_id', req.session.user_id),
+        providers: frontend_user_identities(await db('user_identities').where('user_id', req.session.user_id)),
         current_session_uid: req.sessionID,
-        sessions: await db('sessions').where('user_id', req.session.user_id),
+        sessions: frontend_sessions(await db('sessions').where('user_id', req.session.user_id)),
     });
 }
 
