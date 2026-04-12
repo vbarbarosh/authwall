@@ -55,36 +55,33 @@ async function create_echo_server()
 
 function create_client(base_url)
 {
-    const cookies = new Map();
-
     return {
+        cookies: new Map(),
         get_json(url) {
-            return request('get', url);
+            return request(this.cookies, 'get', url);
         },
         get_json_no_redirects(url) {
-            return request('get', url, null, true);
+            return request(this.cookies, 'get', url, null, true);
         },
         post_json(url, data) {
-            return request('post', url, data);
+            return request(this.cookies, 'post', url, data);
         },
         post_json_no_redirects(url, data) {
-            return request('post', url, data, true);
+            return request(this.cookies, 'post', url, data, true);
         },
         async post_multipart(url, data) {
             const form = new FormData();
-
             for (const [key, value] of Object.entries(data || {})) {
                 await append_form_value(form, key, value);
             }
-
-            return request('post', url, form);
+            return request(this.cookies, 'post', url, form);
         },
         get_session() {
-            return load_session();
+            return load_session(this.cookies);
         },
     };
 
-    async function load_session() {
+    async function load_session(cookies) {
         const pair = cookies.get('connect.sid');
         if (!pair) {
             return null;
@@ -115,7 +112,7 @@ function create_client(base_url)
         };
     }
 
-    async function request(method, url, data, no_redirects = false) {
+    async function request(cookies, method, url, data, no_redirects = false) {
         let current_method = method;
         let current_url = url;
         let current_data = data;
