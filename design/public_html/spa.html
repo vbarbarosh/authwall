@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="same-origin">
+  <meta name="color-scheme" content="light">
   <title>Authwall</title>
   <style>
     /* ── Reset & Base ── */
@@ -43,11 +46,12 @@
     }
 
     /* ── Demo Bar ── */
+    body[data-demo="1"] .demo-bar { display: flex; }
     .demo-bar {
+      display: none;
       background: #1e1b4b;
       color: #c7d2fe;
       padding: 0 20px;
-      display: flex;
       align-items: center;
       gap: 6px;
       height: 46px;
@@ -76,7 +80,7 @@
     /* ── Viewport ── */
     .viewport {
       flex: 1; display: flex; align-items: flex-start;
-      justify-content: center; padding: 48px 16px 64px;
+      justify-content: center; width: 100%; padding: 48px 16px 64px;
     }
 
     /* ── Auth Card ── */
@@ -294,9 +298,10 @@
     .items-center { align-items: center; }
     .justify-between { justify-content: space-between; }
     .w-full { width: 100%; }
-    [data-view] { display: none; min-width: 500px; }
+    [data-view] { display: none; width: 100%; max-width: 500px; }
     [data-view].active { display: block; }
     @media (max-width: 480px) {
+      .viewport { padding: 24px 12px 40px; }
       .card-header, .card-body, .card-footer { padding-left: 20px; padding-right: 20px; }
       .otp-input { width: 40px !important; height: 48px !important; font-size: 18px !important; }
       .field-row { grid-template-columns: 1fr; }
@@ -304,7 +309,7 @@
     .signout-layout { text-align: center; }
   </style>
 </head>
-<body>
+<body data-demo="0">
 
 <!-- ── Demo Bar ── -->
 <div class="demo-bar">
@@ -339,7 +344,7 @@
   <div data-view="sign-in">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Welcome back</h1>
         <p class="page-sub mt-4">Sign in to continue to your application.</p>
       </div>
@@ -376,7 +381,7 @@
           </button>
         </div>
       </div>
-      <div class="card-footer">Don't have an account? <a href="#" onclick="showView('sign-up')">Create one</a></div>
+      <div class="card-footer">Don't have an account? <a href="/auth" onclick="showView('sign-up')">Create one</a></div>
     </div>
   </div>
 
@@ -385,7 +390,7 @@
   <div data-view="sign-up" data-signup-mode="email-username">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Create an account</h1>
         <p class="page-sub mt-4">Join to access your application.</p>
       </div>
@@ -420,7 +425,7 @@
           <button id="su-submit" class="btn btn-primary mt-4">Create account</button>
         </div>
       </div>
-      <div class="card-footer">Already have an account? <a href="#" onclick="showView('sign-in')">Sign in</a></div>
+      <div class="card-footer">Already have an account? <a href="/auth" onclick="showView('sign-in')">Sign in</a></div>
     </div>
   </div>
 
@@ -428,7 +433,7 @@
   <div data-view="pw-reset-req">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Reset your password</h1>
         <p class="page-sub mt-4">Enter the email linked to your account and we'll send you a reset link.</p>
       </div>
@@ -453,7 +458,7 @@
   <div data-view="pw-reset-sent">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
       </div>
       <div class="card-body text-center">
         <div class="notice-icon success">
@@ -474,7 +479,7 @@
   <div data-view="pw-reset-confirm">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Set new password</h1>
         <p class="page-sub mt-4">Choose a new password for your account.</p>
       </div>
@@ -508,7 +513,7 @@
   <div data-view="magic-req">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Passwordless sign in</h1>
         <p class="page-sub mt-4">We'll email you a one-time link and code. No password needed.</p>
       </div>
@@ -536,7 +541,7 @@
   <div data-view="magic-sent">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
       </div>
       <div class="card-body text-center">
         <div class="notice-icon info">
@@ -557,7 +562,7 @@
   <div data-view="magic-confirm">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Enter your code</h1>
         <p class="page-sub mt-4">We sent a 6-digit code to <strong id="mc-email-display">your email</strong>.<br>Or click the link in the email to sign in instantly.</p>
       </div>
@@ -589,7 +594,7 @@
   <div data-view="profile">
     <div class="card wide">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Your profile</h1>
         <p class="page-sub mt-4">Manage your identity and connected accounts.</p>
       </div>
@@ -676,7 +681,7 @@
   <div data-view="sessions">
     <div class="card wide">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Active sessions</h1>
         <p class="page-sub mt-4">Manage where you're signed in. Revoke any session you don't recognize.</p>
       </div>
@@ -710,7 +715,7 @@
   <div data-view="sign-out">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
       </div>
       <div class="card-body signout-layout">
         <div class="notice-icon danger">
@@ -734,7 +739,7 @@
   <div data-view="email-verify-req">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Verify your email</h1>
         <p class="page-sub mt-4">We'll send a one-time verification link to your email address.</p>
       </div>
@@ -762,7 +767,7 @@
   <div data-view="email-verify-sent">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
       </div>
       <div class="card-body text-center">
         <div class="notice-icon info">
@@ -783,7 +788,7 @@
   <div data-view="email-verify-success">
     <div class="card">
       <div class="card-header">
-        <a class="brand" href="#"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
       </div>
       <div class="card-body text-center">
         <div class="notice-icon success">
@@ -820,9 +825,24 @@ const ROUTES = {
 };
 const PATH_FOR = Object.fromEntries(Object.entries(ROUTES).map(([p, v]) => [v, p]));
 
+const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
 function viewFromPath(pathname) {
-  // strip query string if any
   return ROUTES[pathname.split('?')[0]] || 'sign-in';
+}
+
+function build_sign_in_action() {
+  const params = new URLSearchParams(window.location.search);
+  const next = new URLSearchParams();
+  const ret = params.get('return');
+  if (ret) next.set('return', ret);
+  const qs = next.toString();
+  return '/auth/sign-in' + (qs ? '?' + qs : '');
+}
+
+function sync_sign_in_form() {
+  const si_form = document.getElementById('si-form');
+  if (si_form) si_form.action = build_sign_in_action();
 }
 
 function renderView(name) {
@@ -841,6 +861,7 @@ function showView(name, pushState = true) {
   }
   window.scrollTo(0, 0);
   renderView(name);
+  sync_sign_in_form();
   if (name === 'profile' || name === 'sessions' || name === 'sign-out') {
     api_status().then(s => s.authenticated && render_user_data(s));
   }
@@ -850,6 +871,7 @@ window.addEventListener('popstate', e => {
   const name = (e.state && e.state.view) || viewFromPath(window.location.pathname);
   window.scrollTo(0, 0);
   renderView(name);
+  sync_sign_in_form();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1357,6 +1379,8 @@ document.querySelectorAll('.otp-input').forEach((input, i, all) => {
 // BOOT
 // ═══════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  document.body.dataset.demo = DEMO_MODE ? '1' : '0';
+
   // 1. Render the correct view immediately (sync) — no network needed
   const initial = viewFromPath(window.location.pathname);
   history.replaceState({ view: initial }, '', (PATH_FOR[initial] || window.location.pathname) + window.location.search);
@@ -1377,8 +1401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
-  const si_form = document.getElementById('si-form');
-  if (si_form) si_form.action = window.location.pathname + window.location.search;
+  sync_sign_in_form();
   const si_csrf = document.getElementById('si-csrf');
   if (si_csrf) si_csrf.value = status.csrf_token || '';
   if (status.error && viewFromPath(window.location.pathname) === 'sign-in') {
