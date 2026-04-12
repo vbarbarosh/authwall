@@ -120,4 +120,91 @@ describe('emails • new_sign_in', function () {
         assert.deepStrictEqual(actual, expected);
     });
 
+    it('should be sent after successful sign-in using GitHub', async function () {
+
+        const userinfo = {
+            id: 'github-user-123',
+            name: 'Test User',
+            avatar_url: 'https://example.com/avatar.jpg',
+        };
+
+        nock('https://github.com')
+            .post('/login/oauth/access_token')
+            .reply(200, {
+                access_token: 'fake-token',
+                expires_in: 28800,
+                refresh_token: 'ghr_xxx',
+                refresh_token_expires_in: 15811200,
+                token_type: 'bearer',
+                scope: 'user:email',
+            });
+
+        nock('https://api.github.com')
+            .get('/user')
+            .reply(200, userinfo);
+
+        nock('https://api.github.com')
+            .get('/user/emails')
+            .reply(200, [
+                {
+                    email: 'jack@domain1.com',
+                    primary: true,
+                    verified: true,
+                    visibility: 'public'
+                },
+                {
+                    email: 'jack.m@domain2.com',
+                    primary: false,
+                    verified: true,
+                    visibility: null
+                },
+                {
+                    email: 'jj@domain3.com',
+                    primary: false,
+                    verified: true,
+                    visibility: null
+                }
+            ]);
+
+        await db.transaction(async function () {
+            const now = new Date();
+            const user = await users_create();
+            await db('user_identities').insert({
+                uid: random_uid_user_identity(),
+                user_id: user.id,
+                type: const_user_identity.oauth_github,
+                value: userinfo.id,
+                value_normalized: userinfo.id,
+                created_at: now,
+                updated_at: now,
+                verified_at: now,
+            });
+            await db('user_identities').insert({
+                uid: random_uid_user_identity(),
+                user_id: user.id,
+                type: const_user_identity.email,
+                value: 'jack@domain1.com',
+                value_normalized: normalize_email('jack@domain1.com'),
+                created_at: now,
+                updated_at: now,
+                verified_at: now,
+            });
+        });
+
+        config.github_client_id = 'mocha_github_client_id';
+        config.github_redirect_url = 'mocha_github_redirect_url';
+
+        await this.client.get_json_no_redirects('/auth/github');
+        const sess = await this.client.get_session();
+
+        await this.client.get_json(urlmod('/auth/github/callback', {
+            code: "4/fake_code",
+            state: sess.oauth_state,
+        }));
+
+        const actual = this.sent_emails.map(v => v.name)
+        const expected = [const_email.new_sign_in];
+        assert.deepStrictEqual(actual, expected);
+    });
+
 });

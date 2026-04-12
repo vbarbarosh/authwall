@@ -54,6 +54,12 @@ flows:
     client_secret: ${AUTHWALL_GOOGLE_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_GOOGLE_REDIRECT_URL}
 
+  # Sign in with GitHub
+  github:
+    client_id: ${AUTHWALL_GITHUB_CLIENT_ID}
+    client_secret: ${AUTHWALL_GITHUB_CLIENT_SECRET}
+    redirect_url: ${AUTHWALL_GITHUB_REDIRECT_URL}
+
 targets:
   apps.authwall.test: http://apps:8080
   echo.authwall.test: http://echo:8080

@@ -138,6 +138,11 @@ const config = {
     google_client_secret: process.env.AUTHWALL_GOOGLE_CLIENT_SECRET,
     google_redirect_url: process.env.AUTHWALL_GOOGLE_REDIRECT_URL,
 
+    // GitHub Login
+    github_client_id: process.env.AUTHWALL_GITHUB_CLIENT_ID,
+    github_client_secret: process.env.AUTHWALL_GITHUB_CLIENT_SECRET,
+    github_redirect_url: process.env.AUTHWALL_GITHUB_REDIRECT_URL,
+
     // Resend mailer
     resend_key: process.env.AUTHWALL_RESEND_KEY,
     resend_from: process.env.AUTHWALL_RESEND_FROM,
