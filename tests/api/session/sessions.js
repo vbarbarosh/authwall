@@ -1,9 +1,50 @@
 const assert = require('assert');
+const db = require('../../../db');
 
-describe('revoke all sessions after password change', function () {
+describe('session', function () {
 
-    it('password change from profile should revoke other sessions', async function () {
+    it('sign-in replaces existing session', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
+
+        const status = await this.client.get_json('/auth/status');
+        const session =  await this.client.get_session();
+        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+
+        const session2 = await this.client.get_session();
+        assert.notStrictEqual(session.uid, session2.uid);
+        assert.ok(await db('sessions').where('uid', session.uid).first() === undefined);
+        assert.ok(await db('sessions').where('uid', session2.uid).first() !== undefined);
+    });
+
+    it('expired session is ignored', async function () {
+        await this.client.get_json('/auth/status');
+        const session1 = await this.client.get_session();
+
+        await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
+
+        await this.client.get_json('/auth/status');
+        const session2 = await this.client.get_session();
+
+        assert.notStrictEqual(session1.uid, session2.uid);
+        assert.ok(await db('sessions').where('uid', session1.uid).first() !== undefined);
+        assert.ok(await db('sessions').where('uid', session2.uid).first() !== undefined);
+    });
+
+    it('expired session results in unauthenticated user', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+
+        const status1 = await this.client.get_json('/auth/status');
+        const session1 = await this.client.get_session();
+        assert.strictEqual(status1.authenticated, true);
+
+        await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
+
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.authenticated, false);
+    });
+
+    it('password change from profile keeps current session and revokes others', async function () {
+        const {user_id} = await this.add_user({username: 'mocha', password: 'pass123'});
 
         const status = [null, null, null];
         const cookies = [new Map(), new Map(), new Map()];
@@ -45,10 +86,13 @@ describe('revoke all sessions after password change', function () {
         this.client.cookies = cookies[2];
         status[2] = await this.client.get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, false);
+
+        // ensure old sessions no longer in db
+        assert.deepStrictEqual(await db('sessions').where('user_id', user_id).count('* AS c'), [{c: 1}]);
     });
 
-    it('password change via reset link should revoke all sessions', async function () {
-        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
+    it('password reset via link revokes all sessions', async function () {
+        const {user_id} = await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = [null, null, null];
         const cookies = [new Map(), new Map(),new Map()];
@@ -101,6 +145,9 @@ describe('revoke all sessions after password change', function () {
         this.client.cookies = cookies[1];
         status[1] = await this.client.get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, false);
+
+        // ensure old sessions no longer in db
+        assert.deepStrictEqual(await db('sessions').where('user_id', user_id).count('* AS c'), [{c: 1}]);
     });
 
 });

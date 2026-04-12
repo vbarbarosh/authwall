@@ -240,7 +240,7 @@ async function add_user(params = {})
     }
     await db('user_identities').insert(rows);
 
-    return {email, username, password};
+    return {user_id: user.id, email, username, password};
 }
 
 async function sign_in(params)
