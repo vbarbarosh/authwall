@@ -8,7 +8,7 @@ describe('GET /auth/status', function () {
     });
 
     it('returns authenticated status with user info', async function () {
-        await this.sign_in();
+        await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         assert.deepStrictEqual(status.authenticated, true);
     });

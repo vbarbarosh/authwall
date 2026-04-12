@@ -12,13 +12,10 @@ const users_create = require('../../../src/helpers/models/users_create');
 describe('emails • new_sign_in', function () {
 
     it('should be sent after successful sign-in using username and password', async function () {
-        const username = 'mocha';
-        const password = 'pass123';
-
-        await this.add_user({username, password});
+        await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username, password, _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.new_sign_in];
@@ -26,13 +23,10 @@ describe('emails • new_sign_in', function () {
     });
 
     it('should be sent after successful sign-in using email and password', async function () {
-        const email = 'mocha@authwall.test';
-        const password = 'pass123';
-
-        await this.add_user({email, password});
+        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: email, password, _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.new_sign_in];
@@ -40,12 +34,10 @@ describe('emails • new_sign_in', function () {
     });
 
     it('should be sent after successful sign-in using magick link', async function () {
-        const email = 'mocha@authwall.test';
-
-        await this.add_user({email});
+        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
+        await this.client.post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
         await this.client.get_json(this.sent_emails[0].placeholders.link);
 
         const actual = this.sent_emails.map(v => v.name)
@@ -54,13 +46,11 @@ describe('emails • new_sign_in', function () {
     });
 
     it('should be sent after successful sign-in using magick code', async function () {
-        const email = 'mocha@authwall.test';
-
-        await this.add_user({email});
+        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
-        await this.client.post_json('/auth/magic-link/confirm', {email, code: this.sent_emails[0].placeholders.code, _csrf: status.csrf_token});
+        await this.client.post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: this.sent_emails[0].placeholders.code, _csrf: status.csrf_token});
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.new_sign_in];

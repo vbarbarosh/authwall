@@ -7,7 +7,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('updates display name', async function () {
-        await this.sign_in();
+        await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         assert.strictEqual(status.display_name, null);
         await this.client.post_json('/auth/profile', {display_name: 'Mocha 123', _csrf: status.csrf_token});
@@ -16,7 +16,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('uploads avatar image', async function () {
-        await this.sign_in();
+        await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         assert.strictEqual(status.avatar_url, null);
         await this.client.post_multipart('/auth/profile', {

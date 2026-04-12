@@ -13,7 +13,7 @@ describe('shape • status', function () {
     });
 
     it('authenticated', async function () {
-        await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         const actual = await this.client.get_json('/auth/status');
         const expected = {
             error: null,
