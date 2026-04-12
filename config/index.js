@@ -103,6 +103,7 @@ const config = {
         allowed_domains: parse_domains(settings.access.allowed_domains),
     },
 
+    logger: make(process.env.AUTHWALL_LOGGER, {type: 'enum', options: ['daily', 'stdout']}),
     logs_dir,
     uploads_dir,
 
