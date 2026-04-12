@@ -55,7 +55,7 @@ async function create_echo_server()
 
 function create_client(base_url)
 {
-    const map = new Map();
+    const cookies = new Map();
 
     return {
         get_json(url) {
@@ -85,7 +85,7 @@ function create_client(base_url)
     };
 
     async function load_session() {
-        const pair = map.get('connect.sid');
+        const pair = cookies.get('connect.sid');
         if (!pair) {
             return null;
         }
@@ -123,8 +123,8 @@ function create_client(base_url)
         while (true) {
             const headers = {};
 
-            if (map.size) {
-                headers.Cookie = Array.from(map.values()).join('; ');
+            if (cookies.size) {
+                headers.Cookie = Array.from(cookies.values()).join('; ');
             }
 
             if (current_data && !(current_data instanceof FormData)) {
@@ -146,7 +146,7 @@ function create_client(base_url)
                 for (const c of set_cookie) {
                     const [pair] = c.split(';');
                     const [name] = pair.split('=');
-                    map.set(name, pair);
+                    cookies.set(name, pair);
                 }
             }
 
