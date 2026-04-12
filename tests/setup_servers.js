@@ -21,6 +21,9 @@ async function spin(ctx, _this, fn)
         await promisify(cb => echo_server.listen(0, '127.0.0.1', cb));
         config.target_url = `http://127.0.0.1:${echo_server.address().port}`;
 
+        config.cookie.domain = _this._runnable.title.includes('[config.cookie.domain=.authwall.test]') ? '.authwall.test' : null;
+        config.cookie.secure = _this._runnable.title.includes('[config.cookie.secure=true]');
+
         const app = await create_app();
         const server = http.createServer(app);
         await promisify(cb => server.listen(0, '127.0.0.1', cb));
@@ -62,6 +65,9 @@ function create_client(base_url)
         },
         get_json_no_redirects(url) {
             return request(this.cookies, 'get', url, null, true);
+        },
+        get_json_no_redirects_no_https(url) {
+            return request(this.cookies, 'get', url, null, true, false);
         },
         post_json(url, data) {
             return request(this.cookies, 'post', url, data);
@@ -112,7 +118,7 @@ function create_client(base_url)
         };
     }
 
-    async function request(cookies, method, url, data, no_redirects = false) {
+    async function request(cookies, method, url, data, no_redirects = false, simulate_https = true) {
         let current_method = method;
         let current_url = url;
         let current_data = data;
@@ -126,6 +132,11 @@ function create_client(base_url)
 
             if (current_data && !(current_data instanceof FormData)) {
                 headers['content-type'] = 'application/json';
+            }
+
+            if (config.cookie.secure && simulate_https) {
+                // make Express think the request is HTTPS
+                headers['X-Forwarded-Proto'] = 'https';
             }
 
             const res = await axios({
