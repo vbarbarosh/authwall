@@ -12,6 +12,13 @@ async function complete_password_change(req, res, user_id)
     const user = await db('users').where({id: user_id}).first();
 
     await replace_session(req, user);
+
+    // revoke other sessions
+    await db('sessions')
+        .where({user_id: req.session.user_id})
+        .whereNot({uid: req.sessionID})
+        .delete();
+
     redirect(req, res, config.pages.profile);
 
     await send_email_nothrow({

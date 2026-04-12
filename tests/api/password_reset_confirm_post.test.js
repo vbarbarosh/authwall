@@ -4,6 +4,7 @@ describe('POST /auth/password-reset/confirm', function () {
 
     it('resets password with valid token', async function () {
         await this.add_user({email: 'mocha@authwall.test'});
+
         const status = await this.client.get_json('/auth/status');
         assert.strictEqual(status.error, null);
         assert.strictEqual(status.authenticated, false);
@@ -22,7 +23,7 @@ describe('POST /auth/password-reset/confirm', function () {
         assert.strictEqual(status3.error, null);
         assert.strictEqual(status3.authenticated, false);
 
-        await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
+        await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status3.csrf_token});
         const status4 = await this.client.get_json('/auth/status');
         assert.strictEqual(status4.error, null);
         assert.strictEqual(status4.authenticated, true);

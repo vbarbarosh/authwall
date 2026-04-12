@@ -209,12 +209,12 @@ async function append_form_value(form, key, value)
 async function add_user(params = {})
 {
     const verified = Boolean(params.verified ?? true);
-    const password = params.password ?? 'mocha';
+    const password = params.password ?? null;
 
-    const username = params.username ?? 'mocha';
+    const username = params.username ?? null;
     const username_normalized = normalize_username(username);
 
-    const email = params.email ?? 'mocha@authwall.test';
+    const email = params.email ?? null;
     const email_normalized = normalize_email(email);
 
     const user = await users_create({password});
