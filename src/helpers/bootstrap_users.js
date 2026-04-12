@@ -4,6 +4,7 @@ const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
 const normalize_email = require('./normalize/normalize_email');
 const normalize_username = require('./normalize/normalize_username');
+const random_uid_user_identity = require('./random/random_uid_user_identity');
 const users_create = require('./models/users_create');
 
 async function bootstrap_users()
@@ -55,8 +56,8 @@ async function bootstrap_users()
         const now = new Date();
         const base = {user_id, created_at: now, updated_at: now, verified_at: now};
         const rows = [
-            {...base, type: const_user_identity.username, value: username, value_normalized: username_normalized},
-            ...emails.map(v => ({...base, user_id, type: const_user_identity.email, value: v, value_normalized: normalize_email(v)})),
+            {...base, uid: random_uid_user_identity(), type: const_user_identity.username, value: username, value_normalized: username_normalized},
+            ...emails.map(v => ({...base, user_id, uid: random_uid_user_identity(), type: const_user_identity.email, value: v, value_normalized: normalize_email(v)})),
         ].filter(v => v.value_normalized);
         await db('user_identities').insert(rows).onConflict(['type', 'value_normalized']).ignore();
 

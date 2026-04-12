@@ -1,4 +1,3 @@
-const assert = require('assert');
 const assert_shape = require('../../../src/helpers/assert/assert_shape');
 
 describe('shape • status', function () {
@@ -26,6 +25,7 @@ describe('shape • status', function () {
             avatar_url: null,
             providers: [
                 {
+                    uid: String, // 'awident_kc77julc7v2u631t2mg2hjbt',
                     type: String, // 'username',
                     value: String, // 'mocha',
                     value_normalized: String, // 'mocha',
@@ -34,6 +34,7 @@ describe('shape • status', function () {
                     verified_at: Number, // 1775985911948
                 },
                 {
+                    uid: String, // 'awident_ciqvly2ik3js277xpb3y6gf0',
                     type: String, // 'email',
                     value: String, // 'mocha@authwall.test',
                     value_normalized: String, // 'mocha@authwall.test',

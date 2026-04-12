@@ -5,6 +5,7 @@
 exports.up = async function (knex) {
     await knex.schema.createTable('user_identities', function (table) {
         table.increments('id');
+        table.string('uid', 32).notNullable().unique().collate('utf8mb4_bin');
         table.integer('user_id').unsigned().notNullable().index().references('id').inTable('users').onDelete('RESTRICT');
         // table.enum('type', ['username', 'email', 'google', 'apple', 'microsoft', 'phone']).notNullable();
         table.string('type', 32).notNullable().collate('utf8mb4_bin');

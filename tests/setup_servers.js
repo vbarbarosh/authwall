@@ -11,6 +11,7 @@ const normalize_email = require('../src/helpers/normalize/normalize_email');
 const normalize_username = require('../src/helpers/normalize/normalize_username');
 const promisify = require('../src/helpers/promisify');
 const users_create = require('../src/helpers/models/users_create');
+const random_uid_user_identity = require('../src/helpers/random/random_uid_user_identity');
 
 async function spin(ctx, _this, fn)
 {
@@ -224,10 +225,10 @@ async function add_user(params = {})
     const base = {user_id: user.id, created_at: now, updated_at: now, verified_at: now};
     const rows = [];
     if (username_normalized) {
-        rows.push({...base, type: const_user_identity.username, value: username, value_normalized: username_normalized});
+        rows.push({...base, uid: random_uid_user_identity(), type: const_user_identity.username, value: username, value_normalized: username_normalized});
     }
     if (email_normalized) {
-        rows.push({...base, type: const_user_identity.email, value: email, value_normalized: email_normalized, verified_at: (verified ? now : null)});
+        rows.push({...base, uid: random_uid_user_identity(), type: const_user_identity.email, value: email, value_normalized: email_normalized, verified_at: (verified ? now : null)});
     }
     await db('user_identities').insert(rows);
 

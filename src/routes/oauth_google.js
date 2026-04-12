@@ -1,5 +1,6 @@
 const authorize_email = require('../helpers/authorize_email');
 const complete_sign_in = require('../actions/complete_sign_in');
+const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_user_identity = require('../helpers/const/const_user_identity');
@@ -9,11 +10,11 @@ const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_url
 const normalize_email = require('../helpers/normalize/normalize_email');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
+const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
-const complete_sign_up = require('../actions/complete_sign_up');
 
 const routes = [
     {req: 'GET /auth/google', fn: google_get},
@@ -94,6 +95,7 @@ async function google_callback_get(req, res)
 
         const now = new Date();
         await db('user_identities').insert({
+            uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: const_user_identity.oauth_google,
             value: null,
@@ -125,6 +127,7 @@ async function google_callback_get(req, res)
             const user = await users_create({display_name, avatar_url});
             user_id = user.id;
             await db('user_identities').insert({
+                uid: random_uid_user_identity(),
                 user_id,
                 type: const_user_identity.oauth_google,
                 value: userinfo.sub,
@@ -139,6 +142,7 @@ async function google_callback_get(req, res)
                 await authorize_email(email_normalized);
                 if (email_normalized) {
                     await db('user_identities').insert({
+                        uid: random_uid_user_identity(),
                         user_id,
                         type: const_user_identity.email,
                         value: email,

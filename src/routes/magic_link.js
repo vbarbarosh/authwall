@@ -12,6 +12,7 @@ const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
@@ -93,6 +94,7 @@ async function magic_link_confirm_get(req, res)
     else {
         const user = await users_create();
         await db('user_identities').insert({
+            uid: random_uid_user_identity(),
             user_id: user.id,
             type: const_user_identity.email,
             value: email,
@@ -145,6 +147,7 @@ async function magic_link_confirm_post(req, res)
     else {
         const user = await users_create();
         await db('user_identities').insert({
+            uid: random_uid_user_identity(),
             user_id: user.id,
             type: const_user_identity.email,
             value: email,

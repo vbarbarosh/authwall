@@ -9,6 +9,7 @@ const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes'
 const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 
 const SECOND = 1000;
 
@@ -86,6 +87,7 @@ async function email_change_confirm_get(req, res)
         await db('user_identities').where({id: record.id}).del();
 
         await db('user_identities').insert({
+            uid: random_uid_user_identity(),
             user_id: record.user_id,
             type: const_user_identity.email,
             value: record.email_normalized,

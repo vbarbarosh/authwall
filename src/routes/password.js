@@ -15,6 +15,7 @@ const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
+const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
 
@@ -119,6 +120,7 @@ async function sign_up_post(req, res)
             const insert = [];
             if (email_normalized) {
                 insert.push({
+                    uid: random_uid_user_identity(),
                     user_id: user.id,
                     type: const_user_identity.email,
                     value: email,
@@ -130,6 +132,7 @@ async function sign_up_post(req, res)
             }
             if (username_normalized) {
                 insert.push({
+                    uid: random_uid_user_identity(),
                     user_id: user.id,
                     type: const_user_identity.username,
                     value: username,

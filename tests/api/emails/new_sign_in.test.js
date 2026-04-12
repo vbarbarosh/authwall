@@ -5,6 +5,7 @@ const const_user_identity = require('../../../src/helpers/const/const_user_ident
 const db = require('../../../db');
 const nock = require('nock');
 const normalize_email = require('../../../src/helpers/normalize/normalize_email');
+const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../../../src/helpers/models/users_create');
 
@@ -88,6 +89,7 @@ describe('emails • new_sign_in', function () {
             const now = new Date();
             const user = await users_create();
             await db('user_identities').insert({
+                uid: random_uid_user_identity(),
                 user_id: user.id,
                 type: const_user_identity.oauth_google,
                 value: userinfo.sub,
@@ -97,6 +99,7 @@ describe('emails • new_sign_in', function () {
                 verified_at: now,
             });
             await db('user_identities').insert({
+                uid: random_uid_user_identity(),
                 user_id: user.id,
                 type: const_user_identity.email,
                 value: userinfo.email,
