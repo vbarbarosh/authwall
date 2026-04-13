@@ -6,3 +6,5 @@
     - user signed up using Google, then connected GitHub account, then disconnected Google
       - now signup using the same Google account should lead to creating new user, and since
         email already attached to another user, this one will be without email
+- user navigated to /auth/profile; redirected to /auth/sign-in?return=/auth/profile; chose Continue with GitHub; after sucesfull login he should be redirected to /auth/profile
+- user signed up using GitHub without email; he wants to set password - since no email nor username this should be impossible
