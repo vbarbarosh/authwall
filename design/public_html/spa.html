@@ -1077,7 +1077,7 @@ function render_user_data(s) {
     const device_icon = icon === 'mobile' ? ICON_MOBILE : ICON_DESKTOP;
     const meta = [sess.ip, fmt_date(sess.last_seen_at)].filter(Boolean).join(' · ');
     const right = is_current
-      ? `<span class="session-badge current">This device</span>`
+      ? `<span class="session-badge current" data-testid="sessions-current-badge">This device</span>`
       : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" data-revoke="${sess.uid}">Revoke</button>`;
     return `<div class="session-item">
       <div class="session-icon">${device_icon}</div>

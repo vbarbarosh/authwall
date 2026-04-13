@@ -10,6 +10,13 @@ test.describe('auth spa session', function () {
         await expect(page.getByTestId('sessions-view')).toBeVisible();
     });
 
+    test('successful sign-in honors return to profile', async function ({page}) {
+        await sign_in_as_seeded_user(page, {path: '/auth/sign-in?return=%2Fauth%2Fprofile'});
+
+        await expect(page).toHaveURL('http://localhost:3000/auth/profile');
+        await expect(page.getByTestId('profile-view')).toBeVisible();
+    });
+
     test('seeded user can sign in and see profile connections', async function ({page}) {
         await sign_in_as_seeded_user(page);
 
@@ -25,7 +32,7 @@ test.describe('auth spa session', function () {
 
         await expect(page).toHaveURL('http://localhost:3000/auth/sessions');
         await expect(page.getByTestId('sessions-view')).toBeVisible();
-        await expect(page.getByText('This device')).toBeVisible();
+        await expect(page.getByTestId('sessions-current-badge')).toBeVisible();
     });
 
     test('sign-out returns the user to sign-in', async function ({page}) {

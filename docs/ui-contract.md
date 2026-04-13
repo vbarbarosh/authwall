@@ -54,6 +54,7 @@ The following `data-testid` values are the supported Playwright contract:
 - `profile-view`
 - `profile-connections`
 - `sessions-view`
+- `sessions-current-badge`
 - `signout-view`
 - `signout-submit`
 - `signin-error`
