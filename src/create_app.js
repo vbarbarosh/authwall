@@ -93,9 +93,20 @@ async function create_app()
     // Support for mountable design
     app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
 
+    const protected_spa_pages = new Set([
+        config.pages.profile,
+        config.pages.sessions,
+        config.pages.sign_out,
+    ]);
+
     for (const key in config.pages) {
         const path = config.pages[key];
         app.get(path, async function (req, res) {
+            if (protected_spa_pages.has(path) && !req.session?.user_id) {
+                als.logger.write(`[auth_go_to_login] GET ${path}`);
+                return res.redirect(urlmod(config.pages.sign_in, {return: req.originalUrl}));
+            }
+
             const spa = fs_path_resolve(__dirname, '../design/public_html/spa.html');
             if (await fs_exists(spa)) {
                 res.sendFile(spa);

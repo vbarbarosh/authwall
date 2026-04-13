@@ -52,6 +52,8 @@ The following `data-testid` values are the supported Playwright contract:
 - `profile-view`
 - `sessions-view`
 - `signout-view`
+- `signout-submit`
+- `signin-error`
 
 ## Primary Expectations
 
@@ -60,6 +62,8 @@ The following `data-testid` values are the supported Playwright contract:
 - A successful sign-in with a seeded user lands on the profile view.
 - The sessions route is reachable after sign-in.
 - The sign-out route is reachable after sign-in and can end the current session.
+- Unauthenticated navigation to `/auth/profile` resolves to the sign-in view.
+- Failed sign-in keeps the user on the sign-in view and exposes an error banner.
 
 ## Test Ownership
 
