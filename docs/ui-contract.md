@@ -68,11 +68,22 @@ The following `data-testid` values are the supported Playwright contract:
 - The sign-up route exposes the sign-up view and both OAuth entry buttons.
 - Unauthenticated navigation to `/auth/profile` resolves to the sign-in view.
 - Unauthenticated navigation to `/auth/sessions` resolves to the sign-in view.
+- Unauthenticated navigation to `/auth/sign-out` resolves to the sign-in view.
 - Failed sign-in keeps the user on the sign-in view and exposes an error banner.
 - Successful sign-in with `?return=` lands on that protected route.
 - The magic-link request flow reaches the sent view after submission.
 - The authenticated profile view exposes the connected identities section.
+- The authenticated sessions view exposes the current-device state.
 - The sign-out route is reachable after sign-in and can end the current session.
+
+## Test Organization
+
+The Playwright smoke suite is split by state:
+
+- `tests/playwright/auth-anon.spec.js`
+- `tests/playwright/auth-session.spec.js`
+
+Shared helpers live in `tests/playwright/helpers.js`.
 
 ## Test Ownership
 
