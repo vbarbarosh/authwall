@@ -1,21 +1,27 @@
 const assert = require('assert');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const db = require('../../db');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('GET /auth/magic-link/confirm', function () {
 
     it('signs in existing user via magic link token', async function () {
-        const user = await this.add_user({email: 'mocha@authwall.test'});
-        const status = await this.client.get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email: user.email, _csrf: status.csrf_token});
+        const {email} = await this.add_user({email: 'mocha@authwall.test'});
 
-        const [, token] = this.sent_emails[0].text.match(/confirm\?token=([^\s]+)/);
-        await this.client.get_json(`/auth/magic-link/confirm?token=${token}`);
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
+
+        const {token} = this.sent_emails[0].placeholders;
+        const magic_link = await db('magic_links').where('token_hash', crypto_hash_sha256(token)).first();
+        assert.strictEqual(magic_link.used_at, null);
+
+        await this.client.get_json(urlmod('/auth/magic-link/confirm', {token}));
 
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
 
-        const row = await db('magic_links').first();
+        const row = await db('magic_links').where('id', magic_link.id).first();
         assert.ok(row.used_at);
     });
 

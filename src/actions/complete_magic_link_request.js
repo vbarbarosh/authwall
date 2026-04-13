@@ -11,8 +11,9 @@ async function complete_magic_link_request(req, res, email, code, token)
         to: {email},
         placeholders: {
             display_name: '',
-            code,
             link: config.public_url + urlmod(config.pages.magic_link_confirm, {token}),
+            code,
+            token,
         },
     });
 
