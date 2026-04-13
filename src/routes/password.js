@@ -241,6 +241,14 @@ async function change_password_post(req, res)
 {
     const {current_password, password, password_confirm} = req.body;
 
+    const ident = await db('user_identities').where({user_id: req.session.user_id})
+        .whereIn('type', [const_user_identity.email, const_user_identity.username])
+        .whereNotNull('verified_at')
+        .first();
+    if (!ident) {
+        throw new Error('Cannot set or change password without a verified email or username');
+    }
+
     if (!current_password || !password || !password_confirm) {
         throw new Error('Missing fields');
     }

@@ -245,10 +245,12 @@ async function add_user(params = {})
 
 async function sign_in(params)
 {
-    const {username, email, password} = await add_user(params);
+    const {user_id, username, email, password} = await add_user(params);
 
     const status = await this.client.get_json('/auth/status');
     await this.client.post_json('/auth/sign-in', {username: username ?? email, password, _csrf: status.csrf_token});
+
+    return {user_id};
 }
 
 module.exports = {

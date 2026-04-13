@@ -1,4 +1,5 @@
 const assert = require('assert');
+const db = require('../../db');
 
 describe('POST /auth/change-password', function () {
 
@@ -10,6 +11,16 @@ describe('POST /auth/change-password', function () {
         await this.client.post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
+    });
+
+    it('Cannot set or change password without a verified email or username', async function () {
+        const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
+        await db('user_identities').where({user_id}).del();
+        await db('users').where({id: user_id}).update({password_hash: null});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/change-password', {_csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Cannot set or change password without a verified email or username');
     });
 
     it('fails with missing fields');
