@@ -30,6 +30,8 @@ The UI contract does not cover:
 - `/auth/profile` renders the profile view for an authenticated user
 - `/auth/sessions` renders the sessions view for an authenticated user
 - `/auth/sign-out` renders the sign-out view for an authenticated user
+- `/auth/magic-link` renders the magic-link request view
+- `/auth/magic-link/sent` renders the magic-link sent view
 
 Unauthenticated navigation to authenticated routes may redirect to the sign-in
 route. Playwright should assert the user-visible outcome, not the internal
@@ -50,20 +52,27 @@ The following `data-testid` values are the supported Playwright contract:
 - `signup-google`
 - `signup-github`
 - `profile-view`
+- `profile-connections`
 - `sessions-view`
 - `signout-view`
 - `signout-submit`
 - `signin-error`
+- `magic-request-view`
+- `magic-request-email`
+- `magic-request-submit`
+- `magic-sent-view`
 
 ## Primary Expectations
 
 - The sign-in route exposes the sign-in form and both OAuth entry buttons.
 - The sign-up route exposes the sign-up view and both OAuth entry buttons.
-- A successful sign-in with a seeded user lands on the profile view.
-- The sessions route is reachable after sign-in.
-- The sign-out route is reachable after sign-in and can end the current session.
 - Unauthenticated navigation to `/auth/profile` resolves to the sign-in view.
+- Unauthenticated navigation to `/auth/sessions` resolves to the sign-in view.
 - Failed sign-in keeps the user on the sign-in view and exposes an error banner.
+- Successful sign-in with `?return=` lands on that protected route.
+- The magic-link request flow reaches the sent view after submission.
+- The authenticated profile view exposes the connected identities section.
+- The sign-out route is reachable after sign-in and can end the current session.
 
 ## Test Ownership
 

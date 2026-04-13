@@ -521,7 +521,7 @@
   </div>
 
   <!-- ── 6. MAGIC LINK — REQUEST ── -->
-  <div data-view="magic-req">
+  <div data-view="magic-req" data-testid="magic-request-view">
     <div class="card">
       <div class="card-header">
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
@@ -532,13 +532,13 @@
         <div class="form">
           <div class="field">
             <label for="ml-email">Email address</label>
-            <input type="email" id="ml-email" placeholder="you@example.com" autocomplete="email">
+            <input type="email" id="ml-email" placeholder="you@example.com" autocomplete="email" data-testid="magic-request-email">
           </div>
           <div id="ml-error" class="alert alert-error" style="display:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span id="ml-error-msg"></span>
           </div>
-          <button id="ml-submit" class="btn btn-primary mt-4">
+          <button id="ml-submit" class="btn btn-primary mt-4" data-testid="magic-request-submit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             Send magic link
           </button>
@@ -549,7 +549,7 @@
   </div>
 
   <!-- ── 7. MAGIC LINK — SENT ── -->
-  <div data-view="magic-sent">
+  <div data-view="magic-sent" data-testid="magic-sent-view">
     <div class="card">
       <div class="card-header">
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
@@ -644,7 +644,7 @@
           <hr>
 
           <div class="section-title">Connected identities</div>
-          <div id="p-connections">
+          <div id="p-connections" data-testid="profile-connections">
             <div class="text-sm text-muted" style="padding:8px 0">Loading…</div>
           </div>
 
