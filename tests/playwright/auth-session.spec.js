@@ -1,17 +1,18 @@
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const {test, expect} = require('@playwright/test');
 const {sign_in_as_seeded_user} = require('./helpers');
 
 test.describe('auth spa session', function () {
 
     test('successful sign-in honors return to sessions', async function ({page}) {
-        await sign_in_as_seeded_user(page, {path: '/auth/sign-in?return=%2Fauth%2Fsessions'});
+        await sign_in_as_seeded_user(page, {path: urlmod('/auth/sign-in', {return: '/auth/sessions'})});
 
         await expect(page).toHaveURL('http://localhost:3000/auth/sessions');
         await expect(page.getByTestId('sessions-view')).toBeVisible();
     });
 
     test('successful sign-in honors return to profile', async function ({page}) {
-        await sign_in_as_seeded_user(page, {path: '/auth/sign-in?return=%2Fauth%2Fprofile'});
+        await sign_in_as_seeded_user(page, {path: urlmod('/auth/sign-in', {return: '/auth/profile'})});
 
         await expect(page).toHaveURL('http://localhost:3000/auth/profile');
         await expect(page.getByTestId('profile-view')).toBeVisible();

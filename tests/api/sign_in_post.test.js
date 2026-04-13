@@ -1,4 +1,5 @@
 const assert = require('assert');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('POST /auth/sign-in', function () {
 
@@ -24,7 +25,7 @@ describe('POST /auth/sign-in', function () {
     it('redirects to the return url', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: 'https://foo.local.test'}), {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
         assert.strictEqual(r.headers.location, 'https://foo.local.test');
     });
@@ -32,9 +33,9 @@ describe('POST /auth/sign-in', function () {
     it('failure should redirect to the same url', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects('/auth/sign-in?return=https://foo.local.test', {username: 'mocha', password: 'pass12345', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: 'https://foo.local.test'}), {username: 'mocha', password: 'pass12345', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, '/auth/sign-in?return=https://foo.local.test');
+        assert.strictEqual(r.headers.location, urlmod('/auth/sign-in', {return: 'https://foo.local.test'}));
     });
 
     it('fails with missing fields', async function () {

@@ -1,3 +1,4 @@
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const {test, expect} = require('@playwright/test');
 
 test.describe('auth spa anonymous', function () {
@@ -25,21 +26,21 @@ test.describe('auth spa anonymous', function () {
     test('unauthenticated user hitting profile is sent to sign-in', async function ({page}) {
         await page.goto('/auth/profile');
 
-        await expect(page).toHaveURL('http://localhost:3000/auth/sign-in?return=%2Fauth%2Fprofile');
+        await expect(page).toHaveURL(urlmod('http://localhost:3000/auth/sign-in', {return: '/auth/profile'}));
         await expect(page.getByTestId('signin-view')).toBeVisible();
     });
 
     test('unauthenticated user hitting sessions is sent to sign-in', async function ({page}) {
         await page.goto('/auth/sessions');
 
-        await expect(page).toHaveURL('http://localhost:3000/auth/sign-in?return=%2Fauth%2Fsessions');
+        await expect(page).toHaveURL(urlmod('http://localhost:3000/auth/sign-in', {return: '/auth/sessions'}));
         await expect(page.getByTestId('signin-view')).toBeVisible();
     });
 
     test('unauthenticated user hitting sign-out is sent to sign-in', async function ({page}) {
         await page.goto('/auth/sign-out');
 
-        await expect(page).toHaveURL('http://localhost:3000/auth/sign-in?return=%2Fauth%2Fsign-out');
+        await expect(page).toHaveURL(urlmod('http://localhost:3000/auth/sign-in', {return: '/auth/sign-out'}));
         await expect(page.getByTestId('signin-view')).toBeVisible();
     });
 

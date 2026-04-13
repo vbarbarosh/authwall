@@ -30,7 +30,7 @@ describe('GET /auth/magic-link/confirm', function () {
         await this.client.post_json('/auth/magic-link/request', {email: 'new-user@authwall.test', _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
-        await this.client.get_json(`/auth/magic-link/confirm?token=${token}`);
+        await this.client.get_json(urlmod('/auth/magic-link/confirm', {token}));
 
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -51,7 +51,7 @@ describe('GET /auth/magic-link/confirm', function () {
     });
 
     it('fails with invalid token', async function () {
-        await this.client.get_json('/auth/magic-link/confirm?token=invalid');
+        await this.client.get_json(urlmod('/auth/magic-link/confirm', {token: 'invalid'}));
 
         const status = await this.client.get_json('/auth/status');
         assert.strictEqual(status.error, 'Invalid or expired magic link');
@@ -64,7 +64,7 @@ describe('GET /auth/magic-link/confirm', function () {
 
         const {token} = this.sent_emails[0].placeholders;
         await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});
-        await this.client.get_json(`/auth/magic-link/confirm?token=${token}`);
+        await this.client.get_json(urlmod('/auth/magic-link/confirm', {token}));
 
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid or expired magic link');
