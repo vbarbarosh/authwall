@@ -8,7 +8,7 @@ describe('POST /auth/magic-link/confirm', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/magic-link/request', {email: user.email, _csrf: status.csrf_token});
 
-        const [, code] = this.sent_emails[0].text.match(/confirmation page:\s*(\d+)/i);
+        const {code} = this.sent_emails[0].placeholders;
         await this.client.post_json('/auth/magic-link/confirm', {email: user.email, code, _csrf: status.csrf_token});
 
         const status2 = await this.client.get_json('/auth/status');
@@ -20,7 +20,7 @@ describe('POST /auth/magic-link/confirm', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/magic-link/request', {email: 'new-user@authwall.test', _csrf: status.csrf_token});
 
-        const [, code] = this.sent_emails[0].text.match(/confirmation page:\s*(\d+)/i);
+        const {code} = this.sent_emails[0].placeholders;
         await this.client.post_json('/auth/magic-link/confirm', {email: 'new-user@authwall.test', code, _csrf: status.csrf_token});
 
         const status2 = await this.client.get_json('/auth/status');
@@ -61,7 +61,7 @@ describe('POST /auth/magic-link/confirm', function () {
     it('fails with expired code', async function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/magic-link/request', {email: 'expired-code@authwall.test', _csrf: status.csrf_token});
-        const [, code] = this.sent_emails[0].text.match(/confirmation page:\s*(\d+)/i);
+        const {code} = this.sent_emails[0].placeholders;
         await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});
         await this.client.post_json('/auth/magic-link/confirm', {email: 'expired-code@authwall.test', code, _csrf: status.csrf_token});
 

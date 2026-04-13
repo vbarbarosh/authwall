@@ -16,7 +16,7 @@ describe('POST /auth/password-reset/confirm', function () {
 
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
         assert.strictEqual(this.sent_emails[0].subject, 'Reset your password');
-        const [, token] = this.sent_emails[0].text.match(/confirm\?token=(.+)$/m);
+        const {token} = this.sent_emails[0].placeholders;
 
         await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
         const status3 = await this.client.get_json('/auth/status');
