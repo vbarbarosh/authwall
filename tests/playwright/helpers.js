@@ -6,6 +6,8 @@ async function sign_in_as_seeded_user(page, options = {})
 
     await page.goto(path);
 
+    // Wait for the sign-in view and the CSRF token to be ready before
+    // submitting — the token is populated asynchronously by api_status()
     await expect(page.getByTestId('signin-view')).toBeVisible();
     await expect(page.locator('#si-csrf')).toHaveValue(/.+/);
 
@@ -16,15 +18,6 @@ async function sign_in_as_seeded_user(page, options = {})
         page.waitForURL(url => url.pathname !== '/auth/sign-in'),
         page.getByTestId('signin-submit').click(),
     ]);
-
-    await page.waitForFunction(async function () {
-        const res = await fetch('/auth/status', {credentials: 'same-origin'});
-        if (!res.ok) {
-            return false;
-        }
-        const status = await res.json();
-        return Boolean(status.authenticated && status.csrf_token);
-    });
 }
 
 module.exports = {

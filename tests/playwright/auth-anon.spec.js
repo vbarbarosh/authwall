@@ -47,6 +47,9 @@ test.describe('auth spa anonymous', function () {
     test('failed sign-in stays on sign-in and shows an error', async function ({page}) {
         await page.goto('/auth/sign-in');
 
+        await expect(page.getByTestId('signin-view')).toBeVisible();
+        await expect(page.locator('#si-csrf')).toHaveValue(/.+/);
+
         await page.getByTestId('signin-username').fill('foo');
         await page.getByTestId('signin-password').fill('wrong-password');
         await page.getByTestId('signin-submit').click();
