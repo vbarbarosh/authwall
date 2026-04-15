@@ -6,6 +6,20 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('emails • welcome', function () {
 
+    beforeEach(function () {
+        config.flows.google.enabled = true;
+        config.flows.github.enabled = true;
+        config.flows.google.client_id = 'mocha_google_client_id';
+        config.flows.google.redirect_url = 'mocha_google_redirect_url';
+        config.flows.github.client_id = 'mocha_github_client_id';
+        config.flows.github.redirect_url = 'mocha_github_redirect_url';
+    });
+
+    afterEach(function () {
+        config.flows.google.enabled = false;
+        config.flows.github.enabled = false;
+    });
+
     it('should be sent after sign up via magic link', async function () {
         const email = 'mocha@authwall.test';
 
@@ -47,9 +61,6 @@ describe('emails • welcome', function () {
                 email: 'test@example.com',
                 email_verified: true,
             });
-
-        config.google_client_id = 'mocha_google_client_id';
-        config.google_redirect_url = 'mocha_google_redirect_url';
 
         await this.client.get_json_no_redirects('/auth/google');
         const sess = await this.client.get_session();
@@ -112,9 +123,6 @@ describe('emails • welcome', function () {
                     visibility: null
                 }
             ]);
-
-        config.github_client_id = 'mocha_github_client_id';
-        config.github_redirect_url = 'mocha_github_redirect_url';
 
         await this.client.get_json_no_redirects('/auth/github');
         const sess = await this.client.get_session();

@@ -6,6 +6,10 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 describe('sign up via github | scenarios', function () {
 
     beforeEach(function () {
+        config.flows.github.enabled = true;
+        config.flows.github.client_id = 'mocha_github_client_id';
+        config.flows.github.redirect_url = 'mocha_github_redirect_url';
+
         nock('https://github.com')
             .post('/login/oauth/access_token')
             .reply(200, {
@@ -49,17 +53,18 @@ describe('sign up via github | scenarios', function () {
             ]);
     });
 
-    it('signup via github should mark the email as verified', async function () {
-        config.github_client_id = 'mocha_github_client_id';
-        config.github_redirect_url = 'mocha_github_redirect_url';
+    afterEach(function () {
+        config.flows.github.enabled = false;
+    });
 
+    it('signup via github should mark the email as verified', async function () {
         const r = await this.client.get_json_no_redirects('/auth/github');
         const sess = await this.client.get_session();
 
         assert.strictEqual(r.status, 302);
         assert.strictEqual(r.headers.location, urlmod('https://github.com/login/oauth/authorize', {
-            client_id: config.github_client_id,
-            redirect_uri: config.github_redirect_url,
+            client_id: config.flows.github.client_id,
+            redirect_uri: config.flows.github.redirect_url,
             scope: 'user:email',
             prompt: 'select_account',
             state: sess.oauth_state,

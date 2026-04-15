@@ -40,22 +40,26 @@ flows:
 
   # I have a password
   password:
+    enabled: true
     allow_username: true
     allow_email: true
     min_password_length: 8
 
   # Send me a link to my email
   magic_link:
+    enabled: true
     mode: link_and_code # link | code | link_and_code
 
   # Sign in with Google
   google:
+    enabled: true
     client_id: ${AUTHWALL_GOOGLE_CLIENT_ID}
     client_secret: ${AUTHWALL_GOOGLE_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_GOOGLE_REDIRECT_URL}
 
   # Sign in with GitHub
   github:
+    enabled: true
     client_id: ${AUTHWALL_GITHUB_CLIENT_ID}
     client_secret: ${AUTHWALL_GITHUB_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_GITHUB_REDIRECT_URL}

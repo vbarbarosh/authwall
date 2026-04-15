@@ -1,3 +1,4 @@
+const config = require('../../config');
 const db = require('../../db');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
@@ -18,11 +19,50 @@ async function status_get(req, res)
     const error = req.session.error ?? null;
     delete req.session.error;
 
+    // {
+    //   "authenticated": true,
+    //   "user": {...},
+    //   "flows": {
+    //     "password": {"allow_username": true, "allow_email": true},
+    //     "magic_link": {"mode": "link_and_code"},
+    //     "google": {}
+    //   },
+    //   "actions": {
+    //     "can_sign_in": false,
+    //     "can_sign_up": false,
+    //     "can_sign_out": true,
+    //     "can_change_password": true,
+    //     "can_connect_google": true
+    //   }
+    // }
+
+    const flows = {};
+    if (config.flows.password.enabled) {
+        const {allow_username, allow_email, min_password_length} = config.flows.password;
+        flows.password = {
+            allow_username,
+            allow_email,
+            min_password_length,
+        };
+    }
+    if (config.flows.magic_link.enabled) {
+        flows.magic_link = {
+            mode: config.flows.magic_link.mode,
+        };
+    }
+    if (config.flows.google.enabled) {
+        flows.google = {};
+    }
+    if (config.flows.github.enabled) {
+        flows.github = {};
+    }
+
     if (!user) {
         res.send({
             error,
             authenticated: false,
             csrf_token: req.session.csrf_token,
+            flows,
         });
         return;
     }
@@ -30,6 +70,7 @@ async function status_get(req, res)
     res.send({
         error,
         authenticated: true,
+        flows,
         user_uid: user.uid,
         user_slug: user.slug,
         csrf_token: req.session.csrf_token,

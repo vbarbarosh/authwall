@@ -80,12 +80,20 @@ async function create_app()
     });
 
     express_routes(app, require('./routes/dev'));
+    if (config.flows.magic_link.enabled) {
+        express_routes(app, require('./routes/magic_link'));
+    }
+    if (config.flows.github.enabled) {
+        express_routes(app, require('./routes/oauth_github'));
+    }
+    if (config.flows.google.enabled) {
+        express_routes(app, require('./routes/oauth_google'));
+    }
+    if (config.flows.password.enabled) {
+        express_routes(app, require('./routes/password'));
+    }
     express_routes(app, require('./routes/email_change'));
     express_routes(app, require('./routes/email_verify'));
-    express_routes(app, require('./routes/magic_link'));
-    express_routes(app, require('./routes/oauth_github'));
-    express_routes(app, require('./routes/oauth_google'));
-    express_routes(app, require('./routes/password'));
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
     express_routes(app, require('./routes/status'));

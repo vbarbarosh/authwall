@@ -11,6 +11,20 @@ const users_create = require('../../../src/helpers/models/users_create');
 
 describe('emails • new_sign_in', function () {
 
+    beforeEach(function () {
+        config.flows.google.enabled = true;
+        config.flows.github.enabled = true;
+        config.flows.google.client_id = 'mocha_google_client_id';
+        config.flows.google.redirect_url = 'mocha_google_redirect_url';
+        config.flows.github.client_id = 'mocha_github_client_id';
+        config.flows.github.redirect_url = 'mocha_github_redirect_url';
+    });
+
+    afterEach(function () {
+        config.flows.google.enabled = false;
+        config.flows.github.enabled = false;
+    });
+
     it('should be sent after successful sign-in using username and password', async function () {
         await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
@@ -100,9 +114,6 @@ describe('emails • new_sign_in', function () {
             });
         });
 
-        config.google_client_id = 'mocha_google_client_id';
-        config.google_redirect_url = 'mocha_google_redirect_url';
-
         await this.client.get_json_no_redirects('/auth/google');
         const sess = await this.client.get_session();
 
@@ -190,9 +201,6 @@ describe('emails • new_sign_in', function () {
                 verified_at: now,
             });
         });
-
-        config.github_client_id = 'mocha_github_client_id';
-        config.github_redirect_url = 'mocha_github_redirect_url';
 
         await this.client.get_json_no_redirects('/auth/github');
         const sess = await this.client.get_session();

@@ -31,8 +31,8 @@ async function google_get(req, res)
     await save_session(req);
 
     res.redirect(urlmod('https://accounts.google.com/o/oauth2/v2/auth', {
-        client_id: config.google_client_id,
-        redirect_uri: config.google_redirect_url,
+        client_id: config.flows.google.client_id,
+        redirect_uri: config.flows.google.redirect_url,
         response_type: 'code',
         scope: 'openid email profile',
         access_type: 'offline',
@@ -61,9 +61,9 @@ async function google_callback_get(req, res)
 
     const token = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
         code,
-        client_id: config.google_client_id,
-        client_secret: config.google_client_secret,
-        redirect_uri: config.google_redirect_url,
+        client_id: config.flows.google.client_id,
+        client_secret: config.flows.google.client_secret,
+        redirect_uri: config.flows.google.redirect_url,
         grant_type: 'authorization_code',
     });
 

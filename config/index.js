@@ -133,20 +133,56 @@ const config = {
         max_age_days: {type: 'int', min: 1, max: 365, default: 30},
     }),
 
-    // Google Login
-    google_client_id: process.env.AUTHWALL_GOOGLE_CLIENT_ID,
-    google_client_secret: process.env.AUTHWALL_GOOGLE_CLIENT_SECRET,
-    google_redirect_url: process.env.AUTHWALL_GOOGLE_REDIRECT_URL,
-
-    // GitHub Login
-    github_client_id: process.env.AUTHWALL_GITHUB_CLIENT_ID,
-    github_client_secret: process.env.AUTHWALL_GITHUB_CLIENT_SECRET,
-    github_redirect_url: process.env.AUTHWALL_GITHUB_REDIRECT_URL,
+    flows: make(settings.flows, {
+        password: {
+            enabled: 'bool',
+            allow_username: {type: 'bool', default: true},
+            allow_email: {type: 'bool', default: true},
+            min_password_length: {type: 'int', min: 4, max: 32, default: 8},
+        },
+        magic_link: {
+            enabled: 'bool',
+            mode: {type: 'enum', options: ['link', 'code', 'link_and_code']},
+        },
+        google: {
+            enabled: 'bool',
+            client_id: {type: 'str', nullable: true},
+            client_secret: {type: 'str', nullable: true},
+            redirect_url: {type: 'str', nullable: true},
+        },
+        github: {
+            enabled: 'bool',
+            client_id: {type: 'str', nullable: true},
+            client_secret: {type: 'str', nullable: true},
+            redirect_url: {type: 'str', nullable: true},
+        },
+    }),
 
     // Resend mailer
     resend_key: process.env.AUTHWALL_RESEND_KEY,
     resend_from: process.env.AUTHWALL_RESEND_FROM,
 };
+
+if (config.flows.password.enabled) {
+    const {allow_username, allow_email} = config.flows.password;
+    if (!allow_username && !allow_email) {
+        config.flows.password.enabled = false;
+    }
+}
+
+if (config.flows.google.enabled) {
+    const {client_id, client_secret, redirect_url} = config.flows.google;
+    if (!client_id || !client_secret || !redirect_url) {
+        config.flows.google.enabled = false;
+    }
+}
+
+if (config.flows.github.enabled) {
+    const {client_id, client_secret, redirect_url} = config.flows.github;
+    if (!client_id || !client_secret || !redirect_url) {
+        config.flows.github.enabled = false;
+    }
+}
 
 if (config.cookie.same_site === 'none' && !config.cookie.secure) {
     throw new Error('cookie.same_site=none requires cookie.secure=true');

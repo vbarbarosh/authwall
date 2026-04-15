@@ -33,8 +33,8 @@ async function github_get(req, res)
     await save_session(req);
 
     res.redirect(urlmod('https://github.com/login/oauth/authorize', {
-        client_id: config.github_client_id,
-        redirect_uri: config.github_redirect_url,
+        client_id: config.flows.github.client_id,
+        redirect_uri: config.flows.github.redirect_url,
         scope: 'user:email',
         prompt: 'select_account',
         state,
@@ -61,9 +61,9 @@ async function github_callback_get(req, res)
 
     const token = await http_post_json('https://github.com/login/oauth/access_token', {
         code,
-        client_id: config.github_client_id,
-        client_secret: config.github_client_secret,
-        redirect_uri: config.github_redirect_url,
+        client_id: config.flows.github.client_id,
+        client_secret: config.flows.github.client_secret,
+        redirect_uri: config.flows.github.redirect_url,
     });
 
     assert_shape(token, {

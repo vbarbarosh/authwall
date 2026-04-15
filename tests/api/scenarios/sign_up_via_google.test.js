@@ -6,6 +6,10 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 describe('sign up via google | scenarios', function () {
 
     beforeEach(function () {
+        config.flows.google.enabled = true;
+        config.flows.google.client_id = 'mocha_google_client_id';
+        config.flows.google.redirect_url = 'mocha_google_redirect_url';
+
         nock('https://oauth2.googleapis.com')
             .post('/token')
             .reply(200, {access_token: 'fake-token'});
@@ -21,10 +25,11 @@ describe('sign up via google | scenarios', function () {
             });
     });
 
-    it('signup via google should mark the email as verified', async function () {
-        config.google_client_id = 'mocha_google_client_id';
-        config.google_redirect_url = 'mocha_google_redirect_url';
+    afterEach(function () {
+        config.flows.google.enabled = false;
+    });
 
+    it('signup via google should mark the email as verified', async function () {
         const r = await this.client.get_json_no_redirects('/auth/google');
         const sess = await this.client.get_session();
 

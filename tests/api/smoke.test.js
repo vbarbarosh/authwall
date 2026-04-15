@@ -6,7 +6,7 @@ describe('smoke tests', function () {
         await this.client.get_json('/auth/status');
         const status = await this.client.get_json('/auth/status');
         const session = await this.client.get_session();
-        assert.deepStrictEqual(status, {
+        assert.partialDeepStrictEqual(status, {
             error: null,
             authenticated: false,
             csrf_token: session.csrf_token,

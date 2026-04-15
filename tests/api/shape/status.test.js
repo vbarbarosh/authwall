@@ -1,6 +1,17 @@
 const assert_shape = require('../../../src/helpers/assert/assert_shape');
+const config = require('../../../config');
 
 describe('shape • status', function () {
+
+    beforeEach(function () {
+        config.flows.google.enabled = true;
+        config.flows.github.enabled = true;
+    });
+
+    afterEach(function () {
+        config.flows.google.enabled = false;
+        config.flows.github.enabled = false;
+    });
 
     it('anonymous', async function () {
         const actual = await this.client.get_json('/auth/status');
@@ -8,6 +19,18 @@ describe('shape • status', function () {
             error: null,
             authenticated: false,
             csrf_token: String, // '3X2rJ8H6ZsSyDc0vxCrpYDKe',
+            flows: {
+                password: {
+                    allow_username: true,
+                    allow_email: true,
+                    min_password_length: 8,
+                },
+                magic_link: {
+                    mode: 'link_and_code',
+                },
+                google: {},
+                github: {},
+            },
         };
         assert_shape(actual, expected);
     });
@@ -18,6 +41,18 @@ describe('shape • status', function () {
         const expected = {
             error: null,
             authenticated: true,
+            flows: {
+                password: {
+                    allow_username: true,
+                    allow_email: true,
+                    min_password_length: 8,
+                },
+                magic_link: {
+                    mode: 'link_and_code',
+                },
+                google: {},
+                github: {},
+            },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',
             user_slug: String, // 'swbwnpmv7h516n8u',
             csrf_token: String, // '3X2rJ8H6ZsSyDc0vxCrpYDKe',
