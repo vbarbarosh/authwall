@@ -10,8 +10,9 @@
 
 <p align="center"><img src="logo.png" alt="Logo" width="400"></p>
 
-**Authwall** is an authentication proxy — it sits between clients and an internal app, handling sign-in (email/password, magic links, Google OAuth, GitHub OAuth) and forwarding authenticated   
-requests with an X-Auth-User header.
+**Authwall** is an authentication proxy — it sits between clients and an internal app,
+handling sign-in (email/password, magic links, Google OAuth, GitHub OAuth) and forwarding
+authenticated requests with an `X-Auth-User` header.
 
 ```
 client
