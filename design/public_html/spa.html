@@ -87,7 +87,7 @@
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); box-shadow: var(--shadow);
-      width: 100%; max-width: 420px; overflow: hidden;
+      width: 100%; max-width: 420px; overflow: hidden; margin: 0 auto;
     }
     .card.wide { max-width: 480px; }
     .card-header { padding: 32px 32px 0; text-align: center; }
@@ -311,9 +311,44 @@
     }
     .signout-layout { text-align: center; }
     .flow-hidden { display: none !important; }
+
+    /* ── Preloader ── */
+    #preloader {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 400ms ease;
+    }
+    #preloader.ready { opacity: 0; pointer-events: none; }
+    .preloader-logo {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .preloader-icon {
+      width: 56px; height: 56px; background: var(--primary); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      animation: preloader-pulse 1.6s ease-in-out infinite;
+    }
+    .preloader-icon svg { width: 28px; height: 28px; }
+    .preloader-name {
+      font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: var(--text);
+    }
+    @keyframes preloader-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(79,70,229,.35); }
+      50%       { box-shadow: 0 0 0 10px rgba(79,70,229,0); }
+    }
   </style>
 </head>
 <body data-demo="0">
+
+<!-- ── Preloader ── -->
+<div id="preloader">
+  <div class="preloader-logo">
+    <div class="preloader-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <span class="preloader-name">authwall</span>
+  </div>
+</div>
 
 <!-- ── Demo Bar ── -->
 <div class="demo-bar">
@@ -1466,6 +1501,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     show_error('si-error-msg', 'si-error', status.error);
   }
   render_user_data(status);
+
+  // 3. Everything is ready — dismiss the preloader
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.classList.add('ready');
+    preloader.addEventListener('transitionend', () => preloader.remove(), {once: true});
+  }
 });
 </script>
 </body>
