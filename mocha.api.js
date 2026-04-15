@@ -8,12 +8,24 @@ const setup_servers = require('./tests/setup_servers');
 const db = knex(config.knexvars);
 const original_run = Runnable.prototype.run;
 
+async function wait_for_emails(sent_emails, count, timeout_ms = 500)
+{
+    const deadline = Date.now() + timeout_ms;
+    while (sent_emails.length < count) {
+        if (Date.now() >= deadline) {
+            throw new Error(`Timed out waiting for ${count} email(s) (got ${sent_emails.length})`);
+        }
+        await new Promise(resolve => setImmediate(resolve));
+    }
+}
+
 Runnable.prototype.run = function (fn) {
     if (this.type === 'test' && !this.fn.__wrapped__) {
         const original_fn = this.fn;
         this.fn = async function (...args) {
             this.written_logs = [];
             this.sent_emails = [];
+            this.wait_for_emails = count => wait_for_emails(this.sent_emails, count);
             const trx = await db.transaction();
             await using _ = {[Symbol.asyncDispose]: () => trx.rollback()};
             await using logger = make_logger_fake(this.written_logs);

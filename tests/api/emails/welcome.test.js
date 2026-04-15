@@ -12,6 +12,7 @@ describe('emails • welcome', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
         await this.client.get_json(this.sent_emails[0].placeholders.link);
+        await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.welcome];
@@ -24,6 +25,7 @@ describe('emails • welcome', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
         await this.client.post_json('/auth/magic-link/confirm', {email, code: this.sent_emails[0].placeholders.code, _csrf: status.csrf_token});
+        await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.welcome];
@@ -60,6 +62,7 @@ describe('emails • welcome', function () {
             authuser: '0',
             prompt: 'none'
         }));
+        await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name);
         const expected = [const_email.welcome];
@@ -120,6 +123,7 @@ describe('emails • welcome', function () {
             code: "4/fake_code",
             state: sess.oauth_state,
         }));
+        await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name);
         const expected = [const_email.welcome];
