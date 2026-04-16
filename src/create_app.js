@@ -82,7 +82,9 @@ async function create_app()
         }
     });
 
-    express_routes(app, require('./routes/dev'));
+    // 🐛️ Devs only
+    // express_routes(app, require('./routes/dev'));
+
     if (config.flows.magic_link.enabled) {
         express_routes(app, require('./routes/magic_link'));
     }

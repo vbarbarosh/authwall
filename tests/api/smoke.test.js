@@ -24,4 +24,16 @@ describe('smoke tests', function () {
         assert.ok(this.written_logs.length > 0);
     });
 
+    it('GET /auth/dev', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        try {
+            await this.client.get_json('/auth/dev');
+        }
+        catch (error) {
+            assert.strictEqual(error.message, 'Request failed with status code 404');
+            return;
+        }
+        assert.ok(false);
+    });
+
 });
