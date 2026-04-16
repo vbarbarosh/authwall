@@ -211,6 +211,8 @@ describe('emails • new_sign_in', function () {
             state: sess.oauth_state,
         }));
 
+        await this.wait_for_emails(1);
+
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.new_sign_in];
         assert.deepStrictEqual(actual, expected);
