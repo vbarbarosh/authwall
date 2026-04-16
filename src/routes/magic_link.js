@@ -10,6 +10,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
@@ -17,12 +18,15 @@ const random_uid_user_identity = require('../helpers/random/random_uid_user_iden
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
+const MINUTE = 60*SECOND;
 const MAX_ATTEMPTS = 3;
+
+const magic_link_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
 const routes = [
     {req: `GET ${config.pages.magic_link_confirm}`, fn: magic_link_confirm_get},
     {prepend: [csrf_middleware], routes: [
-        {req: 'POST /auth/magic-link/request', fn: magic_link_request_post},
+        {req: 'POST /auth/magic-link/request', prepend: [magic_link_limiter], fn: magic_link_request_post},
         {req: 'POST /auth/magic-link/confirm', fn: magic_link_confirm_post},
     ]},
 ];

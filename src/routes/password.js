@@ -13,6 +13,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
 const random_base62 = require('../helpers/random/random_base62');
@@ -21,13 +22,20 @@ const random_uid_user_identity = require('../helpers/random/random_uid_user_iden
 const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
 
+const SECOND = 1000;
+const MINUTE = 60*SECOND;
+
 let dummy_hash = null;
+
+const sign_in_limiter = make_rate_limit_middleware(10, 15*MINUTE);
+const sign_up_limiter = make_rate_limit_middleware(5, 60*MINUTE);
+const password_reset_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
 const routes = [
     {prepend: [csrf_middleware], routes: [
-        {req: 'POST /auth/sign-in', fn: sign_in_post},
-        {req: 'POST /auth/sign-up', fn: sign_up_post},
-        {req: 'POST /auth/password-reset/request', fn: password_reset_request_post},
+        {req: 'POST /auth/sign-in', prepend: [sign_in_limiter], fn: sign_in_post},
+        {req: 'POST /auth/sign-up', prepend: [sign_up_limiter], fn: sign_up_post},
+        {req: 'POST /auth/password-reset/request', prepend: [password_reset_limiter], fn: password_reset_request_post},
         {req: 'POST /auth/password-reset/confirm', fn: password_reset_confirm_post},
     ]},
     {prepend: [auth_middleware], routes: [

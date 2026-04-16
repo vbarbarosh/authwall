@@ -1,4 +1,5 @@
 process.env.AUTHWALL_SECRET = require('crypto').randomBytes(32).toString('hex');
+process.env.AUTHWALL_RATE_LIMITING = '0';
 
 const Runnable = require('mocha/lib/runnable');
 const config = require('./config');
