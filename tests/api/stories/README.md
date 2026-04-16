@@ -21,6 +21,7 @@ Testable now
 - user visited a protected page, chose magic link instead of password sign-in, completed the flow, and should return to the original page
 - user visited a protected page, chose sign-up instead of sign-in, completed sign-up, and should return to the original page
 - [x] user signed up with `User@example.com`, later signs in with `user@example.com`; it should resolve to the same identity → `email_case_insensitive.test.js`
+- [x] user with a Gmail address signs up as `john.doe@gmail.com`; a second sign-up attempt with `johndoe@gmail.com` must be rejected (Gmail ignores dots) → `gmail_dots.test.js`
 - [x] user is signed in as account A, then tries to connect an OAuth provider already linked to account B; the operation should fail without cross-account takeover → `oauth_cross_account.test.js`
 - user uses an expired magic link after already signing in another way; the link should fail cleanly and should not change session state
 
