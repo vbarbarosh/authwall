@@ -171,13 +171,11 @@ function error_handler(error, req, res, next)
         req.session.error = error.message;
     }
 
-    // ⚠️ TODO Take care of infinite redirects
-
-    if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
+    if (urlparts(req.originalUrl).path !== config.pages.sign_in) {
         res.redirect(config.pages.sign_in);
     }
     else {
-        res.redirect(req.url);
+        next(error);
     }
 }
 
