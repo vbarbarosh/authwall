@@ -157,8 +157,8 @@ async function create_app()
                 }
             },
             error: function (error, req, res) {
-                console.error('PROXY ERROR:', error);
-                res.status(502).send(error.message);
+                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
+                res.status(502).send('Upstream service unavailable');
             },
         },
     }));
