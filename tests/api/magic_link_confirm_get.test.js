@@ -9,7 +9,7 @@ describe('GET /auth/magic-link/confirm', function () {
         const {email} = await this.add_user({email: 'mocha@authwall.test'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
         const magic_link = await db('magic_links').where('token_hash', crypto_hash_sha256(token)).first();
@@ -27,7 +27,7 @@ describe('GET /auth/magic-link/confirm', function () {
 
     it('signs up new user via magic link token', async function () {
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email: 'new-user@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'new-user@authwall.test', _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
         await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
@@ -60,7 +60,7 @@ describe('GET /auth/magic-link/confirm', function () {
 
     it('fails with expired token', async function () {
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email: 'expired@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'expired@authwall.test', _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
         await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});

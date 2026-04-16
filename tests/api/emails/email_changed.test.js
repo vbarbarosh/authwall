@@ -12,7 +12,7 @@ describe('emails • email_changed', function () {
 
         // sign in
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: email,
             password,
             _csrf: status.csrf_token,
@@ -20,7 +20,7 @@ describe('emails • email_changed', function () {
 
         // request email change
         const status2 = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/email-change/request', {
+        await this.http_post_json('/auth/email-change/request', {
             email: new_email,
             _csrf: status2.csrf_token,
         });

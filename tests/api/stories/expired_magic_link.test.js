@@ -11,7 +11,7 @@ describe('Expired magic link does not affect authenticated session | stories', f
 
         // Request a magic link (while already signed in)
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
         const {token} = this.sent_emails.find(e => e.placeholders?.token).placeholders;
 
         // Expire the magic link

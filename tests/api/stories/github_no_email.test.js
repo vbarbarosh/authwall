@@ -89,7 +89,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
         assert.strictEqual(status.providers.length, 1);
         assert.strictEqual(status.providers[0].type, 'oauth_github');
 
-        await this.client.post_json('/auth/change-password', {
+        await this.http_post_json('/auth/change-password', {
             current_password: 'anything',
             password: 'newpass',
             password_confirm: 'newpass',
@@ -111,7 +111,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
         assert.ok(status.providers.find(v => v.type === 'email' && v.verified_at !== null));
 
         // Now password setup should succeed
-        await this.client.post_json('/auth/change-password', {
+        await this.http_post_json('/auth/change-password', {
             current_password: '',
             password: 'newpass',
             password_confirm: 'newpass',

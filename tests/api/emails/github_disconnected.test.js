@@ -34,7 +34,7 @@ describe('emails • github_disconnected', function () {
         });
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/github/disconnect', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/github/disconnect', {_csrf: status.csrf_token});
         await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name);

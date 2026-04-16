@@ -11,7 +11,7 @@ describe('Gmail dot-insensitive email handling | stories', function () {
         config.flows.password.min_password_length = 4;
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-up', {
+        await this.http_post_json('/auth/sign-up', {
             email: 'john.doe@gmail.com',
             password: 'pass123',
             password_confirm: 'pass123',
@@ -19,10 +19,10 @@ describe('Gmail dot-insensitive email handling | stories', function () {
         });
 
         // Sign out, then try to sign up with the dotless variant
-        await this.client.post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
+        await this.http_post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
 
         const status2 = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-up', {
+        await this.http_post_json('/auth/sign-up', {
             email: 'johndoe@gmail.com',
             password: 'pass456',
             password_confirm: 'pass456',
@@ -38,7 +38,7 @@ describe('Gmail dot-insensitive email handling | stories', function () {
         await this.add_user({email: 'johndoe@gmail.com', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'john.doe@gmail.com',
             password: 'pass123',
             _csrf: status.csrf_token,
@@ -53,7 +53,7 @@ describe('Gmail dot-insensitive email handling | stories', function () {
         await this.add_user({email: 'john.doe@gmail.com', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'johndoe@gmail.com',
             password: 'pass123',
             _csrf: status.csrf_token,
@@ -68,7 +68,7 @@ describe('Gmail dot-insensitive email handling | stories', function () {
         await this.add_user({email: 'john.doe@example.com', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'johndoe@example.com',
             password: 'pass123',
             _csrf: status.csrf_token,

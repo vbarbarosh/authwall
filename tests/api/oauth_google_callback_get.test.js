@@ -51,7 +51,7 @@ describe('GET /auth/google/callback', function () {
         const session1 = await this.client.get_session();
 
         // Sign out, then sign in again with same Google account
-        await this.client.post_json('/auth/sign-out', {_csrf: status1.csrf_token});
+        await this.http_post_json('/auth/sign-out', {_csrf: status1.csrf_token});
         mock_google();
         const state2 = await start_oauth_flow(this.client);
         await this.http_get_json(urlmod('/auth/google/callback', {state: state2, code: 'fake_code'}));

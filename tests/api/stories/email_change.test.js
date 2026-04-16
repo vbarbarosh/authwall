@@ -39,7 +39,7 @@ describe('Email change invalidates old email sign-in | stories', function () {
         assert.ok(status1.providers.find(v => v.type === 'oauth_google'));
 
         // Request email change
-        await this.client.post_json(config.pages.email_change_request, {
+        await this.http_post_json(config.pages.email_change_request, {
             email: 'new@authwall.test',
             _csrf: status1.csrf_token,
         });
@@ -51,9 +51,9 @@ describe('Email change invalidates old email sign-in | stories', function () {
         await this.http_get_json(urlmod(config.pages.email_change_confirm, {token}));
 
         // Old email sign-in must now fail
-        await this.client.post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
+        await this.http_post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
         const s = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'old@authwall.test', password: 'pass123', _csrf: s.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'old@authwall.test', password: 'pass123', _csrf: s.csrf_token});
         const after_old = await this.http_get_json('/auth/status');
         assert.strictEqual(after_old.authenticated, false);
         assert.strictEqual(after_old.error, 'Invalid username or password');

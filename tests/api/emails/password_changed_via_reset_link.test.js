@@ -15,12 +15,12 @@ describe('emails • password_changed_via_reset_link', function () {
 
         // request reset
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/password-reset/request', {email, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email, _csrf: status.csrf_token});
 
         // confirm reset using token from email
         const token = this.sent_emails[0].placeholders.token;
 
-        await this.client.post_json('/auth/password-reset/confirm', {
+        await this.http_post_json('/auth/password-reset/confirm', {
             token,
             password: new_password,
             password_confirm: new_password,

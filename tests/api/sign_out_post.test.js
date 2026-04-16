@@ -9,7 +9,7 @@ describe('POST /auth/sign-out', function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);
-        await this.client.post_json('/auth/sign-out', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-out', {_csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.authenticated, false);
     });

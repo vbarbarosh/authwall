@@ -10,14 +10,14 @@ describe('GET /auth/email-change/confirm', function () {
         await this.add_user({email, password});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: email,
             password,
             _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/email-change/request', {
+        await this.http_post_json('/auth/email-change/request', {
             email: new_email,
             _csrf: status2.csrf_token,
         });

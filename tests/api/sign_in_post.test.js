@@ -7,7 +7,7 @@ describe('POST /auth/sign-in', function () {
     it('signs in with username and password', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
@@ -16,7 +16,7 @@ describe('POST /auth/sign-in', function () {
     it('signs in with email and password', async function () {
         await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
@@ -49,7 +49,7 @@ describe('POST /auth/sign-in', function () {
 
     it('fails with missing fields', async function () {
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {_csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Missing fields');
         assert.strictEqual(status2.authenticated, false);
@@ -58,7 +58,7 @@ describe('POST /auth/sign-in', function () {
     it('fails with invalid username', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'xxx', password: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'xxx', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);
@@ -67,7 +67,7 @@ describe('POST /auth/sign-in', function () {
     it('fails with invalid email', async function () {
         await this.add_user({username: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'xxx@authwall.test', password: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'xxx@authwall.test', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);
@@ -76,7 +76,7 @@ describe('POST /auth/sign-in', function () {
     it('fails with wrong password', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'xxx', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'xxx', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');
         assert.strictEqual(status2.authenticated, false);

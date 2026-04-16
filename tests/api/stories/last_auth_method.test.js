@@ -60,7 +60,7 @@ describe('Last auth method cannot be removed | stories', function () {
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.providers.length, 1);
 
-        await this.client.post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Cannot disconnect Google: it is your only sign-in method');
@@ -75,7 +75,7 @@ describe('Last auth method cannot be removed | stories', function () {
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.providers.length, 2);
 
-        await this.client.post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -95,12 +95,12 @@ describe('Last auth method cannot be removed | stories', function () {
         const s = await this.http_get_json('/auth/status');
         assert.strictEqual(s.providers.length, 2);
 
-        await this.client.post_json('/auth/google/disconnect', {_csrf: s.csrf_token});
+        await this.http_post_json('/auth/google/disconnect', {_csrf: s.csrf_token});
         const s2 = await this.http_get_json('/auth/status');
         assert.strictEqual(s2.providers.length, 1);
         assert.strictEqual(s2.providers[0].type, 'oauth_github');
 
-        await this.client.post_json('/auth/github/disconnect', {_csrf: s2.csrf_token});
+        await this.http_post_json('/auth/github/disconnect', {_csrf: s2.csrf_token});
         const s3 = await this.http_get_json('/auth/status');
         assert.strictEqual(s3.error, 'Cannot disconnect GitHub: it is your only sign-in method');
         assert.ok(s3.providers.find(v => v.type === 'oauth_github'));

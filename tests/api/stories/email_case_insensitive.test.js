@@ -8,7 +8,7 @@ describe('Case-insensitive email sign-in | stories', function () {
         await this.add_user({email: 'MixedCase@authwall.test', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'mixedcase@authwall.test',
             password: 'pass123',
             _csrf: status.csrf_token,
@@ -23,7 +23,7 @@ describe('Case-insensitive email sign-in | stories', function () {
         await this.add_user({email: 'lowercase@authwall.test', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'LOWERCASE@authwall.test',
             password: 'pass123',
             _csrf: status.csrf_token,

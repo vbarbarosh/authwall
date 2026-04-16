@@ -17,7 +17,7 @@ describe('min_password_length is enforced only for new passwords | stories', fun
     it('rejects sign-up with a password shorter than the minimum', async function () {
         config.flows.password.min_password_length = 10;
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-up', {
+        await this.http_post_json('/auth/sign-up', {
             username: 'mocha',
             password: 'short',
             password_confirm: 'short',
@@ -32,9 +32,9 @@ describe('min_password_length is enforced only for new passwords | stories', fun
         config.flows.password.min_password_length = 10;
         await this.add_user({email: 'mocha@authwall.test'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
         const {token} = this.sent_emails[0].placeholders;
-        await this.client.post_json('/auth/password-reset/confirm', {
+        await this.http_post_json('/auth/password-reset/confirm', {
             token,
             password: 'short',
             password_confirm: 'short',
@@ -48,7 +48,7 @@ describe('min_password_length is enforced only for new passwords | stories', fun
         config.flows.password.min_password_length = 10;
         await this.sign_in({username: 'mocha', password: 'pass123456'});
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/profile', {
+        await this.http_post_json('/auth/profile', {
             current_password: 'pass123456',
             password: 'short',
             password_confirm: 'short',
@@ -66,7 +66,7 @@ describe('min_password_length is enforced only for new passwords | stories', fun
         // Minimum is raised to 10 — but the existing short password must still authenticate
         config.flows.password.min_password_length = 10;
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/sign-in', {
+        await this.http_post_json('/auth/sign-in', {
             username: 'mocha',
             password: 'pass',
             _csrf: status.csrf_token,
@@ -84,7 +84,7 @@ describe('min_password_length is enforced only for new passwords | stories', fun
         // Minimum is raised to 10 — new password must meet it, but current is still accepted
         config.flows.password.min_password_length = 10;
         const status = await this.http_get_json('/auth/status');
-        await this.client.post_json('/auth/change-password', {
+        await this.http_post_json('/auth/change-password', {
             current_password: 'pass',
             password: 'newlongpass',
             password_confirm: 'newlongpass',
