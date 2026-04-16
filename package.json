@@ -2,7 +2,19 @@
   "name": "authwall",
   "author": "Vladimir Barbaros <authwall@vbarbarosh.com>",
   "version": "1.0.0",
+  "license": "MIT",
   "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vbarbarosh/authwall.git"
+  },
+  "homepage": "https://github.com/vbarbarosh/authwall",
+  "bugs": {
+    "url": "https://github.com/vbarbarosh/authwall/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node .",
     "watch": "nodemon -r dotenv/config .",
