@@ -54,6 +54,7 @@ describe('emails • new_sign_in', function () {
         await this.client.post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
         await this.client.get_json(this.sent_emails[0].placeholders.link);
 
+        await this.wait_for_emails(2);
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.new_sign_in];
         assert.deepStrictEqual(actual, expected);
