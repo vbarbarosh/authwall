@@ -14,8 +14,7 @@ describe('emails • password_changed_via_reset_link', function () {
         await this.add_user({email, password});
 
         // request reset
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email});
 
         // confirm reset using token from email
         const token = this.sent_emails[0].placeholders.token;
@@ -24,7 +23,6 @@ describe('emails • password_changed_via_reset_link', function () {
             token,
             password: new_password,
             password_confirm: new_password,
-            _csrf: status.csrf_token,
         });
 
         const actual = this.sent_emails.map(v => v.name);

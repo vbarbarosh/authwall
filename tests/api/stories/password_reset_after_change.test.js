@@ -12,14 +12,10 @@ describe('Old password-reset link is invalid after profile password change | sto
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
         // Request a password reset (simulates attacker obtaining a link)
-        await this.http_post_json('/auth/password-reset/request', {
-            _csrf: await this.csrf_token(),
-            email: 'mocha@authwall.test',
-        });
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
 
         // User changes password from profile (legitimate action)
         await this.http_post_json('/auth/profile', {
-            _csrf: await this.csrf_token(),
             current_password: 'pass123',
             password: 'pass456',
             password_confirm: 'pass456',
@@ -27,7 +23,6 @@ describe('Old password-reset link is invalid after profile password change | sto
 
         // Now try to use the old reset token
         await this.http_post_json('/auth/password-reset/confirm', {
-            _csrf: await this.csrf_token(),
             token: this.sent_emails[0].placeholders.token,
             password: 'hacked',
             password_confirm: 'hacked',

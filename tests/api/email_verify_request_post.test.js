@@ -4,7 +4,7 @@ const const_email = require('../../src/helpers/const/const_email');
 describe('POST /auth/email-verify/request', function () {
 
     it('requires authentication', async function () {
-        await this.http_post_json('/auth/email-verify/request', {_csrf: await this.csrf_token()});
+        await this.http_post_json('/auth/email-verify/request');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Authentication required',
         });
@@ -12,7 +12,7 @@ describe('POST /auth/email-verify/request', function () {
 
     it('sends verification email', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
-        await this.http_post_json('/auth/email-verify/request', {_csrf: await this.csrf_token()});
+        await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
         const sent_email = this.sent_emails.find(v => v.name === const_email.confirm_email);
         assert.ok(sent_email);
@@ -22,8 +22,8 @@ describe('POST /auth/email-verify/request', function () {
 
     it('rate-limits repeated requests', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
-        await this.http_post_json('/auth/email-verify/request', {_csrf: await this.csrf_token()});
-        await this.http_post_json('/auth/email-verify/request', {_csrf: await this.csrf_token()});
+        await this.http_post_json('/auth/email-verify/request');
+        await this.http_post_json('/auth/email-verify/request');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Verification email already sent. Please wait.',
         });
@@ -31,7 +31,7 @@ describe('POST /auth/email-verify/request', function () {
 
     it('fails when no unverified email exists', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
-        await this.http_post_json('/auth/email-verify/request', {_csrf: await this.csrf_token()});
+        await this.http_post_json('/auth/email-verify/request');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'No unverified email found',
         });

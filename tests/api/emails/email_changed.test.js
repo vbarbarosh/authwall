@@ -11,19 +11,10 @@ describe('emails • email_changed', function () {
         await this.add_user({email, password});
 
         // sign in
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {
-            username: email,
-            password,
-            _csrf: status.csrf_token,
-        });
+        await this.http_post_json('/auth/sign-in', {username: email, password});
 
         // request email change
-        const status2 = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/email-change/request', {
-            email: new_email,
-            _csrf: status2.csrf_token,
-        });
+        await this.http_post_json('/auth/email-change/request', {email: new_email});
 
         // confirm email change using token from email
         await this.http_get_json(this.sent_emails[1].placeholders.confirm_link);

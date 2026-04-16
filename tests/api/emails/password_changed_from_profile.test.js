@@ -12,16 +12,11 @@ describe('emails • password_changed_via_reset_link', function () {
         const new_password = 'pass456';
 
         await this.add_user({email, password});
-
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: email, password, _csrf: status.csrf_token});
-
-        const status2 = await this.http_get_json('/auth/status');
+        await this.http_post_json('/auth/sign-in', {username: email, password});
         await this.http_post_json('/auth/change-password', {
             current_password: password,
             password: new_password,
             password_confirm: new_password,
-            _csrf: status2.csrf_token,
         });
 
         const actual = this.sent_emails.map(v => v.name);

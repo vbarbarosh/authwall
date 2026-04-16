@@ -59,14 +59,10 @@ describe('Google re-signup after disconnect | stories', function () {
         await this.http_get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
 
         // Disconnect Google
-        await this.http_post_json('/auth/google/disconnect', {
-            _csrf: await this.csrf_token(),
-        });
+        await this.http_post_json('/auth/google/disconnect');
 
         // Sign out
-        await this.http_post_json('/auth/sign-out', {
-            _csrf: await this.csrf_token(),
-        });
+        await this.http_post_json('/auth/sign-out');
 
         // Sign up again with the same Google account
         await sign_in_via_google(this.client, {sub: 'google-sub-123', email: 'google-user@authwall.test'});

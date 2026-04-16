@@ -23,8 +23,7 @@ describe('emails • welcome', function () {
     it('should be sent after sign up via magic link', async function () {
         const email = 'mocha@authwall.test';
 
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email});
         await this.http_get_json(this.sent_emails[0].placeholders.link);
         await this.wait_for_emails(2);
 
@@ -36,9 +35,8 @@ describe('emails • welcome', function () {
     it('should be sent after sign up via magic code', async function () {
         const email = 'mocha@authwall.test';
 
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
-        await this.http_post_json('/auth/magic-link/confirm', {email, code: this.sent_emails[0].placeholders.code, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email});
+        await this.http_post_json('/auth/magic-link/confirm', {email, code: this.sent_emails[0].placeholders.code});
         await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name)

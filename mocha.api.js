@@ -12,6 +12,8 @@ const db = knex(config.knexvars);
 const original_run = Runnable.prototype.run;
 const saved_min_password_length = config.flows.password.min_password_length;
 
+global._csrf = Symbol('csrf_token associated with current session');
+
 async function wait_for_emails(sent_emails, count, timeout_ms = 500)
 {
     const deadline = Date.now() + timeout_ms;

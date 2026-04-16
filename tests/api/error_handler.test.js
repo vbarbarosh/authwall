@@ -45,11 +45,9 @@ describe('error_handler', function () {
     });
 
     it('POST /auth/sign-in failure redirects back to sign-in, not elsewhere', async function () {
-        const status = await this.http_get_json('/auth/status');
         const r = await this.client.post_json_no_redirects('/auth/sign-in', {
             username: 'nobody',
             password: 'wrong',
-            _csrf: status.csrf_token,
         });
         assert.strictEqual(r.status, 302);
         assert.strictEqual(r.headers.location, '/auth/sign-in');

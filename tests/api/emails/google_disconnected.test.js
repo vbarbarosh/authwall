@@ -33,8 +33,7 @@ describe('emails • google_disconnected', function () {
             verified_at: now,
         });
 
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/google/disconnect');
         await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name);

@@ -3,13 +3,8 @@ const assert = require('assert');
 describe('sign up via magic link | scenarios', function () {
 
     it('signup via magic link should automatically mark the email as verified', async function () {
-        await this.http_post_json('/auth/magic-link/request', {
-            _csrf: await this.csrf_token(),
-            email: 'mocha@authwall.test',
-        });
-
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
         await this.http_post_json('/auth/magic-link/confirm', {
-            _csrf: await this.csrf_token(),
             email: 'mocha@authwall.test',
             code: this.sent_emails[0].placeholders.code,
         });

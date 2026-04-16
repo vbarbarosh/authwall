@@ -36,10 +36,15 @@ async function spin(ctx, _this, fn)
         _this.sign_in = sign_in;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
-        _this.http_post_json = (url, data) => _this.client.post_json(url, data);
-        _this.csrf_token = async function () {
+        _this.http_post_json = async function (url, data = {}) {
+            if ('_csrf' in data) {
+                return _this.client.post_json(url, data);
+            }
+            // by default attach _csrf to each http_post_json
+            const local_data = {...data};
             const sess = await _this.client.get_session();
-            return (sess ?? await _this.client.get_json('/auth/status')).csrf_token;
+            local_data._csrf = (sess ?? await _this.client.get_json('/auth/status')).csrf_token;
+            return _this.client.post_json(url, local_data);
         };
 
         try {
@@ -286,7 +291,6 @@ async function sign_in(params)
 
     this.sent_emails.splice(0);
     await this.http_post_json('/auth/sign-in', {
-        _csrf: await this.csrf_token(),
         username: username ?? email,
         password,
     });

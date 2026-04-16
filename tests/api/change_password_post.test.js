@@ -6,7 +6,6 @@ describe('POST /auth/change-password', function () {
 
     it('requires authentication', async function () {
         await this.http_post_json('/auth/change-password', {
-            _csrf: await this.csrf_token(),
             current_password: 'pass123',
             password: 'pass456',
             password_confirm: 'pass456',
@@ -20,7 +19,6 @@ describe('POST /auth/change-password', function () {
         config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/change-password', {
-            _csrf: await this.csrf_token(),
             current_password: 'pass123',
             password: 'pass456',
             password_confirm: 'pass456',
@@ -33,7 +31,7 @@ describe('POST /auth/change-password', function () {
 
     it('cannot set or change password without a verified email or username', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
-        await this.http_post_json('/auth/change-password', {_csrf: await this.csrf_token()});
+        await this.http_post_json('/auth/change-password');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Cannot set or change password without a verified email or username',
         });
@@ -41,10 +39,7 @@ describe('POST /auth/change-password', function () {
 
     it('fails with missing fields', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.http_post_json('/auth/change-password', {
-            _csrf: await this.csrf_token(),
-            current_password: 'pass123',
-        });
+        await this.http_post_json('/auth/change-password', {current_password: 'pass123'});
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Missing fields',
         });
@@ -52,8 +47,7 @@ describe('POST /auth/change-password', function () {
 
     it('fails when passwords do not match', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass789', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass789'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Passwords do not match');
     });
@@ -61,8 +55,7 @@ describe('POST /auth/change-password', function () {
     it('fails with wrong current password', async function () {
         config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/change-password', {current_password: 'wrong', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/change-password', {current_password: 'wrong', password: 'pass456', password_confirm: 'pass456'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Current password is incorrect');
     });

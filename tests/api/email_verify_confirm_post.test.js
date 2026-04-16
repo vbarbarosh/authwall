@@ -12,7 +12,7 @@ describe('GET /auth/email-verify/confirm', function () {
         const provider = status.providers.find(v => v.type === 'email');
         assert.strictEqual(provider.verified_at, null);
 
-        await this.http_post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
@@ -38,8 +38,7 @@ describe('GET /auth/email-verify/confirm', function () {
 
     it('fails with expired token', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
@@ -53,8 +52,7 @@ describe('GET /auth/email-verify/confirm', function () {
 
     it('fails with already used token', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');

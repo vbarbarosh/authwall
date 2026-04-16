@@ -8,9 +8,7 @@ describe('emails • password_reset', function () {
         const password = 'pass123';
 
         await this.add_user({email, password});
-
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email, _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email});
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.password_reset];

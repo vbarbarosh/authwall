@@ -7,7 +7,6 @@ describe('sign up via email | scenarios', function () {
         config.flows.password.min_password_length = 4;
 
         await this.http_post_json('/auth/sign-up', {
-            _csrf: await this.csrf_token(),
             email: 'mocha@authwall.test',
             password: 'pass123',
             password_confirm: 'pass123',
@@ -31,7 +30,6 @@ describe('sign up via email | scenarios', function () {
         config.flows.password.min_password_length = 4;
 
         await this.http_post_json('/auth/sign-up', {
-            _csrf: await this.csrf_token(),
             email: 'mocha@authwall.test',
             password: 'pass123',
             password_confirm: 'pass123',
