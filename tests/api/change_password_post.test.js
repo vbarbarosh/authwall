@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../../config');
 const db = require('../../db');
 
 describe('POST /auth/change-password', function () {
@@ -11,6 +12,7 @@ describe('POST /auth/change-password', function () {
     });
 
     it('changes password for authenticated user', async function () {
+        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
@@ -46,6 +48,7 @@ describe('POST /auth/change-password', function () {
     });
 
     it('fails with wrong current password', async function () {
+        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/change-password', {current_password: 'wrong', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});

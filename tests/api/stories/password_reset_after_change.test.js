@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../../../config');
 
 // After a user changes their password from the profile page, any previously issued
 // password-reset links must be invalidated. An attacker who obtained an old reset
@@ -6,6 +7,8 @@ const assert = require('assert');
 describe('Old password-reset link is invalid after profile password change | stories', function () {
 
     it('rejects the reset token after password was changed from profile', async function () {
+        config.flows.password.min_password_length = 4;
+
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
         // Request a password reset (simulates attacker obtaining a link)

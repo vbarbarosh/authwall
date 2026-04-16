@@ -3,6 +3,32 @@ const config = require('../../config');
 const nock = require('nock');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
+function mock_google(userinfo)
+{
+    nock.cleanAll();
+
+    nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: 'fake-token'});
+
+    nock('https://www.googleapis.com')
+        .get('/oauth2/v3/userinfo')
+        .reply(200, {
+            sub: 'google-sub-123',
+            name: 'Test User',
+            picture: 'https://example.com/avatar.jpg',
+            email: 'test@example.com',
+            email_verified: true,
+            ...userinfo,
+        });
+}
+
+async function start_oauth_flow(client)
+{
+    await client.get_json('/auth/google');
+    return (await client.get_session()).oauth_state;
+}
+
 describe('GET /auth/google/callback', function () {
 
     beforeEach(function () {
@@ -14,23 +40,6 @@ describe('GET /auth/google/callback', function () {
     afterEach(function () {
         config.flows.google.enabled = false;
     });
-
-    function mock_google(userinfo) {
-        nock('https://oauth2.googleapis.com').post('/token').reply(200, {access_token: 'fake-token'});
-        nock('https://www.googleapis.com').get('/oauth2/v3/userinfo').reply(200, {
-            sub: 'google-sub-123',
-            name: 'Test User',
-            picture: 'https://example.com/avatar.jpg',
-            email: 'test@example.com',
-            email_verified: true,
-            ...userinfo,
-        });
-    }
-
-    async function start_oauth_flow(client) {
-        await client.get_json('/auth/google');
-        return (await client.get_session()).oauth_state;
-    }
 
     it('signs in existing google user', async function () {
         // First sign up

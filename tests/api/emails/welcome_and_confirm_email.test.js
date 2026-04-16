@@ -1,9 +1,12 @@
 const assert = require('assert');
+const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 
 describe('emails • welcome_and_confirm_email', function () {
 
     it('should be sent after successful signup using email and password', async function () {
+        config.flows.password.min_password_length = 4;
+
         const email = 'mocha@authwall.test';
         const password = 'pass123';
 

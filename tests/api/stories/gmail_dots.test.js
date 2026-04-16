@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../../../config');
 
 // Gmail ignores dots in the local part of the address:
 // john.doe@gmail.com and johndoe@gmail.com are the same inbox.
@@ -7,6 +8,8 @@ const assert = require('assert');
 describe('Gmail dot-insensitive email handling | stories', function () {
 
     it('prevents sign-up when dotless variant is already registered', async function () {
+        config.flows.password.min_password_length = 4;
+
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/sign-up', {
             email: 'john.doe@gmail.com',

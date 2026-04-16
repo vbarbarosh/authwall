@@ -10,6 +10,8 @@ describe('sign up via google | scenarios', function () {
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
 
+        nock.cleanAll();
+
         nock('https://oauth2.googleapis.com')
             .post('/token')
             .reply(200, {access_token: 'fake-token'});

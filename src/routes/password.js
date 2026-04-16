@@ -16,6 +16,7 @@ const db = require('../../db');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
+const plural = require('@vbarbarosh/node-helpers/src/plural');
 const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
@@ -102,6 +103,10 @@ async function sign_up_post(req, res)
 
     if (password !== password_confirm) {
         throw new UserFriendlyError('Passwords do not match')
+    }
+
+    if (password.length < config.flows.password.min_password_length) {
+        throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
     const email_normalized = normalize_email(email);
@@ -228,6 +233,10 @@ async function password_reset_confirm_post(req, res)
         throw new UserFriendlyError('Passwords do not match');
     }
 
+    if (password.length < config.flows.password.min_password_length) {
+        throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
+    }
+
     const token_hash = crypto_hash_sha256(token);
     const reset = await db('password_reset_tokens').where({token_hash}).first();
     if (!reset) {
@@ -269,6 +278,10 @@ async function change_password_post(req, res)
 
     if (password !== password_confirm) {
         throw new UserFriendlyError('Passwords do not match');
+    }
+
+    if (password.length < config.flows.password.min_password_length) {
+        throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
     const user = await db('users').where({id: req.session.user_id}).first();

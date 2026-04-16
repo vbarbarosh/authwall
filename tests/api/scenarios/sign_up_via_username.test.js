@@ -1,8 +1,11 @@
 const assert = require('assert');
+const config = require('../../../config');
 
 describe('sign up via username | scenarios', function () {
 
     it('happy path', async function () {
+        config.flows.password.min_password_length = 4;
+
         const username = 'mocha';
         const password = 'pass123';
 

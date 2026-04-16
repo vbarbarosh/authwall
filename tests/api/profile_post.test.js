@@ -38,6 +38,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('changes password', async function () {
+        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
@@ -47,6 +48,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('sends password_changed email after password change', async function () {
+        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
@@ -71,6 +73,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('fails password change with wrong current password', async function () {
+        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/profile', {current_password: 'wrong', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});

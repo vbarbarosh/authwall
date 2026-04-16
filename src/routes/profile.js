@@ -11,6 +11,7 @@ const fs_path_dirname = require('@vbarbarosh/node-helpers/src/fs_path_dirname');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const fs_rm = require('@vbarbarosh/node-helpers/src/fs_rm');
 const multer = require('multer');
+const plural = require('@vbarbarosh/node-helpers/src/plural');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
 const sharp = require('sharp');
@@ -50,6 +51,9 @@ async function profile_post(req, res)
         }
         if (password !== password_confirm) {
             throw new UserFriendlyError('Passwords do not match');
+        }
+        if (password.length < config.flows.password.min_password_length) {
+            throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
         }
     }
 

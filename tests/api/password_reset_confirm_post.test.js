@@ -1,9 +1,13 @@
 const assert = require('assert');
+const config = require('../../config');
 const const_email = require('../../src/helpers/const/const_email');
+const db = require('../../db');
 
 describe('POST /auth/password-reset/confirm', function () {
 
     it('resets password with valid token', async function () {
+        config.flows.password.min_password_length = 4;
+
         await this.add_user({email: 'mocha@authwall.test'});
 
         const status = await this.client.get_json('/auth/status');
@@ -45,6 +49,7 @@ describe('POST /auth/password-reset/confirm', function () {
     });
 
     it('fails with invalid token', async function () {
+        config.flows.password.min_password_length = 4;
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/password-reset/confirm', {token: 'invalid-token', password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
@@ -52,6 +57,7 @@ describe('POST /auth/password-reset/confirm', function () {
     });
 
     it('fails with already used token', async function () {
+        config.flows.password.min_password_length = 4;
         await this.add_user({email: 'mocha@authwall.test'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
@@ -66,7 +72,7 @@ describe('POST /auth/password-reset/confirm', function () {
     });
 
     it('fails with expired token', async function () {
-        const db = require('../../db');
+        config.flows.password.min_password_length = 4;
         await this.add_user({email: 'mocha@authwall.test'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});

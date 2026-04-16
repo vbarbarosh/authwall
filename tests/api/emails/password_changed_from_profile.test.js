@@ -1,9 +1,12 @@
 const assert = require('assert');
+const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 
 describe('emails • password_changed_via_reset_link', function () {
 
     it('should be sent after changing password from profile', async function () {
+        config.flows.password.min_password_length = 4;
+
         const email = 'mocha@authwall.test';
         const password = 'pass123';
         const new_password = 'pass456';
