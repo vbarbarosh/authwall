@@ -21,7 +21,7 @@ async function main()
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     await using logger = make_logger();
-    await using mailer = make_mailer();
+    await using mailer = make_mailer(logger);
 
     await als.run({db, logger, mailer}, async function () {
         await bootstrap_database();
@@ -39,13 +39,13 @@ function make_logger()
     return make_logger_daily();
 }
 
-function make_mailer()
+function make_mailer(logger)
 {
     if (config.resend_key && config.resend_from) {
-        als.logger.write('✉️ Settings Resend as mailer');
+        logger.write('✉️ Settings Resend as mailer');
         return make_mailer_resend();
     }
 
-    als.logger.write('⚠️ Using fake mailer');
+    logger.write('⚠️ Using fake mailer');
     return make_mailer_fake();
 }
