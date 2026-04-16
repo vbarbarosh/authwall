@@ -16,7 +16,7 @@ async function bootstrap_database()
         }
         catch (error) {
             if (attempt === max_attempts) {
-                console.error('❌ Database initialization failed');
+                als.logger.write('❌ Database initialization failed');
                 throw error;
             }
             als.logger.write(`⏳ MySQL not ready (attempt ${attempt}/${max_attempts})`);

@@ -42,8 +42,10 @@ function make_logger()
 function make_mailer()
 {
     if (config.resend_key && config.resend_from) {
+        als.logger.write('✉️ Settings Resend as mailer');
         return make_mailer_resend();
     }
 
+    als.logger.write('⚠️ Using fake mailer');
     return make_mailer_fake();
 }
