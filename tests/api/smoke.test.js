@@ -2,6 +2,15 @@ const assert = require('assert');
 
 describe('smoke tests', function () {
 
+    it('GET /auth/health', async function () {
+        const r = await this.client.get_json_no_redirects('/auth/health');
+        assert.partialDeepStrictEqual(r, {
+            status: 200,
+            statusText: 'OK',
+            data: 'OK',
+        });
+    });
+
     it('GET /auth/status', async function () {
         await this.client.get_json('/auth/status');
         const status = await this.client.get_json('/auth/status');

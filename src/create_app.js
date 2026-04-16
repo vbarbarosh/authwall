@@ -82,6 +82,9 @@ async function create_app()
         }
     });
 
+    express_routes(app, require('./routes/status'));
+    express_routes(app, require('./routes/health'));
+
     // 🐛️ Devs only
     // express_routes(app, require('./routes/dev'));
 
@@ -97,11 +100,10 @@ async function create_app()
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
     }
-    express_routes(app, require('./routes/email_change'));
-    express_routes(app, require('./routes/email_verify'));
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
-    express_routes(app, require('./routes/status'));
+    express_routes(app, require('./routes/email_change'));
+    express_routes(app, require('./routes/email_verify'));
 
     // Support for mountable design
     app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
