@@ -20,7 +20,7 @@ fs.mkdirSync(uploads_dir, {recursive: true});
 
 let LOG_DIR = null;
 const LOG_FILE = process.env.LOG_FILE ?? null;
-const SECRET = process.env.AUTHWALL_SECRET ?? 'demo_demo_demo_demo_demo_demo_demo';
+const SECRET = process.env.AUTHWALL_SECRET;
 
 const settings = resolve_yaml_vars(
     yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'})),
@@ -191,7 +191,10 @@ if (config.cookie.same_site === 'none' && !config.cookie.secure) {
 }
 
 if (!process.env.AUTHWALL_SECRET) {
-    console.warn('\n⚠️ Missing required env var: AUTHWALL_SECRET\n');
+    throw new Error('Missing required env var: AUTHWALL_SECRET');
+}
+if (process.env.AUTHWALL_SECRET.length < 32) {
+    throw new Error('AUTHWALL_SECRET must be at least 32 characters');
 }
 
 function secret_hkdf(namespace)

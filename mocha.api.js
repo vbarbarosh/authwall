@@ -1,3 +1,5 @@
+process.env.AUTHWALL_SECRET = require('crypto').randomBytes(32).toString('hex');
+
 const Runnable = require('mocha/lib/runnable');
 const config = require('./config');
 const knex = require('knex');
