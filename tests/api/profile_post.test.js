@@ -5,6 +5,11 @@ const const_email = require('../../src/helpers/const/const_email');
 describe('POST /auth/profile', function () {
 
     it('requires authentication', async function () {
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {display_name: 'Hacker', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Authentication required');
+        assert.strictEqual(status2.authenticated, false);
     });
 
     it('updates display name', async function () {

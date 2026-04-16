@@ -27,10 +27,54 @@ describe('POST /auth/password-reset/confirm', function () {
         await this.assert_password({email: 'mocha@authwall.test', password: 'pass123'});
     });
 
-    it('fails with missing fields');
-    it('fails when passwords do not match');
-    it('fails with invalid token');
-    it('fails with already used token');
-    it('fails with expired token');
+    it('fails with missing fields', async function () {
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/confirm', {_csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Missing fields');
+    });
+
+    it('fails when passwords do not match', async function () {
+        await this.add_user({email: 'mocha@authwall.test'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        const {token} = this.sent_emails[0].placeholders;
+        await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass456', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Passwords do not match');
+    });
+
+    it('fails with invalid token', async function () {
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/confirm', {token: 'invalid-token', password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Invalid reset token');
+    });
+
+    it('fails with already used token', async function () {
+        await this.add_user({email: 'mocha@authwall.test'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        const {token} = this.sent_emails[0].placeholders;
+        // Use it once (valid)
+        await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        // Try to use it again
+        const status2 = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass456', password_confirm: 'pass456', _csrf: status2.csrf_token});
+        const status3 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status3.error, 'Reset token already used');
+    });
+
+    it('fails with expired token', async function () {
+        const db = require('../../db');
+        await this.add_user({email: 'mocha@authwall.test'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        const {token} = this.sent_emails[0].placeholders;
+        await db('password_reset_tokens').update({expires_at: new Date(Date.now() - 1000)});
+        await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Reset token expired');
+    });
 
 });

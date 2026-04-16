@@ -21,7 +21,18 @@ describe('POST /auth/password-reset/request', function () {
         assert.deepStrictEqual(this.sent_emails, []);
     });
 
-    it('fails with missing email');
-    it('fails with invalid email');
+    it('fails with missing email', async function () {
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/request', {_csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Missing email');
+    });
+
+    it('fails with invalid email', async function () {
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/password-reset/request', {email: '   ', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Invalid email');
+    });
 
 });
