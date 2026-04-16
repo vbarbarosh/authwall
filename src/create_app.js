@@ -16,6 +16,18 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 
+const LOGGED_HEADERS = new Set([
+    'user-agent',
+    'content-type',
+    'content-length',
+    'referer',
+    'origin',
+    'host',
+    'x-forwarded-for',
+    'x-forwarded-proto',
+    'x-real-ip',
+]);
+
 async function create_app()
 {
     const app = express();
@@ -31,7 +43,9 @@ async function create_app()
 
         req.uid = random_uid('req_');
         logger.write(`[req_uid] ${req.uid}`);
-        logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(req.headers)}`);
+
+        const headers = Object.fromEntries(Object.keys(req.headers).filter(v => LOGGED_HEADERS.has(v)).map(k => [k, req.headers[k]]));
+        logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
 
         res.on('close', function () {
             pending--;
