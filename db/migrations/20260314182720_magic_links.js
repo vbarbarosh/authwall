@@ -9,6 +9,7 @@ exports.up = async function (knex) {
         table.string('email_normalized', 255).notNullable().index();
         table.string('code_hash', 255);
         table.string('token_hash', 64).notNullable().unique();
+        table.integer('attempts').notNullable().defaultTo(0);
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();
         table.timestamp('expires_at').notNullable();

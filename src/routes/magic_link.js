@@ -16,6 +16,7 @@ const random_uid_user_identity = require('../helpers/random/random_uid_user_iden
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
+const MAX_ATTEMPTS = 3;
 
 const routes = [
     {req: `GET ${config.pages.magic_link_confirm}`, fn: magic_link_confirm_get},
@@ -132,6 +133,12 @@ async function magic_link_confirm_post(req, res)
     if (!magic_link) {
         throw new Error('Invalid or expired code');
     }
+    if (magic_link.attempts >= MAX_ATTEMPTS) {
+        throw new Error('Invalid or expired code');
+    }
+
+    await db('magic_links').where({id: magic_link.id}).update({attempts: magic_link.attempts + 1, updated_at: now});
+
     const ok = await bcrypt.compare(code, magic_link.code_hash);
     if (!ok) {
         throw new Error('Invalid or expired code');
