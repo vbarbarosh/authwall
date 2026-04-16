@@ -1,5 +1,7 @@
 const als = require('../src/helpers/als');
+const assert = require('assert');
 const axios = require('axios');
+const bcrypt = require('bcrypt');
 const config = require('../config');
 const const_user_identity = require('../src/helpers/const/const_user_identity');
 const cookie_signature = require('cookie-signature');
@@ -32,6 +34,7 @@ async function spin(ctx, _this, fn)
         _this.client = create_client(config.public_url);
         _this.add_user = add_user;
         _this.sign_in = sign_in;
+        _this.assert_password = assert_password;
 
         try {
             await fn();
@@ -279,6 +282,16 @@ async function sign_in(params)
     await this.client.post_json('/auth/sign-in', {username: username ?? email, password, _csrf: status.csrf_token});
 
     return {user_id};
+}
+
+async function assert_password({username, email, password})
+{
+    const ident = username
+        ? await db('user_identities').where({type: const_user_identity.username, value_normalized: username}).first()
+        : await db('user_identities').where({type: const_user_identity.email, value_normalized: email}).first();
+
+    const user = await db('users').where({id: ident.user_id}).first();
+    assert.ok(await bcrypt.compare(password, user.password_hash));
 }
 
 module.exports = {

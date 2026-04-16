@@ -11,6 +11,7 @@ describe('POST /auth/change-password', function () {
         await this.client.post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.error, null);
+        await this.assert_password({username: 'mocha', password: 'pass456'});
     });
 
     it('Cannot set or change password without a verified email or username', async function () {
