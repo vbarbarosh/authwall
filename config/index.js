@@ -176,6 +176,9 @@ if (config.flows.google.enabled) {
     const {client_id, client_secret, redirect_url} = config.flows.google;
     if (!client_id || !client_secret || !redirect_url) {
         config.flows.google.enabled = false;
+        if (client_id || client_secret || redirect_url) {
+            console.warn('⚠️  Google OAuth disabled: client_id, client_secret, and redirect_url must all be set');
+        }
     }
 }
 
@@ -183,11 +186,18 @@ if (config.flows.github.enabled) {
     const {client_id, client_secret, redirect_url} = config.flows.github;
     if (!client_id || !client_secret || !redirect_url) {
         config.flows.github.enabled = false;
+        if (client_id || client_secret || redirect_url) {
+            console.warn('⚠️  GitHub OAuth disabled: client_id, client_secret, and redirect_url must all be set');
+        }
     }
 }
 
 if (config.cookie.same_site === 'none' && !config.cookie.secure) {
     throw new Error('cookie.same_site=none requires cookie.secure=true');
+}
+
+if (!!config.resend_key !== !!config.resend_from) {
+    throw new Error('Both AUTHWALL_RESEND_KEY and AUTHWALL_RESEND_FROM must be set together');
 }
 
 if (!process.env.AUTHWALL_SECRET) {
