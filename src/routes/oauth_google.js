@@ -115,6 +115,23 @@ async function google_callback_get(req, res)
             verified_at: now,
         });
 
+        // Also add the verified email from Google if not already taken
+        if (userinfo.email_verified && userinfo.email) {
+            const email_normalized = normalize_email(userinfo.email);
+            if (email_normalized) {
+                await db('user_identities').insert({
+                    uid: random_uid_user_identity(),
+                    user_id: req.session.user_id,
+                    type: const_user_identity.email,
+                    value: userinfo.email,
+                    value_normalized: email_normalized,
+                    created_at: now,
+                    updated_at: now,
+                    verified_at: now,
+                }).onConflict(['type', 'value_normalized']).ignore();
+            }
+        }
+
         redirect(req, res, '/auth/profile');
 
         const user = await db('users').where({id: req.session.user_id}).first();
