@@ -1,4 +1,3 @@
-const Promise = require('bluebird');
 const als = require('../als');
 
 function express_run(app, port = 3000, host = 'localhost')
@@ -8,17 +7,15 @@ function express_run(app, port = 3000, host = 'localhost')
         als.logger.write(`[express_run] Listening to ${address}:${port}`);
     });
 
-    // https://joseoncode.com/2014/07/21/graceful-shutdown-in-node-dot-js/
-    // process.on('SIGTERM', sigterm);
-    // process.on('SIGINT', sigint);
-    //
-    // server.on('close', function () {
-    //     console.log(`[express_run] end`);
-    //     process.off('SIGTERM', sigterm);
-    //     process.off('SIGINT', sigint);
-    // });
+    process.on('SIGTERM', sigterm);
+    process.on('SIGINT', sigint);
 
-    // return pending(cb => server.once('close', cb));
+    server.on('close', function () {
+        als.logger.write('[express_run] closed');
+        process.off('SIGTERM', sigterm);
+        process.off('SIGINT', sigint);
+    });
+
     return new Promise(function (resolve) {
         server.once('close', resolve);
     });
@@ -26,11 +23,13 @@ function express_run(app, port = 3000, host = 'localhost')
     function sigterm() {
         als.logger.write('[express_run] SIGTERM');
         server.close();
+        setTimeout(() => process.exit(1), 10000).unref();
     }
 
     function sigint() {
         als.logger.write('[express_run] SIGINT');
         server.close();
+        setTimeout(() => process.exit(1), 10000).unref();
     }
 }
 
