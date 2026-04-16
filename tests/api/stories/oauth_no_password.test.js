@@ -8,11 +8,10 @@ describe('OAuth user with no password tries email+password sign-in | stories', f
         // Create a user that has a verified email but no password (like an OAuth signup would)
         await this.add_user({email: 'oauth-user@authwall.test', password: null});
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'oauth-user@authwall.test',
             password: 'anything',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');

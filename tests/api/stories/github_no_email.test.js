@@ -90,10 +90,10 @@ describe('GitHub user without email — password setup impossible | stories', fu
         assert.strictEqual(status.providers[0].type, 'oauth_github');
 
         await this.http_post_json('/auth/change-password', {
+            _csrf: status.csrf_token,
             current_password: 'anything',
             password: 'newpass',
             password_confirm: 'newpass',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');
@@ -112,10 +112,10 @@ describe('GitHub user without email — password setup impossible | stories', fu
 
         // Now password setup should succeed
         await this.http_post_json('/auth/change-password', {
+            _csrf: status.csrf_token,
             current_password: '',
             password: 'newpass',
             password_confirm: 'newpass',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');

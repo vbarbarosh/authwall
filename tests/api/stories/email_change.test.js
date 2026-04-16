@@ -40,8 +40,8 @@ describe('Email change invalidates old email sign-in | stories', function () {
 
         // Request email change
         await this.http_post_json(config.pages.email_change_request, {
-            email: 'new@authwall.test',
             _csrf: status1.csrf_token,
+            email: 'new@authwall.test',
         });
         const change_email = this.sent_emails.find(e => e.placeholders?.token && e.to === 'new@authwall.test');
         assert.ok(change_email, 'email change confirmation email should be sent');

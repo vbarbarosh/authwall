@@ -16,12 +16,11 @@ describe('min_password_length is enforced only for new passwords | stories', fun
 
     it('rejects sign-up with a password shorter than the minimum', async function () {
         config.flows.password.min_password_length = 10;
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-up', {
+            _csrf: await this.csrf_token(),
             username: 'mocha',
             password: 'short',
             password_confirm: 'short',
-            _csrf: status.csrf_token,
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Password must be at least 10 characters');
@@ -31,14 +30,15 @@ describe('min_password_length is enforced only for new passwords | stories', fun
     it('rejects password reset with a password shorter than the current minimum', async function () {
         config.flows.password.min_password_length = 10;
         await this.add_user({email: 'mocha@authwall.test'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
-        const {token} = this.sent_emails[0].placeholders;
+        await this.http_post_json('/auth/password-reset/request', {
+            _csrf: await this.csrf_token(),
+            email: 'mocha@authwall.test',
+        });
         await this.http_post_json('/auth/password-reset/confirm', {
-            token,
+            _csrf: await this.csrf_token(),
+            token: this.sent_emails[0].placeholders.token,
             password: 'short',
             password_confirm: 'short',
-            _csrf: status.csrf_token,
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Password must be at least 10 characters');
@@ -47,12 +47,11 @@ describe('min_password_length is enforced only for new passwords | stories', fun
     it('rejects profile password change with a password shorter than the current minimum', async function () {
         config.flows.password.min_password_length = 10;
         await this.sign_in({username: 'mocha', password: 'pass123456'});
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/profile', {
+            _csrf: await this.csrf_token(),
             current_password: 'pass123456',
             password: 'short',
             password_confirm: 'short',
-            _csrf: status.csrf_token,
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Password must be at least 10 characters');
@@ -65,11 +64,10 @@ describe('min_password_length is enforced only for new passwords | stories', fun
 
         // Minimum is raised to 10 — but the existing short password must still authenticate
         config.flows.password.min_password_length = 10;
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'mocha',
             password: 'pass',
-            _csrf: status.csrf_token,
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -83,12 +81,11 @@ describe('min_password_length is enforced only for new passwords | stories', fun
 
         // Minimum is raised to 10 — new password must meet it, but current is still accepted
         config.flows.password.min_password_length = 10;
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/change-password', {
+            _csrf: await this.csrf_token(),
             current_password: 'pass',
             password: 'newlongpass',
             password_confirm: 'newlongpass',
-            _csrf: status.csrf_token,
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);

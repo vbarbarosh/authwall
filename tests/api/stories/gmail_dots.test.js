@@ -10,23 +10,23 @@ describe('Gmail dot-insensitive email handling | stories', function () {
     it('prevents sign-up when dotless variant is already registered', async function () {
         config.flows.password.min_password_length = 4;
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-up', {
+            _csrf: await this.csrf_token(),
             email: 'john.doe@gmail.com',
             password: 'pass123',
             password_confirm: 'pass123',
-            _csrf: status.csrf_token,
         });
 
         // Sign out, then try to sign up with the dotless variant
-        await this.http_post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
+        await this.http_post_json('/auth/sign-out', {
+            _csrf: await this.csrf_token(),
+        });
 
-        const status2 = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-up', {
+            _csrf: await this.csrf_token(),
             email: 'johndoe@gmail.com',
             password: 'pass456',
             password_confirm: 'pass456',
-            _csrf: status2.csrf_token,
         });
 
         const status3 = await this.http_get_json('/auth/status');
@@ -52,11 +52,10 @@ describe('Gmail dot-insensitive email handling | stories', function () {
     it('signs in with dotless variant when registered with dots', async function () {
         await this.add_user({email: 'john.doe@gmail.com', password: 'pass123'});
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'johndoe@gmail.com',
             password: 'pass123',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');
@@ -67,11 +66,10 @@ describe('Gmail dot-insensitive email handling | stories', function () {
     it('does not strip dots for non-Gmail domains', async function () {
         await this.add_user({email: 'john.doe@example.com', password: 'pass123'});
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'johndoe@example.com',
             password: 'pass123',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');

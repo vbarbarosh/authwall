@@ -7,11 +7,10 @@ describe('Case-insensitive email sign-in | stories', function () {
     it('signs in with lowercase when registered with mixed-case email', async function () {
         await this.add_user({email: 'MixedCase@authwall.test', password: 'pass123'});
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'mixedcase@authwall.test',
             password: 'pass123',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');
@@ -22,11 +21,10 @@ describe('Case-insensitive email sign-in | stories', function () {
     it('signs in with mixed-case when registered with lowercase email', async function () {
         await this.add_user({email: 'lowercase@authwall.test', password: 'pass123'});
 
-        const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {
+            _csrf: await this.csrf_token(),
             username: 'LOWERCASE@authwall.test',
             password: 'pass123',
-            _csrf: status.csrf_token,
         });
 
         const status2 = await this.http_get_json('/auth/status');

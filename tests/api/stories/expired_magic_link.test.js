@@ -10,12 +10,14 @@ describe('Expired magic link does not affect authenticated session | stories', f
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
         // Request a magic link (while already signed in)
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
-        const {token} = this.sent_emails.find(e => e.placeholders?.token).placeholders;
+        await this.http_post_json('/auth/magic-link/request', {
+            _csrf: await this.csrf_token(),
+            email: 'mocha@authwall.test'
+        });
+        const {token} = this.sent_emails.find(v => v.placeholders?.token).placeholders;
 
         // Expire the magic link
-        await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});
+        await db('magic_links').update({expires_at: new Date()});
 
         // Try to use the expired link
         await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
