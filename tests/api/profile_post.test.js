@@ -31,4 +31,45 @@ describe('POST /auth/profile', function () {
         assert.strictEqual(status2.avatar_url, `${config.public_url}/auth/uploads/${status.user_slug}/avatar.webp`);
     });
 
+    it('changes password', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, null);
+        assert.strictEqual(status2.authenticated, true);
+    });
+
+    it('sends password_changed email after password change', async function () {
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
+        await this.wait_for_emails(2);
+        assert.strictEqual(this.sent_emails[1].subject, 'Your password was changed');
+    });
+
+    it('fails password change with missing fields', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {current_password: 'pass123', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Missing fields');
+    });
+
+    it('fails password change when passwords do not match', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass789', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Passwords do not match');
+    });
+
+    it('fails password change with wrong current password', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/profile', {current_password: 'wrong', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
+        const status2 = await this.client.get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Current password is incorrect');
+    });
+
 });

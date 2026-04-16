@@ -1,6 +1,9 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
+const bcrypt = require('bcrypt');
+const complete_password_change = require('../actions/complete_password_change');
 const config = require('../../config');
+const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const fs_mkdirp = require('@vbarbarosh/node-helpers/src/fs_mkdirp');
@@ -38,14 +41,17 @@ const routes = [
 // POST /auth/profile
 async function profile_post(req, res)
 {
-    // const {current_password, password, password_confirm} = req.body;
-    // if (!current_password || !password || !password_confirm) {
-    //     throw new Error('Missing fields');
-    // }
-    //
-    // if (password !== password_confirm) {
-    //     throw new Error('Passwords do not match');
-    // }
+    const {current_password, password, password_confirm} = req.body;
+    const is_password_change = current_password || password || password_confirm;
+
+    if (is_password_change) {
+        if (!current_password || !password || !password_confirm) {
+            throw new UserFriendlyError('Missing fields');
+        }
+        if (password !== password_confirm) {
+            throw new UserFriendlyError('Passwords do not match');
+        }
+    }
 
     const update = {};
 
@@ -62,23 +68,36 @@ async function profile_post(req, res)
         const avatar_path = fs_path_resolve(__dirname, `../../data/uploads/${user.slug}/avatar.webp`);
         await fs_mkdirp(fs_path_dirname(avatar_path));
         await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
-        await fs_rm(req.file.path)
+        await fs_rm(req.file.path);
         update.avatar_url = `${config.public_url}/auth/uploads/${user.slug}/avatar.webp`;
     }
 
-    // const ok = await bcrypt.compare(current_password, user.password_hash);
-    // if (!ok) {
-    //     throw new Error('Current password is incorrect');
-    // }
-    // const password_hash = await bcrypt.hash(password, config.password_rounds);
+    if (is_password_change) {
+        const ident = await db('user_identities')
+            .where({user_id: req.session.user_id})
+            .whereIn('type', [const_user_identity.email, const_user_identity.username])
+            .whereNotNull('verified_at')
+            .first();
+        if (!ident) {
+            throw new UserFriendlyError('Cannot set or change password without a verified email or username');
+        }
+        const ok = await bcrypt.compare(current_password, user.password_hash);
+        if (!ok) {
+            throw new UserFriendlyError('Current password is incorrect');
+        }
+        update.password_hash = await bcrypt.hash(password, config.password_rounds);
+    }
 
     const now = new Date();
     await db('users').where({id: user.id}).update({...update, updated_at: now});
 
-    // refresh session (important after credential change)
-    await replace_session(req, user);
-
-    redirect(req, res, config.pages.profile);
+    if (is_password_change) {
+        await complete_password_change(req, res, user.id);
+    }
+    else {
+        await replace_session(req, user);
+        redirect(req, res, config.pages.profile);
+    }
 }
 
 module.exports = routes;
