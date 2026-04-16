@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -18,7 +19,7 @@ const upload_avatar = multer({
     },
     fileFilter: function (req, file, callback) {
         if (!file.mimetype.startsWith('image/')) {
-            callback(new Error('Invalid file type'));
+            callback(new UserFriendlyError('Invalid file type'));
             return;
         }
         callback(null, true);

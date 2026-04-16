@@ -14,6 +14,7 @@ const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 
 async function create_app()
 {
@@ -175,14 +176,21 @@ function error_handler(error, req, res, next)
     als.logger.write(`[error_handler] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
 
     if (req.session) {
-        req.session.error = `An error occurred [${req.uid}]`;
+        if (error instanceof UserFriendlyError) {
+            req.session.error = error.message;
+        }
+        else {
+            req.session.error = `An error occurred [${req.uid}]`;
+        }
     }
 
-    if (urlparts(req.originalUrl).path !== config.pages.sign_in) {
+    // ⚠️ TODO Take care of infinite redirects
+
+    if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
         res.redirect(config.pages.sign_in);
     }
     else {
-        next(error);
+        res.redirect(req.url);
     }
 }
 

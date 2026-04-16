@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('../helpers/als');
 const assert_shape = require('../helpers/assert/assert_shape');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
@@ -60,10 +61,10 @@ async function github_callback_get(req, res)
     // delete req.session.oauth_state;
 
     if (!code) {
-        throw new Error('Missing OAuth code');
+        throw new UserFriendlyError('Missing OAuth code');
     }
     if (!state || state !== expected_state) {
-        throw new Error('Invalid OAuth state');
+        throw new UserFriendlyError('Invalid OAuth state');
     }
 
     delete req.session.oauth_state;
@@ -116,12 +117,12 @@ async function github_callback_get(req, res)
     if (oauth_intent === const_oauth_intent.connect) {
 
         if (!req.session.user_id) {
-            throw new Error('Authentication required');
+            throw new UserFriendlyError('Authentication required');
         }
 
         if (ident) {
             if (ident.user_id !== req.session.user_id) {
-                throw new Error('GitHub account already linked to another user');
+                throw new UserFriendlyError('GitHub account already linked to another user');
             }
             // already connected
             return redirect(req, res, '/auth/profile');
@@ -227,7 +228,7 @@ async function github_disconnect_post(req, res)
     }
 
     if (identities.length <= 1) {
-        throw new Error('Cannot disconnect GitHub: it is your only sign-in method');
+        throw new UserFriendlyError('Cannot disconnect GitHub: it is your only sign-in method');
     }
 
     await db('user_identities').where({id: github_ident.id}).delete();

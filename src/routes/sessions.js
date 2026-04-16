@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const complete_sign_out = require('../actions/complete_sign_out');
 const config = require('../../config');
@@ -20,12 +21,12 @@ async function sessions_revoke_post(req, res)
 {
     const {uid} = req.body;
     if (!uid) {
-        throw new Error('Missing session uid');
+        throw new UserFriendlyError('Missing session uid');
     }
 
     // Prevent deleting current session
     if (uid === req.sessionID) {
-        throw new Error('Cannot revoke current session');
+        throw new UserFriendlyError('Cannot revoke current session');
     }
 
     await db('sessions').where({uid, user_id: req.session.user_id}).delete();

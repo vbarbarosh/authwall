@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const complete_email_verify_confirm = require('../actions/complete_email_verify_confirm');
 const complete_email_verify_request = require('../actions/complete_email_verify_request');
@@ -25,7 +26,7 @@ async function email_verify_request_post(req, res)
 
     const ident = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNull('verified_at').first();
     if (!ident) {
-        throw new Error('No unverified email found');
+        throw new UserFriendlyError('No unverified email found');
     }
 
     const email_normalized = ident.value_normalized;
@@ -33,7 +34,7 @@ async function email_verify_request_post(req, res)
     // Rate-limit: prevent spamming
     const recent = await db('email_verify_tokens').where({email_normalized}).orderBy('id', 'desc').first();
     if (recent && (Date.now() - new Date(recent.created_at).getTime()) < 60 * SECOND) {
-        throw new Error('Verification email already sent. Please wait.');
+        throw new UserFriendlyError('Verification email already sent. Please wait.');
     }
 
     const token = random_hex();
@@ -56,7 +57,7 @@ async function email_verify_confirm_get(req, res)
 {
     const {token} = req.query;
     if (!token) {
-        throw new Error('Missing token');
+        throw new UserFriendlyError('Missing token');
     }
 
     const now = new Date();
@@ -66,7 +67,7 @@ async function email_verify_confirm_get(req, res)
         .where('expires_at', '>', now)
         .first();
     if (!record) {
-        throw new Error('Invalid or expired verification link');
+        throw new UserFriendlyError('Invalid or expired verification link');
     }
 
     await db.transaction(async function () {

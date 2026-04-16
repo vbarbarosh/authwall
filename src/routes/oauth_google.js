@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const complete_sign_in = require('../actions/complete_sign_in');
@@ -60,10 +61,10 @@ async function google_callback_get(req, res)
     // delete req.session.oauth_state;
 
     if (!code) {
-        throw new Error('Missing OAuth code');
+        throw new UserFriendlyError('Missing OAuth code');
     }
     if (!state || state !== expected_state) {
-        throw new Error('Invalid OAuth state');
+        throw new UserFriendlyError('Invalid OAuth state');
     }
 
     delete req.session.oauth_state;
@@ -91,12 +92,12 @@ async function google_callback_get(req, res)
     if (oauth_intent === const_oauth_intent.connect) {
 
         if (!req.session.user_id) {
-            throw new Error('Authentication required');
+            throw new UserFriendlyError('Authentication required');
         }
 
         if (ident) {
             if (ident.user_id !== req.session.user_id) {
-                throw new Error('Google account already linked to another user');
+                throw new UserFriendlyError('Google account already linked to another user');
             }
             // already connected
             return redirect(req, res, '/auth/profile');
@@ -203,7 +204,7 @@ async function google_disconnect_post(req, res)
     }
 
     if (identities.length <= 1) {
-        throw new Error('Cannot disconnect Google: it is your only sign-in method');
+        throw new UserFriendlyError('Cannot disconnect Google: it is your only sign-in method');
     }
 
     await db('user_identities').where({id: google_ident.id}).delete();

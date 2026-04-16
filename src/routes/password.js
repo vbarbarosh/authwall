@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
@@ -40,7 +41,7 @@ async function sign_in_post(req, res)
     const {username, password} = req.body;
 
     if (!username || !password) {
-        throw new Error('Missing fields');
+        throw new UserFriendlyError('Missing fields');
     }
 
     const is_email = username.includes('@');
@@ -48,7 +49,7 @@ async function sign_in_post(req, res)
     if (is_email) {
         const email_normalized = normalize_email(username);
         if (!email_normalized) {
-            throw new Error('Invalid username or password');
+            throw new UserFriendlyError('Invalid username or password');
         }
         await authorize_email(email_normalized);
         ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
@@ -56,13 +57,13 @@ async function sign_in_post(req, res)
     else {
         const username_normalized = normalize_username(username);
         if (!username_normalized) {
-            throw new Error('Invalid username or password');
+            throw new UserFriendlyError('Invalid username or password');
         }
         ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
     }
 
     if (!ident) {
-        throw new Error('Invalid username or password');
+        throw new UserFriendlyError('Invalid username or password');
     }
 
     const user = await db('users').where({id: ident.user_id}).first();
@@ -71,7 +72,7 @@ async function sign_in_post(req, res)
     // Attackers can detect if username exists by timing
     const ok = await bcrypt.compare(password, password_hash);
     if (!user || !ok) {
-        throw new Error('Invalid username or password');
+        throw new UserFriendlyError('Invalid username or password');
     }
 
     await complete_sign_in(req, res, user);
@@ -83,32 +84,32 @@ async function sign_up_post(req, res)
     const {email, username, password, password_confirm} = req.body;
 
     if ((!email && !username) || !password) {
-        throw new Error('Missing fields');
+        throw new UserFriendlyError('Missing fields');
     }
 
     if (password !== password_confirm) {
-        throw new Error('Passwords do not match')
+        throw new UserFriendlyError('Passwords do not match')
     }
 
     const email_normalized = normalize_email(email);
     const username_normalized = normalize_username(username);
 
     if (email && !email_normalized) {
-        throw new Error('Invalid email');
+        throw new UserFriendlyError('Invalid email');
     }
     if (username && !username_normalized) {
-        throw new Error('Invalid username');
+        throw new UserFriendlyError('Invalid username');
     }
 
     if (email_normalized) {
         if (await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first()) {
-            throw new Error('Email already exists');
+            throw new UserFriendlyError('Email already exists');
         }
         await authorize_email(email_normalized);
     }
     if (username_normalized) {
         if (await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first()) {
-            throw new Error('Username already exists');
+            throw new UserFriendlyError('Username already exists');
         }
     }
 
@@ -163,7 +164,7 @@ async function sign_up_post(req, res)
     }
     catch (error) {
         if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {
-            throw new Error('Identity already exists')
+            throw new UserFriendlyError('Identity already exists')
         }
         throw error;
     }
@@ -177,7 +178,7 @@ async function password_reset_request_post(req, res)
     }
     const email_normalized = normalize_email(req.body.email);
     if (!email_normalized) {
-        throw new Error('Invalid email');
+        throw new UserFriendlyError('Invalid email');
     }
 
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
@@ -207,23 +208,23 @@ async function password_reset_confirm_post(req, res)
     const {token, password, password_confirm} = req.body;
 
     if (!token || !password || !password_confirm) {
-        throw new Error('Missing fields');
+        throw new UserFriendlyError('Missing fields');
     }
 
     if (password !== password_confirm) {
-        throw new Error('Passwords do not match');
+        throw new UserFriendlyError('Passwords do not match');
     }
 
     const token_hash = crypto_hash_sha256(token);
     const reset = await db('password_reset_tokens').where({token_hash}).first();
     if (!reset) {
-        throw new Error('Invalid reset token');
+        throw new UserFriendlyError('Invalid reset token');
     }
     if (reset.used_at) {
-        throw new Error('Reset token already used');
+        throw new UserFriendlyError('Reset token already used');
     }
     if (new Date(reset.expires_at) < new Date()) {
-        throw new Error('Reset token expired');
+        throw new UserFriendlyError('Reset token expired');
     }
 
     const password_hash = await bcrypt.hash(password, config.password_rounds);
@@ -246,15 +247,15 @@ async function change_password_post(req, res)
         .whereNotNull('verified_at')
         .first();
     if (!ident) {
-        throw new Error('Cannot set or change password without a verified email or username');
+        throw new UserFriendlyError('Cannot set or change password without a verified email or username');
     }
 
     if (!current_password || !password || !password_confirm) {
-        throw new Error('Missing fields');
+        throw new UserFriendlyError('Missing fields');
     }
 
     if (password !== password_confirm) {
-        throw new Error('Passwords do not match');
+        throw new UserFriendlyError('Passwords do not match');
     }
 
     const user = await db('users').where({id: req.session.user_id}).first();
@@ -264,7 +265,7 @@ async function change_password_post(req, res)
 
     const ok = await bcrypt.compare(current_password, user.password_hash);
     if (!ok) {
-        throw new Error('Current password is incorrect');
+        throw new UserFriendlyError('Current password is incorrect');
     }
 
     const password_hash = await bcrypt.hash(password, config.password_rounds);

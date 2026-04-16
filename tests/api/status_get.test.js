@@ -16,7 +16,7 @@ describe('GET /auth/status', function () {
     it('clears error from session after returning it', async function () {
         await this.client.post_json('/auth/sign-in')
         const status = await this.client.get_json('/auth/status');
-        assert.deepStrictEqual(status.error, '[403] Invalid CSRF Token');
+        assert.deepStrictEqual(status.error, 'Invalid CSRF Token');
         const status2 = await this.client.get_json('/auth/status');
         assert.deepStrictEqual(status2.error, null);
     });

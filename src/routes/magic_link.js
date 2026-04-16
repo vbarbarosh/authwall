@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
 const complete_magic_link_request = require('../actions/complete_magic_link_request');
@@ -30,20 +31,20 @@ const routes = [
 async function magic_link_request_post(req, res)
 {
     if (!req.body.email) {
-        throw new Error('Missing email');
+        throw new UserFriendlyError('Missing email');
     }
 
     const email = req.body.email;
     const email_normalized = normalize_email(email);
     if (!email) {
-        throw new Error('Invalid email');
+        throw new UserFriendlyError('Invalid email');
     }
     await authorize_email(email_normalized);
 
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
     if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
-        throw new Error('Magic link already sent. Please wait.');
+        throw new UserFriendlyError('Magic link already sent. Please wait.');
     }
 
     const code = random_code();
@@ -68,7 +69,7 @@ async function magic_link_confirm_get(req, res)
 {
     const {token} = req.query;
     if (!token) {
-        throw new Error('Missing token');
+        throw new UserFriendlyError('Missing token');
     }
 
     const now = new Date();
@@ -78,7 +79,7 @@ async function magic_link_confirm_get(req, res)
         .where('expires_at', '>', now)
         .first();
     if (!magic_link) {
-        throw new Error('Invalid or expired magic link');
+        throw new UserFriendlyError('Invalid or expired magic link');
     }
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
@@ -113,13 +114,13 @@ async function magic_link_confirm_post(req, res)
 {
     const {code} = req.body;
     if (!req.body.email || !code) {
-        throw new Error('Missing fields');
+        throw new UserFriendlyError('Missing fields');
     }
 
     const email = req.body.email;
     const email_normalized = normalize_email(email);
     if (!email_normalized) {
-        throw new Error('Invalid email');
+        throw new UserFriendlyError('Invalid email');
     }
     await authorize_email(email_normalized);
 
@@ -131,17 +132,17 @@ async function magic_link_confirm_post(req, res)
         .orderBy('id', 'desc')
         .first();
     if (!magic_link) {
-        throw new Error('Invalid or expired code');
+        throw new UserFriendlyError('Invalid or expired code');
     }
     if (magic_link.attempts >= MAX_ATTEMPTS) {
-        throw new Error('Invalid or expired code');
+        throw new UserFriendlyError('Invalid or expired code');
     }
 
     await db('magic_links').where({id: magic_link.id}).update({attempts: magic_link.attempts + 1, updated_at: now});
 
     const ok = await bcrypt.compare(code, magic_link.code_hash);
     if (!ok) {
-        throw new Error('Invalid or expired code');
+        throw new UserFriendlyError('Invalid or expired code');
     }
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});

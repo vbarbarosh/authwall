@@ -1,3 +1,4 @@
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const complete_email_change_confirm = require('../actions/complete_email_change_confirm');
 const complete_email_change_request = require('../actions/complete_email_change_request');
@@ -25,19 +26,19 @@ async function email_change_request_post(req, res)
 {
     const {email} = req.body;
     if (!email) {
-        throw new Error('Missing email');
+        throw new UserFriendlyError('Missing email');
     }
 
     const email_normalized = normalize_email(email);
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
-        throw new Error('Email already registered');
+        throw new UserFriendlyError('Email already registered');
     }
 
     // Rate-limit: prevent spamming
     const recent = await db('email_change_tokens').where({email_normalized}).orderBy('id', 'desc').first();
     if (recent && (Date.now() - new Date(recent.created_at).getTime()) < 60 * SECOND) {
-        throw new Error('Email change already requested. Please wait.');
+        throw new UserFriendlyError('Email change already requested. Please wait.');
     }
 
     const user_id = req.session.user_id;
@@ -61,7 +62,7 @@ async function email_change_confirm_get(req, res)
 {
     const {token} = req.query;
     if (!token) {
-        throw new Error('Missing token');
+        throw new UserFriendlyError('Missing token');
     }
 
     const now = new Date();
@@ -72,7 +73,7 @@ async function email_change_confirm_get(req, res)
         .first();
 
     if (!email_change) {
-        throw new Error('Invalid or expired email change link');
+        throw new UserFriendlyError('Invalid or expired email change link');
     }
 
     await db.transaction(async function () {
