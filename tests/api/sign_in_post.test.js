@@ -22,20 +22,28 @@ describe('POST /auth/sign-in', function () {
         assert.strictEqual(this.sent_emails[0].subject, 'New sign-in to your account');
     });
 
-    it('redirects to the return url', async function () {
+    it('redirects to a relative return url', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: 'https://foo.local.test'}), {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: '/some/path'}), {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, 'https://foo.local.test');
+        assert.strictEqual(r.headers.location, '/some/path');
+    });
+
+    it('ignores an external return url', async function () {
+        await this.add_user({username: 'mocha', password: 'pass123'});
+        const status = await this.client.get_json('/auth/status');
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: 'https://evil.com'}), {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        assert.strictEqual(r.status, 302);
+        assert.strictEqual(r.headers.location, '/');
     });
 
     it('failure should redirect to the same url', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: 'https://foo.local.test'}), {username: 'mocha', password: 'pass12345', _csrf: status.csrf_token});
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: '/some/path'}), {username: 'mocha', password: 'pass12345', _csrf: status.csrf_token});
         assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, urlmod('/auth/sign-in', {return: 'https://foo.local.test'}));
+        assert.strictEqual(r.headers.location, urlmod('/auth/sign-in', {return: '/some/path'}));
     });
 
     it('fails with missing fields', async function () {
