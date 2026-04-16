@@ -52,8 +52,8 @@ describe('POST /auth/profile', function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
-        await this.wait_for_emails(2);
-        assert.strictEqual(this.sent_emails[1].name, const_email.password_changed_from_profile);
+        await this.wait_for_emails(1);
+        assert.strictEqual(this.sent_emails[0].name, const_email.password_changed_from_profile);
     });
 
     it('fails password change with missing fields', async function () {

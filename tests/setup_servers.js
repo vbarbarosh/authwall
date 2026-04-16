@@ -277,15 +277,24 @@ async function add_user(params = {})
     }
     await db('user_identities').insert(rows);
 
-    return {user_id: user.id, email, username, password};
+    return {user_id: user.id, email, username, password, verified};
 }
 
 async function sign_in(params)
 {
     const {user_id, username, email, password} = await add_user(params);
 
-    const status = await this.client.get_json('/auth/status');
-    await this.client.post_json('/auth/sign-in', {username: username ?? email, password, _csrf: status.csrf_token});
+    this.sent_emails.splice(0);
+    await this.http_post_json('/auth/sign-in', {
+        _csrf: await this.csrf_token(),
+        username: username ?? email,
+        password,
+    });
+
+    if (email) {
+        await this.wait_for_emails(1);
+        this.sent_emails.splice(0);
+    }
 
     return {user_id};
 }

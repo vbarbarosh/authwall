@@ -55,10 +55,10 @@ describe('emails • github_connected', function () {
             code: '4/fake_code',
             state: sess.oauth_state,
         }));
-        await this.wait_for_emails(2);
+        await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name);
-        const expected = [const_email.new_sign_in, const_email.github_connected];
+        const expected = [const_email.github_connected];
         assert.deepStrictEqual(actual, expected);
     });
 
@@ -112,10 +112,8 @@ describe('emails • github_connected', function () {
             state: sess.oauth_state,
         }));
 
-        await this.wait_for_emails(1);
-
         const actual = this.sent_emails.map(v => v.name);
-        const expected = [const_email.new_sign_in];
+        const expected = [];
         assert.deepStrictEqual(actual, expected);
     });
 

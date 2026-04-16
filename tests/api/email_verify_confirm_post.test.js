@@ -13,7 +13,7 @@ describe('GET /auth/email-verify/confirm', function () {
         assert.strictEqual(provider.verified_at, null);
 
         await this.client.post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
-        await this.wait_for_emails(2);
+        await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
@@ -40,7 +40,7 @@ describe('GET /auth/email-verify/confirm', function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
-        await this.wait_for_emails(2);
+        await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
@@ -55,7 +55,7 @@ describe('GET /auth/email-verify/confirm', function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/email-verify/request', {_csrf: status.csrf_token});
-        await this.wait_for_emails(2);
+        await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
