@@ -10,6 +10,7 @@ const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
+const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
@@ -27,6 +28,8 @@ async function create_app()
         const hrtime0 = process.hrtime();
         const logger = als.logger.spawn({decorate: s => `[+${format_hrtime0(hrtime0, 4)}] ${s}`});
 
+        req.uid = random_uid('req_');
+        logger.write(`[req_uid] ${req.uid}`);
         logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(req.headers)}`);
 
         res.on('close', function () {
@@ -168,7 +171,7 @@ function error_handler(error, req, res, next)
     als.logger.write(`[error_handler] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
 
     if (req.session) {
-        req.session.error = error.message;
+        req.session.error = `An error occurred [${req.uid}]`;
     }
 
     if (urlparts(req.originalUrl).path !== config.pages.sign_in) {
