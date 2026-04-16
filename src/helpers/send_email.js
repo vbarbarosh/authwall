@@ -23,7 +23,7 @@ async function send_email(params)
         placeholders,
     };
 
-    als.logger.write(`[send_email_request] ${JSON.stringify(request)}`);
+    als.logger.write(`[send_email_request] ${JSON.stringify({name, to: request.to, subject})}`);
 
     const response = await als.mailer.send(request);
 
