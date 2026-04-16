@@ -1,4 +1,5 @@
 const assert = require('assert');
+const const_email = require('../../src/helpers/const/const_email');
 
 describe('smoke tests', function () {
 
@@ -29,7 +30,7 @@ describe('smoke tests', function () {
         const status2 = await this.client.get_json('/auth/status');
         assert.strictEqual(status2.authenticated, true);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
-        assert.strictEqual(this.sent_emails[0].subject, 'New sign-in to your account');
+        assert.strictEqual(this.sent_emails[0].name, const_email.new_sign_in);
         assert.ok(this.written_logs.length > 0);
     });
 

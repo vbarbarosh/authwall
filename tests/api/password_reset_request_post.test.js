@@ -1,4 +1,5 @@
 const assert = require('assert');
+const const_email = require('../../src/helpers/const/const_email');
 
 describe('POST /auth/password-reset/request', function () {
 
@@ -7,7 +8,7 @@ describe('POST /auth/password-reset/request', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/password-reset/request', {email: user.email, _csrf: status.csrf_token});
         assert.strictEqual(this.sent_emails[0].to, user.email);
-        assert.strictEqual(this.sent_emails[0].subject, 'Reset your password');
+        assert.strictEqual(this.sent_emails[0].name, const_email.password_reset);
     });
 
     it('redirects silently for unknown email', async function () {

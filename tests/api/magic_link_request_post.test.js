@@ -1,4 +1,5 @@
 const assert = require('assert');
+const const_email = require('../../src/helpers/const/const_email');
 const db = require('../../db');
 
 describe('POST /auth/magic-link/request', function () {
@@ -13,7 +14,7 @@ describe('POST /auth/magic-link/request', function () {
 
         assert.strictEqual(this.sent_emails.length, 1);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
-        assert.strictEqual(this.sent_emails[0].subject, 'Your sign-in link');
+        assert.strictEqual(this.sent_emails[0].name, const_email.magic_link);
 
         const row = await db('magic_links').where({email_normalized: 'mocha@authwall.test'}).first();
         assert.ok(row);

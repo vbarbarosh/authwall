@@ -1,4 +1,5 @@
 const assert = require('assert');
+const const_email = require('../../src/helpers/const/const_email');
 
 describe('POST /auth/sign-up', function () {
 
@@ -17,7 +18,7 @@ describe('POST /auth/sign-up', function () {
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
-        assert.strictEqual(this.sent_emails[0].subject, 'Welcome!');
+        assert.strictEqual(this.sent_emails[0].name, const_email.welcome_and_confirm_email);
     });
 
     it('signs up with both email and username', async function () {
@@ -27,7 +28,7 @@ describe('POST /auth/sign-up', function () {
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
-        assert.strictEqual(this.sent_emails[0].subject, 'Welcome!');
+        assert.strictEqual(this.sent_emails[0].name, const_email.welcome_and_confirm_email);
     });
 
     it('fails with missing fields');

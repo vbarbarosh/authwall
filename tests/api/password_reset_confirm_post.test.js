@@ -1,4 +1,5 @@
 const assert = require('assert');
+const const_email = require('../../src/helpers/const/const_email');
 
 describe('POST /auth/password-reset/confirm', function () {
 
@@ -15,7 +16,7 @@ describe('POST /auth/password-reset/confirm', function () {
         assert.strictEqual(status2.authenticated, false);
 
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
-        assert.strictEqual(this.sent_emails[0].subject, 'Reset your password');
+        assert.strictEqual(this.sent_emails[0].name, const_email.password_reset);
         const {token} = this.sent_emails[0].placeholders;
 
         await this.client.post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});

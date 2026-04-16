@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../config');
+const const_email = require('../../src/helpers/const/const_email');
 
 describe('POST /auth/profile', function () {
 
@@ -45,7 +46,7 @@ describe('POST /auth/profile', function () {
         const status = await this.client.get_json('/auth/status');
         await this.client.post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status.csrf_token});
         await this.wait_for_emails(2);
-        assert.strictEqual(this.sent_emails[1].subject, 'Your password was changed');
+        assert.strictEqual(this.sent_emails[1].name, const_email.password_changed_from_profile);
     });
 
     it('fails password change with missing fields', async function () {
