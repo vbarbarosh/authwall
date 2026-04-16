@@ -3,6 +3,9 @@
 /data
 /node_modules
 
+# Coverage
+/coverage/
+
 # Playwright
 /blob-report/
 /playwright-report/
