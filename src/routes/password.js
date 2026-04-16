@@ -174,7 +174,7 @@ async function sign_up_post(req, res)
 async function password_reset_request_post(req, res)
 {
     if (!req.body.email) {
-        throw new Error('Missing email');
+        throw new UserFriendlyError('Missing email');
     }
     const email_normalized = normalize_email(req.body.email);
     if (!email_normalized) {
@@ -260,7 +260,7 @@ async function change_password_post(req, res)
 
     const user = await db('users').where({id: req.session.user_id}).first();
     if (!user) {
-        throw new Error('User not found');
+        throw new UserFriendlyError('User not found');
     }
 
     const ok = await bcrypt.compare(current_password, user.password_hash);

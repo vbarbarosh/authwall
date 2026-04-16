@@ -184,10 +184,12 @@ function error_handler(error, req, res, next)
         }
     }
 
-    // ⚠️ TODO Take care of infinite redirects
-
     if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
         res.redirect(config.pages.sign_in);
+    }
+    else if (req.method === 'GET' && req.url === req.originalUrl) {
+        // GET /auth/sign-in threw an error — redirecting would loop
+        next(error);
     }
     else {
         res.redirect(req.url);

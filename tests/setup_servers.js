@@ -85,6 +85,9 @@ function create_client(base_url)
         get_session() {
             return load_session(this.cookies);
         },
+        add_to_session(vars) {
+            return add_to_session(this.cookies, vars);
+        },
     };
 
     async function load_session(cookies) {
@@ -116,6 +119,31 @@ function create_client(base_url)
             ua: row.ua,
             ...JSON.parse(row.custom),
         };
+    }
+
+    async function add_to_session(cookies, vars) {
+        const pair = cookies.get('connect.sid');
+        if (!pair) {
+            throw new Error('Empty session');
+        }
+
+        const signed = decodeURIComponent(pair.slice('connect.sid='.length));
+        if (!signed.startsWith('s:')) {
+            throw new Error('Invalid session cookie');
+        }
+
+        const uid = cookie_signature.unsign(signed.slice(2), config.secrets.express_session);
+        if (!uid) {
+            throw new Error('Invalid session signature');
+        }
+
+        const row = await db('sessions').where({uid}).first();
+        if (!row) {
+            throw new Error('Session not found');
+        }
+
+        const custom = JSON.stringify({...JSON.parse(row.custom), ...vars});
+        await db('sessions').where({uid}).update({custom, updated_at: new Date()});
     }
 
     async function request(cookies, method, url, data, no_redirects = false, simulate_https = true) {

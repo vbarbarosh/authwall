@@ -55,7 +55,7 @@ async function profile_post(req, res)
 
     const user = await db('users').where({id: req.session.user_id}).first();
     if (!user) {
-        throw new Error('User not found');
+        throw new UserFriendlyError('User not found');
     }
 
     if (req.file) {
