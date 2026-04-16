@@ -53,6 +53,8 @@ const config = {
         [const_email.new_sign_in]: `${emails_dir}/new-sign-in.txt`,
         [const_email.google_connected]: `${emails_dir}/google-connected.txt`,
         [const_email.google_disconnected]: `${emails_dir}/google-disconnected.txt`,
+        [const_email.github_connected]: `${emails_dir}/github-connected.txt`,
+        [const_email.github_disconnected]: `${emails_dir}/github-disconnected.txt`,
         [const_email.password_changed_from_profile]: `${emails_dir}/password-changed-from-profile.txt`,
         [const_email.password_changed_via_reset_link]: `${emails_dir}/password-changed-via-reset-link.txt`,
     },

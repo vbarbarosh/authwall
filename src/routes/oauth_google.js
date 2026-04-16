@@ -3,10 +3,14 @@ const authorize_email = require('../helpers/authorize_email');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
+const const_email = require('../helpers/const/const_email');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
+const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
+const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const normalize_email = require('../helpers/normalize/normalize_email');
@@ -111,6 +115,22 @@ async function google_callback_get(req, res)
         });
 
         redirect(req, res, '/auth/profile');
+
+        const user = await db('users').where({id: req.session.user_id}).first();
+        const email_and_name = await get_user_email_and_name(req.session.user_id);
+        if (email_and_name) {
+            await send_email_nothrow({
+                name: const_email.google_connected,
+                user,
+                placeholders: {
+                    display_name: user.display_name,
+                    google_email: userinfo.email ?? '',
+                    date: format_date_pretty_24(new Date()),
+                    ip: req.session.ip ?? 'n/a',
+                    reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
+                },
+            });
+        }
         return;
     }
 
@@ -189,6 +209,21 @@ async function google_disconnect_post(req, res)
     await db('user_identities').where({id: google_ident.id}).delete();
 
     redirect(req, res, '/auth/profile');
+
+    const user = await db('users').where({id: user_id}).first();
+    const email_and_name = await get_user_email_and_name(user_id);
+    if (email_and_name) {
+        await send_email_nothrow({
+            name: const_email.google_disconnected,
+            user,
+            placeholders: {
+                display_name: user.display_name,
+                date: format_date_pretty_24(new Date()),
+                ip: req.session.ip ?? 'n/a',
+                reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
+            },
+        });
+    }
 }
 
 module.exports = routes;

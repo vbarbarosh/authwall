@@ -13,6 +13,8 @@ const const_email = {
     new_sign_in: 'new_sign_in',
     google_connected: 'google_connected',
     google_disconnected: 'google_disconnected',
+    github_connected: 'github_connected',
+    github_disconnected: 'github_disconnected',
     password_changed_from_profile: 'password_changed_from_profile',
     password_changed_via_reset_link: 'password_changed_via_reset_link',
 };
