@@ -1121,19 +1121,51 @@ function render_user_data(s) {
   // Connections
   const conn_el = document.getElementById('p-connections');
   if (conn_el && s.providers) {
-    conn_el.innerHTML = s.providers.map(p => {
-      const labels = {
-        username: { label: 'Username', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, bg: '#e0e7ff' },
-        email: { label: 'Email', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, bg: '#e0e7ff' },
-        oauth_google: { label: 'Google', icon: `<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`, bg: '#fff', cls: 'google' },
-        oauth_github: { label: 'GitHub', icon: `<svg viewBox="0 0 24 24" width="18" height="18" fill="#111827"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.93c.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.72-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.47.11-3.06 0 0 .97-.31 3.17 1.18a10.96 10.96 0 0 1 5.78 0c2.19-1.49 3.16-1.18 3.16-1.18.63 1.59.24 2.77.12 3.06.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.07.78 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>`, bg: '#fff', cls: 'google' },
-      };
-      const meta = labels[p.type] || { label: p.type, icon: '', bg: '#e0e7ff' };
+    const flows = s.flows || {};
+    const providers = s.providers;
+    const PROVIDER_META = {
+      username:     { label: 'Username', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, bg: '#e0e7ff' },
+      email:        { label: 'Email', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, bg: '#e0e7ff' },
+      oauth_google: { label: 'Google', icon: `<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`, bg: '#fff', cls: 'google' },
+      oauth_github: { label: 'GitHub', icon: `<svg viewBox="0 0 24 24" width="18" height="18" fill="#111827"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.93c.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.72-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.47.11-3.06 0 0 .97-.31 3.17 1.18a10.96 10.96 0 0 1 5.78 0c2.19-1.49 3.16-1.18 3.16-1.18.63 1.59.24 2.77.12 3.06.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.07.78 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>`, bg: '#fff', cls: 'google' },
+    };
+
+    // Build items: all existing providers, then unlinked OAuth providers that are enabled
+    const TYPE_ORDER = {email: 0, username: 1, oauth_google: 2, oauth_github: 3};
+    const items = providers.map(p => ({...p, linked: true}));
+    if (flows.google && !providers.find(p => p.type === 'oauth_google')) {
+      items.push({type: 'oauth_google', value: null, linked: false});
+    }
+    if (flows.github && !providers.find(p => p.type === 'oauth_github')) {
+      items.push({type: 'oauth_github', value: null, linked: false});
+    }
+    items.sort((a, b) => (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99));
+
+    conn_el.innerHTML = items.map(p => {
+      const meta = PROVIDER_META[p.type] || { label: p.type, icon: '', bg: '#e0e7ff' };
+
+      if (!p.linked) {
+        const href = p.type === 'oauth_google' ? '/auth/google?connect=1' : '/auth/github?connect=1';
+        return `<div class="connection-item">
+          <div class="connection-logo ${meta.cls || ''}" style="background:${meta.bg}">${meta.icon}</div>
+          <div class="connection-detail">
+            <div class="connection-label">${meta.label}</div>
+            <div class="connection-value" style="color:var(--text-subtle)">Not connected</div>
+          </div>
+          <a href="${href}" class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0">Connect</a>
+        </div>`;
+      }
+
       const status_label = p.type === 'email' ? (p.verified_at ? 'Verified' : 'Unverified') : 'Linked';
       const status_cls = p.verified_at ? 'linked' : 'unlinked';
-      const verify_btn = (p.type === 'email' && !p.verified_at)
-        ? `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-verify-req')">Verify →</button>`
-        : '';
+      let action = '';
+      if (p.type === 'email' && !p.verified_at) {
+        action = `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-verify-req')">Verify →</button>`;
+      } else if ((p.type === 'oauth_google' || p.type === 'oauth_github') && providers.length > 1) {
+        const endpoint = p.type === 'oauth_google' ? '/auth/google/disconnect' : '/auth/github/disconnect';
+        action = `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('${endpoint}')">Disconnect</button>`;
+      }
+
       return `<div class="connection-item">
         <div class="connection-logo ${meta.cls || ''}" style="background:${meta.bg}">${meta.icon}</div>
         <div class="connection-detail">
@@ -1141,7 +1173,7 @@ function render_user_data(s) {
           <div class="connection-value">${p.value || ''}</div>
         </div>
         <span class="connection-status ${status_cls}">${status_label}</span>
-        ${verify_btn}
+        ${action}
       </div>`;
     }).join('');
   }
@@ -1401,6 +1433,14 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   document.getElementById('p-newpass').value = '';
   document.getElementById('p-newpass2').value = '';
 });
+
+// ── OAuth — Disconnect ───────────────────────────────────────────────────────
+async function handle_disconnect(endpoint) {
+  const { error } = await api_post(endpoint, {});
+  if (error) return alert(error);
+  const s = await api_status();
+  if (s.authenticated) render_user_data(s);
+}
 
 // ── Sessions — Revoke one ────────────────────────────────────────────────────
 async function handle_revoke(uid) {

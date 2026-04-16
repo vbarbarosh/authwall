@@ -1,11 +1,13 @@
 const als = require('../helpers/als');
 const assert_shape = require('../helpers/assert/assert_shape');
+const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_user_identity = require('../helpers/const/const_user_identity');
+const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_json = require('../http/http_post_json');
@@ -21,6 +23,9 @@ const users_create = require('../helpers/models/users_create');
 const routes = [
     {req: 'GET /auth/github', fn: github_get},
     {req: 'GET /auth/github/callback', fn: github_callback_get},
+    {prepend: [auth_middleware, csrf_middleware], routes: [
+        {req: 'POST /auth/github/disconnect', fn: github_disconnect_post},
+    ]},
 ];
 
 // GET /auth/github
@@ -189,6 +194,26 @@ async function github_callback_get(req, res)
     else {
         await complete_sign_up(req, res, user);
     }
+}
+
+// POST /auth/github/disconnect
+async function github_disconnect_post(req, res)
+{
+    const user_id = req.session.user_id;
+    const identities = await db('user_identities').where({user_id});
+    const github_ident = identities.find(v => v.type === const_user_identity.oauth_github);
+
+    if (!github_ident) {
+        return redirect(req, res, '/auth/profile');
+    }
+
+    if (identities.length <= 1) {
+        throw new Error('Cannot disconnect GitHub: it is your only sign-in method');
+    }
+
+    await db('user_identities').where({id: github_ident.id}).delete();
+
+    redirect(req, res, '/auth/profile');
 }
 
 module.exports = routes;
