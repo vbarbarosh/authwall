@@ -65,40 +65,40 @@ async function email_change_confirm_get(req, res)
     }
 
     const now = new Date();
-    const record = await db('email_change_tokens')
+    const email_change = await db('email_change_tokens')
         .whereNull('used_at')
         .where('token_hash', crypto_hash_sha256(token))
-        .where('expires_at', '>', now)
+        .where('expires_at', '>=', now)
         .first();
 
-    if (!record) {
+    if (!email_change) {
         throw new Error('Invalid or expired email change link');
     }
 
     await db.transaction(async function () {
-        await db('email_change_tokens').where({id: record.id}).update({used_at: now, updated_at: now});
+        await db('email_change_tokens').where({id: email_change.id}).update({used_at: now, updated_at: now});
 
         const ident = await db('user_identities')
-            .where({user_id: record.user_id, type: const_user_identity.email})
+            .where({user_id: email_change.user_id, type: const_user_identity.email})
             .first();
 
         const old_email = ident?.value ?? null;
 
-        await db('user_identities').where({id: record.id}).del();
+        await db('user_identities').where({id: ident.id}).del();
 
         await db('user_identities').insert({
             uid: random_uid_user_identity(),
-            user_id: record.user_id,
+            user_id: email_change.user_id,
             type: const_user_identity.email,
-            value: record.email_normalized,
-            value_normalized: record.email_normalized,
+            value: email_change.email_normalized,
+            value_normalized: email_change.email_normalized,
             created_at: now,
             updated_at: now,
             verified_at: now,
         });
 
-        const user_id = record.user_id;
-        const new_email = record.email_normalized;
+        const user_id = email_change.user_id;
+        const new_email = email_change.email_normalized;
         await complete_email_change_confirm(req, res, user_id, old_email, new_email);
     });
 }
