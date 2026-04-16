@@ -1,5 +1,6 @@
 const assert = require('assert');
 const db = require('../../../db');
+const config = require('../../../config');
 
 describe('session', function () {
 
@@ -7,12 +8,16 @@ describe('session', function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
 
         const status = await this.http_get_json('/auth/status');
-        const session =  await this.client.get_session();
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        const session1 =  await this.client.get_session();
+        await this.http_post_json('/auth/sign-in', {
+            _csrf: status.csrf_token,
+            username: 'mocha',
+            password: 'pass123',
+        });
 
         const session2 = await this.client.get_session();
-        assert.notStrictEqual(session.uid, session2.uid);
-        assert.ok(await db('sessions').where('uid', session.uid).first() === undefined);
+        assert.notStrictEqual(session1.uid, session2.uid);
+        assert.ok(await db('sessions').where('uid', session1.uid).first() === undefined);
         assert.ok(await db('sessions').where('uid', session2.uid).first() !== undefined);
     });
 
@@ -44,6 +49,7 @@ describe('session', function () {
     });
 
     it('password change from profile keeps current session and revokes others', async function () {
+        config.flows.password.min_password_length = 4;
         const {user_id} = await this.add_user({username: 'mocha', password: 'pass123'});
 
         const status = [null, null, null];
@@ -74,7 +80,10 @@ describe('session', function () {
         this.client.cookies = cookies[0];
         await this.http_post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status[0].csrf_token});
         status[0] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[0].authenticated, true);
+        assert.partialDeepStrictEqual(status[0], {
+            error: null,
+            authenticated: true,
+        });
         assert.strictEqual(status[0].sessions.length, 1);
 
         // ensure other sessions are dead
@@ -92,6 +101,7 @@ describe('session', function () {
     });
 
     it('password reset via link revokes all sessions', async function () {
+        config.flows.password.min_password_length = 4;
         const {user_id} = await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = [null, null, null];
@@ -123,28 +133,35 @@ describe('session', function () {
 
         // confirm reset using token from email
         await this.http_post_json('/auth/password-reset/confirm', {
+            _csrf: status[2].csrf_token,
             token: this.sent_emails.at(-1).placeholders.token,
             password: 'pass456',
             password_confirm: 'pass456',
-            _csrf: status[2].csrf_token,
         });
         status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, false);
 
         await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass456', _csrf: status[2].csrf_token});
         status[2] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[2].authenticated, true);
+        assert.partialDeepStrictEqual(status[2], {
+            error: null,
+            authenticated: true,
+        });
         assert.strictEqual(status[2].sessions.length, 1);
 
         // ensure other sessions are dead
 
         this.client.cookies = cookies[0];
-        status[0] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[0].authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: false,
+        });
 
         this.client.cookies = cookies[1];
-        status[1] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[1].authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: false,
+        });
 
         // ensure old sessions no longer in db
         assert.deepStrictEqual(await db('sessions').where('user_id', user_id).count('* AS c'), [{c: 1}]);
