@@ -15,10 +15,13 @@ const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes'
 const db = require('../../db');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
+const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
 const users_create = require('../helpers/models/users_create');
+
+let dummy_hash = null;
 
 const routes = [
     {prepend: [csrf_middleware], routes: [
@@ -62,16 +65,18 @@ async function sign_in_post(req, res)
         ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
     }
 
-    if (!ident) {
-        throw new UserFriendlyError('Invalid username or password');
+    const user = ident ? await db('users').where({id: ident.user_id}).first() : null;
+
+    // Always run bcrypt to prevent timing-based username enumeration.
+    // dummy_hash is computed once on first use with a random value so
+    // an attacker cannot know which password would match it.
+    if (!dummy_hash) {
+        dummy_hash = await bcrypt.hash(random_base62(), config.password_rounds);
     }
-
-    const user = await db('users').where({id: ident.user_id}).first();
-    const password_hash = user?.password_hash || '$2b$10$invalidinvalidinvalidinvalidinv';
-
-    // Attackers can detect if username exists by timing
+    const password_hash = user?.password_hash ?? dummy_hash;
     const ok = await bcrypt.compare(password, password_hash);
-    if (!user || !ok) {
+
+    if (!ident || !user || !ok) {
         throw new UserFriendlyError('Invalid username or password');
     }
 
