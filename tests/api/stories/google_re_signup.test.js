@@ -43,7 +43,7 @@ describe('Google re-signup after disconnect | stories', function () {
     it('creates a new user when the disconnected Google account signs up again', async function () {
         // Sign up via Google with email
         await sign_in_via_google(this.client, {sub: 'google-sub-123', email: 'google-user@authwall.test'});
-        const status1 = await this.client.get_json('/auth/status');
+        const status1 = await this.http_get_json('/auth/status');
         const original_uid = status1.user_uid;
         assert.strictEqual(status1.authenticated, true);
 
@@ -56,20 +56,20 @@ describe('Google re-signup after disconnect | stories', function () {
         nock('https://api.github.com').get('/user/emails').reply(200, []);
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess_gh = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
 
         // Disconnect Google
-        const s = await this.client.get_json('/auth/status');
+        const s = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/google/disconnect', {_csrf: s.csrf_token});
 
         // Sign out
-        const s2 = await this.client.get_json('/auth/status');
+        const s2 = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-out', {_csrf: s2.csrf_token});
 
         // Sign up again with the same Google account
         await sign_in_via_google(this.client, {sub: 'google-sub-123', email: 'google-user@authwall.test'});
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         // Must be a NEW user, not the original one

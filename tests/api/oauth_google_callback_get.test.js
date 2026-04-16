@@ -45,8 +45,8 @@ describe('GET /auth/google/callback', function () {
         // First sign up
         mock_google();
         const state = await start_oauth_flow(this.client);
-        await this.client.get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
-        const status1 = await this.client.get_json('/auth/status');
+        await this.http_get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
+        const status1 = await this.http_get_json('/auth/status');
         assert.strictEqual(status1.authenticated, true);
         const session1 = await this.client.get_session();
 
@@ -54,9 +54,9 @@ describe('GET /auth/google/callback', function () {
         await this.client.post_json('/auth/sign-out', {_csrf: status1.csrf_token});
         mock_google();
         const state2 = await start_oauth_flow(this.client);
-        await this.client.get_json(urlmod('/auth/google/callback', {state: state2, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state: state2, code: 'fake_code'}));
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         // Same user
@@ -66,9 +66,9 @@ describe('GET /auth/google/callback', function () {
     it('signs up new google user', async function () {
         mock_google();
         const state = await start_oauth_flow(this.client);
-        await this.client.get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, null);
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.display_name, 'Test User');
@@ -79,11 +79,11 @@ describe('GET /auth/google/callback', function () {
     it('connects google account to existing session', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
         mock_google();
-        await this.client.get_json('/auth/google?connect=1');
+        await this.http_get_json('/auth/google?connect=1');
         const state = (await this.client.get_session()).oauth_state;
-        await this.client.get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state, code: 'fake_code'}));
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, null);
         assert.strictEqual(status.authenticated, true);
         assert.ok(status.providers.find(v => v.type === 'oauth_google' && v.value_normalized === 'google-sub-123'));
@@ -91,15 +91,15 @@ describe('GET /auth/google/callback', function () {
 
     it('fails with missing oauth code', async function () {
         const state = await start_oauth_flow(this.client);
-        await this.client.get_json(urlmod('/auth/google/callback', {state}));
-        const status = await this.client.get_json('/auth/status');
+        await this.http_get_json(urlmod('/auth/google/callback', {state}));
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, 'Missing OAuth code');
     });
 
     it('fails with invalid oauth state', async function () {
-        await this.client.get_json('/auth/google'); // sets oauth_state in session
-        await this.client.get_json(urlmod('/auth/google/callback', {state: 'tampered-state', code: 'fake_code'}));
-        const status = await this.client.get_json('/auth/status');
+        await this.http_get_json('/auth/google'); // sets oauth_state in session
+        await this.http_get_json(urlmod('/auth/google/callback', {state: 'tampered-state', code: 'fake_code'}));
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, 'Invalid OAuth state');
     });
 

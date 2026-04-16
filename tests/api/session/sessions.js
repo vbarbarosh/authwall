@@ -6,7 +6,7 @@ describe('session', function () {
     it('sign-in replaces existing session', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         const session =  await this.client.get_session();
         await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
 
@@ -17,12 +17,12 @@ describe('session', function () {
     });
 
     it('expired session is ignored', async function () {
-        await this.client.get_json('/auth/status');
+        await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
 
         await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
 
-        await this.client.get_json('/auth/status');
+        await this.http_get_json('/auth/status');
         const session2 = await this.client.get_session();
 
         assert.notStrictEqual(session1.uid, session2.uid);
@@ -33,13 +33,13 @@ describe('session', function () {
     it('expired session results in unauthenticated user', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
 
-        const status1 = await this.client.get_json('/auth/status');
+        const status1 = await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
         assert.strictEqual(status1.authenticated, true);
 
         await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.authenticated, false);
     });
 
@@ -50,41 +50,41 @@ describe('session', function () {
         const cookies = [new Map(), new Map(), new Map()];
 
         this.client.cookies = cookies[0];
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[0].csrf_token});
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, true);
         assert.strictEqual(status[0].sessions.length, 1);
 
         this.client.cookies = cookies[1];
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[1].csrf_token});
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, true);
         assert.strictEqual(status[1].sessions.length, 2);
 
         this.client.cookies = cookies[2];
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[2].csrf_token});
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, true);
         assert.strictEqual(status[2].sessions.length, 3);
 
         // reset password using Profile page
         this.client.cookies = cookies[0];
         await this.client.post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status[0].csrf_token});
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, true);
         assert.strictEqual(status[0].sessions.length, 1);
 
         // ensure other sessions are dead
 
         this.client.cookies = cookies[1];
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, false);
 
         this.client.cookies = cookies[2];
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, false);
 
         // ensure old sessions no longer in db
@@ -98,23 +98,23 @@ describe('session', function () {
         const cookies = [new Map(), new Map(),new Map()];
 
         this.client.cookies = cookies[0];
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[0].csrf_token});
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, true);
         assert.strictEqual(status[0].sessions.length, 1);
 
         this.client.cookies = cookies[1];
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[1].csrf_token});
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, true);
         assert.strictEqual(status[1].sessions.length, 2);
 
         this.client.cookies = cookies[2];
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[2].csrf_token});
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, true);
         assert.strictEqual(status[2].sessions.length, 3);
 
@@ -128,22 +128,22 @@ describe('session', function () {
             password_confirm: 'pass456',
             _csrf: status[2].csrf_token,
         });
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, false);
 
         await this.client.post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass456', _csrf: status[2].csrf_token});
-        status[2] = await this.client.get_json('/auth/status');
+        status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, true);
         assert.strictEqual(status[2].sessions.length, 1);
 
         // ensure other sessions are dead
 
         this.client.cookies = cookies[0];
-        status[0] = await this.client.get_json('/auth/status');
+        status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, false);
 
         this.client.cookies = cookies[1];
-        status[1] = await this.client.get_json('/auth/status');
+        status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, false);
 
         // ensure old sessions no longer in db

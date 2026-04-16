@@ -51,7 +51,7 @@ describe('emails • github_connected', function () {
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess = await this.client.get_session();
 
-        await this.client.get_json(urlmod('/auth/github/callback', {
+        await this.http_get_json(urlmod('/auth/github/callback', {
             code: '4/fake_code',
             state: sess.oauth_state,
         }));
@@ -107,7 +107,7 @@ describe('emails • github_connected', function () {
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess = await this.client.get_session();
 
-        await this.client.get_json(urlmod('/auth/github/callback', {
+        await this.http_get_json(urlmod('/auth/github/callback', {
             code: '4/fake_code',
             state: sess.oauth_state,
         }));

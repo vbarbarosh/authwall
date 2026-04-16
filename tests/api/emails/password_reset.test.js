@@ -9,7 +9,7 @@ describe('emails • password_reset', function () {
 
         await this.add_user({email, password});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/password-reset/request', {email, _csrf: status.csrf_token});
 
         const actual = this.sent_emails.map(v => v.name)

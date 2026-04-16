@@ -25,8 +25,8 @@ describe('error_handler', function () {
     });
 
     it('UserFriendlyError message is stored in session', async function () {
-        await this.client.get_json('/auth/email-verify/confirm');
-        const status = await this.client.get_json('/auth/status');
+        await this.http_get_json('/auth/email-verify/confirm');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, 'Missing token');
     });
 
@@ -37,15 +37,15 @@ describe('error_handler', function () {
                 error: 'fake',
             });
 
-        await this.client.get_json('/auth/status');  // initialize session
+        await this.http_get_json('/auth/status');  // initialize session
         await this.client.add_to_session({oauth_state: 'fake'});
-        await this.client.get_json('/auth/github/callback?code=fake&state=fake');
-        const status = await this.client.get_json('/auth/status');
+        await this.http_get_json('/auth/github/callback?code=fake&state=fake');
+        const status = await this.http_get_json('/auth/status');
         assert.match(status.error, /^An error occurred \[req_/);
     });
 
     it('POST /auth/sign-in failure redirects back to sign-in, not elsewhere', async function () {
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         const r = await this.client.post_json_no_redirects('/auth/sign-in', {
             username: 'nobody',
             password: 'wrong',
@@ -56,7 +56,7 @@ describe('error_handler', function () {
     });
 
     it('POST /auth/sign-in failure preserves ?return query param', async function () {
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         const r = await this.client.post_json_no_redirects(
             urlmod('/auth/sign-in', {return: '/some/path'}),
             {username: 'nobody', password: 'wrong', _csrf: status.csrf_token}

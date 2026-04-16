@@ -44,7 +44,7 @@ describe('emails • google_connected', function () {
         await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();
 
-        await this.client.get_json(urlmod('/auth/google/callback', {
+        await this.http_get_json(urlmod('/auth/google/callback', {
             state: sess.oauth_state,
             code: '4/fake_code',
         }));
@@ -91,7 +91,7 @@ describe('emails • google_connected', function () {
         await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();
 
-        await this.client.get_json(urlmod('/auth/google/callback', {
+        await this.http_get_json(urlmod('/auth/google/callback', {
             state: sess.oauth_state,
             code: '4/fake_code',
         }));

@@ -59,9 +59,9 @@ describe('Google + GitHub with same email attach to same user | stories', functi
         mock_google({email: 'shared@example.com'});
         await this.client.get_json_no_redirects('/auth/google');
         const sess1 = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/google/callback', {state: sess1.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state: sess1.oauth_state, code: 'fake_code'}));
 
-        const status1 = await this.client.get_json('/auth/status');
+        const status1 = await this.http_get_json('/auth/status');
         assert.strictEqual(status1.authenticated, true);
         assert.ok(status1.providers.find(v => v.type === 'oauth_google'));
         assert.ok(status1.providers.find(v => v.type === 'email' && v.value === 'shared@example.com'));
@@ -70,9 +70,9 @@ describe('Google + GitHub with same email attach to same user | stories', functi
         mock_github({email: 'shared@example.com'});
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess2 = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/github/callback', {state: sess2.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/github/callback', {state: sess2.oauth_state, code: 'fake_code'}));
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         assert.ok(status2.providers.find(v => v.type === 'oauth_google'));

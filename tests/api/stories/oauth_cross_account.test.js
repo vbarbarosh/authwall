@@ -48,11 +48,11 @@ describe('OAuth connect blocked when provider belongs to another account | stori
             email_verified: false,
         });
 
-        await this.client.get_json('/auth/google?connect=1');
+        await this.http_get_json('/auth/google?connect=1');
         const sess = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/google/callback', {state: sess.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state: sess.oauth_state, code: 'fake_code'}));
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.error, 'Google account already linked to another user');
         // User A is still authenticated as themselves
         assert.strictEqual(status.authenticated, true);

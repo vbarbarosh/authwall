@@ -14,7 +14,7 @@ describe('shape • status', function () {
     });
 
     it('anonymous', async function () {
-        const actual = await this.client.get_json('/auth/status');
+        const actual = await this.http_get_json('/auth/status');
         const expected = {
             error: null,
             authenticated: false,
@@ -37,7 +37,7 @@ describe('shape • status', function () {
 
     it('authenticated', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
-        const actual = await this.client.get_json('/auth/status');
+        const actual = await this.http_get_json('/auth/status');
         const expected = {
             error: null,
             authenticated: true,

@@ -33,9 +33,9 @@ describe('Email change invalidates old email sign-in | stories', function () {
         });
         await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/google/callback', {state: sess.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state: sess.oauth_state, code: 'fake_code'}));
 
-        const status1 = await this.client.get_json('/auth/status');
+        const status1 = await this.http_get_json('/auth/status');
         assert.ok(status1.providers.find(v => v.type === 'oauth_google'));
 
         // Request email change
@@ -48,13 +48,13 @@ describe('Email change invalidates old email sign-in | stories', function () {
         const token = change_email.placeholders.token;
 
         // Confirm email change
-        await this.client.get_json(urlmod(config.pages.email_change_confirm, {token}));
+        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token}));
 
         // Old email sign-in must now fail
-        await this.client.post_json('/auth/sign-out', {_csrf: (await this.client.get_json('/auth/status')).csrf_token});
-        const s = await this.client.get_json('/auth/status');
+        await this.client.post_json('/auth/sign-out', {_csrf: (await this.http_get_json('/auth/status')).csrf_token});
+        const s = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: 'old@authwall.test', password: 'pass123', _csrf: s.csrf_token});
-        const after_old = await this.client.get_json('/auth/status');
+        const after_old = await this.http_get_json('/auth/status');
         assert.strictEqual(after_old.authenticated, false);
         assert.strictEqual(after_old.error, 'Invalid username or password');
 
@@ -69,9 +69,9 @@ describe('Email change invalidates old email sign-in | stories', function () {
         });
         await this.client.get_json_no_redirects('/auth/google');
         const sess2 = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/google/callback', {state: sess2.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {state: sess2.oauth_state, code: 'fake_code'}));
 
-        const after_google = await this.client.get_json('/auth/status');
+        const after_google = await this.http_get_json('/auth/status');
         assert.strictEqual(after_google.error, null);
         assert.strictEqual(after_google.authenticated, true);
     });

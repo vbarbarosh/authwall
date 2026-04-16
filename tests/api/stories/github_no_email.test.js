@@ -83,7 +83,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
     it('cannot set a password when signed up via GitHub with no email', async function () {
         await sign_in_via_github(this.client, {email: null});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);
         // No email and no username — only oauth_github
         assert.strictEqual(status.providers.length, 1);
@@ -96,7 +96,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
             _csrf: status.csrf_token,
         });
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Cannot set or change password without a verified email or username');
     });
 
@@ -106,7 +106,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
         // Connect Google — brings in a verified email identity
         await connect_google(this.client, {email: 'user@example.com'});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.ok(status.providers.find(v => v.type === 'oauth_github'));
         assert.ok(status.providers.find(v => v.type === 'email' && v.verified_at !== null));
 
@@ -118,7 +118,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
             _csrf: status.csrf_token,
         });
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         // Error here is about wrong current_password, not about missing identity
         assert.notStrictEqual(status2.error, 'Cannot set or change password without a verified email or username');
     });

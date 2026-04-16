@@ -10,7 +10,7 @@ describe('emails • welcome_and_confirm_email', function () {
         const email = 'mocha@authwall.test';
         const password = 'pass123';
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-up', {email, password, password_confirm: password, _csrf: status.csrf_token});
 
         const actual = this.sent_emails.map(v => v.name)

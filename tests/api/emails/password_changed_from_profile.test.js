@@ -13,10 +13,10 @@ describe('emails • password_changed_via_reset_link', function () {
 
         await this.add_user({email, password});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/sign-in', {username: email, password, _csrf: status.csrf_token});
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         await this.client.post_json('/auth/change-password', {
             current_password: password,
             password: new_password,

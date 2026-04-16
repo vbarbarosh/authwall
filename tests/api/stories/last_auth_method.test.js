@@ -56,13 +56,13 @@ describe('Last auth method cannot be removed | stories', function () {
     it('blocks disconnecting Google when it is the only identity', async function () {
         await sign_in_via_google(this.client, {sub: 'google-only-sub'});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.providers.length, 1);
 
         await this.client.post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Cannot disconnect Google: it is your only sign-in method');
         assert.ok(status2.providers.find(v => v.type === 'oauth_google'));
     });
@@ -71,13 +71,13 @@ describe('Last auth method cannot be removed | stories', function () {
         // Sign up via Google with a verified email — creates two identities: oauth_google + email
         await sign_in_via_google(this.client, {sub: 'google-with-email-sub', email: 'googleuser@authwall.test'});
 
-        const status = await this.client.get_json('/auth/status');
+        const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.providers.length, 2);
 
         await this.client.post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
 
-        const status2 = await this.client.get_json('/auth/status');
+        const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.providers.find(v => v.type === 'oauth_google'), undefined);
         assert.ok(status2.providers.find(v => v.type === 'email'));
@@ -90,18 +90,18 @@ describe('Last auth method cannot be removed | stories', function () {
         mock_github();
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess_gh = await this.client.get_session();
-        await this.client.get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
 
-        const s = await this.client.get_json('/auth/status');
+        const s = await this.http_get_json('/auth/status');
         assert.strictEqual(s.providers.length, 2);
 
         await this.client.post_json('/auth/google/disconnect', {_csrf: s.csrf_token});
-        const s2 = await this.client.get_json('/auth/status');
+        const s2 = await this.http_get_json('/auth/status');
         assert.strictEqual(s2.providers.length, 1);
         assert.strictEqual(s2.providers[0].type, 'oauth_github');
 
         await this.client.post_json('/auth/github/disconnect', {_csrf: s2.csrf_token});
-        const s3 = await this.client.get_json('/auth/status');
+        const s3 = await this.http_get_json('/auth/status');
         assert.strictEqual(s3.error, 'Cannot disconnect GitHub: it is your only sign-in method');
         assert.ok(s3.providers.find(v => v.type === 'oauth_github'));
     });
