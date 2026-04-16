@@ -14,10 +14,10 @@ async function complete_password_change(req, res, user_id)
     await replace_session(req, user);
 
     // revoke other sessions
-    await db('sessions')
-        .where({user_id: req.session.user_id})
-        .whereNot({uid: req.sessionID})
-        .delete();
+    await db('sessions').where({user_id}).whereNot({uid: req.sessionID}).del();
+
+    // invalidate any pending password reset tokens
+    await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
 
     redirect(req, res, config.pages.profile);
 

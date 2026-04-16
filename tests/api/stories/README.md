@@ -5,8 +5,8 @@ Prefer turning each stable story into a normal `tests/api/**/*.test.js` case.
 
 Testable now
 
-- user signed up using Google with verified email; later he tries to sign in using email + password; it should fail with "Invalid username or password" because no password was set
-- prevent user from removing the last authentication method
+- [x] user signed up using Google with verified email; later he tries to sign in using email + password; it should fail with "Invalid username or password" because no password was set → `oauth_no_password.test.js`
+- [x] prevent user from removing the last authentication method → `last_auth_method.test.js`
   - user signed up using Google, then connected GitHub, then disconnected Google; GitHub should not be disconnectable until email+password or username+password is configured
 - edge case: user signed up using Google, then connected GitHub, then disconnected Google
   - later sign-up using the same Google account should create a new user
@@ -17,11 +17,11 @@ Testable now
 - user signed up using GitHub without email, then later connected Google with verified email; now password setup should become possible
 - user signed up using Google with verified email, then connected GitHub with the same email; both providers should attach to the same user
 - user has email+password and Google linked; after changing email, sign-in with the old email should fail and Google sign-in should still work
-- user changed password from profile, then tried to use an older password-reset link; the old reset link should be invalid
+- [x] user changed password from profile, then tried to use an older password-reset link; the old reset link should be invalid → `password_reset_after_change.test.js`
 - user visited a protected page, chose magic link instead of password sign-in, completed the flow, and should return to the original page
 - user visited a protected page, chose sign-up instead of sign-in, completed sign-up, and should return to the original page
-- user signed up with `User@example.com`, later signs in with `user@example.com`; it should resolve to the same identity
-- user is signed in as account A, then tries to connect an OAuth provider already linked to account B; the operation should fail without cross-account takeover
+- [x] user signed up with `User@example.com`, later signs in with `user@example.com`; it should resolve to the same identity → `email_case_insensitive.test.js`
+- [x] user is signed in as account A, then tries to connect an OAuth provider already linked to account B; the operation should fail without cross-account takeover → `oauth_cross_account.test.js`
 - user uses an expired magic link after already signing in another way; the link should fail cleanly and should not change session state
 
 Needs product decision
