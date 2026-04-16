@@ -46,19 +46,21 @@ describe('sign up via google | scenarios', function () {
             state: sess.oauth_state,
         }));
 
-        await this.client.get_json(urlmod('/auth/google/callback', {
+        await this.http_get_json(urlmod('/auth/google/callback', {
             state: sess.oauth_state,
-            iss: "https://accounts.google.com",
-            code: "4/fake_code",
-            scope: "email profile https://www.googleapis.com/auth/userinfo.profile openid https://www.googleapis.com/auth/userinfo.email",
-            authuser: "0",
-            prompt: "none"
+            iss: 'https://accounts.google.com',
+            code: '4/fake_code',
+            scope: 'email profile https://www.googleapis.com/auth/userinfo.profile openid https://www.googleapis.com/auth/userinfo.email',
+            authuser: '0',
+            prompt: 'none'
         }));
-        const status = await this.client.get_json('/auth/status');
-        assert.strictEqual(status.error, null);
-        assert.strictEqual(status.authenticated, true);
-        assert.strictEqual(status.display_name, 'Test User');
-        assert.strictEqual(status.avatar_url, 'https://example.com/avatar.jpg');
+        const status = await this.http_get_json('/auth/status');
+        assert.partialDeepStrictEqual(status, {
+            error: null,
+            authenticated: true,
+            display_name: 'Test User',
+            avatar_url: 'https://example.com/avatar.jpg',
+        });
         assert.ok(status.providers.find(v => v.type === 'oauth_google' && v.value === 'google-user-123').verified_at !== null);
         assert.ok(status.providers.find(v => v.type === 'email' && v.value === 'test@example.com').verified_at !== null);
     });

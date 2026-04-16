@@ -35,6 +35,12 @@ async function spin(ctx, _this, fn)
         _this.add_user = add_user;
         _this.sign_in = sign_in;
         _this.assert_password = assert_password;
+        _this.http_get_json = (url) => _this.client.get_json(url);
+        _this.http_post_json = (url, data) => _this.client.post_json(url, data);
+        _this.csrf_token = async function () {
+            const sess = await _this.client.get_session();
+            return (sess ?? await _this.client.get_json('/auth/status')).csrf_token;
+        };
 
         try {
             await fn();

@@ -70,15 +70,18 @@ describe('sign up via github | scenarios', function () {
             state: sess.oauth_state,
         }));
 
-        await this.client.get_json(urlmod('/auth/github/callback', {
+        await this.http_get_json(urlmod('/auth/github/callback', {
             code: "4/fake_code",
             state: sess.oauth_state,
         }));
-        const status = await this.client.get_json('/auth/status');
-        assert.strictEqual(status.error, null);
-        assert.strictEqual(status.authenticated, true);
-        assert.strictEqual(status.display_name, 'Test User');
-        assert.strictEqual(status.avatar_url, 'https://example.com/avatar.jpg');
+
+        const status = await this.http_get_json('/auth/status');
+        assert.partialDeepStrictEqual(status, {
+            error: null,
+            authenticated: true,
+            display_name: 'Test User',
+            avatar_url: 'https://example.com/avatar.jpg',
+        });
         assert.ok(status.providers.find(v => v.type === 'oauth_github' && v.value === 'github-user-123').verified_at !== null);
         assert.ok(status.providers.find(v => v.type === 'email' && v.value === 'jack@domain1.com').verified_at !== null);
     });
