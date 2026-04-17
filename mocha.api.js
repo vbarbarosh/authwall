@@ -7,6 +7,7 @@ const bootstrap_database = require('./src/helpers/bootstrap_database');
 const config = require('./config');
 const knex = require('knex');
 const make_logger_fake = require('./src/services/logger/make_logger_fake');
+const make_logger_stdout = require('./src/services/logger/make_logger_stdout');
 const make_mailer_fake = require('./src/services/mailer/make_mailer_fake');
 const setup_servers = require('./tests/setup_servers');
 
@@ -49,8 +50,9 @@ module.exports = {
     require: [__filename],
     mochaHooks: {
         beforeAll: async function () {
-            await using logger = make_logger_fake();
+            await using logger = make_logger_stdout();
             await als.run({db, logger}, () => bootstrap_database());
+            process.stdout.write('\n');
         },
         afterAll: async function () {
             await db.destroy();
