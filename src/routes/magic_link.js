@@ -59,7 +59,7 @@ async function magic_link_request_post(req, res)
         email,
         email_normalized,
         code_hash: await bcrypt.hash(code, config.password_rounds),
-        token_hash: crypto_hash_sha256(token),
+        token_hash: crypto_hash_sha256(token).toString('base64url'),
         created_at: now,
         updated_at: now,
         expires_at: date_add_minutes(new Date(), 10),
@@ -79,7 +79,7 @@ async function magic_link_confirm_get(req, res)
     const now = new Date();
     const magic_link = await db('magic_links')
         .whereNull('used_at')
-        .where('token_hash', crypto_hash_sha256(token))
+        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
         .where('expires_at', '>', now)
         .first();
     if (!magic_link) {

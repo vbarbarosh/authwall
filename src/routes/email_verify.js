@@ -43,7 +43,7 @@ async function email_verify_request_post(req, res)
     await db('email_verify_tokens').insert({
         user_id,
         email_normalized,
-        token_hash: crypto_hash_sha256(token),
+        token_hash: crypto_hash_sha256(token).toString('base64url'),
         created_at: now,
         updated_at: now,
         expires_at: date_add_minutes(new Date(), 30),
@@ -63,7 +63,7 @@ async function email_verify_confirm_get(req, res)
     const now = new Date();
     const record = await db('email_verify_tokens')
         .whereNull('used_at')
-        .where('token_hash', crypto_hash_sha256(token))
+        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
         .where('expires_at', '>', now)
         .first();
     if (!record) {

@@ -172,7 +172,7 @@ async function sign_up_post(req, res)
             await db('email_verify_tokens').insert({
                 user_id: user.id,
                 email_normalized,
-                token_hash: crypto_hash_sha256(token),
+                token_hash: crypto_hash_sha256(token).toString('base64url'),
                 created_at: now,
                 updated_at: now,
                 expires_at: date_add_minutes(new Date(), 30),
@@ -206,7 +206,7 @@ async function password_reset_request_post(req, res)
         const now = new Date();
         await db('password_reset_tokens').insert({
             user_id: ident.user_id,
-            token_hash: crypto_hash_sha256(token),
+            token_hash: crypto_hash_sha256(token).toString('base64url'),
             created_at: now,
             updated_at: now,
             expires_at: date_add_minutes(new Date(), 10),
@@ -237,7 +237,7 @@ async function password_reset_confirm_post(req, res)
         throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
-    const token_hash = crypto_hash_sha256(token);
+    const token_hash = crypto_hash_sha256(token).toString('base64url');
     const reset = await db('password_reset_tokens').where({token_hash}).first();
     if (!reset) {
         throw new UserFriendlyError('Invalid reset token');
