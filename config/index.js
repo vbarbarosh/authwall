@@ -18,8 +18,6 @@ const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
 fs.mkdirSync(logs_dir, {recursive: true});
 fs.mkdirSync(uploads_dir, {recursive: true});
 
-let LOG_DIR = null;
-const LOG_FILE = process.env.LOG_FILE ?? null;
 const SECRET = process.env.AUTHWALL_SECRET;
 
 const settings = resolve_yaml_vars(
@@ -109,14 +107,6 @@ const config = {
     logs_dir,
     uploads_dir,
 
-    log_file: LOG_FILE,
-    log_file_http: LOG_FILE ?? function () {
-        if (LOG_DIR === null) {
-            LOG_DIR = fs_path_resolve(__dirname, '../data/logs');
-            fs.mkdirSync(LOG_DIR, {recursive: true});
-        }
-        return `${LOG_DIR}/http-${new Date().toJSON().substring(0, 10)}.log`;
-    },
     listen: process.env.LISTEN ?? '127.0.0.1',
     port: process.env.PORT ?? 3000,
     secrets: {
