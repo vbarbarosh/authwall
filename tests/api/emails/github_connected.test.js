@@ -3,7 +3,7 @@ const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const db = require('../../../db');
-const nock = require('nock');
+const mock_github = require('../../mock_github');
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -21,30 +21,7 @@ describe('emails • github_connected', function () {
 
     it('should be sent after connecting a GitHub account from profile', async function () {
 
-        const userinfo = {
-            id: 'github-user-123',
-            name: 'Test User',
-            avatar_url: 'https://example.com/avatar.jpg',
-        };
-
-        nock('https://github.com')
-            .post('/login/oauth/access_token')
-            .reply(200, {
-                access_token: 'fake-token',
-                expires_in: 28800,
-                refresh_token: 'ghr_xxx',
-                refresh_token_expires_in: 15811200,
-                token_type: 'bearer',
-                scope: 'user:email',
-            });
-
-        nock('https://api.github.com')
-            .get('/user')
-            .reply(200, userinfo);
-
-        nock('https://api.github.com')
-            .get('/user/emails')
-            .reply(200, []);
+        mock_github();
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
 
@@ -64,41 +41,18 @@ describe('emails • github_connected', function () {
 
     it('should not be sent when GitHub is already connected', async function () {
 
-        const userinfo = {
-            id: 'github-user-123',
-            name: 'Test User',
-            avatar_url: 'https://example.com/avatar.jpg',
-        };
-
-        nock('https://github.com')
-            .post('/login/oauth/access_token')
-            .reply(200, {
-                access_token: 'fake-token',
-                expires_in: 28800,
-                refresh_token: 'ghr_xxx',
-                refresh_token_expires_in: 15811200,
-                token_type: 'bearer',
-                scope: 'user:email',
-            });
-
-        nock('https://api.github.com')
-            .get('/user')
-            .reply(200, userinfo);
-
-        nock('https://api.github.com')
-            .get('/user/emails')
-            .reply(200, []);
+        mock_github();
 
         const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
 
-        // Pre-link github account
+        // Pre-link GitHub account
         const now = new Date();
         await db('user_identities').insert({
             uid: random_uid_user_identity(),
             user_id,
             type: const_user_identity.oauth_github,
-            value: userinfo.id,
-            value_normalized: userinfo.id,
+            value: 'github-user-123',
+            value_normalized: 'github-user-123',
             created_at: now,
             updated_at: now,
             verified_at: now,

@@ -3,7 +3,7 @@ const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const db = require('../../../db');
-const nock = require('nock');
+const mock_google = require('../../mock_google');
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -21,21 +21,7 @@ describe('emails • google_connected', function () {
 
     it('should be sent after connecting a Google account from profile', async function () {
 
-        const userinfo = {
-            sub: 'google-user-123',
-            name: 'Test User',
-            picture: 'https://example.com/avatar.jpg',
-            email: 'test@example.com',
-            email_verified: true,
-        };
-
-        nock('https://oauth2.googleapis.com')
-            .post('/token')
-            .reply(200, {access_token: 'fake-token'});
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .reply(200, userinfo);
+        mock_google();
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
 
@@ -55,21 +41,7 @@ describe('emails • google_connected', function () {
 
     it('should not be sent when Google is already connected', async function () {
 
-        const userinfo = {
-            sub: 'google-user-123',
-            name: 'Test User',
-            picture: 'https://example.com/avatar.jpg',
-            email: 'test@example.com',
-            email_verified: true,
-        };
-
-        nock('https://oauth2.googleapis.com')
-            .post('/token')
-            .reply(200, {access_token: 'fake-token'});
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .reply(200, userinfo);
+        mock_google();
 
         const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
 
@@ -79,8 +51,8 @@ describe('emails • google_connected', function () {
             uid: random_uid_user_identity(),
             user_id,
             type: const_user_identity.oauth_google,
-            value: userinfo.sub,
-            value_normalized: userinfo.sub,
+            value: 'google-user-123',
+            value_normalized: 'google-user-123',
             created_at: now,
             updated_at: now,
             verified_at: now,

@@ -7,16 +7,12 @@ describe('emails • password_changed_via_reset_link', function () {
     it('should be sent after changing password from profile', async function () {
         config.flows.password.min_password_length = 4;
 
-        const email = 'mocha@authwall.test';
-        const password = 'pass123';
-        const new_password = 'pass456';
-
-        await this.add_user({email, password});
-        await this.http_post_json('/auth/sign-in', {username: email, password});
+        await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/change-password', {
-            current_password: password,
-            password: new_password,
-            password_confirm: new_password,
+            current_password: 'pass123',
+            password: 'pass456',
+            password_confirm: 'pass456',
         });
 
         const actual = this.sent_emails.map(v => v.name);

@@ -8,6 +8,8 @@ const normalize_email = require('../../../src/helpers/normalize/normalize_email'
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../../../src/helpers/models/users_create');
+const mock_google = require('../../mock_google');
+const mock_github = require('../../mock_github');
 
 describe('emails • new_sign_in', function () {
 
@@ -70,21 +72,7 @@ describe('emails • new_sign_in', function () {
 
     it('should be sent after successful sign-in using Google', async function () {
 
-        const userinfo = {
-            sub: 'google-user-123',
-            name: 'Test User',
-            picture: 'https://example.com/avatar.jpg',
-            email: 'test@example.com',
-            email_verified: true,
-        };
-
-        nock('https://oauth2.googleapis.com')
-            .post('/token')
-            .reply(200, {access_token: 'fake-token'});
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .reply(200, userinfo);
+        mock_google();
 
         await db.transaction(async function () {
             const now = new Date();
@@ -93,8 +81,8 @@ describe('emails • new_sign_in', function () {
                 uid: random_uid_user_identity(),
                 user_id: user.id,
                 type: const_user_identity.oauth_google,
-                value: userinfo.sub,
-                value_normalized: userinfo.sub,
+                value: 'google-user-123',
+                value_normalized: 'google-user-123',
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -103,8 +91,8 @@ describe('emails • new_sign_in', function () {
                 uid: random_uid_user_identity(),
                 user_id: user.id,
                 type: const_user_identity.email,
-                value: userinfo.email,
-                value_normalized: normalize_email(userinfo.email),
+                value: 'test@example.com',
+                value_normalized: normalize_email('test@example.com'),
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -130,49 +118,7 @@ describe('emails • new_sign_in', function () {
 
     it('should be sent after successful sign-in using GitHub', async function () {
 
-        const userinfo = {
-            id: 'github-user-123',
-            name: 'Test User',
-            avatar_url: 'https://example.com/avatar.jpg',
-        };
-
-        nock('https://github.com')
-            .post('/login/oauth/access_token')
-            .reply(200, {
-                access_token: 'fake-token',
-                expires_in: 28800,
-                refresh_token: 'ghr_xxx',
-                refresh_token_expires_in: 15811200,
-                token_type: 'bearer',
-                scope: 'user:email',
-            });
-
-        nock('https://api.github.com')
-            .get('/user')
-            .reply(200, userinfo);
-
-        nock('https://api.github.com')
-            .get('/user/emails')
-            .reply(200, [
-                {
-                    email: 'jack@domain1.com',
-                    primary: true,
-                    verified: true,
-                    visibility: 'public'
-                },
-                {
-                    email: 'jack.m@domain2.com',
-                    primary: false,
-                    verified: true,
-                    visibility: null
-                },
-                {
-                    email: 'jj@domain3.com',
-                    primary: false,
-                    verified: true,
-                    visibility: null
-                }
-            ]);
+        mock_github();
 
         await db.transaction(async function () {
             const now = new Date();
@@ -181,8 +127,8 @@ describe('emails • new_sign_in', function () {
                 uid: random_uid_user_identity(),
                 user_id: user.id,
                 type: const_user_identity.oauth_github,
-                value: userinfo.id,
-                value_normalized: userinfo.id,
+                value: 'github-user-123',
+                value_normalized: 'github-user-123',
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -203,7 +149,7 @@ describe('emails • new_sign_in', function () {
         const sess = await this.client.get_session();
 
         await this.http_get_json(urlmod('/auth/github/callback', {
-            code: "4/fake_code",
+            code: '4/fake_code',
             state: sess.oauth_state,
         }));
 
