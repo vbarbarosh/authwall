@@ -12,7 +12,7 @@ describe('GET /auth/magic-link/confirm', function () {
         await this.http_post_json('/auth/magic-link/request', {email, _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
-        const magic_link = await db('magic_links').where('token_hash', crypto_hash_sha256(token)).first();
+        const magic_link = await db('magic_links').where('token_hash', crypto_hash_sha256(token).toString('base64url')).first();
         assert.strictEqual(magic_link.used_at, null);
 
         await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
