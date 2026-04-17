@@ -169,7 +169,7 @@ async function create_app()
                 //         proxy_req.removeHeader(header);
                 //     }
                 // }
-                if (req.session.user_uid) {
+                if (req.session.user_uid && !config.public_paths.includes(req.path)) {
                     proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
                 }
             },

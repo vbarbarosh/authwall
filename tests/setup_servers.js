@@ -65,7 +65,7 @@ async function create_echo_server()
         req.on('end', () => {
             const body = Buffer.concat(chunks).toString();
             res.writeHead(200, {'content-type': 'application/json'});
-            res.end(JSON.stringify({echo_server: 'grep_aich7deHie7eej2woic3', method: req.method, url: req.url, body}));
+            res.end(JSON.stringify({echo_server: 'authwall_testing_echo_server', method: req.method, url: req.url, headers: req.headers, body}));
         });
     });
 }
