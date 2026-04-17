@@ -43,13 +43,13 @@ jobs:
       if: matrix.db == 'mysql'
       run: |
         for i in {1..30}; do
-          mysqladmin ping -h mysql -proot && break
+          mysqladmin ping -h 127.0.0.1 -proot && break
           echo Waiting for MySQL...
           sleep 2
         done
     - name: Run all tests
       env:
-        AUTHWALL_MYSQL: ${{ matrix.db == 'mysql' && 'mysql://root:root@mysql:3306/authwall' || '' }}
+        AUTHWALL_MYSQL: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || '' }}
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
