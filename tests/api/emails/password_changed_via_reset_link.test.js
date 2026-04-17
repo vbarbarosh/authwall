@@ -20,6 +20,7 @@ describe('emails • password_changed_via_reset_link', function () {
             password: 'pass456',
             password_confirm: 'pass456',
         });
+        await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name);
         const expected = [const_email.password_reset, const_email.password_changed_via_reset_link];
