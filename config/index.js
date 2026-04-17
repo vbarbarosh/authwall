@@ -10,7 +10,7 @@ const yaml = require('yaml');
 
 const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
 
-const knexvars = AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
+const knexvars = AUTHWALL_MYSQL ? {...knexfile.mysql, connection: AUTHWALL_MYSQL} : knexfile.sqlite;
 
 const logs_dir = fs_path_resolve(__dirname, '../data/logs');
 const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
