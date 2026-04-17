@@ -17,7 +17,7 @@ module.exports = {
 
     mysql: {
         client: 'mysql2',
-        connection: null,
+        connection: process.env.AUTHWALL_MYSQL,
         pool: {
             min: 2,
             max: 10
