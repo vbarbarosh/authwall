@@ -64,18 +64,18 @@ describe('shape • status', function () {
                     type: String, // 'username',
                     value: String, // 'mocha',
                     value_normalized: String, // 'mocha',
-                    created_at: Number, // 1775985911948,
-                    updated_at: Number, // 1775985911948,
-                    verified_at: Number, // 1775985911948
+                    created_at: String, // '2026-04-17T23:37:00.732Z',
+                    updated_at: String, // '2026-04-17T23:37:00.732Z',
+                    verified_at: String, // '2026-04-17T23:37:00.732Z'
                 },
                 {
                     uid: String, // 'awident_ciqvly2ik3js277xpb3y6gf0',
                     type: String, // 'email',
                     value: String, // 'mocha@authwall.test',
                     value_normalized: String, // 'mocha@authwall.test',
-                    created_at: Number, // 1775985911948,
-                    updated_at: Number, // 1775985911948,
-                    verified_at: Number, // 1775985911948
+                    created_at: String, // '2026-04-17T23:37:00.732Z',
+                    updated_at: String, // '2026-04-17T23:37:00.732Z',
+                    verified_at: String, // '2026-04-17T23:37:00.732Z'
                 }
             ],
             current_session_uid: String, // 'awsess_nb8t0n2uu8glaxrfnhcj1jed',
@@ -84,9 +84,9 @@ describe('shape • status', function () {
                     uid: String, // 'awsess_nb8t0n2uu8glaxrfnhcj1jed',
                     ip: String, // '127.0.0.1',
                     ua: String, // 'axios/1.14.0',
-                    created_at: Number, // 1775985912170,
-                    expires_at: Number, // 1778577912179,
-                    last_seen_at: Number, // 1775985912179
+                    created_at: String, // '2026-04-17T23:37:01.149Z',
+                    expires_at: String, // '2026-05-17T23:37:01.160Z',
+                    last_seen_at: String, // '2026-04-17T23:37:01.160Z'
                 }
             ]
         };
