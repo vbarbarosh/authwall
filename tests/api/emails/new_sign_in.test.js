@@ -31,6 +31,7 @@ describe('emails • new_sign_in', function () {
         await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
         await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
+        await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.new_sign_in];
@@ -41,6 +42,7 @@ describe('emails • new_sign_in', function () {
         await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123'});
+        await this.wait_for_emails(1);
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.new_sign_in];
@@ -52,8 +54,8 @@ describe('emails • new_sign_in', function () {
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
         await this.http_get_json(this.sent_emails[0].placeholders.link);
-
         await this.wait_for_emails(2);
+
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.new_sign_in];
         assert.deepStrictEqual(actual, expected);
@@ -64,6 +66,7 @@ describe('emails • new_sign_in', function () {
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
         await this.http_post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: this.sent_emails[0].placeholders.code});
+        await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name)
         const expected = [const_email.magic_link, const_email.new_sign_in];
