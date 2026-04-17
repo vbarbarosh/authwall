@@ -8,7 +8,7 @@ class SessionStore extends express_session.Store
         try {
             const now = new Date();
 
-            const row = await db('sessions').where({uid}).where('expires_at', '>=', now).first();
+            const row = await db('sessions').where({uid}).where('expires_at', '>', now).first();
             if (!row) {
                 callback(null, null);
                 return;
