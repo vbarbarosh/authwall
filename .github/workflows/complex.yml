@@ -8,11 +8,26 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        db: [sqlite, mysql]
     services:
       echo:
         image: jmalloc/echo-server
         ports:
           - 8080:8080
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: authwall
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -25,10 +40,12 @@ jobs:
 #    - name: Run Playwright tests
 #      run: npx playwright test
     - name: Run all tests
-      run: bin/migrate && npm test
+      env:
+        AUTHWALL_MYSQL: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || '' }}
+      run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report
+        name: playwright-report-${{ matrix.db }}
         path: playwright-report/
         retention-days: 30

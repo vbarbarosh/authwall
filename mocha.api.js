@@ -2,6 +2,8 @@ process.env.AUTHWALL_SECRET = require('crypto').randomBytes(32).toString('hex');
 process.env.AUTHWALL_RATE_LIMITING = '0';
 
 const Runnable = require('mocha/lib/runnable');
+const als = require('./src/helpers/als');
+const bootstrap_database = require('./src/helpers/bootstrap_database');
 const config = require('./config');
 const knex = require('knex');
 const make_logger_fake = require('./src/services/logger/make_logger_fake');
@@ -46,14 +48,18 @@ module.exports = {
     timeout: 10000,
     require: [__filename],
     mochaHooks: {
+        beforeAll: async function () {
+            await using logger = make_logger_fake();
+            await als.run({db, logger}, () => bootstrap_database());
+        },
+        afterAll: async function () {
+            await db.destroy();
+        },
         beforeEach: function () {
             for (const key of Object.keys(config)) {
                 delete config[key];
             }
             Object.assign(config, structuredClone(saved_config));
-        },
-        afterAll: async function () {
-            await db.destroy();
         },
     },
 };
