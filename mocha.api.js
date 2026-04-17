@@ -10,7 +10,7 @@ const setup_servers = require('./tests/setup_servers');
 
 const db = knex(config.knexvars);
 const original_run = Runnable.prototype.run;
-const saved_min_password_length = config.flows.password.min_password_length;
+const saved_config = structuredClone(config);
 
 async function wait_for_emails(sent_emails, count, timeout_ms = 500)
 {
@@ -47,7 +47,10 @@ module.exports = {
     require: [__filename],
     mochaHooks: {
         beforeEach: function () {
-            config.flows.password.min_password_length = saved_min_password_length;
+            for (const key of Object.keys(config)) {
+                delete config[key];
+            }
+            Object.assign(config, structuredClone(saved_config));
         },
         afterAll: async function () {
             await db.destroy();
