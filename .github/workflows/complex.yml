@@ -24,7 +24,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -43,7 +43,7 @@ jobs:
       if: matrix.db == 'mysql'
       run: |
         for i in {1..30}; do
-          mysqladmin ping -h 127.0.0.1 -proot && break
+          mysqladmin ping -h 127.0.0.1 -u root -proot && break
           echo Waiting for MySQL...
           sleep 2
         done
