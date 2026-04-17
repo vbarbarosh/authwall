@@ -196,8 +196,6 @@ function error_handler(error, req, res, next)
         else {
             req.session.error = `An error occurred [${req.uid}]`;
         }
-
-        req.session.error = error.message;
     }
 
     if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
