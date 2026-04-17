@@ -19,7 +19,7 @@ async function bootstrap_database()
                 als.logger.write('❌ Database initialization failed');
                 throw error;
             }
-            als.logger.write(`⏳ MySQL not ready (attempt ${attempt}/${max_attempts})`);
+            als.logger.write(`⏳ MySQL not ready (attempt ${attempt}/${max_attempts}) - ${JSON.stringify(error.message).slice(1, -1)}`);
             await Promise.delay(delay_ms);
         }
     }
