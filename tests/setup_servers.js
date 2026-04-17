@@ -28,6 +28,7 @@ async function spin(ctx, _this, fn)
 
         const app = await create_app();
         const server = http.createServer(app);
+        server.keepAliveTimeout = 1;
         await promisify(cb => server.listen(0, '127.0.0.1', cb));
         config.public_url = `http://127.0.0.1:${server.address().port}`;
 
