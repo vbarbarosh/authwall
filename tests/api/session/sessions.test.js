@@ -40,12 +40,12 @@ describe('session', function () {
 
         const status1 = await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
-        assert.strictEqual(status1.authenticated, true);
+        assert.strictEqual(status1.authenticated, true, 'Fresh authentication');
 
         await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
 
         const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.authenticated, false);
+        assert.strictEqual(status2.authenticated, false, 'Expiration time');
     });
 
     it('password change from profile keeps current session and revokes others', async function () {
