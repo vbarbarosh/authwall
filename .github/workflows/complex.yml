@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        db: [sqlite, mysql]
+        db: [sqlite, mysql, postgres]
     services:
       echo:
         image: jmalloc/echo-server
@@ -25,6 +25,19 @@ jobs:
           - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: authwall
+          POSTGRES_USER: authwall
+          POSTGRES_PASSWORD: authwall
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U authwall -d authwall"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -47,9 +60,18 @@ jobs:
           echo Waiting for MySQL...
           sleep 2
         done
+    - name: Wait for Postgres
+      if: matrix.db == 'postgres'
+      run: |
+        for i in {1..30}; do
+          pg_isready -h 127.0.0.1 -p 5432 -U authwall -d authwall && break
+          echo Waiting for Postgres...
+          sleep 2
+        done
     - name: Run all tests
       env:
         AUTHWALL_MYSQL: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || '' }}
+        AUTHWALL_POSTGRES: ${{ matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

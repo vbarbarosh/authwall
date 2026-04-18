@@ -9,6 +9,7 @@ services:
       AUTHWALL_PUBLIC_URL: http://127.0.0.1:3000
       AUTHWALL_TARGET_URL: http://echo-server:8080
       AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
+      # AUTHWALL_POSTGRES: postgres://authwall:authwall@postgres/authwall
     ports:
       - 3000:3000
     volumes:
@@ -26,6 +27,16 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - ./data/mysql:/var/lib/mysql
+
+#  postgres:
+#    image: postgres:17-alpine
+#    restart: unless-stopped
+#    environment:
+#      POSTGRES_DB: authwall
+#      POSTGRES_USER: authwall
+#      POSTGRES_PASSWORD: authwall
+#    volumes:
+#      - ./data/postgres:/var/lib/postgresql/data
 
   echo-server:
       image: jmalloc/echo-server

@@ -8,7 +8,13 @@ const parse_domains = require('../src/helpers/parse_domains');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
 
-const knexvars = process.env.AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
+if (process.env.AUTHWALL_MYSQL && process.env.AUTHWALL_POSTGRES) {
+    throw new Error('Set only one of AUTHWALL_MYSQL or AUTHWALL_POSTGRES');
+}
+
+const knexvars = process.env.AUTHWALL_POSTGRES ? knexfile.postgres
+    : process.env.AUTHWALL_MYSQL ? knexfile.mysql
+    : knexfile.sqlite;
 
 const data_dir = fs_path_resolve(__dirname, '../data');
 const logs_dir = fs_path_resolve(__dirname, '../data/logs');

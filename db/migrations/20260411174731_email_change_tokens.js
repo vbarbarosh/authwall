@@ -1,3 +1,5 @@
+const utf8mb4_bin = require('../utf8mb4_bin');
+
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
@@ -6,7 +8,7 @@ exports.up = async function (knex) {
     await knex.schema.createTable('email_change_tokens', function (table) {
         table.increments('id');
         table.integer('user_id').unsigned().notNullable().index().references('id').inTable('users').onDelete('RESTRICT');
-        table.string('email_normalized', 255).notNullable().collate('utf8mb4_bin');
+        utf8mb4_bin(table.string('email_normalized', 255).notNullable());
         table.string('token_hash', 64).notNullable().unique();
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();
