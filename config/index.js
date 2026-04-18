@@ -164,7 +164,7 @@ const config = {
             from: {type: 'str', nullable: true},
         },
         ses: {
-            region: {type: 'str', default: 'us-east-1', before: v => v || undefined},
+            region: {type: 'str', default: 'us-east-1'},
             key: {type: 'str', nullable: true},
             secret: {type: 'str', nullable: true},
             session_token: {type: 'str', nullable: true},
@@ -172,6 +172,9 @@ const config = {
         },
     }),
 };
+
+config.mailer.provider = resolve_mailer_provider(config.mailer);
+validate_mailer(config.mailer);
 
 if (config.flows.password.enabled) {
     const {allow_username, allow_email} = config.flows.password;
@@ -203,8 +206,6 @@ if (config.flows.github.enabled) {
 if (config.cookie.same_site === 'none' && !config.cookie.secure) {
     throw new Error('cookie.same_site=none requires cookie.secure=true');
 }
-
-validate_mailer(config.mailer);
 
 function secret_hkdf(namespace)
 {
@@ -257,7 +258,7 @@ function validate_mailer(mailer)
         return;
     }
 
-    if (mailer.provider === 'auto' || mailer.provider === 'fake') {
+    if (mailer.provider === 'fake') {
         return;
     }
 
@@ -279,9 +280,31 @@ function validate_mailer(mailer)
         if (!mailer.ses.key || !mailer.ses.secret || !mailer.ses.from) {
             throw new Error('mailer.provider=ses requires mailer.ses.key, mailer.ses.secret, and mailer.ses.from');
         }
+        return;
     }
 
     throw new Error(`Invalid mailer.provider: ${mailer.provider}`);
+}
+
+function resolve_mailer_provider(mailer)
+{
+    if (mailer.provider && mailer.provider !== 'auto') {
+        return mailer.provider;
+    }
+
+    if (mailer.resend.key && mailer.resend.from) {
+        return 'resend';
+    }
+
+    if (mailer.mailjet.key && mailer.mailjet.secret && mailer.mailjet.from) {
+        return 'mailjet';
+    }
+
+    if (mailer.ses.key && mailer.ses.secret && mailer.ses.from) {
+        return 'ses';
+    }
+
+    return 'fake';
 }
 
 function get_knexvars()
