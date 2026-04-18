@@ -79,15 +79,11 @@ docker run --rm -p 3000:3000 \
 * email verification: **enabled**
 * registration: **open**
 
----
-
 ## Notes
 
 * If no mailer is configured, **email-based flows are disabled automatically**
 * First user is created via sign-up (no bootstrap user required)
 * Data is stored inside the container unless a volume is mounted
-
----
 
 ## Philosophy
 
