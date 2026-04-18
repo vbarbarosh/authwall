@@ -69,29 +69,26 @@ describe('session', function () {
         const cookies = [new Map(), new Map(), new Map()];
 
         this.client.cookies = cookies[0];
-        status[0] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[0].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
         status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, true);
         assert.strictEqual(status[0].sessions.length, 1);
 
         this.client.cookies = cookies[1];
-        status[1] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[1].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
         status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, true);
         assert.strictEqual(status[1].sessions.length, 2);
 
         this.client.cookies = cookies[2];
-        status[2] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: status[2].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
         status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, true);
         assert.strictEqual(status[2].sessions.length, 3);
 
         // reset password using Profile page
         this.client.cookies = cookies[0];
-        await this.http_post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456', _csrf: status[0].csrf_token});
+        await this.http_post_json('/auth/change-password', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456'});
         status[0] = await this.http_get_json('/auth/status');
         assert.partialDeepStrictEqual(status[0], {
             error: null,
@@ -102,12 +99,14 @@ describe('session', function () {
         // ensure other sessions are dead
 
         this.client.cookies = cookies[1];
-        status[1] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[1].authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            authenticated: false,
+        });
 
         this.client.cookies = cookies[2];
-        status[2] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[2].authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            authenticated: false,
+        });
 
         // ensure old sessions no longer in db
         assert.deepStrictEqual(await db('sessions').where('user_id', user_id).count('* AS c'), [{c: 1}]);
@@ -115,46 +114,44 @@ describe('session', function () {
 
     it('password reset via link revokes all sessions', async function () {
         config.flows.password.min_password_length = 4;
+
         const {user_id} = await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         const status = [null, null, null];
         const cookies = [new Map(), new Map(),new Map()];
 
         this.client.cookies = cookies[0];
-        status[0] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[0].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123'});
         status[0] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[0].authenticated, true);
         assert.strictEqual(status[0].sessions.length, 1);
 
         this.client.cookies = cookies[1];
-        status[1] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[1].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123'});
         status[1] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[1].authenticated, true);
         assert.strictEqual(status[1].sessions.length, 2);
 
         this.client.cookies = cookies[2];
-        status[2] = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status[2].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123'});
         status[2] = await this.http_get_json('/auth/status');
         assert.strictEqual(status[2].authenticated, true);
         assert.strictEqual(status[2].sessions.length, 3);
 
         // request reset
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status[2].csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
 
         // confirm reset using token from email
         await this.http_post_json('/auth/password-reset/confirm', {
-            _csrf: status[2].csrf_token,
             token: this.sent_emails.at(-1).placeholders.token,
             password: 'pass456',
             password_confirm: 'pass456',
         });
-        status[2] = await this.http_get_json('/auth/status');
-        assert.strictEqual(status[2].authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            authenticated: false,
+        });
 
-        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass456', _csrf: status[2].csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass456'});
         status[2] = await this.http_get_json('/auth/status');
         assert.partialDeepStrictEqual(status[2], {
             error: null,
