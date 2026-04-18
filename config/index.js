@@ -10,21 +10,24 @@ const yaml = require('yaml');
 
 const knexvars = process.env.AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
 
+const data_dir = fs_path_resolve(__dirname, '../data');
 const logs_dir = fs_path_resolve(__dirname, '../data/logs');
 const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
+const secret_key_file = fs_path_resolve(__dirname, '../data/secret.key');
+const design_dir = fs_path_resolve(__dirname, '../design');
+const emails_dir = fs_path_resolve(__dirname, '../design/emails');
 
+fs.mkdirSync(data_dir, {recursive: true});
 fs.mkdirSync(logs_dir, {recursive: true});
 fs.mkdirSync(uploads_dir, {recursive: true});
 
-const SECRET = process.env.AUTHWALL_SECRET;
+const SECRET = load_secret();
 
 const settings = resolve_yaml_vars(
     yaml.parse(fs.readFileSync(fs_path_resolve(__dirname, 'settings.yaml'), {encoding: 'utf8'})),
     process.env
 );
 
-const design_dir = fs_path_resolve(__dirname, '../design');
-const emails_dir = fs_path_resolve(__dirname, '../design/emails');
 const public_url = process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000';
 
 const config = {
@@ -188,16 +191,49 @@ if (!!config.resend_key !== !!config.resend_from) {
     throw new Error('Both AUTHWALL_RESEND_KEY and AUTHWALL_RESEND_FROM must be set together');
 }
 
-if (!process.env.AUTHWALL_SECRET) {
-    throw new Error('Missing required env var: AUTHWALL_SECRET');
-}
-if (process.env.AUTHWALL_SECRET.length < 32) {
-    throw new Error('AUTHWALL_SECRET must be at least 32 characters');
-}
-
 function secret_hkdf(namespace)
 {
-    return Buffer.from(crypto.hkdfSync('sha256', SECRET, 'authwall', namespace, 32)).toString('hex');
+    return Buffer.from(crypto.hkdfSync('sha256', SECRET, 'authwall', namespace, 32)).toString('base64url');
+}
+
+function load_secret()
+{
+    if (process.env.AUTHWALL_SECRET) {
+        validate_secret(process.env.AUTHWALL_SECRET, 'AUTHWALL_SECRET');
+        return process.env.AUTHWALL_SECRET;
+    }
+
+    try {
+        const secret = fs.readFileSync(secret_key_file, {encoding: 'utf8'}).trim();
+        validate_secret(secret, secret_key_file);
+        return secret;
+    }
+    catch (error) {
+        if (error.code !== 'ENOENT') {
+            throw error;
+        }
+    }
+
+    const secret = crypto.randomBytes(32).toString('base64url');
+    try {
+        fs.writeFileSync(secret_key_file, secret, {encoding: 'utf8', mode: 0o600, flag: 'wx'});
+        return secret;
+    }
+    catch (error) {
+        if (error.code !== 'EEXIST') {
+            throw error;
+        }
+        const existing_secret = fs.readFileSync(secret_key_file, {encoding: 'utf8'}).trim();
+        validate_secret(existing_secret, secret_key_file);
+        return existing_secret;
+    }
+}
+
+function validate_secret(secret, source)
+{
+    if (secret.length < 32) {
+        throw new Error(`${source} must be at least 32 characters`);
+    }
 }
 
 module.exports = config;

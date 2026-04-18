@@ -34,3 +34,22 @@ sequenceDiagram
     your_app -->> authwall: response
     authwall -->> client: response
 ```
+
+## Secret Management
+
+`AUTHWALL_SECRET` is optional.
+
+Startup order is:
+
+1. Use `AUTHWALL_SECRET` when it is set.
+2. Otherwise, load `/app/data/secret.key` if it already exists.
+3. Otherwise, generate a new random secret, write it to `/app/data/secret.key`, and use that value.
+
+Why this default exists:
+
+- Authwall derives session and CSRF secrets from one root secret, so that root value must stay stable across restarts.
+- Requiring an env var for every local or single-host deployment makes first boot harder and encourages weak placeholder values.
+- Persisting the generated secret in the data directory keeps restarts deterministic as long as the data volume is preserved.
+- An explicit `AUTHWALL_SECRET` still takes precedence, which is the better fit when secrets are managed by the runtime or an external secret store.
+
+If you rotate either `AUTHWALL_SECRET` or `data/secret.key`, existing sessions and CSRF tokens become invalid by design.
