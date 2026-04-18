@@ -1,6 +1,7 @@
 const assert = require('assert');
 const db = require('../../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 
 // A user who is already signed in visits an expired magic link.
 // The link must fail cleanly without disrupting the authenticated session.
@@ -13,15 +14,17 @@ describe('Expired magic link does not affect authenticated session | stories', f
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
 
         // Expire the magic link
-        await db('magic_links').update({expires_at: new Date()});
+        const magic_link = await db('magic_links').where({token_hash: crypto_hash_sha256(this.sent_emails[0].placeholders.token).toString('base64url')}).first();
+        await db('magic_links').where({id: magic_link.id}).update({expires_at: new Date()});
 
         // Try to use the expired link
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token: this.sent_emails.find(v => v.placeholders?.token).placeholders}));
+        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token: this.sent_emails[0].placeholders.token}));
 
         // Session must still be authenticated
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.authenticated, true);
-        assert.strictEqual(status2.error, 'Invalid or expired magic link');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Invalid or expired magic link',
+            authenticated: true,
+        });
     });
 
 });

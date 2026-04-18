@@ -17,10 +17,6 @@ describe('OAuth connect blocked when provider belongs to another account | stori
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-    });
-
     it('rejects Google connect when the Google account is already linked to another user', async function () {
         // Create user B in the DB with Google identity already linked
         const user_b = await users_create();

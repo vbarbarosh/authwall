@@ -49,37 +49,42 @@ describe('Google + GitHub with same email attach to same user | stories', functi
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-        config.flows.google.enabled = false;
-    });
-
     it('connects GitHub to the Google account when both share the same email', async function () {
         // Sign up via Google (creates user with oauth_google + email)
         mock_google({email: 'shared@example.com'});
         await this.client.get_json_no_redirects('/auth/google');
-        const sess1 = await this.client.get_session();
-        await this.http_get_json(urlmod('/auth/google/callback', {state: sess1.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/google/callback', {
+            code: 'fake_code',
+            state: await this.client.get_session().then(v => v.oauth_state),
+        }));
 
         const status1 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status1.authenticated, true);
+        assert.partialDeepStrictEqual(status1, {
+            error: null,
+            authenticated: true,
+        });
         assert.ok(status1.providers.find(v => v.type === 'oauth_google'));
         assert.ok(status1.providers.find(v => v.type === 'email' && v.value === 'shared@example.com'));
 
         // Connect GitHub (which also has the same email)
         mock_github({email: 'shared@example.com'});
         await this.client.get_json_no_redirects('/auth/github?connect=1');
-        const sess2 = await this.client.get_session();
-        await this.http_get_json(urlmod('/auth/github/callback', {state: sess2.oauth_state, code: 'fake_code'}));
+        await this.http_get_json(urlmod('/auth/github/callback', {
+            code: 'fake_code',
+            state: await this.client.get_session().then(v => v.oauth_state),
+        }));
 
         const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, null);
-        assert.strictEqual(status2.authenticated, true);
+        assert.partialDeepStrictEqual(status1, {
+            error: null,
+            authenticated: true,
+        });
         assert.ok(status2.providers.find(v => v.type === 'oauth_google'));
         assert.ok(status2.providers.find(v => v.type === 'oauth_github'));
         assert.ok(status2.providers.find(v => v.type === 'email' && v.value === 'shared@example.com'));
+
         // All providers belong to the same user
-        assert.strictEqual(status2.user_uid, status1.user_uid);
+        assert.strictEqual(status1.user_uid, status2.user_uid);
     });
 
 });

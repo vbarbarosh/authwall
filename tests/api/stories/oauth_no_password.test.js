@@ -13,10 +13,11 @@ describe('OAuth user with no password tries email+password sign-in | stories', f
             password: 'anything',
         });
 
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.authenticated, false);
         // Must not reveal that the account exists or that no password is set
-        assert.strictEqual(status2.error, 'Invalid username or password');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Invalid username or password',
+            authenticated: false,
+        });
     });
 
 });

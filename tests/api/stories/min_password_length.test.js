@@ -6,14 +6,6 @@ const config = require('../../../config');
 // This allows the minimum to be raised without locking out existing users.
 describe('min_password_length is enforced only for new passwords | stories', function () {
 
-    beforeEach(function () {
-        this._original_min = config.flows.password.min_password_length;
-    });
-
-    afterEach(function () {
-        config.flows.password.min_password_length = this._original_min;
-    });
-
     it('rejects sign-up with a password shorter than the minimum', async function () {
         config.flows.password.min_password_length = 10;
         await this.http_post_json('/auth/sign-up', {
@@ -21,24 +13,25 @@ describe('min_password_length is enforced only for new passwords | stories', fun
             password: 'short',
             password_confirm: 'short',
         });
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, 'Password must be at least 10 characters');
-        assert.strictEqual(status2.authenticated, false);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Password must be at least 10 characters',
+            authenticated: false,
+        });
     });
 
     it('rejects password reset with a password shorter than the current minimum', async function () {
         config.flows.password.min_password_length = 10;
         await this.add_user({email: 'mocha@authwall.test'});
-        await this.http_post_json('/auth/password-reset/request', {
-            email: 'mocha@authwall.test',
-        });
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         await this.http_post_json('/auth/password-reset/confirm', {
             token: this.sent_emails[0].placeholders.token,
             password: 'short',
             password_confirm: 'short',
         });
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, 'Password must be at least 10 characters');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Password must be at least 10 characters',
+            authenticated: false,
+        });
     });
 
     it('rejects profile password change with a password shorter than the current minimum', async function () {
@@ -49,40 +42,46 @@ describe('min_password_length is enforced only for new passwords | stories', fun
             password: 'short',
             password_confirm: 'short',
         });
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, 'Password must be at least 10 characters');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Password must be at least 10 characters',
+            authenticated: false,
+        });
     });
 
     it('old short password still works for sign-in after the minimum is raised', async function () {
+        config.flows.password.min_password_length = 10;
+
         // User registered when minimum was 4
-        config.flows.password.min_password_length = 4;
         await this.add_user({username: 'mocha', password: 'pass'});
 
         // Minimum is raised to 10 — but the existing short password must still authenticate
-        config.flows.password.min_password_length = 10;
         await this.http_post_json('/auth/sign-in', {
             username: 'mocha',
             password: 'pass',
         });
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, null);
-        assert.strictEqual(status2.authenticated, true);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: true,
+        });
     });
 
     it('old short password still works for change-password current_password check after minimum is raised', async function () {
+        config.flows.password.min_password_length = 10;
+
         // User registered when minimum was 4
-        config.flows.password.min_password_length = 4;
         await this.sign_in({username: 'mocha', password: 'pass'});
 
         // Minimum is raised to 10 — new password must meet it, but current is still accepted
-        config.flows.password.min_password_length = 10;
         await this.http_post_json('/auth/change-password', {
             current_password: 'pass',
             password: 'newlongpass',
             password_confirm: 'newlongpass',
         });
-        const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, null);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: true,
+        });
+
         await this.assert_password({username: 'mocha', password: 'newlongpass'});
     });
 

@@ -30,6 +30,7 @@ describe('Old password-reset link is invalid after profile password change | sto
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid reset token',
+            authenticated: true,
         });
 
         // Original password change must still hold
