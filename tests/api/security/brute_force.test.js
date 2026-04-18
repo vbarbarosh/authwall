@@ -10,9 +10,9 @@ describe('Brute-force protection', function () {
         });
 
         // exhaust attempts with wrong codes
-        for (let i = 0; i < 3; i++) {
-            await this.http_post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: '000000'});
-        }
+        await this.http_post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: '000000'});
+        await this.http_post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: '000000'});
+        await this.http_post_json('/auth/magic-link/confirm', {email: 'mocha@authwall.test', code: '000000'});
 
         // correct code should now be rejected too
         const {code} = this.sent_emails[0].placeholders;
