@@ -48,6 +48,18 @@ describe('session', function () {
         assert.strictEqual(status2.authenticated, false, 'Expiration time');
     });
 
+    it('expired session should get new UID', async function () {
+        await this.http_get_json('/auth/status');
+        const session1 = await this.client.get_session();
+
+        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
+
+        await this.http_get_json('/auth/status');
+        const session2 = await this.client.get_session();
+
+        assert.notStrictEqual(session1.uid, session2.uid);
+    });
+
     it('password change from profile keeps current session and revokes others', async function () {
         config.flows.password.min_password_length = 4;
         const {user_id} = await this.add_user({username: 'mocha', password: 'pass123'});
