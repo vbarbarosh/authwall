@@ -13,6 +13,10 @@ module.exports = {
         seeds: {
             directory: `${__dirname}/db/seeds`,
         },
+        custom: {
+            name: 'sqlite',
+            label: 'SQLite 3',
+        },
     },
 
     mysql: {
@@ -36,6 +40,30 @@ module.exports = {
         },
         seeds: {
             directory: `${__dirname}/db/seeds`,
+        },
+        custom: {
+            name: 'mysql',
+            label: 'MySQL',
+        },
+    },
+
+    postgres: {
+        client: 'pg',
+        connection: process.env.AUTHWALL_POSTGRES,
+        pool: {
+            min: 2,
+            max: 10,
+        },
+        migrations: {
+            directory: `${__dirname}/db/migrations`,
+            tableName: 'knex_migrations'
+        },
+        seeds: {
+            directory: `${__dirname}/db/seeds`,
+        },
+        custom: {
+            name: 'postgres',
+            label: 'PostgreSQL',
         },
     },
 
