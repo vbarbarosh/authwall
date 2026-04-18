@@ -21,7 +21,7 @@ async function spin(ctx, _this, fn)
 
         const echo_server = await create_echo_server();
         await promisify(cb => echo_server.listen(0, '127.0.0.1', cb));
-        config.target_url = `http://127.0.0.1:${echo_server.address().port}`;
+        config.target.url = `http://127.0.0.1:${echo_server.address().port}`;
 
         config.cookie.domain = _this._runnable.title.includes('[config.cookie.domain=.authwall.test]') ? '.authwall.test' : null;
         config.cookie.secure = _this._runnable.title.includes('[config.cookie.secure=true]');

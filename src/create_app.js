@@ -152,9 +152,9 @@ async function create_app()
     app.use(clean_headers);
     app.use(sign_in_required);
     app.use(http_proxy_middleware.createProxyMiddleware({
-        target: config.target_url,
-        xfwd: (config.target_mode === 'proxy'),
-        changeOrigin: (config.target_mode === 'direct'),
+        target: config.target.url,
+        xfwd: (config.target.mode === 'proxy'),
+        changeOrigin: (config.target.mode === 'direct'),
         pathFilter: function (pathname) {
             return !(pathname === '/auth' || pathname.startsWith('/auth/'));
         },

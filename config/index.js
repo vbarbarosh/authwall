@@ -28,14 +28,17 @@ const settings = resolve_yaml_vars(
     process.env
 );
 
-const public_url = process.env.AUTHWALL_PUBLIC_URL ?? 'http://127.0.0.1:3000';
+const public_url = settings.public_url ?? 'http://127.0.0.1:3000';
 
 const config = {
     seed_users: Array.from(settings.seed_users||[]),
     public_url,
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
-    target_url: process.env.AUTHWALL_TARGET_URL ?? 'http://127.0.0.1:8080',
-    target_mode: make(process.env.AUTHWALL_TARGET_MODE, {type: 'enum', options: ['direct', 'proxy']}),
+
+    target: make(settings.target, {
+        url: {type: 'str', default: 'http://127.0.0.1:8080'},
+        mode: {type: 'enum', options: ['direct', 'proxy']},
+    }),
 
     emails: {
         [const_email.welcome]: `${emails_dir}/welcome.txt`,

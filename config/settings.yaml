@@ -1,3 +1,5 @@
+public_url: ${AUTHWALL_PUBLIC_URL}
+
 public_paths:
   # Only paths listed here are publicly accessible.
   # Default: all paths are private.
@@ -15,6 +17,10 @@ public_paths:
 
   # well-known endpoints
   - /.well-known/appspecific/com.chrome.devtools.json
+
+target:
+  url: ${AUTHWALL_TARGET_URL}
+  mode: ${AUTHWALL_TARGET_MODE}
 
 access:
   # (1) denied_emails -> deny
