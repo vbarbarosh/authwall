@@ -1,7 +1,22 @@
-require('dotenv/config');
+// util._extend used in http-proxy (transitive dep of http-proxy-middleware) — cannot be fixed upstream
+//
+// node_modules/http-proxy$ g _extend
+// lib/http-proxy/index.js
+// 2:    extend    = require('util')._extend,
+//
+// lib/http-proxy/common.js
+// 3:    extend   = require('util')._extend,
+process.removeAllListeners('warning');
+process.on('warning', function (event) {
+    if (event.code === 'DEP0060') {
+        return;
+    }
+    process.stderr.write(event.stack + '\n');
+});
 
-process.env.AUTHWALL_SECRET = require('crypto').randomBytes(32).toString('base64url');
-process.env.AUTHWALL_RATE_LIMITING = '0';
+require('dotenv/config');
+process.env.AUTHWALL_SECRET ??= require('crypto').randomBytes(32).toString('base64url');
+process.env.AUTHWALL_RATE_LIMITING ??= '0';
 
 const Runnable = require('mocha/lib/runnable');
 const als = require('./src/helpers/als');
