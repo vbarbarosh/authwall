@@ -22,17 +22,13 @@ describe('session', function () {
     });
 
     it('expired session is ignored', async function () {
-        const s1 = await this.http_get_json('/auth/status');
-        console.log(s1);
+        await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
-        console.log(session1);
 
-        await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
+        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
 
-        const s2 = await this.http_get_json('/auth/status');
-        console.log(s2);
+        await this.http_get_json('/auth/status');
         const session2 = await this.client.get_session();
-        console.log(session2);
 
         assert.notStrictEqual(session1.uid, session2.uid);
         assert.ok(await db('sessions').where('uid', session1.uid).first() !== undefined);
@@ -46,7 +42,7 @@ describe('session', function () {
         const session1 = await this.client.get_session();
         assert.strictEqual(status1.authenticated, true, 'Fresh authentication');
 
-        await db('sessions').where('uid', session1.uid).update({expires_at: new Date()});
+        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.authenticated, false, 'Expiration time');
