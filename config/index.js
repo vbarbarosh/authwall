@@ -216,7 +216,7 @@ function load_secret()
 
     const secret = crypto.randomBytes(32).toString('base64url');
     try {
-        fs.writeFileSync(secret_key_file, secret, {encoding: 'utf8', mode: 0o600, flag: 'wx'});
+        fs.writeFileSync(secret_key_file, `${secret}\n`, {encoding: 'utf8', mode: 0o600, flag: 'wx'});
         return secret;
     }
     catch (error) {
