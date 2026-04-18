@@ -34,7 +34,7 @@ function make_mailer_resend()
             }
             return out;
         },
-        [Symbol.dispose]: async function () {
+        [Symbol.dispose]: function () {
             client = null;
         },
     };
