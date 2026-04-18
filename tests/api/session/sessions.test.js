@@ -8,15 +8,15 @@ describe('session', function () {
     it('sign-in replaces existing session', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
 
-        const status = await this.http_get_json('/auth/status');
+        await this.http_get_json('/auth/status');
         const session1 =  await this.client.get_session();
+
         await this.http_post_json('/auth/sign-in', {
-            _csrf: status.csrf_token,
             username: 'mocha',
             password: 'pass123',
         });
-
         const session2 = await this.client.get_session();
+
         assert.notStrictEqual(session1.uid, session2.uid);
         assert.ok(await db('sessions').where('uid', session1.uid).first() === undefined);
         assert.ok(await db('sessions').where('uid', session2.uid).first() !== undefined);
