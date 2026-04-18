@@ -37,25 +37,64 @@ sequenceDiagram
 
 ## Quick Start
 
-Public → Sign up → Signed in → Proxy works
-
-Open registration (username + password only):
-
 ```
+Public → Sign up → Signed in → Proxied resource
+````
+
+Authwall runs with zero configuration. By default, it uses SQLite and enables open registration.
+
+---
+
+### Open registration (username + password only)
+
+```bash
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_TARGET_URL=https://app.test \
     vbarbarosh/authwall
-```
+````
 
-Open registration (username/email + password and magic links):
+**Behavior:**
 
-```
+* sign-in: **username + password**
+* registration: **open**
+* email features: **disabled**
+* storage: **SQLite (ephemeral unless volume mounted)**
+
+---
+
+### Open registration (username/email + password + magic link)
+
+```bash
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_TARGET_URL=https://app.test \
     -e AUTHWALL_RESEND_KEY=re_xxx \
     -e AUTHWALL_RESEND_FROM="Authwall <noreply@app.test>" \
     vbarbarosh/authwall
 ```
+
+**Behavior:**
+
+* sign-in: **username/email + password**
+* magic link: **enabled**
+* email verification: **enabled**
+* registration: **open**
+
+---
+
+## Notes
+
+* If no mailer is configured, **email-based flows are disabled automatically**
+* First user is created via sign-up (no bootstrap user required)
+* Data is stored inside the container unless a volume is mounted
+
+---
+
+## Philosophy
+
+* **Zero-config start**
+* **Env-driven configuration**
+* **Optional advanced config via settings.yaml**
+* **Sensible defaults for local development**
 
 ## Secret Management
 
