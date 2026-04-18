@@ -4,13 +4,6 @@ const make_mailer_ses = require('./make_mailer_ses');
 const nock = require('nock');
 
 describe('make_mailer_ses', function () {
-    const original = {
-        region: config.mailer.ses.region,
-        key: config.mailer.ses.key,
-        secret: config.mailer.ses.secret,
-        session_token: config.mailer.ses.session_token,
-        from: config.mailer.ses.from,
-    };
 
     beforeEach(function () {
         nock.cleanAll();
@@ -19,15 +12,6 @@ describe('make_mailer_ses', function () {
         config.mailer.ses.secret = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
         config.mailer.ses.session_token = 'session-token';
         config.mailer.ses.from = 'Authwall <authwall@example.com>';
-    });
-
-    afterEach(function () {
-        nock.cleanAll();
-        config.mailer.ses.region = original.region;
-        config.mailer.ses.key = original.key;
-        config.mailer.ses.secret = original.secret;
-        config.mailer.ses.session_token = original.session_token;
-        config.mailer.ses.from = original.from;
     });
 
     it('sends expected payload and signs request', async function () {
