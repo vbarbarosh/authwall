@@ -8,8 +8,7 @@ const parse_domains = require('../src/helpers/parse_domains');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
 
-const AUTHWALL_MYSQL = process.env.AUTHWALL_MYSQL;
-const knexvars = AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
+const knexvars = process.env.AUTHWALL_MYSQL ? knexfile.mysql : knexfile.sqlite;
 
 const logs_dir = fs_path_resolve(__dirname, '../data/logs');
 const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
@@ -112,7 +111,7 @@ const config = {
         csrf_token: secret_hkdf('csrf_token'),
         express_session: secret_hkdf('express_session'),
     },
-    mysql: process.env.AUTHWALL_MYSQL,
+
     knexvars,
     password_rounds: 12,
 

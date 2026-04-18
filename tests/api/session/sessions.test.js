@@ -1,6 +1,7 @@
 const assert = require('assert');
-const db = require('../../../db');
 const config = require('../../../config');
+const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
+const db = require('../../../db');
 
 describe('session', function () {
 
@@ -25,7 +26,7 @@ describe('session', function () {
         await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
 
-        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
+        await db('sessions').where('uid', session1.uid).update({expires_at: date_trunc_ms()});
 
         await this.http_get_json('/auth/status');
         const session2 = await this.client.get_session();
@@ -42,7 +43,7 @@ describe('session', function () {
         const session1 = await this.client.get_session();
         assert.strictEqual(status1.authenticated, true, 'Fresh authentication');
 
-        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
+        await db('sessions').where('uid', session1.uid).update({expires_at: date_trunc_ms()});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.authenticated, false, 'Expiration time');
@@ -52,7 +53,7 @@ describe('session', function () {
         await this.http_get_json('/auth/status');
         const session1 = await this.client.get_session();
 
-        await db('sessions').where('uid', session1.uid).update({expires_at: new Date(new Date().setMilliseconds(0))});
+        await db('sessions').where('uid', session1.uid).update({expires_at: date_trunc_ms()});
 
         await this.http_get_json('/auth/status');
         const session2 = await this.client.get_session();
