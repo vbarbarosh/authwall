@@ -1,6 +1,7 @@
 const assert = require('assert');
 const config = require('../../config');
 const const_email = require('../../src/helpers/const/const_email');
+const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
 const db = require('../../db');
 
 describe('POST /auth/password-reset/confirm', function () {
@@ -77,7 +78,7 @@ describe('POST /auth/password-reset/confirm', function () {
         const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
         const {token} = this.sent_emails[0].placeholders;
-        await db('password_reset_tokens').update({expires_at: new Date(Date.now() - 1000)});
+        await db('password_reset_tokens').update({expires_at: date_trunc_ms()});
         await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Reset token expired');

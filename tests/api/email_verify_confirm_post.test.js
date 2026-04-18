@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../config');
+const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
 const db = require('../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -43,7 +44,7 @@ describe('GET /auth/email-verify/confirm', function () {
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await db('email_verify_tokens').update({expires_at: new Date(Date.now() - 1000)});
+        await db('email_verify_tokens').update({expires_at: date_trunc_ms()});
         await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
 
         const status2 = await this.http_get_json('/auth/status');

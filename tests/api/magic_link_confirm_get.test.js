@@ -1,5 +1,6 @@
 const assert = require('assert');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
+const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
 const db = require('../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -63,7 +64,7 @@ describe('GET /auth/magic-link/confirm', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'expired@authwall.test', _csrf: status.csrf_token});
 
         const {token} = this.sent_emails[0].placeholders;
-        await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});
+        await db('magic_links').update({expires_at: date_trunc_ms()});
         await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
 
         const status2 = await this.http_get_json('/auth/status');

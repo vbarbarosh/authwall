@@ -1,4 +1,5 @@
 const assert = require('assert');
+const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
 const db = require('../../db');
 
 describe('POST /auth/magic-link/confirm', function () {
@@ -62,7 +63,7 @@ describe('POST /auth/magic-link/confirm', function () {
         const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/magic-link/request', {email: 'expired-code@authwall.test', _csrf: status.csrf_token});
         const {code} = this.sent_emails[0].placeholders;
-        await db('magic_links').update({expires_at: new Date(Date.now() - 1000)});
+        await db('magic_links').update({expires_at: date_trunc_ms()});
         await this.http_post_json('/auth/magic-link/confirm', {email: 'expired-code@authwall.test', code, _csrf: status.csrf_token});
 
         const status2 = await this.http_get_json('/auth/status');
