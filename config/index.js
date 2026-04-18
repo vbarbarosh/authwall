@@ -154,6 +154,12 @@ const config = {
     // Resend mailer
     resend_key: process.env.AUTHWALL_RESEND_KEY,
     resend_from: process.env.AUTHWALL_RESEND_FROM,
+
+    // Mailjet mailer
+    mailjet_key: process.env.AUTHWALL_MAILJET_KEY,
+    mailjet_secret: process.env.AUTHWALL_MAILJET_SECRET,
+    mailjet_from: process.env.AUTHWALL_MAILJET_FROM,
+
     mailer: {
         enabled: true,
     },
@@ -192,6 +198,11 @@ if (config.cookie.same_site === 'none' && !config.cookie.secure) {
 
 if (!!config.resend_key !== !!config.resend_from) {
     throw new Error('Both AUTHWALL_RESEND_KEY and AUTHWALL_RESEND_FROM must be set together');
+}
+
+if ([config.mailjet_key, config.mailjet_secret, config.mailjet_from].some(Boolean)
+        && ![config.mailjet_key, config.mailjet_secret, config.mailjet_from].every(Boolean)) {
+    throw new Error('AUTHWALL_MAILJET_KEY, AUTHWALL_MAILJET_SECRET, and AUTHWALL_MAILJET_FROM must be set together');
 }
 
 function secret_hkdf(namespace)

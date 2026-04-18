@@ -27,6 +27,7 @@ const knex = require('knex');
 const make_logger_daily = require('./services/logger/make_logger_daily');
 const make_logger_stdout = require('./services/logger/make_logger_stdout');
 const make_mailer_fake = require('./services/mailer/make_mailer_fake');
+const make_mailer_mailjet = require('./services/mailer/make_mailer_mailjet');
 const make_mailer_resend = require('./services/mailer/make_mailer_resend');
 
 cli(main);
@@ -60,6 +61,11 @@ function make_mailer(logger)
     if (config.resend_key && config.resend_from) {
         logger.write('✉️ Settings Resend as mailer');
         return make_mailer_resend();
+    }
+
+    if (config.mailjet_key && config.mailjet_secret && config.mailjet_from) {
+        logger.write('✉️ Settings Mailjet as mailer');
+        return make_mailer_mailjet();
     }
 
     logger.write('⚠️ Using fake mailer');
