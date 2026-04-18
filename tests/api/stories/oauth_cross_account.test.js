@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
-const db = require('../../../db');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
+const db = require('../../../db');
 const nock = require('nock');
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
@@ -44,14 +44,15 @@ describe('OAuth connect blocked when provider belongs to another account | stori
             email_verified: false,
         });
 
-        await this.http_get_json('/auth/google?connect=1');
+        await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();
         await this.http_get_json(urlmod('/auth/google/callback', {state: sess.oauth_state, code: 'fake_code'}));
 
         const status = await this.http_get_json('/auth/status');
-        assert.strictEqual(status.error, 'Google account already linked to another user');
-        // User A is still authenticated as themselves
-        assert.strictEqual(status.authenticated, true);
+        assert.partialDeepStrictEqual(status, {
+            error: 'Google account already linked to another user',
+            authenticated: true, // User A is still authenticated as themselves
+        })
         assert.strictEqual(status.providers.find(v => v.type === 'oauth_google'), undefined);
     });
 
