@@ -29,6 +29,20 @@ describe('resolve_yaml_vars', function () {
         assert.strictEqual(actual, 'ab');
     });
 
+    it('removes object key when value is a missing bare variable', function () {
+        const input = {a: '${MISSING}', b: 'keep'};
+        const actual = resolve_yaml_vars(input);
+        assert.strictEqual(actual, input);
+        assert.deepStrictEqual(actual, {b: 'keep'});
+    });
+
+    it('preserves object key when env var is explicitly empty', function () {
+        const input = {a: '${EMPTY}'};
+        const actual = resolve_yaml_vars(input, {EMPTY: ''});
+        assert.strictEqual(actual, input);
+        assert.deepStrictEqual(actual, {a: ''});
+    });
+
     it('works for nested structures', function () {
         const input = {
             a: ['${FOO}', {b: '${FOO}'}],

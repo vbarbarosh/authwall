@@ -1,3 +1,5 @@
+const UNSET = Symbol('resolve_yaml_vars.unset');
+
 /**
  * Resolves yaml variables in the for of ${VAR_NAME} inplace.
  */
@@ -9,8 +11,12 @@ function resolve_yaml_vars(input, vars = {})
 function resolve_yaml_vars_int(seen, input, vars = {})
 {
     if (typeof input === 'string') {
+        const match = input.match(/^\$\{([^}]+)}$/);
+        if (match && !Object.hasOwn(vars, match[1])) {
+            return UNSET;
+        }
         return input.replace(/\$\{([^}]+)}/g, function (_, name) {
-            return vars[name] ?? '';
+            return Object.hasOwn(vars, name) ? vars[name] : '';
         });
     }
 
@@ -33,7 +39,13 @@ function resolve_yaml_vars_int(seen, input, vars = {})
         const entries = Object.entries(input);
         for (let i = 0, ii = entries.length; i < ii; ++i) {
             const [key, value] = entries[i];
-            input[key] = resolve_yaml_vars_int(seen, value, vars);
+            const resolved = resolve_yaml_vars_int(seen, value, vars);
+            if (resolved === UNSET) {
+                delete input[key];
+            }
+            else {
+                input[key] = resolved;
+            }
         }
         return input;
     }
