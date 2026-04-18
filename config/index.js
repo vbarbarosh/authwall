@@ -8,13 +8,7 @@ const parse_domains = require('../src/helpers/parse_domains');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
 
-if (process.env.AUTHWALL_MYSQL && process.env.AUTHWALL_POSTGRES) {
-    throw new Error('Set only one of AUTHWALL_MYSQL or AUTHWALL_POSTGRES');
-}
-
-const knexvars = process.env.AUTHWALL_POSTGRES ? knexfile.postgres
-    : process.env.AUTHWALL_MYSQL ? knexfile.mysql
-    : knexfile.sqlite;
+const knexvars = get_knexvars();
 
 const data_dir = fs_path_resolve(__dirname, '../data');
 const logs_dir = fs_path_resolve(__dirname, '../data/logs');
@@ -243,6 +237,24 @@ function validate_secret(secret, source)
     if (secret.length < 32) {
         throw new Error(`${source} must be at least 32 characters`);
     }
+}
+
+function get_knexvars()
+{
+    const db = process.env.AUTHWALL_DB;
+    if (!db) {
+        return knexfile.sqlite;
+    }
+
+    if (db.startsWith('mysql://')) {
+        return knexfile.mysql;
+    }
+
+    if (db.startsWith('postgres://') || db.startsWith('postgresql://')) {
+        return knexfile.postgres;
+    }
+
+    throw new Error('AUTHWALL_DB must use mysql://, postgres://, or postgresql://');
 }
 
 module.exports = config;

@@ -30,7 +30,7 @@ module.exports = {
     mysql: {
         client: 'mysql2',
         connection: {
-            uri: process.env.AUTHWALL_MYSQL,
+            uri: process.env.AUTHWALL_DB,
         },
         pool: {
             min: 2,
@@ -57,7 +57,7 @@ module.exports = {
 
     postgres: {
         client: 'pg',
-        connection: process.env.AUTHWALL_POSTGRES,
+        connection: process.env.AUTHWALL_DB,
         pool: {
             min: 2,
             max: 10,

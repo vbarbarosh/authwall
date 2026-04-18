@@ -8,8 +8,8 @@ services:
     environment:
       AUTHWALL_PUBLIC_URL: http://127.0.0.1:3000
       AUTHWALL_TARGET_URL: http://echo-server:8080
-      AUTHWALL_MYSQL: mysql://authwall:authwall@mysql/authwall
-      # AUTHWALL_POSTGRES: postgres://authwall:authwall@postgres/authwall
+      AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall
+      # AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
     ports:
       - 3000:3000
     volumes:
