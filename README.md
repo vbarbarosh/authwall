@@ -35,6 +35,28 @@ sequenceDiagram
     authwall -->> client: response
 ```
 
+## Quick Start
+
+Open registration (username + password only):
+
+Public → Sign up → Signed in → Proxy works
+
+```
+docker run --rm -p 3000:3000 \
+    -e AUTHWALL_TARGET_URL=https://app.test \
+    vbarbarosh/authwall
+```
+
+Open registration (username/email + password and magic links):
+
+```
+docker run --rm -p 3000:3000 \
+    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_RESEND_KEY=re_xxx \
+    -e AUTHWALL_RESEND_FROM="Authwall <noreply@app.test>" \
+    vbarbarosh/authwall
+```
+
 ## Secret Management
 
 `AUTHWALL_SECRET` is optional.
