@@ -2,7 +2,7 @@
 
 const bcrypt = require('bcrypt');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
-const config = require('../config2');
+const config = require('../config');
 
 cli(main);
 
