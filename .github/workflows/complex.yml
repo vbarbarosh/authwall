@@ -70,8 +70,7 @@ jobs:
         done
     - name: Run all tests
       env:
-        AUTHWALL_MYSQL: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || '' }}
-        AUTHWALL_POSTGRES: ${{ matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
+        AUTHWALL_DB: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
