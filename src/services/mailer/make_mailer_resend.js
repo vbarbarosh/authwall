@@ -3,11 +3,11 @@ const resend = require('resend');
 
 function make_mailer_resend()
 {
-    let client = new resend.Resend(config.resend_key);
+    let client = new resend.Resend(config.mailer.resend.key);
 
     return {
         send: async function ({to, subject, text}) {
-            const out = await client.emails.send({from: config.resend_from, to, subject, text});
+            const out = await client.emails.send({from: config.mailer.resend.from, to, subject, text});
             // {
             //     "data": null,
             //     "error": {

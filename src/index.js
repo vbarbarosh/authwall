@@ -59,21 +59,23 @@ function make_logger()
 
 function make_mailer(logger)
 {
-    if (config.resend_key && config.resend_from) {
+    if (!config.mailer.enabled) {
+        logger.write('⚠️ Mailer is disabled');
+        return make_mailer_fake();
+    }
+
+    switch (config.mailer.provider) {
+    case 'resend':
         logger.write('✉️ Settings Resend as mailer');
         return make_mailer_resend();
-    }
-
-    if (config.mailjet_key && config.mailjet_secret && config.mailjet_from) {
+    case 'mailjet':
         logger.write('✉️ Settings Mailjet as mailer');
         return make_mailer_mailjet();
-    }
-
-    if (config.ses_region && config.ses_key && config.ses_secret && config.ses_from) {
+    case 'ses':
         logger.write('✉️ Settings SES as mailer');
         return make_mailer_ses();
+    default:
+        logger.write('⚠️ Using fake mailer');
+        return make_mailer_fake();
     }
-
-    logger.write('⚠️ Using fake mailer');
-    return make_mailer_fake();
 }

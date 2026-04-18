@@ -4,16 +4,24 @@ const make_mailer_mailjet = require('./make_mailer_mailjet');
 const nock = require('nock');
 
 describe('make_mailer_mailjet', function () {
+    const original = {
+        key: config.mailer.mailjet.key,
+        secret: config.mailer.mailjet.secret,
+        from: config.mailer.mailjet.from,
+    };
 
     beforeEach(function () {
         nock.cleanAll();
-        config.mailjet_key = 'mailjet-key';
-        config.mailjet_secret = 'mailjet-secret';
-        config.mailjet_from = 'Authwall <authwall@example.com>';
+        config.mailer.mailjet.key = 'mailjet-key';
+        config.mailer.mailjet.secret = 'mailjet-secret';
+        config.mailer.mailjet.from = 'Authwall <authwall@example.com>';
     });
 
     afterEach(function () {
         nock.cleanAll();
+        config.mailer.mailjet.key = original.key;
+        config.mailer.mailjet.secret = original.secret;
+        config.mailer.mailjet.from = original.from;
     });
 
     it('sends expected payload', async function () {

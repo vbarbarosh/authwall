@@ -6,12 +6,12 @@ function make_mailer_mailjet()
 {
     return {
         send: async function ({to, subject, text}) {
-            const from = parse_mailjet_email_address(config.mailjet_from);
+            const from = parse_mailjet_email_address(config.mailer.mailjet.from);
             const recipient = parse_mailjet_email_address(to);
             const params = {
                 auth: {
-                    username: config.mailjet_key,
-                    password: config.mailjet_secret,
+                    username: config.mailer.mailjet.key,
+                    password: config.mailer.mailjet.secret,
                 },
             };
             const data = {

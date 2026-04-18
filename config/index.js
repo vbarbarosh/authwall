@@ -151,25 +151,26 @@ const config = {
         },
     }),
 
-    // Resend mailer
-    resend_key: process.env.AUTHWALL_RESEND_KEY,
-    resend_from: process.env.AUTHWALL_RESEND_FROM,
-
-    // Mailjet mailer
-    mailjet_key: process.env.AUTHWALL_MAILJET_KEY,
-    mailjet_secret: process.env.AUTHWALL_MAILJET_SECRET,
-    mailjet_from: process.env.AUTHWALL_MAILJET_FROM,
-
-    // Amazon SES mailer
-    ses_region: process.env.AUTHWALL_SES_REGION || 'us-east-1',
-    ses_key: process.env.AUTHWALL_SES_KEY,
-    ses_secret: process.env.AUTHWALL_SES_SECRET,
-    ses_session_token: process.env.AUTHWALL_SES_SESSION_TOKEN,
-    ses_from: process.env.AUTHWALL_SES_FROM,
-
-    mailer: {
-        enabled: true,
-    },
+    mailer: make(settings.mailer, {
+        enabled: {type: 'bool', default: true},
+        provider: {type: 'enum', options: ['auto', 'fake', 'resend', 'mailjet', 'ses']},
+        resend: {
+            key: {type: 'str', nullable: true},
+            from: {type: 'str', nullable: true},
+        },
+        mailjet: {
+            key: {type: 'str', nullable: true},
+            secret: {type: 'str', nullable: true},
+            from: {type: 'str', nullable: true},
+        },
+        ses: {
+            region: {type: 'str', default: 'us-east-1', before: v => v || undefined},
+            key: {type: 'str', nullable: true},
+            secret: {type: 'str', nullable: true},
+            session_token: {type: 'str', nullable: true},
+            from: {type: 'str', nullable: true},
+        },
+    }),
 };
 
 if (config.flows.password.enabled) {
@@ -203,19 +204,7 @@ if (config.cookie.same_site === 'none' && !config.cookie.secure) {
     throw new Error('cookie.same_site=none requires cookie.secure=true');
 }
 
-if (!!config.resend_key !== !!config.resend_from) {
-    throw new Error('Both AUTHWALL_RESEND_KEY and AUTHWALL_RESEND_FROM must be set together');
-}
-
-if ([config.mailjet_key, config.mailjet_secret, config.mailjet_from].some(Boolean)
-    && ![config.mailjet_key, config.mailjet_secret, config.mailjet_from].every(Boolean)) {
-    throw new Error('AUTHWALL_MAILJET_KEY, AUTHWALL_MAILJET_SECRET, and AUTHWALL_MAILJET_FROM must be set together');
-}
-
-if ([config.ses_key, config.ses_secret, config.ses_from].some(Boolean)
-    && ![config.ses_key, config.ses_secret, config.ses_from].every(Boolean)) {
-    throw new Error('AUTHWALL_SES_KEY, AUTHWALL_SES_SECRET, and AUTHWALL_SES_FROM must be set together');
-}
+validate_mailer(config.mailer);
 
 function secret_hkdf(namespace)
 {
@@ -260,6 +249,39 @@ function validate_secret(secret, source)
     if (secret.length < 32) {
         throw new Error(`${source} must be at least 32 characters`);
     }
+}
+
+function validate_mailer(mailer)
+{
+    if (!mailer.enabled) {
+        return;
+    }
+
+    if (mailer.provider === 'auto' || mailer.provider === 'fake') {
+        return;
+    }
+
+    if (mailer.provider === 'resend') {
+        if (!mailer.resend.key || !mailer.resend.from) {
+            throw new Error('mailer.provider=resend requires mailer.resend.key and mailer.resend.from');
+        }
+        return;
+    }
+
+    if (mailer.provider === 'mailjet') {
+        if (!mailer.mailjet.key || !mailer.mailjet.secret || !mailer.mailjet.from) {
+            throw new Error('mailer.provider=mailjet requires mailer.mailjet.key, mailer.mailjet.secret, and mailer.mailjet.from');
+        }
+        return;
+    }
+
+    if (mailer.provider === 'ses') {
+        if (!mailer.ses.key || !mailer.ses.secret || !mailer.ses.from) {
+            throw new Error('mailer.provider=ses requires mailer.ses.key, mailer.ses.secret, and mailer.ses.from');
+        }
+    }
+
+    throw new Error(`Invalid mailer.provider: ${mailer.provider}`);
 }
 
 function get_knexvars()

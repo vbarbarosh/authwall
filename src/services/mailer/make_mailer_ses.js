@@ -7,9 +7,9 @@ function make_mailer_ses({now = () => new Date()} = {})
 {
     return {
         send: async function ({to, subject, text}) {
-            const endpoint = `https://email.${config.ses_region}.amazonaws.com/v2/email/outbound-emails`;
+            const endpoint = `https://email.${config.mailer.ses.region}.amazonaws.com/v2/email/outbound-emails`;
             const body = JSON.stringify({
-                FromEmailAddress: config.ses_from,
+                FromEmailAddress: config.mailer.ses.from,
                 Destination: {
                     ToAddresses: parse_ses_recipients(to),
                 },
@@ -32,10 +32,10 @@ function make_mailer_ses({now = () => new Date()} = {})
                 method: 'POST',
                 url: endpoint,
                 body,
-                region: config.ses_region,
-                key: config.ses_key,
-                secret: config.ses_secret,
-                session_token: config.ses_session_token,
+                region: config.mailer.ses.region,
+                key: config.mailer.ses.key,
+                secret: config.mailer.ses.secret,
+                session_token: config.mailer.ses.session_token,
                 now: now(),
             });
             const out = await http_post_json(endpoint, JSON.parse(body), {headers}).catch(throw_ses_error);

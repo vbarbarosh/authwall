@@ -64,6 +64,26 @@ flows:
     client_secret: ${AUTHWALL_GITHUB_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_GITHUB_REDIRECT_URL}
 
+mailer:
+  enabled: true
+  provider: ${AUTHWALL_MAILER}
+
+  resend:
+    key: ${AUTHWALL_RESEND_KEY}
+    from: ${AUTHWALL_RESEND_FROM}
+
+  mailjet:
+    key: ${AUTHWALL_MAILJET_KEY}
+    secret: ${AUTHWALL_MAILJET_SECRET}
+    from: ${AUTHWALL_MAILJET_FROM}
+
+  ses:
+    region: ${AUTHWALL_SES_REGION}
+    key: ${AUTHWALL_SES_KEY}
+    secret: ${AUTHWALL_SES_SECRET}
+    session_token: ${AUTHWALL_SES_SESSION_TOKEN}
+    from: ${AUTHWALL_SES_FROM}
+
 targets:
   apps.authwall.test: http://apps:8080
   echo.authwall.test: http://echo:8080
