@@ -32,7 +32,7 @@ async function bootstrap_database()
         version = await db.raw('SELECT sqlite_version() AS version').then(v => v[0].version);
         break;
     case 'mysql':
-        version = await db.raw('SELECT VERSION() AS version').then(v => v[0].version);
+        version = await db.raw('SELECT VERSION() AS version').then(v => v[0][0].version);
         break;
     case 'postgres':
         version = await db.raw('SELECT VERSION() AS version').then(v => v.rows[0].version);
