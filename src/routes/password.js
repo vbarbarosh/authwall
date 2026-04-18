@@ -59,6 +59,9 @@ async function sign_in_post(req, res)
     const is_email = username.includes('@');
     let ident;
     if (is_email) {
+        if (!config.flows.password.allow_email) {
+            throw new UserFriendlyError('Invalid username or password');
+        }
         const email_normalized = normalize_email(username);
         if (!email_normalized) {
             throw new UserFriendlyError('Invalid username or password');
@@ -67,6 +70,9 @@ async function sign_in_post(req, res)
         ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     }
     else {
+        if (!config.flows.password.allow_username) {
+            throw new UserFriendlyError('Invalid username or password');
+        }
         const username_normalized = normalize_username(username);
         if (!username_normalized) {
             throw new UserFriendlyError('Invalid username or password');
@@ -99,6 +105,13 @@ async function sign_up_post(req, res)
 
     if ((!email && !username) || !password) {
         throw new UserFriendlyError('Missing fields');
+    }
+
+    if (email && !config.flows.password.allow_email) {
+        throw new UserFriendlyError('Email sign-up is disabled');
+    }
+    if (username && !config.flows.password.allow_username) {
+        throw new UserFriendlyError('Username sign-up is disabled');
     }
 
     if (password !== password_confirm) {
@@ -191,6 +204,10 @@ async function sign_up_post(req, res)
 // POST /auth/password-reset/request
 async function password_reset_request_post(req, res)
 {
+    if (!config.mailer.enabled) {
+        throw new UserFriendlyError('Password reset is disabled');
+    }
+
     if (!req.body.email) {
         throw new UserFriendlyError('Missing email');
     }
@@ -223,6 +240,10 @@ async function password_reset_request_post(req, res)
 // POST /auth/password-reset/confirm
 async function password_reset_confirm_post(req, res)
 {
+    if (!config.mailer.enabled) {
+        throw new UserFriendlyError('Password reset is disabled');
+    }
+
     const {token, password, password_confirm} = req.body;
 
     if (!token || !password || !password_confirm) {

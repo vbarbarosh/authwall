@@ -1,4 +1,5 @@
 const SessionStore = require('./helpers/SessionStore');
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const config = require('../config');
 const express = require('express');
@@ -14,7 +15,6 @@ const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
-const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 
 const LOGGED_HEADERS = new Set([
     'user-agent',
@@ -117,8 +117,10 @@ async function create_app()
     }
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
-    express_routes(app, require('./routes/email_change'));
-    express_routes(app, require('./routes/email_verify'));
+    if (config.mailer.enabled) {
+        express_routes(app, require('./routes/email_change'));
+        express_routes(app, require('./routes/email_verify'));
+    }
 
     // Support for mountable design
     app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));

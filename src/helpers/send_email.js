@@ -7,6 +7,10 @@ const config = require('../../config');
 // ⚠️ Do not send emails to non-verified email addresses.
 async function send_email(params)
 {
+    if (!config.mailer.enabled) {
+        throw new Error('Email delivery is disabled');
+    }
+
     const {name, to, user_id, user, placeholders} = params;
 
     const email_and_name = to ?? await get_user_email_and_name(user_id ?? user.id);

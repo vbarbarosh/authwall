@@ -154,6 +154,9 @@ const config = {
     // Resend mailer
     resend_key: process.env.AUTHWALL_RESEND_KEY,
     resend_from: process.env.AUTHWALL_RESEND_FROM,
+    mailer: {
+        enabled: true,
+    },
 };
 
 if (config.flows.password.enabled) {
