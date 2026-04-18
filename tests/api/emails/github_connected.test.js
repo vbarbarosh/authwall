@@ -15,10 +15,6 @@ describe('emails • github_connected', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-    });
-
     it('should be sent after connecting a GitHub account from profile', async function () {
 
         mock_github();

@@ -21,11 +21,6 @@ describe('emails • new_sign_in', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-        config.flows.github.enabled = false;
-    });
-
     it('should be sent after successful sign-in using username and password', async function () {
         await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 

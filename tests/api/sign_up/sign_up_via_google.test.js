@@ -1,6 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
-const nock = require('nock');
+const mock_google = require('../../mock_google');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('sign up via google | scenarios', function () {
@@ -9,26 +9,7 @@ describe('sign up via google | scenarios', function () {
         config.flows.google.enabled = true;
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
-
-        nock.cleanAll();
-
-        nock('https://oauth2.googleapis.com')
-            .post('/token')
-            .reply(200, {access_token: 'fake-token'});
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .reply(200, {
-                sub: 'google-user-123',
-                name: 'Test User',
-                picture: 'https://example.com/avatar.jpg',
-                email: 'test@example.com',
-                email_verified: true,
-            });
-    });
-
-    afterEach(function () {
-        config.flows.google.enabled = false;
+        mock_google();
     });
 
     it('signup via google should mark the email as verified', async function () {

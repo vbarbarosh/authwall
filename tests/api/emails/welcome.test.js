@@ -16,11 +16,6 @@ describe('emails • welcome', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-        config.flows.github.enabled = false;
-    });
-
     it('should be sent after sign up via magic link', async function () {
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});

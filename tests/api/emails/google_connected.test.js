@@ -15,10 +15,6 @@ describe('emails • google_connected', function () {
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-    });
-
     it('should be sent after connecting a Google account from profile', async function () {
 
         mock_google();
