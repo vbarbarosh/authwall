@@ -1,6 +1,7 @@
 const Promise = require('bluebird');
 const als = require('./als');
 const db = require('../../db');
+const plural = require('@vbarbarosh/node-helpers/src/plural');
 
 async function bootstrap_database()
 {
@@ -44,7 +45,7 @@ async function bootstrap_database()
 
     const [batch, migrations] = await db.migrate.latest();
     if (migrations.length) {
-        als.logger.write(`Applied ${migrations.length} migration(s)`);
+        als.logger.write(plural(migrations.length, 'Applied # migration', 'Applied # migrations'));
     }
 
     als.logger.write(`✅ ${db.client.config.custom.label} is ready`);
