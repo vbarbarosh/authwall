@@ -1,5 +1,6 @@
 /.claude
 /.env
+/.idea
 /data
 /node_modules
 
