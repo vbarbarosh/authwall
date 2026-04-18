@@ -160,6 +160,13 @@ const config = {
     mailjet_secret: process.env.AUTHWALL_MAILJET_SECRET,
     mailjet_from: process.env.AUTHWALL_MAILJET_FROM,
 
+    // Amazon SES mailer
+    ses_region: process.env.AUTHWALL_SES_REGION || 'us-east-1',
+    ses_key: process.env.AUTHWALL_SES_KEY,
+    ses_secret: process.env.AUTHWALL_SES_SECRET,
+    ses_session_token: process.env.AUTHWALL_SES_SESSION_TOKEN,
+    ses_from: process.env.AUTHWALL_SES_FROM,
+
     mailer: {
         enabled: true,
     },
@@ -201,8 +208,13 @@ if (!!config.resend_key !== !!config.resend_from) {
 }
 
 if ([config.mailjet_key, config.mailjet_secret, config.mailjet_from].some(Boolean)
-        && ![config.mailjet_key, config.mailjet_secret, config.mailjet_from].every(Boolean)) {
+    && ![config.mailjet_key, config.mailjet_secret, config.mailjet_from].every(Boolean)) {
     throw new Error('AUTHWALL_MAILJET_KEY, AUTHWALL_MAILJET_SECRET, and AUTHWALL_MAILJET_FROM must be set together');
+}
+
+if ([config.ses_key, config.ses_secret, config.ses_from].some(Boolean)
+    && ![config.ses_key, config.ses_secret, config.ses_from].every(Boolean)) {
+    throw new Error('AUTHWALL_SES_KEY, AUTHWALL_SES_SECRET, and AUTHWALL_SES_FROM must be set together');
 }
 
 function secret_hkdf(namespace)

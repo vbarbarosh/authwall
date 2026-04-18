@@ -29,6 +29,7 @@ const make_logger_stdout = require('./services/logger/make_logger_stdout');
 const make_mailer_fake = require('./services/mailer/make_mailer_fake');
 const make_mailer_mailjet = require('./services/mailer/make_mailer_mailjet');
 const make_mailer_resend = require('./services/mailer/make_mailer_resend');
+const make_mailer_ses = require('./services/mailer/make_mailer_ses');
 
 cli(main);
 
@@ -66,6 +67,11 @@ function make_mailer(logger)
     if (config.mailjet_key && config.mailjet_secret && config.mailjet_from) {
         logger.write('✉️ Settings Mailjet as mailer');
         return make_mailer_mailjet();
+    }
+
+    if (config.ses_region && config.ses_key && config.ses_secret && config.ses_from) {
+        logger.write('✉️ Settings SES as mailer');
+        return make_mailer_ses();
     }
 
     logger.write('⚠️ Using fake mailer');
