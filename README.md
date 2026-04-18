@@ -37,9 +37,9 @@ sequenceDiagram
 
 ## Quick Start
 
-Open registration (username + password only):
-
 Public → Sign up → Signed in → Proxy works
+
+Open registration (username + password only):
 
 ```
 docker run --rm -p 3000:3000 \
