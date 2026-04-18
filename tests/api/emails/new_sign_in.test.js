@@ -3,13 +3,12 @@ const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const db = require('../../../db');
-const nock = require('nock');
+const mock_github = require('../../mock_github');
+const mock_google = require('../../mock_google');
 const normalize_email = require('../../../src/helpers/normalize/normalize_email');
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../../../src/helpers/models/users_create');
-const mock_google = require('../../mock_google');
-const mock_github = require('../../mock_github');
 
 describe('emails • new_sign_in', function () {
 
