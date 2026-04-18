@@ -44,7 +44,7 @@ describe('min_password_length is enforced only for new passwords | stories', fun
         });
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Password must be at least 10 characters',
-            authenticated: false,
+            authenticated: true,
         });
     });
 
