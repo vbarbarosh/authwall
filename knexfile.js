@@ -1,3 +1,11 @@
+const pg = require('pg');
+
+// int8 → JS number
+//
+// console.log(await db('sessions').count());
+// [ { count: '3' } ] → [ { count: 3 } ]
+pg.types.setTypeParser(20, val => parseInt(val, 10));
+
 module.exports = {
 
     sqlite: {
