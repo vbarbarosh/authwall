@@ -43,7 +43,7 @@ describe('emails • new_sign_in', function () {
         assert.deepStrictEqual(actual, expected);
     });
 
-    it('should be sent after successful sign-in using magick link', async function () {
+    it('should be sent after successful sign-in using magic link', async function () {
         await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
@@ -55,7 +55,7 @@ describe('emails • new_sign_in', function () {
         assert.deepStrictEqual(actual, expected);
     });
 
-    it('should be sent after successful sign-in using magick code', async function () {
+    it('should be sent after successful sign-in using magic code', async function () {
         await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});

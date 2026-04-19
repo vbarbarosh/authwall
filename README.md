@@ -1,6 +1,6 @@
 <p>
 <a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/pulls/vbarbarosh/authwall" /></a>
-<a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/v/vbarbarosh/authwall/2?label=docker%20image%20ver." /></a>
+<a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/v/vbarbarosh/authwall?label=docker%20image%20ver." /></a>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall"><img src="https://img.shields.io/github/last-commit/vbarbarosh/authwall" /></a>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall"><img src="https://img.shields.io/github/stars/vbarbarosh/authwall?style=flat" /></a>
 <br>
@@ -39,7 +39,7 @@ sequenceDiagram
 
 ```
 Public → Sign up → Signed in → Proxied resource
-````
+```
 
 Authwall runs with zero configuration. By default, it uses SQLite and enables open registration.
 
@@ -51,7 +51,7 @@ Authwall runs with zero configuration. By default, it uses SQLite and enables op
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_TARGET_URL=https://app.test \
     vbarbarosh/authwall
-````
+```
 
 **Behavior:**
 
