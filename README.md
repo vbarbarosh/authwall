@@ -1,6 +1,6 @@
 <p>
 <a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/pulls/vbarbarosh/authwall" /></a>
-<a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/v/vbarbarosh/authwall?label=docker%20image%20ver." /></a>
+<a target="_blank" href="https://hub.docker.com/r/vbarbarosh/authwall"><img src="https://img.shields.io/docker/v/vbarbarosh/authwall?sort=semver&label=docker%20image%20ver." /></a>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall"><img src="https://img.shields.io/github/last-commit/vbarbarosh/authwall" /></a>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall"><img src="https://img.shields.io/github/stars/vbarbarosh/authwall?style=flat" /></a>
 <br>
