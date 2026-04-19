@@ -5,7 +5,6 @@ Prefer turning each stable story into a normal `tests/api/**/*.test.js` case.
 
 Testable now
 
-- [x] user signed up using Google with verified email; later he tries to sign in using email + password; it should fail with "Invalid username or password" because no password was set → `oauth_no_password.test.js`
 - [x] prevent user from removing the last authentication method → `last_auth_method.test.js`
   - [x] user signed up using Google, then connected GitHub, then disconnected Google; GitHub should not be disconnectable → `last_auth_method.test.js`
 - [x] edge case: user signed up using Google, then connected GitHub, then disconnected Google → `google_re_signup.test.js`
