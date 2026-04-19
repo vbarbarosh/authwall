@@ -52,22 +52,6 @@ jobs:
       run: npx playwright install --with-deps
 #    - name: Run Playwright tests
 #      run: npx playwright test
-    - name: Wait for MySQL
-      if: matrix.db == 'mysql'
-      run: |
-        for i in {1..30}; do
-          mysqladmin ping -h 127.0.0.1 -u root -proot && break
-          echo Waiting for MySQL...
-          sleep 2
-        done
-    - name: Wait for Postgres
-      if: matrix.db == 'postgres'
-      run: |
-        for i in {1..30}; do
-          pg_isready -h 127.0.0.1 -p 5432 -U authwall -d authwall && break
-          echo Waiting for Postgres...
-          sleep 2
-        done
     - name: Run all tests
       env:
         AUTHWALL_DB: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
