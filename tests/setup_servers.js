@@ -202,6 +202,28 @@ function create_client(base_url)
             }
 
             if (no_redirects) {
+                // axios.AxiosHeaders → plain object, to simplify tests:
+                //
+                // assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/health'), {
+                //     status: 200,
+                //     statusText: 'OK',
+                //     data: 'OK',
+                //     headers: new axios.AxiosHeaders({
+                //         'x-authwall-version': pkg.version,
+                //     }),
+                // });
+                //
+                // vvv
+                //
+                // assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/health'), {
+                //     status: 200,
+                //     statusText: 'OK',
+                //     data: 'OK',
+                //     headers: {
+                //         'x-authwall-version': pkg.version,
+                //     },
+                // });
+                res.headers = JSON.parse(JSON.stringify(res.headers));
                 return res;
             }
 
