@@ -31,6 +31,8 @@ module.exports = {
         client: 'mysql2',
         connection: {
             uri: process.env.AUTHWALL_DB,
+            charset: 'utf8mb4',
+            timezone: 'Z',
         },
         pool: {
             min: 2,
