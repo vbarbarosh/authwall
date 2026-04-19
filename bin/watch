@@ -8,5 +8,6 @@ script=`realpath $0`
 scriptdir=`dirname $script`
 scriptname=`basename $script`
 
-cd $scriptdir
+cd $scriptdir/..
+
 npm run watch
