@@ -1,4 +1,4 @@
-name: Complex Tests
+name: Master
 on:
   push:
     branches: [ master ]
