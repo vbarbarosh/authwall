@@ -18,10 +18,14 @@ exports.up = async function (knex) {
         table.string('ip', 64).nullable();
         table.string('ua', 512).nullable();
         table.text('custom').notNullable();
+
+        // dates
         table.timestamp('created_at').notNullable();
 
         // constraints
         table.unique(['uid']);
+
+        // foreign keys
         table.foreign('user_id').references('id').inTable('users').onDelete('RESTRICT');
 
         // indexes

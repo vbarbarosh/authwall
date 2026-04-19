@@ -7,14 +7,26 @@ const utf8mb4_bin = require('../utf8mb4_bin');
 exports.up = async function (knex) {
     await knex.schema.createTable('email_change_tokens', function (table) {
         table.increments('id');
-        table.integer('user_id').unsigned().notNullable().index().references('id').inTable('users').onDelete('RESTRICT');
+        table.integer('user_id').unsigned().notNullable();
         utf8mb4_bin(table.string('email_normalized', 255).notNullable());
-        table.string('token_hash', 64).notNullable().unique();
+        table.string('token_hash', 64).notNullable();
+
+        // dates
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();
         table.timestamp('expires_at').notNullable();
         table.timestamp('used_at').nullable();
 
+        // constraints
+        table.unique(['token_hash']);
+
+        // foreign keys
+        table.foreign('user_id').references('id').inTable('users').onDelete('RESTRICT');
+
+        // indexes
+        table.index(['user_id']);
+
+        // composite indexes
         // Rate-limit: prevent spamming email change requests
         table.index(['email_normalized', 'created_at']);
     });

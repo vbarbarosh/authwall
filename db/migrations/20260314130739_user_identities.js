@@ -7,19 +7,30 @@ const utf8mb4_bin = require('../utf8mb4_bin');
 exports.up = async function (knex) {
     await knex.schema.createTable('user_identities', function (table) {
         table.increments('id');
-        utf8mb4_bin(table.string('uid', 32).notNullable().unique());
-        table.integer('user_id').unsigned().notNullable().index().references('id').inTable('users').onDelete('RESTRICT');
-        // table.enum('type', ['username', 'email', 'google', 'apple', 'microsoft', 'phone']).notNullable();
+        utf8mb4_bin(table.string('uid', 32).notNullable());
+        table.integer('user_id').unsigned().notNullable();
         utf8mb4_bin(table.string('type', 32).notNullable());
         table.string('value', 255).nullable().comment('Original value, but some providers (like Google OAuth) has nothing meaningful for this field');
         utf8mb4_bin(table.string('value_normalized', 255).notNullable());
+
+        // dates
         table.timestamp('created_at').notNullable();
         table.timestamp('updated_at').notNullable();
-        table.timestamp('verified_at').nullable().index();
+        table.timestamp('verified_at').nullable();
+
+        // unique
+        table.unique(['uid']);
         // prevent the same username linking to multiple users
         // prevent the same email linking to multiple users
         // prevent the same Google account linking to multiple users
-        table.unique(['type', 'value_normalized'])
+        table.unique(['type', 'value_normalized']);
+
+        // foreign keys
+        table.foreign('user_id').references('id').inTable('users').onDelete('RESTRICT');
+
+        // indexes
+        table.index(['user_id']);
+        table.index(['verified_at']);
     });
 };
 
