@@ -45,6 +45,8 @@ const config = {
         [const_email.welcome_and_confirm_email]: `${emails_dir}/welcome-and-confirm-email.txt`,
 
         [const_email.magic_link]: `${emails_dir}/magic-link.txt`,
+        [const_email.magic_link_without_code]: `${emails_dir}/magic-link-without-code.txt`,
+        [const_email.magic_link_without_link]: `${emails_dir}/magic-link-without-link.txt`,
         [const_email.password_reset]: `${emails_dir}/password-reset.txt`,
 
         [const_email.confirm_email]: `${emails_dir}/confirm-email.txt`,

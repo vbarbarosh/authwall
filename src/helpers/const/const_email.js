@@ -3,6 +3,8 @@ const const_email = {
     welcome_and_confirm_email: 'welcome_and_confirm_email',
 
     magic_link: 'magic_link',
+    magic_link_without_code: 'magic_link_without_code',
+    magic_link_without_link: 'magic_link_without_link',
     password_reset: 'password_reset',
 
     confirm_email: 'confirm_email',
