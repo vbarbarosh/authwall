@@ -20,5 +20,18 @@ RUN npm ci --omit=dev
 
 COPY --chown=node:node . .
 
+ARG AUTHWALL_CREATED
+ARG AUTHWALL_REVISION
+ARG AUTHWALL_SOURCE="https://github.com/vbarbarosh/authwall"
+ARG AUTHWALL_VERSION
+
+LABEL org.opencontainers.image.title="vbarbarosh/authwall" \
+      org.opencontainers.image.description="Minimal login gateway for protecting internal apps" \
+      org.opencontainers.image.created="${AUTHWALL_CREATED}" \
+      org.opencontainers.image.revision="${AUTHWALL_REVISION}" \
+      org.opencontainers.image.source="${AUTHWALL_SOURCE}" \
+      org.opencontainers.image.version="${AUTHWALL_VERSION}" \
+      org.opencontainers.image.licenses="MIT"
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start"]

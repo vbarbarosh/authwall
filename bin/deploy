@@ -4,12 +4,23 @@
 # http://redsymbol.net/articles/unofficial-bash-strict-mode
 set -o nounset -o errexit -o pipefail
 
-script=`realpath $0`
-scriptdir=`dirname $script`
-scriptname=`basename $script`
+script=$(realpath $0)
+scriptdir=$(dirname $script)
+scriptname=$(basename $script)
 
 cd $scriptdir/..
 
-bin/build
+version=${VERSION:-$(node -p "require('./package.json').version")}
+major=${MAJOR:-${version%%.*}}
+revision=${REVISION:-$(git rev-parse --short=12 HEAD)}
+
+VERSION="$version" REVISION="$revision" bin/build \
+    -t vbarbarosh/authwall \
+    -t vbarbarosh/authwall:$version \
+    -t vbarbarosh/authwall:$major \
+    -t vbarbarosh/authwall:$revision
 
 docker push vbarbarosh/authwall
+docker push vbarbarosh/authwall:$version
+docker push vbarbarosh/authwall:$major
+docker push vbarbarosh/authwall:$revision

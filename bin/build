@@ -10,4 +10,18 @@ scriptname=`basename $script`
 
 cd $scriptdir/..
 
-docker build -t vbarbarosh/authwall .
+version=${VERSION:-$(node -p "require('./package.json').version")}
+revision=${REVISION:-$(git rev-parse --short=12 HEAD)}
+source=${SOURCE:-https://github.com/vbarbarosh/authwall}
+created=${CREATED:-$(date -u +%FT%TZ)}
+
+if [[ $# -eq 0 ]]; then
+    set -- -t vbarbarosh/authwall
+fi
+
+docker build \
+    --build-arg AUTHWALL_CREATED="$created" \
+    --build-arg AUTHWALL_REVISION="$revision" \
+    --build-arg AUTHWALL_SOURCE="$source" \
+    --build-arg AUTHWALL_VERSION="$version" \
+    "$@" .
