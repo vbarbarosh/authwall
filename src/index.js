@@ -41,7 +41,7 @@ async function main()
 
     await using logger = make_logger();
 
-    logger.write(`Authwall version: ${pkg.version}`);
+    logger.write(`[authwall_started] v${pkg.version}`);
 
     await using mailer = make_mailer(logger);
 
