@@ -1,16 +1,8 @@
 const assert = require('assert');
 const const_email = require('../../src/helpers/const/const_email');
+const pkg = require('../../package.json');
 
 describe('smoke tests', function () {
-
-    it('GET /auth/health', async function () {
-        const r = await this.client.get_json_no_redirects('/auth/health');
-        assert.partialDeepStrictEqual(r, {
-            status: 200,
-            statusText: 'OK',
-            data: 'OK',
-        });
-    });
 
     it('GET /auth/status', async function () {
         const status = await this.http_get_json('/auth/status');
@@ -18,6 +10,7 @@ describe('smoke tests', function () {
         assert.partialDeepStrictEqual(status, {
             error: null,
             authenticated: false,
+            version: pkg.version,
             csrf_token: session.csrf_token,
         });
     });
@@ -44,6 +37,26 @@ describe('smoke tests', function () {
             return;
         }
         assert.ok(false);
+    });
+
+    it('GET /auth/health', async function () {
+        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/health'), {
+            status: 200,
+            statusText: 'OK',
+            data: 'OK',
+            headers: {
+                'x-authwall-version': pkg.version,
+            },
+        });
+    });
+
+    it('GET /auth/sidecar', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/sidecar'), {
+            status: 200,
+            statusText: 'OK',
+            data: '',
+        });
     });
 
 });

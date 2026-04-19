@@ -30,6 +30,7 @@ const make_mailer_fake = require('./services/mailer/make_mailer_fake');
 const make_mailer_mailjet = require('./services/mailer/make_mailer_mailjet');
 const make_mailer_resend = require('./services/mailer/make_mailer_resend');
 const make_mailer_ses = require('./services/mailer/make_mailer_ses');
+const pkg = require('../package.json');
 
 cli(main);
 
@@ -39,6 +40,9 @@ async function main()
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     await using logger = make_logger();
+
+    logger.write(`Authwall version: ${pkg.version}`);
+
     await using mailer = make_mailer(logger);
 
     await als.run({db, logger, mailer}, async function () {

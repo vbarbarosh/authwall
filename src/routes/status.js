@@ -2,6 +2,7 @@ const config = require('../../config');
 const db = require('../../db');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
+const pkg = require('../../package.json');
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
@@ -63,6 +64,7 @@ async function status_get(req, res)
             authenticated: false,
             csrf_token: req.session.csrf_token,
             flows,
+            version: pkg.version,
         });
         return;
     }
@@ -79,6 +81,7 @@ async function status_get(req, res)
         providers: frontend_user_identities(await db('user_identities').where('user_id', req.session.user_id)),
         current_session_uid: req.sessionID,
         sessions: frontend_sessions(await db('sessions').where('user_id', req.session.user_id)),
+        version: pkg.version,
     });
 }
 

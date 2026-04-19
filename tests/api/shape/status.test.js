@@ -1,5 +1,6 @@
 const assert_shape = require('../../../src/helpers/assert/assert_shape');
 const config = require('../../../config');
+const pkg = require('../../../package.json');
 
 describe('shape • status', function () {
 
@@ -31,6 +32,7 @@ describe('shape • status', function () {
                 google: {},
                 github: {},
             },
+            version: pkg.version,
         };
         assert_shape(actual, expected);
     });
@@ -88,7 +90,8 @@ describe('shape • status', function () {
                     expires_at: String, // '2026-05-17T23:37:01.160Z',
                     last_seen_at: String, // '2026-04-17T23:37:01.160Z'
                 }
-            ]
+            ],
+            version: pkg.version,
         };
         assert_shape(actual, expected);
     });
