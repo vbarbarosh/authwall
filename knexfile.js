@@ -32,6 +32,7 @@ module.exports = {
         connection: {
             uri: process.env.AUTHWALL_DB,
             charset: 'utf8mb4',
+            collate: 'utf8mb4_unicode_ci',
             timezone: 'Z',
         },
         pool: {
