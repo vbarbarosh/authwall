@@ -399,7 +399,7 @@
           </a>
           <div class="divider" data-flow-divider="signin-oauth">or</div>
           <form id="si-form" method="post" class="form" action="/auth/sign-in" data-testid="signin-form" data-flow="password">
-            <input type="hidden" id="si-csrf" name="_csrf">
+            <input type="hidden" id="si-csrf" name="_csrf" data-testid="signin-csrf">
             <div class="field">
               <label for="si-user" id="si-user-label">Username or email</label>
               <input type="text" id="si-user" name="username" placeholder="you@example.com" autocomplete="username" required data-testid="signin-username">
@@ -449,11 +449,11 @@
           </a>
           <div class="divider" data-flow-divider="signup-oauth">or</div>
           <div data-flow="password" style="display:contents">
-          <div class="field" id="su-email-field">
+          <div class="field" id="su-email-field" data-testid="signup-email-field">
             <label for="su-email">Email address</label>
             <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
           </div>
-          <div class="field" id="su-user-field">
+          <div class="field" id="su-user-field" data-testid="signup-username-field">
             <label for="su-user">Username</label>
             <input type="text" id="su-user" placeholder="jsmith" autocomplete="username">
           </div>

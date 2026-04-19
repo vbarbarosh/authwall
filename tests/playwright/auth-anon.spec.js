@@ -53,8 +53,8 @@ test.describe('auth spa anonymous', function () {
         await page.goto('/auth/sign-up');
 
         await expect(page.getByTestId('signup-view')).toBeVisible();
-        await expect(page.locator('#su-email-field')).toBeHidden();
-        await expect(page.locator('#su-user-field')).toBeVisible();
+        await expect(page.getByTestId('signup-email-field')).toBeHidden();
+        await expect(page.getByTestId('signup-username-field')).toBeVisible();
     });
 
     test('unauthenticated user hitting profile is sent to sign-in', async function ({page}) {
@@ -82,7 +82,7 @@ test.describe('auth spa anonymous', function () {
         await page.goto('/auth/sign-in');
 
         await expect(page.getByTestId('signin-view')).toBeVisible();
-        await expect(page.locator('#si-csrf')).toHaveValue(/.+/);
+        await expect(page.getByTestId('signin-csrf')).toHaveValue(/.+/);
 
         await page.getByTestId('signin-username').fill('foo');
         await page.getByTestId('signin-password').fill('wrong-password');

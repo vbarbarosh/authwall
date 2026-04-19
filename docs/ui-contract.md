@@ -45,10 +45,13 @@ The following `data-testid` values are the supported Playwright contract:
 - `signin-form`
 - `signin-username`
 - `signin-password`
+- `signin-csrf`
 - `signin-submit`
 - `signin-google`
 - `signin-github`
 - `signup-view`
+- `signup-email-field`
+- `signup-username-field`
 - `signup-google`
 - `signup-github`
 - `profile-view`
