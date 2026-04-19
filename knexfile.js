@@ -43,10 +43,9 @@ module.exports = {
         //       }
         //     }
         //
-        connection: Object.create({
+        connection: Object.assign(Object.create({collate: 'utf8mb4_unicode_ci'}), {
             uri: process.env.AUTHWALL_DB,
             charset: 'utf8mb4',
-            collate: 'utf8mb4_unicode_ci',
             timezone: 'Z',
         }),
         pool: {
