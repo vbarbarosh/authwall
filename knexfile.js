@@ -43,6 +43,58 @@ module.exports = {
         //       }
         //     }
         //
+        // > How the Object.create hack works:
+        // >
+        // > The object shape:
+        // > Object.assign(Object.create({collate: 'utf8mb4_unicode_ci'}), {
+        // >     uri: ...,
+        // >     charset: 'utf8mb4',
+        // >     timezone: 'Z',
+        // > })
+        // > // Own properties:  { uri, charset, timezone }
+        // > // Prototype:       { collate: 'utf8mb4_unicode_ci' }
+        // >
+        // > Step 1 — knex's cloneDeep preserves the prototype
+        // > -------------------------------------------------
+        // >
+        // > In knex/lib/client.js:76:
+        // > this.connectionSettings = cloneDeep(config.connection || {});
+        // > Lodash cloneDeep copies the prototype chain intact, so connectionSettings.collate still resolves to 'utf8mb4_unicode_ci' via prototype lookup.
+        // >
+        // > Step 2 — mysql2 warning is silenced
+        // > -----------------------------------
+        // >
+        // > In mysql2/lib/connection_config.js:91-98:
+        // > for (const key in options) {           // iterates own + inherited
+        // >     if (!Object.prototype.hasOwnProperty.call(options, key)) continue;  // ← skips 'collate'
+        // >     if (validOptions[key] !== 1) {
+        // >         console.error(`Ignoring invalid configuration option...`);
+        // >     }
+        // > }
+        // > collate is not in validOptions, but because it lives on the prototype (not an own property),
+        // > hasOwnProperty returns false and the continue skips the warning entirely.
+        // >
+        // > Step 3 — knex DDL uses conn.collate via normal property access
+        // > --------------------------------------------------------------
+        // >
+        // > In knex/lib/dialects/mysql/schema/mysql-tablecompiler.js:36-45:
+        // > conn = client.connectionSettings;
+        // > const charset   = this.single.charset || conn.charset || '';   // own prop → 'utf8mb4'
+        // > const collation = this.single.collate  || conn.collate || '';  // prototype → 'utf8mb4_unicode_ci'
+        // >
+        // > if (charset)    sql += ` default character set ${charset}`;
+        // > if (collation)  sql += ` collate ${collation}`;
+        // > Normal conn.collate access walks the prototype chain, so it finds the value and emits:
+        // > CREATE TABLE ... DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        // >
+        // > Summary
+        // > -------
+        // >
+        // > Object.create({collate: …}) exploits the difference between for...in (which traverses prototypes)
+        // > and hasOwnProperty (which doesn't). mysql2's guard uses hasOwnProperty → prototype properties
+        // > are invisible to the warning check. But knex's table compiler uses plain property
+        // > access → prototype properties are fully visible. So collate silently flows through to DDL
+        // > generation while producing zero warnings.
         connection: Object.assign(Object.create({collate: 'utf8mb4_unicode_ci'}), {
             uri: process.env.AUTHWALL_DB,
             charset: 'utf8mb4',
