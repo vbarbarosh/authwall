@@ -29,12 +29,26 @@ module.exports = {
 
     mysql: {
         client: 'mysql2',
-        connection: {
+        // 🐵 Object.create – Just to mute the following warning:
+        //
+        // node_modules/mysql2/lib/connection_config.js
+        //
+        //     for (const key in options) {
+        //       if (!Object.prototype.hasOwnProperty.call(options, key)) continue;
+        //       if (validOptions[key] !== 1) {
+        //         // REVIEW: Should this be emitted somehow?
+        //         console.error(
+        //           `Ignoring invalid configuration option passed to Connection: ${key}. This is currently a warning, but in future versions of MySQL2, an error will be thrown if you pass an invalid configuration option to a Connection`
+        //         );
+        //       }
+        //     }
+        //
+        connection: Object.create({
             uri: process.env.AUTHWALL_DB,
             charset: 'utf8mb4',
             collate: 'utf8mb4_unicode_ci',
             timezone: 'Z',
-        },
+        }),
         pool: {
             min: 2,
             max: 10,
