@@ -1089,6 +1089,22 @@ function apply_flows(flows) {
                                  : allow_username                   ? 'Username'
                                  :                                    'Email';
     if (input) input.placeholder = (allow_username && !allow_email) ? 'jsmith' : 'you@example.com';
+
+    document.querySelectorAll('button[data-signup-mode="email"], button[data-signup-mode="email-username"]').forEach(el => {
+      el.classList.toggle('flow-hidden', !allow_email);
+    });
+    document.querySelectorAll('button[data-signup-mode="username"]').forEach(el => {
+      el.classList.toggle('flow-hidden', !allow_username);
+    });
+
+    const mode = su_get_mode();
+    if (!allow_email && mode !== 'username') {
+      su_apply_mode('username');
+    } else if (!allow_username && mode !== 'email') {
+      su_apply_mode('email');
+    } else {
+      su_apply_mode(mode);
+    }
   }
 }
 
@@ -1263,13 +1279,13 @@ function su_apply_mode(mode) {
     userField.style.display  = '';
   }
   // highlight active mode button
-  document.querySelectorAll('[data-signup-mode]').forEach(btn => {
+  document.querySelectorAll('button[data-signup-mode]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.signupMode === mode);
   });
 }
 
 // wire demo-bar mode toggle buttons
-document.querySelectorAll('[data-signup-mode]').forEach(btn => {
+document.querySelectorAll('button[data-signup-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
     su_apply_mode(btn.dataset.signupMode);
     showView('sign-up');

@@ -23,6 +23,40 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('signup-github')).toBeVisible();
     });
 
+    test('sign-up footer sign-in link returns to sign-in', async function ({page}) {
+        await page.goto('/auth/sign-up');
+
+        await page.getByRole('link', {name: 'Sign in'}).click();
+
+        await expect(page).toHaveURL('http://localhost:3000/auth/sign-in');
+        await expect(page.getByTestId('signin-view')).toBeVisible();
+        await expect(page.getByTestId('signup-view')).toBeHidden();
+    });
+
+    test('sign-up route hides email field when email password flow is disabled', async function ({page}) {
+        await page.route('/auth/status', route => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                error: null,
+                authenticated: false,
+                csrf_token: 'csrf',
+                flows: {
+                    password: {
+                        allow_username: true,
+                        allow_email: false,
+                        min_password_length: 8,
+                    },
+                },
+            }),
+        }));
+
+        await page.goto('/auth/sign-up');
+
+        await expect(page.getByTestId('signup-view')).toBeVisible();
+        await expect(page.locator('#su-email-field')).toBeHidden();
+        await expect(page.locator('#su-user-field')).toBeVisible();
+    });
+
     test('unauthenticated user hitting profile is sent to sign-in', async function ({page}) {
         await page.goto('/auth/profile');
 
