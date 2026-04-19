@@ -1,0 +1,80 @@
+name: Production Release
+
+on:
+  push:
+    branches: [ production ]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        db: [sqlite, mysql, postgres]
+    services:
+      echo:
+        image: jmalloc/echo-server
+        ports:
+          - 8080:8080
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: authwall
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: authwall
+          POSTGRES_USER: authwall
+          POSTGRES_PASSWORD: authwall
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U authwall -d authwall"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run tests
+        env:
+          AUTHWALL_DB: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
+        run: bin/test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ matrix.db }}
+          path: playwright-report/
+          retention-days: 30
+
+  deploy:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Deploy Docker image
+        run: bin/deploy

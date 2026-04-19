@@ -50,8 +50,6 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-#    - name: Run Playwright tests
-#      run: npx playwright test
     - name: Run all tests
       env:
         AUTHWALL_DB: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}

@@ -4,11 +4,24 @@
 # http://redsymbol.net/articles/unofficial-bash-strict-mode
 set -o nounset -o errexit -o pipefail
 
-script=$(realpath $0)
-scriptdir=$(dirname $script)
-scriptname=$(basename $script)
+script=`realpath $0`
+scriptdir=`dirname $script`
+scriptname=`basename $script`
 
 cd $scriptdir/..
+
+branch=$(git branch --show-current)
+if [[ $branch != production ]]; then
+    echo "🛑 Refusing production deploy from branch: $branch" >&2
+    echo "👉 Switch to production branch before running bin/$scriptname." >&2
+    exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "🛑 Refusing production deploy with uncommitted changes:" >&2
+    git status --short >&2
+    exit 1
+fi
 
 version=${VERSION:-$(node -p "require('./package.json').version")}
 major=${MAJOR:-${version%%.*}}
