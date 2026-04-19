@@ -10,8 +10,8 @@ exports.up = async function (knex) {
         utf8mb4_bin(table.string('uid', 32).notNullable());
         table.integer('user_id').unsigned().nullable();
         utf8mb4_bin(table.string('session_uid', 32).nullable());
-        utf8mb4_bin(table.string('event_type', 64).notNullable());
-        utf8mb4_bin(table.string('event_status', 32).notNullable());
+        utf8mb4_bin(table.string('event_type', 64).notNullable().comment('Events must describe intent (sign_in), not mechanics (session replaced)'));
+        utf8mb4_bin(table.string('event_status', 32).notNullable().comment('Result of the event: success | failure'));
         utf8mb4_bin(table.string('identity_type', 32).nullable());
         table.string('identity_value', 255).nullable();
         utf8mb4_bin(table.string('identity_value_normalized', 255).nullable());
