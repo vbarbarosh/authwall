@@ -4,7 +4,7 @@ const pg = require('pg');
 //
 // console.log(await db('sessions').count());
 // [ { count: '3' } ] → [ { count: 3 } ]
-pg.types.setTypeParser(20, val => parseInt(val, 10));
+pg.types.setTypeParser(20, v => Number(v));
 
 module.exports = {
 
