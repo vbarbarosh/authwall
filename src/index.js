@@ -64,19 +64,19 @@ function make_logger()
 function make_mailer(logger)
 {
     if (!config.mailer.enabled) {
-        logger.write('⚠️ Mailer is disabled');
+        logger.write('🚫 Mailer is disabled: email verification, email change, password reset, and magic-link sign-in are unavailable');
         return make_mailer_fake();
     }
 
     switch (config.mailer.provider) {
     case 'resend':
-        logger.write('✉️ Settings Resend as mailer');
+        logger.write('📭 Settings Resend as mailer');
         return make_mailer_resend();
     case 'mailjet':
-        logger.write('✉️ Settings Mailjet as mailer');
+        logger.write('📭 Settings Mailjet as mailer');
         return make_mailer_mailjet();
     case 'ses':
-        logger.write('✉️ Settings SES as mailer');
+        logger.write('📭 Settings SES as mailer');
         return make_mailer_ses();
     default:
         logger.write('⚠️ Using fake mailer');

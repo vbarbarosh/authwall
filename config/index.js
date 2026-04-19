@@ -179,11 +179,24 @@ const config = {
 config.mailer.provider = resolve_mailer_provider(config.mailer);
 validate_mailer(config.mailer);
 
+if (config.mailer.provider === 'fake' && (settings.mailer?.provider !== 'fake')) {
+    config.mailer.enabled = false;
+}
+
 if (config.flows.password.enabled) {
     const {allow_username, allow_email} = config.flows.password;
     if (!allow_username && !allow_email) {
         config.flows.password.enabled = false;
     }
+}
+
+if (!config.mailer.enabled) {
+    config.flows.magic_link.enabled = false;
+    config.flows.password.allow_email = false;
+}
+
+if (!config.flows.password.allow_email && !config.flows.password.allow_username) {
+    config.flows.password.enabled = false;
 }
 
 if (config.flows.google.enabled) {

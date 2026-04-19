@@ -84,6 +84,7 @@ module.exports = defineConfig({
         env: {
             AUTHWALL_SECRET: require('crypto').randomBytes(32).toString('hex'),
             AUTHWALL_RATE_LIMITING: '0',
+            AUTHWALL_MAILER: 'fake',
             AUTHWALL_GOOGLE_CLIENT_ID: 'playwright_google_client_id',
             AUTHWALL_GOOGLE_CLIENT_SECRET: 'playwright_google_client_secret',
             AUTHWALL_GOOGLE_REDIRECT_URL: 'http://localhost:3000/auth/google/callback',

@@ -1,6 +1,5 @@
 const assert = require('assert');
 const config = require('../../config');
-const db = require('../../db');
 
 describe('POST /auth/change-password', function () {
 
