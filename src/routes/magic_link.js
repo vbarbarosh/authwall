@@ -34,13 +34,13 @@ const routes = [
 // POST /auth/magic-link/request
 async function magic_link_request_post(req, res)
 {
-    if (!req.body.email) {
+    const email = req.body.email;
+    if (!email) {
         throw new UserFriendlyError('Missing email');
     }
 
-    const email = req.body.email;
     const email_normalized = normalize_email(email);
-    if (!email) {
+    if (!email_normalized) {
         throw new UserFriendlyError('Invalid email');
     }
     await authorize_email(email_normalized);
