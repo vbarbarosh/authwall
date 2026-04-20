@@ -1,8 +1,9 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const crypto_equal = require('../crypto_equal');
 
 async function csrf_middleware(req, res, next)
 {
-    if (req.body && req.body._csrf === req.session.csrf_token) {
+    if (crypto_equal(req.body?._csrf, req.session.csrf_token)) {
         next();
     }
     else {
