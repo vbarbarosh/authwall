@@ -6,6 +6,7 @@ const authorize_email = require('../helpers/authorize_email');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
+const const_auth_event = require('../helpers/const/const_auth_event');
 const const_email = require('../helpers/const/const_email');
 const const_oauth_intent = require('../helpers/const/const_oauth_intent');
 const const_user_identity = require('../helpers/const/const_user_identity');
@@ -13,15 +14,16 @@ const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
 const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
-const send_email_nothrow = require('../helpers/send_email_nothrow');
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_json = require('../http/http_post_json');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
 
@@ -122,9 +124,29 @@ async function github_callback_get(req, res)
 
         if (ident) {
             if (ident.user_id !== req.session.user_id) {
+                await insert_auth_event({
+                    req,
+                    ident: {
+                        type: const_user_identity.oauth_github,
+                        value: String(userinfo.id),
+                        value_normalized: String(userinfo.id),
+                    },
+                    event_type: const_auth_event.identity_added,
+                    event_status: 'failure',
+                    custom: {
+                        reason: 'linked_to_another_user',
+                    },
+                });
                 throw new UserFriendlyError('GitHub account already linked to another user');
             }
             // already connected
+            await insert_auth_event({
+                req,
+                ident,
+                event_type: const_auth_event.identity_added,
+                event_status: 'noop',
+                custom: {reason: 'already_connected'},
+            });
             return redirect(req, res, '/auth/profile');
         }
 
@@ -133,11 +155,21 @@ async function github_callback_get(req, res)
             uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: const_user_identity.oauth_github,
-            value: userinfo.id,
-            value_normalized: userinfo.id,
+            value: String(userinfo.id),
+            value_normalized: String(userinfo.id),
             created_at: now,
             updated_at: now,
             verified_at: now,
+        });
+
+        await insert_auth_event({
+            req,
+            ident: {
+                type: const_user_identity.oauth_github,
+                value: String(userinfo.id),
+                value_normalized: String(userinfo.id),
+            },
+            event_type: const_auth_event.identity_added,
         });
 
         redirect(req, res, '/auth/profile');
@@ -180,8 +212,8 @@ async function github_callback_get(req, res)
                 uid: random_uid_user_identity(),
                 user_id,
                 type: const_user_identity.oauth_github,
-                value: userinfo.id,
-                value_normalized: userinfo.id,
+                value: String(userinfo.id),
+                value_normalized: String(userinfo.id),
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -209,10 +241,14 @@ async function github_callback_get(req, res)
     const user = await db('users').where({id: user_id}).first();
 
     if (ident) {
-        await complete_sign_in(req, res, user);
+        await complete_sign_in(req, res, user, ident);
     }
     else {
-        await complete_sign_up(req, res, user);
+        await complete_sign_up(req, res, user, null, {
+            type: const_user_identity.oauth_github,
+            value: String(userinfo.id),
+            value_normalized: String(userinfo.id),
+        });
     }
 }
 
@@ -221,18 +257,33 @@ async function github_disconnect_post(req, res)
 {
     const user_id = req.session.user_id;
     const identities = await db('user_identities').where({user_id});
-    const github_ident = identities.find(v => v.type === const_user_identity.oauth_github);
+    const ident = identities.find(v => v.type === const_user_identity.oauth_github);
 
-    if (!github_ident) {
+    if (!ident) {
+        await insert_auth_event({
+            req,
+            ident: {type: const_user_identity.oauth_github},
+            event_type: const_auth_event.identity_removed,
+            event_status: 'noop',
+            custom: {reason: 'not_connected'},
+        });
         return redirect(req, res, '/auth/profile');
     }
 
     if (identities.length <= 1) {
+        await insert_auth_event({
+            req,
+            ident,
+            event_type: const_auth_event.identity_removed,
+            event_status: 'failure',
+            custom: {reason: 'last_identity'},
+        });
         throw new UserFriendlyError('Cannot disconnect GitHub: it is your only sign-in method');
     }
 
-    await db('user_identities').where({id: github_ident.id}).delete();
+    await db('user_identities').where({id: ident.id}).delete();
 
+    await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, '/auth/profile');
 
     const user = await db('users').where({id: user_id}).first();

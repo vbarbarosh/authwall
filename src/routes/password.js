@@ -8,11 +8,13 @@ const complete_password_reset_request = require('../actions/complete_password_re
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
+const const_auth_event = require('../helpers/const/const_auth_event');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
@@ -57,24 +59,35 @@ async function sign_in_post(req, res)
     }
 
     const is_email = username.includes('@');
+    const ident_unsafe = {
+        type: is_email ? const_user_identity.email : const_user_identity.username,
+        value: username,
+        value_normalized: null,
+    };
     let ident;
     if (is_email) {
+        const email_normalized = normalize_email(username);
+        ident_unsafe.value_normalized = email_normalized;
         if (!config.flows.password.allow_email) {
+            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'flows_password_allow_email_disabled'});
             throw new UserFriendlyError('Invalid username or password');
         }
-        const email_normalized = normalize_email(username);
         if (!email_normalized) {
+            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'invalid_email'});
             throw new UserFriendlyError('Invalid username or password');
         }
         await authorize_email(email_normalized);
         ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     }
     else {
+        const username_normalized = normalize_username(username);
+        ident_unsafe.value_normalized = username_normalized;
         if (!config.flows.password.allow_username) {
+            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'flows_password_allow_username_disabled'});
             throw new UserFriendlyError('Invalid username or password');
         }
-        const username_normalized = normalize_username(username);
         if (!username_normalized) {
+            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'invalid_username'});
             throw new UserFriendlyError('Invalid username or password');
         }
         ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
@@ -91,11 +104,12 @@ async function sign_in_post(req, res)
     const password_hash = user?.password_hash ?? dummy_hash;
     const ok = await bcrypt.compare(password, password_hash);
 
-    if (!ident || !user || !ok) {
+    if (!user || !ok) {
+        await insert_auth_event_sign_in_failure(req, ident ?? ident_unsafe, {reason: !user ? 'user_not_found' : 'invalid_password'});
         throw new UserFriendlyError('Invalid username or password');
     }
 
-    await complete_sign_in(req, res, user);
+    await complete_sign_in(req, res, user, ident);
 }
 
 // POST /auth/sign-up
@@ -147,6 +161,7 @@ async function sign_up_post(req, res)
     try {
         const now = new Date();
         let user;
+        let ident;
         await db.transaction(async function () {
             user = await users_create({password});
             const insert = [];
@@ -175,10 +190,11 @@ async function sign_up_post(req, res)
                 });
             }
             await db('user_identities').insert(insert);
+            ident = await db('user_identities').where({uid: insert[0].uid}).first();
         });
 
         if (!email_normalized) {
-            await complete_sign_up(req, res, user);
+            await complete_sign_up(req, res, user, null, ident, {method: 'signup_form', email, username});
         }
         else {
             const token = random_hex();
@@ -190,7 +206,7 @@ async function sign_up_post(req, res)
                 updated_at: now,
                 expires_at: date_add_minutes(new Date(), 30),
             });
-            await complete_sign_up(req, res, user, token);
+            await complete_sign_up(req, res, user, token, ident, {method: 'signup_form', email, username});
         }
     }
     catch (error) {
@@ -208,10 +224,11 @@ async function password_reset_request_post(req, res)
         throw new UserFriendlyError('Password reset is disabled');
     }
 
-    if (!req.body.email) {
+    const email = req.body.email;
+    if (!email) {
         throw new UserFriendlyError('Missing email');
     }
-    const email_normalized = normalize_email(req.body.email);
+    const email_normalized = normalize_email(email);
     if (!email_normalized) {
         throw new UserFriendlyError('Invalid email');
     }
@@ -221,19 +238,33 @@ async function password_reset_request_post(req, res)
         const token = random_hex();
 
         const now = new Date();
+        const token_hash = crypto_hash_sha256(token).toString('base64url');
         await db('password_reset_tokens').insert({
             user_id: ident.user_id,
-            token_hash: crypto_hash_sha256(token).toString('base64url'),
+            token_hash,
             created_at: now,
             updated_at: now,
             expires_at: date_add_minutes(new Date(), 10),
         });
 
-        await complete_password_reset_request(req, res, ident.user_id, ident.value, token);
+        await complete_password_reset_request(req, res, ident, token, token_hash);
         return;
     }
 
     // Never reveal whether email exists
+
+    await insert_auth_event({
+        req,
+        ident: {
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+        },
+        event_type: const_auth_event.password_reset_requested,
+        event_status: 'noop',
+        custom: {reason: 'email_not_found'},
+    });
+
     redirect(req, res, config.pages.password_reset_notice);
 }
 
@@ -277,7 +308,7 @@ async function password_reset_confirm_post(req, res)
         await db('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
     });
 
-    await complete_password_reset_confirm(req, res, reset.user_id);
+    await complete_password_reset_confirm(req, res, reset.user_id, reset.token_hash);
 }
 
 // POST /auth/change-password
@@ -319,7 +350,18 @@ async function change_password_post(req, res)
     const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 
-    await complete_password_change(req, res, user.id);
+    await complete_password_change(req, res, user.id, {method: 'profile'});
+}
+
+async function insert_auth_event_sign_in_failure(req, ident, custom)
+{
+    await insert_auth_event({
+        req,
+        ident,
+        event_type: const_auth_event.sign_in,
+        event_status: 'failure',
+        custom: {method: 'sign_in_form', ...custom},
+    });
 }
 
 module.exports = routes;

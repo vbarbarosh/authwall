@@ -3,11 +3,13 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const complete_email_change_confirm = require('../actions/complete_email_change_confirm');
 const complete_email_change_request = require('../actions/complete_email_change_request');
 const config = require('../../config');
+const const_auth_event = require('../helpers/const/const_auth_event');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
@@ -32,12 +34,30 @@ async function email_change_request_post(req, res)
     const email_normalized = normalize_email(email);
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
+        await insert_auth_event({
+            req,
+            ident,
+            event_type: const_auth_event.email_change_requested,
+            event_status: 'failure',
+            custom: {reason: 'email_already_registered'},
+        });
         throw new UserFriendlyError('Email already registered');
     }
 
     // Rate-limit: prevent spamming
     const recent = await db('email_change_tokens').where({email_normalized}).orderBy('id', 'desc').first();
     if (recent && (Date.now() - new Date(recent.created_at).getTime()) < 60 * SECOND) {
+        await insert_auth_event({
+            req,
+            ident: {
+                type: const_user_identity.email,
+                value: email,
+                value_normalized: email_normalized,
+            },
+            event_type: const_auth_event.email_change_requested,
+            event_status: 'noop',
+            custom: {reason: 'email_changed_already_requested'},
+        });
         throw new UserFriendlyError('Email change already requested. Please wait.');
     }
 
@@ -54,7 +74,11 @@ async function email_change_request_post(req, res)
         expires_at: date_add_minutes(new Date(), 30),
     });
 
-    await complete_email_change_request(req, res, user_id, email, token);
+    await complete_email_change_request(req, res, user_id, email, token, {
+        type: const_user_identity.email,
+        value: email,
+        value_normalized: email_normalized,
+    });
 }
 
 // GET /auth/email-change/confirm?token=xxx

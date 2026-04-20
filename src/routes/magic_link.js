@@ -95,7 +95,7 @@ async function magic_link_confirm_get(req, res)
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
-        await complete_sign_in(req, res, user);
+        await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_link'});
     }
     else {
         const user = await users_create();
@@ -109,7 +109,12 @@ async function magic_link_confirm_get(req, res)
             updated_at: now,
             verified_at: now,
         });
-        await complete_sign_up(req, res, user);
+        const fresh_ident = {
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+        };
+        await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_link'});
     }
 }
 
@@ -154,7 +159,7 @@ async function magic_link_confirm_post(req, res)
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
-        await complete_sign_in(req, res, user);
+        await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_code'});
     }
     else {
         const user = await users_create();
@@ -168,7 +173,12 @@ async function magic_link_confirm_post(req, res)
             updated_at: now,
             verified_at: now,
         });
-        await complete_sign_up(req, res, user);
+        const fresh_ident = {
+            type: const_user_identity.email,
+            value: email,
+            value_normalized: email_normalized,
+        };
+        await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_code'});
     }
 }
 

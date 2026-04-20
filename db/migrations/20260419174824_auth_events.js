@@ -17,7 +17,7 @@ exports.up = async function (knex) {
         utf8mb4_bin(table.string('identity_value_normalized', 255).nullable());
         table.string('ip', 64).nullable();
         table.string('ua', 512).nullable();
-        table.text('custom').notNullable();
+        table.text('custom').nullable();
 
         // dates
         table.timestamp('created_at').notNullable();

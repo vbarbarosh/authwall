@@ -1,3 +1,5 @@
+require('dotenv/config');
+
 const {defineConfig, devices} = require('@playwright/test');
 
 /**
@@ -82,6 +84,7 @@ module.exports = defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
         env: {
+            AUTHWALL_LOGGER: 'daily',
             AUTHWALL_SECRET: require('crypto').randomBytes(32).toString('hex'),
             AUTHWALL_RATE_LIMITING: '0',
             AUTHWALL_MAILER: 'fake',
