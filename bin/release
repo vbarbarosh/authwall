@@ -59,9 +59,11 @@ fi
 # Increase a version without commiting it and making a tag
 npm version $1 --no-git-tag-version
 
-# Building a frontend
-# export SENTRY_RELEASE=v$(node -e 'console.log(require("./package.json").version)')
-# npm run prod
+tag=v$(node -e 'console.log(require("./package.json").version)')
+if git rev-parse "$tag" >/dev/null 2>&1; then
+    echo -e "${RED}error: tag $tag already exists${RESET}" >&2
+    exit 1
+fi
 
 git add package.json
 if test -e package-lock.json; then
@@ -70,7 +72,6 @@ fi
 git commit -m "release v$(node -e 'console.log(require("./package.json").version)')"
 
 # Create a tag
-tag=v$(node -e 'console.log(require("./package.json").version)')
 git tag $tag
 
 git push origin production
