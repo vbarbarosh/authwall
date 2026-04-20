@@ -1,5 +1,6 @@
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const {test, expect} = require('@playwright/test');
+const pkg = require('../../package.json');
 
 test.describe('auth spa anonymous', function () {
 
@@ -13,6 +14,8 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('signin-submit')).toBeVisible();
         await expect(page.getByTestId('signin-google')).toBeVisible();
         await expect(page.getByTestId('signin-github')).toBeVisible();
+        await expect(page.getByTestId('version-link')).toHaveText(`authwall v${pkg.version}`);
+        await expect(page.getByTestId('version-link')).toHaveAttribute('href', `https://github.com/vbarbarosh/authwall/releases/tag/v${pkg.version}`);
     });
 
     test('sign-up route exposes oauth entry points', async function ({page}) {

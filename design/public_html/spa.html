@@ -82,6 +82,14 @@
       flex: 1; display: flex; align-items: flex-start;
       justify-content: center; width: 100%; padding: 48px 16px 64px;
     }
+    .app-footer {
+      flex-shrink: 0; padding: 0 16px 24px; text-align: center;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .app-footer a {
+      color: var(--text-muted); text-decoration: none; font-weight: 500;
+    }
+    .app-footer a:hover { color: var(--primary); text-decoration: underline; }
 
     /* ── Auth Card ── */
     .card {
@@ -854,6 +862,10 @@
 
 </div><!-- /viewport -->
 
+<footer class="app-footer">
+  <a id="app-version-link" href="https://github.com/vbarbarosh/authwall" target="_blank" rel="noopener noreferrer" data-testid="version-link">authwall</a>
+</footer>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROUTING
@@ -936,6 +948,13 @@ async function api_status() {
   _status = await r.json();
   _csrf = _status.csrf_token;
   return _status;
+}
+
+function render_version_link(status) {
+  const link = document.getElementById('app-version-link');
+  if (!link || !status.version) return;
+  link.textContent = 'authwall v' + status.version;
+  link.href = 'https://github.com/vbarbarosh/authwall/releases/tag/v' + encodeURIComponent(status.version);
 }
 
 async function api_post(path, fields) {
@@ -1549,6 +1568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
+  render_version_link(status);
   if (status.flows) apply_flows(status.flows);
   sync_sign_in_form();
   const si_csrf = document.getElementById('si-csrf');
