@@ -4,6 +4,7 @@ const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
 const make = require('@vbarbarosh/type-helpers');
+const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
 const parse_domains = require('../src/helpers/parse_domains');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
@@ -31,7 +32,7 @@ const settings = resolve_yaml_vars(
 const public_url = settings.public_url ?? 'http://127.0.0.1:3000';
 
 const config = {
-    seed_users: Array.from(settings.seed_users||[]),
+    seed_users: parse_authwall_seed(settings.seed_users),
     public_url,
     public_paths: Array.from(settings.public_paths||[]).filter(v => v && v[0] === '/'),
 

@@ -16,7 +16,7 @@ async function bootstrap_users()
 
     als.logger.write('👤 Seeding users...');
     for (const user_seed of config.seed_users) {
-        const {username, email, password_hash, display_name} = user_seed;
+        const {username, email, password, password_hash, display_name} = user_seed;
         const emails = Array.isArray(email) ? email : [email].filter(Boolean);
 
         const username_normalized = normalize_username(username);
@@ -47,7 +47,7 @@ async function bootstrap_users()
             user_id = ident.user_id;
         }
         else {
-            const user = await users_create({password_hash, display_name});
+            const user = await users_create({password, password_hash, display_name});
             user_id = user.id;
         }
 
