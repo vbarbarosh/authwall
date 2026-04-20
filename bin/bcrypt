@@ -14,6 +14,6 @@ async function main()
         process.exit(1);
     }
 
-    const hash = await bcrypt.hash(password, config.password_rounds);
+    const hash = await bcrypt.hash(password, config.bcrypt_rounds);
     console.log(hash);
 }

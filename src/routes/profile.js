@@ -89,7 +89,7 @@ async function profile_post(req, res)
         if (!ok) {
             throw new UserFriendlyError('Current password is incorrect');
         }
-        update.password_hash = await bcrypt.hash(password, config.password_rounds);
+        update.password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     }
 
     const now = new Date();

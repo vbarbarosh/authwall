@@ -121,7 +121,7 @@ const config = {
     },
 
     knexvars,
-    password_rounds: 12,
+    bcrypt_rounds: make(settings.bcrypt_rounds, {type: 'int', min: 4, max: 31, default: 12}),
 
     cookie: make(settings.cookie, {
         domain: {type: 'str', after: v => v.trim() || undefined},

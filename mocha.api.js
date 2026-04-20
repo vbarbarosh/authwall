@@ -18,6 +18,7 @@ require('dotenv/config');
 process.env.AUTHWALL_SECRET ??= require('crypto').randomBytes(32).toString('base64url');
 process.env.AUTHWALL_RATE_LIMITING ??= '0';
 process.env.AUTHWALL_MAILER = 'fake';
+process.env.AUTHWALL_BCRYPT_ROUNDS = '4';
 
 const Runnable = require('mocha/lib/runnable');
 const als = require('./src/helpers/als');

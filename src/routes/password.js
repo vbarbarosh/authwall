@@ -99,7 +99,7 @@ async function sign_in_post(req, res)
     // dummy_hash is computed once on first use with a random value so
     // an attacker cannot know which password would match it.
     if (!dummy_hash) {
-        dummy_hash = await bcrypt.hash(random_base62(), config.password_rounds);
+        dummy_hash = await bcrypt.hash(random_base62(), config.bcrypt_rounds);
     }
     const password_hash = user?.password_hash ?? dummy_hash;
     const ok = await bcrypt.compare(password, password_hash);
@@ -301,7 +301,7 @@ async function password_reset_confirm_post(req, res)
         throw new UserFriendlyError('Reset token expired');
     }
 
-    const password_hash = await bcrypt.hash(password, config.password_rounds);
+    const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     await db.transaction(async function () {
         const now = new Date();
         await db('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
@@ -346,7 +346,7 @@ async function change_password_post(req, res)
         throw new UserFriendlyError('Current password is incorrect');
     }
 
-    const password_hash = await bcrypt.hash(password, config.password_rounds);
+    const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     const now = new Date();
     await db('users').where({id: user.id}).update({password_hash, updated_at: now});
 

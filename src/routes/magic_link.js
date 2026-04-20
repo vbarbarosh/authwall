@@ -58,7 +58,7 @@ async function magic_link_request_post(req, res)
     await db('magic_links').insert({
         email,
         email_normalized,
-        code_hash: await bcrypt.hash(code, config.password_rounds),
+        code_hash: await bcrypt.hash(code, config.bcrypt_rounds),
         token_hash: crypto_hash_sha256(token).toString('base64url'),
         created_at: now,
         updated_at: now,

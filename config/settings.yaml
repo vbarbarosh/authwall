@@ -35,6 +35,8 @@ access:
   denied_domains: ${AUTHWALL_DENIED_DOMAINS}
   allowed_domains: ${AUTHWALL_ALLOWED_DOMAINS}
 
+bcrypt_rounds: ${AUTHWALL_BCRYPT_ROUNDS}
+
 cookie:
   domain: ${AUTHWALL_COOKIE_DOMAIN}
   path: ${AUTHWALL_COOKIE_PATH}

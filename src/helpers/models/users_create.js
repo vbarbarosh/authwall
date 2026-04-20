@@ -11,7 +11,7 @@ async function users_create(params = {})
     const password_hash = params.password_hash
         ? params.password_hash
         : params.password
-            ? await bcrypt.hash(params.password, config.password_rounds)
+            ? await bcrypt.hash(params.password, config.bcrypt_rounds)
             : null;
     const display_name = params.display_name ?? null;
     const avatar_url = params.avatar_url ?? null;
