@@ -6,8 +6,8 @@ public_paths:
   #
   # Avoid exposing the root path (/), as it may implicitly expose
   # dependent assets (CSS, images, fonts).
-  - /foo
-  - /bar
+  # - /foo
+  # - /bar
 
   # common public files
   - /favicon.ico
