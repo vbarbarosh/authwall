@@ -18,6 +18,7 @@ describe('POST /auth/sign-in', function () {
         const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sign-in', {username: 'mocha@authwall.test', password: 'pass123', _csrf: status.csrf_token});
         const status2 = await this.http_get_json('/auth/status');
+        await this.wait_for_emails(1);
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
         assert.strictEqual(this.sent_emails[0].name, const_email.new_sign_in);
