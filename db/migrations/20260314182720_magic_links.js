@@ -12,10 +12,10 @@ exports.up = async function (knex) {
         table.integer('attempts').notNullable().defaultTo(0);
 
         // dates
-        table.timestamp('created_at').notNullable();
-        table.timestamp('updated_at').notNullable();
-        table.timestamp('expires_at').notNullable();
-        table.timestamp('used_at').nullable();
+        table.datetime('created_at').notNullable();
+        table.datetime('updated_at').notNullable();
+        table.datetime('expires_at').notNullable();
+        table.datetime('used_at').nullable();
 
         // constraints
         table.unique(['token_hash']);

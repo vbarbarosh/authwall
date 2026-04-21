@@ -14,9 +14,9 @@ exports.up = async function (knex) {
         utf8mb4_bin(table.string('value_normalized', 255).notNullable());
 
         // dates
-        table.timestamp('created_at').notNullable();
-        table.timestamp('updated_at').notNullable();
-        table.timestamp('verified_at').nullable();
+        table.datetime('created_at').notNullable();
+        table.datetime('updated_at').notNullable();
+        table.datetime('verified_at').nullable();
 
         // unique
         table.unique(['uid']);

@@ -69,6 +69,7 @@ module.exports = {
     require: [__filename],
     mochaHooks: {
         beforeAll: async function () {
+            this.timeout(30000);
             await using logger = make_logger_stdout();
             await als.run({db, logger}, () => bootstrap_database());
             process.stdout.write('\n');

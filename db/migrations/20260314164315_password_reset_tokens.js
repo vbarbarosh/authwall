@@ -9,10 +9,10 @@ exports.up = async function (knex) {
         table.string('token_hash', 64).notNullable().comment('Store only SHA256(token). If DB leaks, reset links cannot be used.');
 
         // dates
-        table.timestamp('created_at').notNullable();
-        table.timestamp('updated_at').notNullable();
-        table.timestamp('expires_at').notNullable();
-        table.timestamp('used_at');
+        table.datetime('created_at').notNullable();
+        table.datetime('updated_at').notNullable();
+        table.datetime('expires_at').notNullable();
+        table.datetime('used_at');
 
         // constraints
         table.unique(['token_hash']);

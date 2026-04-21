@@ -20,7 +20,7 @@ exports.up = async function (knex) {
         table.text('custom').nullable();
 
         // dates
-        table.timestamp('created_at').notNullable();
+        table.datetime('created_at').notNullable();
 
         // constraints
         table.unique(['uid']);

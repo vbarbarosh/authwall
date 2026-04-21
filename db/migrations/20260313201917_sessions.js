@@ -17,10 +17,10 @@ exports.up = async function (knex) {
         table.text('custom').notNullable();
 
         // dates
-        table.timestamp('created_at').notNullable();
-        table.timestamp('updated_at').notNullable();
-        table.timestamp('expires_at').notNullable();
-        table.timestamp('last_seen_at').notNullable();
+        table.datetime('created_at').notNullable();
+        table.datetime('updated_at').notNullable();
+        table.datetime('expires_at').notNullable();
+        table.datetime('last_seen_at').notNullable();
 
         // constraints
         table.unique(['uid']);

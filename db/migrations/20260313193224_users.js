@@ -14,8 +14,8 @@ exports.up = async function (knex) {
         table.string('avatar_url', 500).nullable();
 
         // dates
-        table.timestamp('created_at').notNullable();
-        table.timestamp('updated_at').notNullable();
+        table.datetime('created_at').notNullable();
+        table.datetime('updated_at').notNullable();
 
         // constraints
         table.unique(['uid']);
