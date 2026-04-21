@@ -5,19 +5,47 @@ on:
     branches: [ production ]
 
 jobs:
-  test:
+  test-sqlite:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    services:
+      echo:
+        image: jmalloc/echo-server
+        ports:
+          - 8080:8080
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run tests
+        run: bin/test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-sqlite
+          path: playwright-report/
+          retention-days: 30
+
+  test-mysql:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        db: [sqlite, mysql, postgres]
+        mysql-version: [8, 5.7]
     services:
       echo:
         image: jmalloc/echo-server
         ports:
           - 8080:8080
       mysql:
-        image: mysql:8
+        image: mysql:${{ matrix.mysql-version }}
         env:
           MYSQL_DATABASE: authwall
           MYSQL_ROOT_PASSWORD: root
@@ -28,6 +56,59 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify MySQL version
+        env:
+          AUTHWALL_DB: mysql://root:root@127.0.0.1:3306/authwall
+          EXPECTED_MYSQL_VERSION: ${{ matrix.mysql-version }}
+        run: |
+          node - <<'NODE'
+          const mysql = require('mysql2/promise');
+
+          (async () => {
+            const connection = await mysql.createConnection(process.env.AUTHWALL_DB);
+            const [[row]] = await connection.query('SELECT VERSION() AS version');
+            await connection.end();
+
+            const expected = process.env.EXPECTED_MYSQL_VERSION + '.';
+            if (!String(row.version).startsWith(expected)) {
+              throw new Error(`Expected MySQL ${expected}x, got ${row.version}`);
+            }
+            console.log(`MySQL ${row.version}`);
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run tests
+        env:
+          AUTHWALL_DB: mysql://root:root@127.0.0.1:3306/authwall
+        run: bin/test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-mysql-${{ matrix.mysql-version }}
+          path: playwright-report/
+          retention-days: 30
+
+  test-postgres:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    services:
+      echo:
+        image: jmalloc/echo-server
+        ports:
+          - 8080:8080
       postgres:
         image: postgres:17
         env:
@@ -54,19 +135,19 @@ jobs:
         run: npx playwright install --with-deps
       - name: Run tests
         env:
-          AUTHWALL_DB: ${{ matrix.db == 'mysql' && 'mysql://root:root@127.0.0.1:3306/authwall' || matrix.db == 'postgres' && 'postgres://authwall:authwall@127.0.0.1:5432/authwall' || '' }}
+          AUTHWALL_DB: postgres://authwall:authwall@127.0.0.1:5432/authwall
         run: bin/test
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-${{ matrix.db }}
+          name: playwright-report-postgres
           path: playwright-report/
           retention-days: 30
 
   deploy:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test-sqlite, test-mysql, test-postgres]
     steps:
       - uses: actions/checkout@v4
         with:
