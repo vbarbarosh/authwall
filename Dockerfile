@@ -17,7 +17,7 @@ ENV NODE_ENV=production
 ENV NODE_OPTIONS=--use-openssl-ca
 
 COPY --chown=node:node package*.json .
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --chown=node:node . .
 

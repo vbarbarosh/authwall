@@ -1,11 +1,29 @@
+# dot files
 /.env
-/data
-/node_modules
+/.env.example
+/.claude
+/.github
+/.dockerignore
+/.gitignore
 
 # Playwright
 /blob-report/
-/node_modules/
 /playwright-report/
 /playwright/.auth/
 /playwright/.cache/
 /test-results/
+/playwright.config.js
+
+# other files never use on production
+/Dockerfile
+/LICENSE
+/README.md
+/data
+/docker-compose.yaml
+/docs
+/logo.png
+/mocha.api.js
+/mocha.unit.js
+/node_modules
+/research
+/tests
