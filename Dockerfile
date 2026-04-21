@@ -7,11 +7,11 @@ RUN apk add --no-cache dumb-init
 USER node
 WORKDIR /app
 
-ENV LISTEN=0.0.0.0
-ENV AUTHWALL_LOGGER=stdout
-ENV NODE_ENV=production
 # node -e "require('https').get('https://example.com', v => console.log('OK', v.statusCode)).on('error', e => console.error(e))"
-ENV NODE_OPTIONS=--use-openssl-ca
+ENV LISTEN=0.0.0.0 \
+    AUTHWALL_LOGGER=stdout \
+    NODE_ENV=production \
+    NODE_OPTIONS=--use-openssl-ca
 
 # Leverage Docker's cache system.
 # package.json will be changed less often than other files, so copy it first
