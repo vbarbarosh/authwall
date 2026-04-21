@@ -35,4 +35,4 @@ LABEL org.opencontainers.image.title="vbarbarosh/authwall" \
       org.opencontainers.image.licenses="MIT"
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]
