@@ -13,6 +13,7 @@ const http_proxy_middleware = require('http-proxy-middleware');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
+const save_session = require('./helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
 
@@ -187,7 +188,7 @@ async function create_app()
     return app;
 }
 
-function error_handler(error, req, res, next)
+async function error_handler(error, req, res, next)
 {
     als.logger.write(`[error_handler] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
 
@@ -198,6 +199,8 @@ function error_handler(error, req, res, next)
         else {
             req.session.error = `An error occurred [${req.uid}]`;
         }
+        // MySQL 8.0 accessed over http://172.17.0.1:30600 required this
+        await save_session(req);
     }
 
     if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {

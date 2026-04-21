@@ -12,6 +12,8 @@ const routes = [
 // GET /auth/status
 async function status_get(req, res)
 {
+    res.set('Cache-Control', 'no-store');
+
     let user = null;
     if (req.session.user_id) {
         user = await db('users').where({id: req.session.user_id}).first();

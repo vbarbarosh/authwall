@@ -108,4 +108,20 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('magic-sent-view')).toBeVisible();
     });
 
+    test('compatibility: (chromium) MySQL 8.0 accessed over http://172.17.0.1:36060', async function ({page, request}) {
+        await page.goto('/auth/sign-in');
+
+        await expect(page.getByTestId('signin-view')).toBeVisible();
+        await expect(page.getByTestId('signin-csrf')).toHaveValue(/.+/);
+
+        await page.getByTestId('signin-username').fill('foo');
+        await page.getByTestId('signin-password').fill('wrong-password');
+        await page.getByTestId('signin-submit').click();
+
+        await expect(page).toHaveURL('http://localhost:3000/auth/sign-in');
+        await expect(page.getByTestId('signin-view')).toBeVisible();
+        await expect(page.getByTestId('signin-error')).toBeVisible();
+        await expect(page.getByTestId('signin-error')).toContainText('Invalid username or password');
+    });
+
 });
