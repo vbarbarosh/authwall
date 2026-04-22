@@ -53,6 +53,8 @@ describe('auth_events • sign_up', function () {
     });
 
     it('should be recorded on sign-up via magic link', async function () {
+        await db('auth_events').del();
+
         await this.http_post_json('/auth/magic-link/request', {email: 'newuser@authwall.test'});
         await this.http_get_json(this.sent_emails[0].placeholders.link);
 
@@ -66,6 +68,8 @@ describe('auth_events • sign_up', function () {
     });
 
     it('should be recorded on sign-up via magic code', async function () {
+        await db('auth_events').del();
+
         await this.http_post_json('/auth/magic-link/request', {email: 'newuser@authwall.test'});
         await this.http_post_json('/auth/magic-link/confirm', {email: 'newuser@authwall.test', code: this.sent_emails[0].placeholders.code});
 
@@ -79,6 +83,7 @@ describe('auth_events • sign_up', function () {
     });
 
     it('should be recorded on sign-up via Google', async function () {
+        await db('auth_events').del();
         mock_google();
 
         await this.client.get_json_no_redirects('/auth/google');
@@ -95,6 +100,7 @@ describe('auth_events • sign_up', function () {
     });
 
     it('should be recorded on sign-up via GitHub', async function () {
+        await db('auth_events').del();
         mock_github();
 
         await this.client.get_json_no_redirects('/auth/github');

@@ -6,6 +6,7 @@ const knexfile = require('../knexfile');
 const make = require('@vbarbarosh/type-helpers');
 const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
 const parse_domains = require('../src/helpers/parse_domains');
+const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_setting');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
 
@@ -141,7 +142,7 @@ const config = {
         },
         magic_link: {
             enabled: 'bool',
-            mode: {type: 'enum', options: ['link', 'code', 'link_and_code']},
+            mode: {type: 'str', default: 'auto'},
         },
         google: {
             enabled: 'bool',
@@ -187,6 +188,8 @@ if (config.mailer.provider === 'fake' && (settings.mailer?.provider !== 'fake'))
     config.mailer.enabled = false;
 }
 
+Object.assign(config.flows.magic_link, parse_magic_link_setting(config.flows.magic_link.mode, {mailer_enabled: config.mailer.enabled}));
+
 if (config.flows.password.enabled) {
     const {allow_username, allow_email} = config.flows.password;
     if (!allow_username && !allow_email) {
@@ -195,7 +198,6 @@ if (config.flows.password.enabled) {
 }
 
 if (!config.mailer.enabled) {
-    config.flows.magic_link.enabled = false;
     config.flows.password.allow_email = false;
 }
 

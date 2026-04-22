@@ -56,7 +56,7 @@ flows:
   # Send me a link to my email
   magic_link:
     enabled: true
-    mode: link_and_code # link | code | link_and_code
+    mode: ${AUTHWALL_MAGIC_LINK} # auto | off | disabled | link | code | link_and_code
 
   # Sign in with Google
   google:
