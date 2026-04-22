@@ -19,15 +19,19 @@ describe('error_handler', function () {
     // — a convenient way to trigger a user-facing error on a non-sign_in route.
 
     it('error on a non-sign_in route redirects to sign-in', async function () {
-        const r = await this.client.get_json_no_redirects('/auth/email-verify/confirm');
-        assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, config.pages.sign_in);
+        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/email-verify/confirm'), {
+            status: 302,
+            headers: {
+                location: config.pages.sign_in,
+            },
+        });
     });
 
     it('UserFriendlyError message is stored in session', async function () {
         await this.http_get_json('/auth/email-verify/confirm');
-        const status = await this.http_get_json('/auth/status');
-        assert.strictEqual(status.error, 'Missing token');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Missing token',
+        });
     });
 
     it('non-UserFriendlyError stores generic message with req.uid', async function () {
@@ -49,18 +53,25 @@ describe('error_handler', function () {
             username: 'nobody',
             password: 'wrong',
         });
-        assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, '/auth/sign-in');
+        assert.partialDeepStrictEqual(r, {
+            status: 302,
+            headers: {
+                location: config.pages.sign_in,
+            },
+        });
     });
 
     it('POST /auth/sign-in failure preserves ?return query param', async function () {
         const status = await this.http_get_json('/auth/status');
-        const r = await this.client.post_json_no_redirects(
-            urlmod('/auth/sign-in', {return: '/some/path'}),
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: '/some/path'}),
             {username: 'nobody', password: 'wrong', _csrf: status.csrf_token}
         );
-        assert.strictEqual(r.status, 302);
-        assert.strictEqual(r.headers.location, urlmod('/auth/sign-in', {return: '/some/path'}));
+        assert.partialDeepStrictEqual(r, {
+            status: 302,
+            headers: {
+                location: urlmod(config.pages.sign_in, {return: '/some/path'}),
+            },
+        });
     });
 
 });

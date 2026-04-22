@@ -15,7 +15,7 @@ describe('POST /auth/password-reset/confirm', function () {
         assert.strictEqual(status.error, null);
         assert.strictEqual(status.authenticated, false);
 
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, false);
@@ -24,7 +24,7 @@ describe('POST /auth/password-reset/confirm', function () {
         assert.strictEqual(this.sent_emails[0].name, const_email.password_reset);
         const {token} = this.sent_emails[0].placeholders;
 
-        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123'});
         const status3 = await this.http_get_json('/auth/status');
         assert.strictEqual(status3.error, null);
         assert.strictEqual(status3.authenticated, false);
@@ -33,26 +33,23 @@ describe('POST /auth/password-reset/confirm', function () {
     });
 
     it('fails with missing fields', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/confirm', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm');
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Missing fields');
     });
 
     it('fails when passwords do not match', async function () {
         await this.add_user({email: 'mocha@authwall.test'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         const {token} = this.sent_emails[0].placeholders;
-        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass456', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass456'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Passwords do not match');
     });
 
     it('fails with invalid token', async function () {
         config.flows.password.min_password_length = 4;
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/confirm', {token: 'invalid-token', password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token: 'invalid-token', password: 'pass123', password_confirm: 'pass123'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid reset token');
     });
@@ -60,14 +57,12 @@ describe('POST /auth/password-reset/confirm', function () {
     it('fails with already used token', async function () {
         config.flows.password.min_password_length = 4;
         await this.add_user({email: 'mocha@authwall.test'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         const {token} = this.sent_emails[0].placeholders;
         // Use it once (valid)
-        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123'});
         // Try to use it again
-        const status2 = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass456', password_confirm: 'pass456', _csrf: status2.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass456', password_confirm: 'pass456'});
         const status3 = await this.http_get_json('/auth/status');
         assert.strictEqual(status3.error, 'Reset token already used');
     });
@@ -75,11 +70,10 @@ describe('POST /auth/password-reset/confirm', function () {
     it('fails with expired token', async function () {
         config.flows.password.min_password_length = 4;
         await this.add_user({email: 'mocha@authwall.test'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         const {token} = this.sent_emails[0].placeholders;
         await db('password_reset_tokens').update({expires_at: date_trunc_ms()});
-        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/password-reset/confirm', {token, password: 'pass123', password_confirm: 'pass123'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Reset token expired');
     });

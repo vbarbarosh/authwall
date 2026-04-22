@@ -5,8 +5,7 @@ const db = require('../../db');
 describe('POST /auth/magic-link/request', function () {
 
     it('sends magic link email', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -22,9 +21,8 @@ describe('POST /auth/magic-link/request', function () {
     });
 
     it('rate-limits repeated requests', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
-        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Magic link already sent. Please wait.');
@@ -32,16 +30,14 @@ describe('POST /auth/magic-link/request', function () {
     });
 
     it('fails with missing email', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request');
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Missing email');
     });
 
     it('accepts loosely formatted email input', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/magic-link/request', {email: 'invalid-email', _csrf: status.csrf_token});
+        await this.http_post_json('/auth/magic-link/request', {email: 'invalid-email'});
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);

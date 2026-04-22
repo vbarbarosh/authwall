@@ -11,17 +11,14 @@ describe('POST /auth/sessions/revoke-all', function () {
 
         // Sign in from two clients
         this.client.cookies = cookies_a;
-        const s_a = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: s_a.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
 
         this.client.cookies = cookies_b;
-        const s_b = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123', _csrf: s_b.csrf_token});
+        await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass123'});
 
         // Revoke all from client A
         this.client.cookies = cookies_a;
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sessions/revoke-all', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/sessions/revoke-all');
 
         // Client A still authenticated
         const status_a = await this.http_get_json('/auth/status');
@@ -38,16 +35,14 @@ describe('POST /auth/sessions/revoke-all', function () {
 
     it('keeps current session', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sessions/revoke-all', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/sessions/revoke-all');
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
         assert.strictEqual(status2.authenticated, true);
     });
 
     it('requires authentication', async function () {
-        const status = await this.http_get_json('/auth/status');
-        await this.http_post_json('/auth/sessions/revoke-all', {_csrf: status.csrf_token});
+        await this.http_post_json('/auth/sessions/revoke-all');
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Authentication required');
     });

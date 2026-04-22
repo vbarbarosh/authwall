@@ -14,8 +14,8 @@ describe('GET /auth/email-change/confirm', function () {
 
         await this.http_get_json(this.sent_emails[1].placeholders.confirm_link);
 
-        const status3 = await this.http_get_json('/auth/status');
-        const actual = status3.providers.filter(v => v.type === 'email').map(v => v.value_normalized);
+        const status = await this.http_get_json('/auth/status');
+        const actual = status.providers.filter(v => v.type === 'email').map(v => v.value_normalized);
 
         assert.deepStrictEqual(actual, [new_email]);
     });
