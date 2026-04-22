@@ -183,6 +183,7 @@ config.mailer.provider = resolve_mailer_provider(config.mailer);
 validate_mailer(config.mailer);
 
 if (config.mailer.provider === 'fake' && (settings.mailer?.provider !== 'fake')) {
+    // rule: When the mailer is disabled, any request to send an email is treated as a no-op and produces no observable side effects.
     config.mailer.enabled = false;
 }
 
