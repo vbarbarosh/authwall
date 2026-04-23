@@ -1,5 +1,6 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
+const authorize_email = require('../helpers/authorize_email');
 const complete_email_change_confirm = require('../actions/complete_email_change_confirm');
 const complete_email_change_request = require('../actions/complete_email_change_request');
 const config = require('../../config');
@@ -32,6 +33,11 @@ async function email_change_request_post(req, res)
     }
 
     const email_normalized = normalize_email(email);
+    if (!email_normalized) {
+        throw new UserFriendlyError('Invalid email');
+    }
+    await authorize_email(email_normalized);
+
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         await insert_auth_event({
