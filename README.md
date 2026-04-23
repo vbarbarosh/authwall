@@ -6,6 +6,7 @@
 <br>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall/actions"><img src="https://github.com/vbarbarosh/authwall/actions/workflows/master.yml/badge.svg" alt="@vbarbarosh/authwall CI status" /></a>
 <a target="_blank" href="https://github.com/vbarbarosh/authwall/actions"><img src="https://github.com/vbarbarosh/authwall/actions/workflows/production.yml/badge.svg" alt="@vbarbarosh/authwall CI status" /></a>
+<a target="_blank" href="https://github.com/vbarbarosh/authwall/actions"><img src="https://github.com/vbarbarosh/authwall/actions/workflows/trivy.yml/badge.svg" alt="@vbarbarosh/authwall Trivy status" /></a>
 <a target="_blank" href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/vbarbarosh/authwall" alt="License" /></a>
 <a target="_blank" href="https://codecov.io/gh/vbarbarosh/authwall"><img src="https://codecov.io/gh/vbarbarosh/authwall/graph/badge.svg" alt="Code coverage" /></a>
 </p>
