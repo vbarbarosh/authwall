@@ -222,8 +222,12 @@ async function error_handler(error, req, res, next)
         await save_session(req);
     }
 
-    if (req.url === req.originalUrl && urlparts(req.url).path !== config.pages.sign_in) {
-        res.redirect(config.pages.sign_in);
+    const path = urlparts(req.url).path;
+
+    if (req.url === req.originalUrl && path !== config.pages.sign_in) {
+        // Keep authenticated users inside the signed-in flow after route errors,
+        // e.g. a failed OAuth connect attempt that started from /auth/profile.
+        res.redirect(req.session?.user_id ? config.pages.profile : config.pages.sign_in);
     }
     else if (req.method === 'GET' && req.url === req.originalUrl) {
         // GET /auth/sign-in threw an error — redirecting would loop

@@ -34,6 +34,16 @@ describe('error_handler', function () {
         });
     });
 
+    it('error on a non-sign_in route redirects authenticated user to profile', async function () {
+        await this.sign_in({email: 'jonny@gmail.com', password: 'pass1234'});
+        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/email-verify/confirm'), {
+            status: 302,
+            headers: {
+                location: config.pages.profile,
+            },
+        });
+    });
+
     it('non-UserFriendlyError stores generic message with req.uid', async function () {
         nock('https://github.com')
             .post('/login/oauth/access_token')
