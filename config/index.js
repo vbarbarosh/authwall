@@ -6,6 +6,7 @@ const knexfile = require('../knexfile');
 const make = require('@vbarbarosh/type-helpers');
 const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
 const parse_domains = require('../src/helpers/parse_domains');
+const parse_flows_setting = require('../src/helpers/parse/parse_flows_setting');
 const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_setting');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
@@ -190,21 +191,6 @@ if (config.mailer.provider === 'fake' && (settings.mailer?.provider !== 'fake'))
 
 Object.assign(config.flows.magic_link, parse_magic_link_setting(config.flows.magic_link.mode, {mailer_enabled: config.mailer.enabled}));
 
-if (config.flows.password.enabled) {
-    const {allow_username, allow_email} = config.flows.password;
-    if (!allow_username && !allow_email) {
-        config.flows.password.enabled = false;
-    }
-}
-
-if (!config.mailer.enabled) {
-    config.flows.password.allow_email = false;
-}
-
-if (!config.flows.password.allow_email && !config.flows.password.allow_username) {
-    config.flows.password.enabled = false;
-}
-
 if (config.flows.google.enabled) {
     const {client_id, client_secret, redirect_url} = config.flows.google;
     if (!client_id || !client_secret || !redirect_url) {
@@ -224,6 +210,21 @@ if (config.flows.github.enabled) {
         }
     }
 }
+
+const flows = parse_flows_setting(process.env.AUTHWALL_FLOWS, {
+    password_enabled: config.flows.password.enabled,
+    username_enabled: config.flows.password.allow_username,
+    email_enabled: config.flows.password.allow_email,
+    magic_link_enabled: config.flows.magic_link.enabled,
+    magic_link_mode: config.flows.magic_link.mode,
+    mailer_enabled: config.mailer.enabled,
+    google_enabled: config.flows.google.enabled,
+    github_enabled: config.flows.github.enabled,
+});
+Object.assign(config.flows.password, flows.password);
+Object.assign(config.flows.magic_link, flows.magic_link);
+Object.assign(config.flows.google, flows.google);
+Object.assign(config.flows.github, flows.github);
 
 if (config.cookie.same_site === 'none' && !config.cookie.secure) {
     throw new Error('cookie.same_site=none requires cookie.secure=true');

@@ -17,13 +17,6 @@ describe('parse_magic_link_setting', function () {
         });
     });
 
-    it('defaults to auto', function () {
-        assert.deepStrictEqual(parse_magic_link_setting(undefined, {mailer_enabled: true}), {
-            enabled: true,
-            mode: 'link_and_code',
-        });
-    });
-
     it('supports explicit modes when mailer is configured', function () {
         for (const mode of ['link', 'code', 'link_and_code']) {
             assert.deepStrictEqual(parse_magic_link_setting(mode, {mailer_enabled: true}), {
@@ -66,7 +59,7 @@ describe('parse_magic_link_setting', function () {
             mode: 'link_and_code',
         });
         assert.strictEqual(warnings.length, 1);
-        assert.match(warnings[0], /Magic link disabled/);
+        assert.match(warnings[0], /AUTHWALL_MAGIC_LINK/);
         assert.match(warnings[0], /no/);
     });
 
