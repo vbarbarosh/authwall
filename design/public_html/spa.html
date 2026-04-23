@@ -44,6 +44,11 @@
       display: flex;
       flex-direction: column;
     }
+    body.loading .demo-bar,
+    body.loading .viewport,
+    body.loading .app-footer {
+      display: none !important;
+    }
 
     /* ── Demo Bar ── */
     body[data-demo="1"] .demo-bar { display: flex; }
@@ -346,7 +351,7 @@
     }
   </style>
 </head>
-<body data-demo="0">
+<body data-demo="0" class="loading">
 
 <!-- ── Preloader ── -->
 <div id="preloader">
@@ -1587,6 +1592,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3. Everything is ready — dismiss the preloader
   const preloader = document.getElementById('preloader');
   if (preloader) {
+    document.body.classList.remove('loading');
     preloader.classList.add('ready');
     preloader.addEventListener('transitionend', () => preloader.remove(), {once: true});
   }
