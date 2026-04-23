@@ -4,6 +4,7 @@ const fs = require('fs');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const knexfile = require('../knexfile');
 const make = require('@vbarbarosh/type-helpers');
+const normalize_email = require('../src/helpers/normalize/normalize_email');
 const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
 const parse_domains = require('../src/helpers/parse_domains');
 const parse_flows_setting = require('../src/helpers/parse/parse_flows_setting');
@@ -91,8 +92,8 @@ function make_config(input = {})
         },
 
         access: {
-            denied_emails: parse_domains(settings.access.denied_emails),
-            allowed_emails: parse_domains(settings.access.allowed_emails),
+            denied_emails: parse_access_emails(settings.access.denied_emails, 'AUTHWALL_DENIED_EMAILS'),
+            allowed_emails: parse_access_emails(settings.access.allowed_emails, 'AUTHWALL_ALLOWED_EMAILS'),
             denied_domains: parse_domains(settings.access.denied_domains),
             allowed_domains: parse_domains(settings.access.allowed_domains),
         },
@@ -336,6 +337,20 @@ function get_knexvars(env)
     }
 
     throw new Error('AUTHWALL_DB must use mysql://, postgres://, or postgresql://');
+}
+
+function parse_access_emails(value, env_name)
+{
+    return parse_domains(value).map(v => normalize_access_email(v, env_name));
+}
+
+function normalize_access_email(email, env_name)
+{
+    const out = normalize_email(email);
+    if (!out || !/^[^@\s,;]+@[^@\s,;]+$/.test(out)) {
+        throw new Error(`${env_name} contains invalid email: ${JSON.stringify(email)}`);
+    }
+    return out;
 }
 
 module.exports = make_config;

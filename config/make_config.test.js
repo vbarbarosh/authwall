@@ -74,4 +74,25 @@ describe('make_config', function () {
         });
     });
 
+    it('normalizes access email allowlists the same way as login emails', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_ALLOWED_EMAILS: 'jonny.small@gmail.com',
+        });
+
+        assert.deepStrictEqual(config.access.allowed_emails, ['jonnysmall@gmail.com']);
+    });
+
+    it('rejects invalid access-list emails instead of silently dropping them', function () {
+        assert.throws(run, /AUTHWALL_ALLOWED_EMAILS contains invalid email/);
+        function run() {
+            make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_ALLOWED_EMAILS: 'jonny.small@gmail.com;',
+            });
+        }
+    });
+
 });
