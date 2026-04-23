@@ -31,6 +31,8 @@ const LOGGED_HEADERS = new Set([
 
 async function create_app()
 {
+    als.logger.write(`🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure}`);
+
     const app = express();
 
     app.set('trust proxy', true);
@@ -63,12 +65,22 @@ async function create_app()
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
 
+    // always send secure cookies when told so
+    if (config.cookie.secure) {
+        app.use(function (req, res, next) {
+            req.headers['x-forwarded-proto'] = 'https';
+            next();
+        });
+    }
+
     app.use(express_session({
         genid: random_uid_session,
         store: new SessionStore(),
         resave: false,
         saveUninitialized: false,
         secret: config.secrets.express_session,
+        // true: The "X-Forwarded-Proto" header will be used | https://github.com/expressjs/session#proxy
+        proxy: config.cookie.secure || undefined,
         cookie: {
             httpOnly: true,
             domain: config.cookie.domain,

@@ -19,7 +19,12 @@ describe('cookies', function () {
 
     it('over http [config.cookie.secure=true]', async function () {
         const r = await this.client.get_json_no_redirects_no_https('/auth/status');
-        assert.strictEqual(r.headers['set-cookie'], undefined);
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const attributes = cookie.match(/;\s*(.*)$/)[1];
+        const expires = cookie.match(/\bExpires=([^;]+)/)[1];
+
+        assert.strictEqual(config.cookie.secure, true);
+        assert.strictEqual(attributes, `Path=/; Expires=${expires}; HttpOnly; Secure; SameSite=Lax`);
     });
 
     it('[config.cookie.secure=true]', async function () {
