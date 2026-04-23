@@ -17,10 +17,12 @@ const tests = [
     ['///evil.com', false],
     ['////evil.com', false],
     ['/\\evil.com', false],
+    ['\\\\evil.com', false],
     ['javascript:alert(1)', false],
     ['/javascript:alert(1)', true],
 
     // quirks
+    ['%2f%2fevil.com', false],
     ['/%2f', false],
     ['/foo%2f', true],
 

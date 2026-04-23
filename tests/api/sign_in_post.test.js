@@ -38,6 +38,20 @@ describe('POST /auth/sign-in', function () {
         assert.strictEqual(r.headers.location, '/');
     });
 
+    it('ignores a backslash open-redirect return url', async function () {
+        // /\evil.com passes the startsWith('/') && !startsWith('//') check but
+        // browsers normalise the backslash to / and treat it as //evil.com
+        await this.add_user({username: 'mocha', password: 'pass123'});
+        const status = await this.http_get_json('/auth/status');
+        const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: '/\\evil.com'}), {username: 'mocha', password: 'pass123', _csrf: status.csrf_token});
+        assert.partialDeepStrictEqual(r, {
+            status: 302,
+            headers: {
+                location: '/',
+            },
+        });
+    });
+
     it('failure should redirect to the same url', async function () {
         await this.add_user({username: 'mocha', password: 'pass123'});
         const r = await this.client.post_json_no_redirects(urlmod('/auth/sign-in', {return: '/some/path'}), {username: 'mocha', password: 'pass12345'});

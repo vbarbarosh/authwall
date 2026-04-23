@@ -1,4 +1,5 @@
 const config = require('../../config');
+const is_relative_url = require('./is_relative_url');
 
 function redirect(req, res, default_url = '/')
 {
@@ -21,9 +22,7 @@ function extract_return_url(req)
     }
 
     const value = req.query.return;
-
-    // Relative path: must start with / but not // (protocol-relative)
-    if (value.startsWith('/') && !value.startsWith('//')) {
+    if (is_relative_url(value)) {
         return value;
     }
 

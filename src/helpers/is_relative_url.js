@@ -1,3 +1,4 @@
+// Relative path: must start with / but not // (protocol-relative)
 function is_relative_url(value)
 {
     if (typeof value !== 'string') {
