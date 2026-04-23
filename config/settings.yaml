@@ -21,6 +21,8 @@ public_paths:
 target:
   url: ${AUTHWALL_TARGET_URL}
   mode: ${AUTHWALL_TARGET_MODE}
+  set_headers: ${AUTHWALL_SET_HEADERS}
+  unset_headers: ${AUTHWALL_UNSET_HEADERS}
 
 access:
   # (1) denied_emails -> deny

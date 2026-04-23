@@ -187,6 +187,13 @@ async function create_app()
                 if (req.session.user_uid && !config.public_paths.includes(req.path)) {
                     proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
                 }
+                for (let i = 0, ii = config.target.set_headers.length; i < ii; ++i) {
+                    const header = config.target.set_headers[i];
+                    proxy_req.setHeader(header.name, header.value);
+                }
+                for (let i = 0, ii = config.target.unset_headers.length; i < ii; ++i) {
+                    proxy_req.removeHeader(config.target.unset_headers[i]);
+                }
             },
             error: function (error, req, res) {
                 als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);

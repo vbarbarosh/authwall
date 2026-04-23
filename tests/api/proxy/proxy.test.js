@@ -6,6 +6,8 @@ describe('proxy', function () {
 
     beforeEach(function () {
         config.public_paths = ['/terms.html', '/custom/public/path'];
+        config.target.set_headers = [];
+        config.target.unset_headers = [];
     });
 
     it('public url has no x-auth-* headers at upstream', async function () {
@@ -82,6 +84,61 @@ describe('proxy', function () {
             },
             body: JSON.stringify({num: 123}),
         });
+    });
+
+    it('auth url adds configured upstream headers after authwall headers', async function () {
+        config.target.set_headers = [
+            {name: 'X-Team', value: 'notes'},
+            {name: 'X-Env', value: 'prod'},
+        ];
+
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const sess = await this.client.get_session();
+        assert.partialDeepStrictEqual(await this.http_get_json('/private'), {
+            echo_server: 'authwall_testing_echo_server',
+            headers: {
+                'x-auth-user': sess.user_uid,
+                'x-team': 'notes',
+                'x-env': 'prod',
+            },
+        });
+    });
+
+    it('auth url can set an empty upstream header value', async function () {
+        config.target.set_headers = [
+            {name: 'X-Empty', value: ''},
+            {name: 'X-Team', value: 'notes'},
+        ];
+
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const sess = await this.client.get_session();
+        assert.partialDeepStrictEqual(await this.http_get_json('/private'), {
+            echo_server: 'authwall_testing_echo_server',
+            headers: {
+                'x-auth-user': sess.user_uid,
+                'x-empty': '',
+                'x-team': 'notes',
+            },
+        });
+    });
+
+    it('auth url can remove x-auth-user with configured unset headers', async function () {
+        config.target.set_headers = [
+            {name: 'X-Team', value: 'notes'},
+        ];
+        config.target.unset_headers = ['X-Auth-User'];
+
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const r = await this.http_get_json('/private');
+        const auth_headers = Object.keys(r.headers).filter(v => v.startsWith('x-auth-'));
+
+        assert.partialDeepStrictEqual(r, {
+            echo_server: 'authwall_testing_echo_server',
+            headers: {
+                'x-team': 'notes',
+            },
+        });
+        assert.deepStrictEqual(auth_headers, []);
     });
 
 });

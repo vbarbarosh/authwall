@@ -8,6 +8,8 @@ const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
 const parse_domains = require('../src/helpers/parse_domains');
 const parse_flows_setting = require('../src/helpers/parse/parse_flows_setting');
 const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_setting');
+const parse_set_headers = require('../src/helpers/parse/parse_set_headers');
+const parse_unset_headers = require('../src/helpers/parse/parse_unset_headers');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const yaml = require('yaml');
 
@@ -41,6 +43,8 @@ const config = {
     target: make(settings.target, {
         url: {type: 'str', default: 'http://127.0.0.1:8080'},
         mode: {type: 'enum', options: ['direct', 'proxy']},
+        set_headers: {type: 'any', default: []},
+        unset_headers: {type: 'any', default: []},
     }),
 
     emails: {
@@ -180,6 +184,9 @@ const config = {
         },
     }),
 };
+
+config.target.set_headers = parse_set_headers(config.target.set_headers);
+config.target.unset_headers = parse_unset_headers(config.target.unset_headers);
 
 config.mailer.provider = resolve_mailer_provider(config.mailer);
 validate_mailer(config.mailer);
