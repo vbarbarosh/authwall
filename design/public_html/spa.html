@@ -432,7 +432,7 @@
           </button>
         </div>
       </div>
-      <div class="card-footer">Don't have an account? <a href="/auth/sign-up" onclick="showView('sign-up'); return false;">Create one</a></div>
+      <div class="card-footer" data-flow="password">Don't have an account? <a href="/auth/sign-up" onclick="showView('sign-up'); return false;">Create one</a></div>
     </div>
   </div>
 
@@ -1124,6 +1124,12 @@ function apply_flows(flows) {
     } else {
       su_apply_mode(mode);
     }
+  }
+
+  if (!has_password) {
+    ROUTES['/auth/sign-up'] = 'sign-in';
+    const active = document.querySelector('[data-view].active');
+    if (active && active.dataset.view === 'sign-up') showView('sign-in', false);
   }
 }
 
