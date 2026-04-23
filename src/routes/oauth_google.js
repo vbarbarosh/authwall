@@ -1,6 +1,6 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
-const authorize_email = require('../helpers/authorize_email');
+const authorize_oauth_verified_emails = require('../helpers/authorize_oauth_verified_emails');
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
@@ -15,7 +15,6 @@ const get_user_email_and_name = require('../helpers/models/get_user_email_and_na
 const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
 const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
 const insert_auth_event = require('../helpers/insert_auth_event');
-const normalize_email = require('../helpers/normalize/normalize_email');
 const oauth_intent_from_state = require('../helpers/oauth_intent_from_state');
 const oauth_state_from_intent = require('../helpers/oauth_state_from_intent');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
@@ -89,6 +88,10 @@ async function google_callback_get(req, res)
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
+    const verified_emails = await authorize_oauth_verified_emails(
+        userinfo.email_verified && userinfo.email ? [userinfo.email] : [],
+        {require_one_when_access_rules: oauth_intent === const_oauth_intent.login}
+    );
 
     // Connect account flow
     if (oauth_intent === const_oauth_intent.connect) {
@@ -148,20 +151,18 @@ async function google_callback_get(req, res)
         });
 
         // Also add the verified email from Google if not already taken
-        if (userinfo.email_verified && userinfo.email) {
-            const email_normalized = normalize_email(userinfo.email);
-            if (email_normalized) {
-                await db('user_identities').insert({
-                    uid: random_uid_user_identity(),
-                    user_id: req.session.user_id,
-                    type: const_user_identity.email,
-                    value: userinfo.email,
-                    value_normalized: email_normalized,
-                    created_at: now,
-                    updated_at: now,
-                    verified_at: now,
-                }).onConflict(['type', 'value_normalized']).ignore();
-            }
+        const verified_email = verified_emails[0];
+        if (verified_email) {
+            await db('user_identities').insert({
+                uid: random_uid_user_identity(),
+                user_id: req.session.user_id,
+                type: const_user_identity.email,
+                value: verified_email.email,
+                value_normalized: verified_email.email_normalized,
+                created_at: now,
+                updated_at: now,
+                verified_at: now,
+            }).onConflict(['type', 'value_normalized']).ignore();
         }
 
         redirect(req, res, '/auth/profile');
@@ -211,22 +212,18 @@ async function google_callback_get(req, res)
                 updated_at: now,
                 verified_at: now,
             });
-            if (userinfo.email_verified) {
-                const email = userinfo.email;
-                const email_normalized = normalize_email(userinfo.email);
-                await authorize_email(email_normalized);
-                if (email_normalized) {
-                    await db('user_identities').insert({
-                        uid: random_uid_user_identity(),
-                        user_id,
-                        type: const_user_identity.email,
-                        value: email,
-                        value_normalized: email_normalized,
-                        created_at: now,
-                        updated_at: now,
-                        verified_at: now,
-                    }).onConflict(['type', 'value_normalized']).ignore();
-                }
+            const verified_email = verified_emails[0];
+            if (verified_email) {
+                await db('user_identities').insert({
+                    uid: random_uid_user_identity(),
+                    user_id,
+                    type: const_user_identity.email,
+                    value: verified_email.email,
+                    value_normalized: verified_email.email_normalized,
+                    created_at: now,
+                    updated_at: now,
+                    verified_at: now,
+                }).onConflict(['type', 'value_normalized']).ignore();
             }
         });
     }
