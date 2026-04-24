@@ -1,43 +1,40 @@
 const config = require('../../../config');
-const resend = require('resend');
+const http_post_json = require('../../http/http_post_json');
+const ignore = require('@vbarbarosh/node-helpers/src/ignore');
+const pkg = require('../../../package.json');
 
+// https://resend.com/docs/api-reference/emails/send-email
 function make_mailer_resend()
 {
-    let client = new resend.Resend(config.mailer.resend.key);
-
     return {
         send: async function ({to, subject, text}) {
-            const out = await client.emails.send({from: config.mailer.resend.from, to, subject, text});
-            // {
-            //     "data": null,
-            //     "error": {
-            //         "statusCode": 422,
-            //         "name": "validation_error",
-            //         "message": "Invalid `to` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format."
-            //     },
-            //     "headers": {
-            //         "cf-cache-status": "DYNAMIC",
-            //         "cf-ray": "9e3a56a85adf186a-KIV",
-            //         "connection": "keep-alive",
-            //         "content-length": "172",
-            //         "content-type": "application/json",
-            //         "date": "Sat, 28 Mar 2026 23:15:44 GMT",
-            //         "ratelimit-limit": "5",
-            //         "ratelimit-policy": "5;w=1",
-            //         "ratelimit-remaining": "4",
-            //         "ratelimit-reset": "1",
-            //         "server": "cloudflare"
-            //     }
-            // }
-            if (out.error) {
-                throw new Error(`Email delivery failed: ${out.error.message}\n\n${JSON.stringify(out)}`);
+            const data = {
+                from: config.mailer.resend.from,
+                to,
+                subject,
+                text,
+            };
+            const params = {
+                headers: {
+                    Authorization: `Bearer ${config.mailer.resend.key}`,
+                    'User-Agent': `vbarbarosh/authwall:${pkg.version}`,
+                },
+            };
+            const out = await http_post_json('https://api.resend.com/emails', data, params).catch(throw_resend_error);
+            if (!out?.id) {
+                throw new Error(`Email delivery failed: Invalid Resend response\n\n${JSON.stringify(out)}`);
             }
             return out;
         },
-        [Symbol.dispose]: function () {
-            client = null;
-        },
+        [Symbol.dispose]: ignore,
     };
+}
+
+function throw_resend_error(error)
+{
+    const response = error.response?.data;
+    const message = response?.message || response?.error?.message || error.message;
+    throw new Error(`Email delivery failed: ${message}\n\n${JSON.stringify(response ?? {message: error.message})}`);
 }
 
 module.exports = make_mailer_resend;
