@@ -4,11 +4,12 @@ const parse_flows_setting = require('./parse_flows_setting');
 describe('parse_flows_setting', function () {
 
     it('auto uses username/password when no other configured flow exists', function () {
-        assert.deepStrictEqual(parse_flows_setting(undefined, {
+        const env = {
             mailer_enabled: false,
             google_enabled: false,
             github_enabled: false,
-        }), {
+        };
+        assert.deepStrictEqual(parse_flows_setting(undefined, env), {
             password: {enabled: true, allow_username: true, allow_email: false},
             magic_link: {enabled: false, mode: 'link_and_code'},
             google: {enabled: false},
@@ -17,11 +18,12 @@ describe('parse_flows_setting', function () {
     });
 
     it('auto uses username/email password and magic link when only mailer is configured', function () {
-        assert.deepStrictEqual(parse_flows_setting('auto', {
+        const env = {
             mailer_enabled: true,
             google_enabled: false,
             github_enabled: false,
-        }), {
+        };
+        assert.deepStrictEqual(parse_flows_setting('auto', env), {
             password: {enabled: true, allow_username: true, allow_email: true},
             magic_link: {enabled: true, mode: 'link_and_code'},
             google: {enabled: false},
@@ -30,11 +32,12 @@ describe('parse_flows_setting', function () {
     });
 
     it('auto uses only configured OAuth flows when OAuth is configured', function () {
-        assert.deepStrictEqual(parse_flows_setting('auto', {
+        const env = {
             mailer_enabled: true,
             google_enabled: true,
             github_enabled: false,
-        }), {
+        };
+        assert.deepStrictEqual(parse_flows_setting('auto', env), {
             password: {enabled: false, allow_username: false, allow_email: false},
             magic_link: {enabled: false, mode: 'link_and_code'},
             google: {enabled: true},
@@ -43,11 +46,12 @@ describe('parse_flows_setting', function () {
     });
 
     it('supports explicit comma-separated flow lists', function () {
-        assert.deepStrictEqual(parse_flows_setting('username,email,magic_link,magic_code,google,github', {
+        const env = {
             mailer_enabled: true,
             google_enabled: true,
             github_enabled: true,
-        }), {
+        };
+        assert.deepStrictEqual(parse_flows_setting('username,email,magic_link,magic_code,google,github', env), {
             password: {enabled: true, allow_username: true, allow_email: true},
             magic_link: {enabled: true, mode: 'link_and_code'},
             google: {enabled: true},
@@ -56,32 +60,24 @@ describe('parse_flows_setting', function () {
     });
 
     it('supports each magic-link mode explicitly', function () {
-        assert.deepStrictEqual(parse_flows_setting('magic_link', {
+        const env = {
             mailer_enabled: true,
             google_enabled: false,
             github_enabled: false,
-        }).magic_link, {enabled: true, mode: 'link'});
-
-        assert.deepStrictEqual(parse_flows_setting('magic_code', {
-            mailer_enabled: true,
-            google_enabled: false,
-            github_enabled: false,
-        }).magic_link, {enabled: true, mode: 'code'});
-
-        assert.deepStrictEqual(parse_flows_setting('magic_link_and_code', {
-            mailer_enabled: true,
-            google_enabled: false,
-            github_enabled: false,
-        }).magic_link, {enabled: true, mode: 'link_and_code'});
+        };
+        assert.deepStrictEqual(parse_flows_setting('magic_link', env).magic_link, {enabled: true, mode: 'link'});
+        assert.deepStrictEqual(parse_flows_setting('magic_code', env).magic_link, {enabled: true, mode: 'code'});
+        assert.deepStrictEqual(parse_flows_setting('magic_link_and_code', env).magic_link, {enabled: true, mode: 'link_and_code'});
     });
 
     it('auto preserves the configured magic-link mode', function () {
-        assert.deepStrictEqual(parse_flows_setting('auto', {
+        const env = {
             mailer_enabled: true,
             google_enabled: false,
             github_enabled: false,
             magic_link_mode: 'code',
-        }).magic_link, {enabled: true, mode: 'code'});
+        };
+        assert.deepStrictEqual(parse_flows_setting('auto', env).magic_link, {enabled: true, mode: 'code'});
     });
 
     it('rejects magic-link modes not enabled by magic-link settings', function () {
@@ -138,22 +134,17 @@ describe('parse_flows_setting', function () {
         );
     });
 
-    it('falls back to auto with a warning for unsupported values', function () {
-        const warnings = [];
-        assert.deepStrictEqual(parse_flows_setting('username,nonsense', {
+    it('rejects unsupported values', function () {
+        const env = {
             mailer_enabled: false,
             google_enabled: false,
             github_enabled: false,
-            warn: message => warnings.push(message),
-        }), {
-            password: {enabled: true, allow_username: true, allow_email: false},
-            magic_link: {enabled: false, mode: 'link_and_code'},
-            google: {enabled: false},
-            github: {enabled: false},
-        });
-        assert.strictEqual(warnings.length, 1);
-        assert.match(warnings[0], /unsupported value/);
-        assert.match(warnings[0], /nonsense/);
+        };
+        assert.throws(
+            () => parse_flows_setting('username,nonsense', env),
+            /AUTHWALL_FLOWS contains unsupported value\(s\): nonsense/
+        );
+        assert.throws(() => parse_flows_setting(', ,'), /AUTHWALL_FLOWS contains no supported values/);
     });
 
 });

@@ -17,7 +17,6 @@ function parse_flows_setting(value, {
     mailer_enabled = false,
     google_enabled = false,
     github_enabled = false,
-    warn = console.warn,
 } = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
@@ -27,9 +26,11 @@ function parse_flows_setting(value, {
 
     const requested = normalized.split(',').map(v => v.trim()).filter(Boolean);
     const invalid = requested.filter(v => !ALLOWED.has(v));
-    if (!requested.length || invalid.length) {
-        warn(`Warning: AUTHWALL_FLOWS contains unsupported value(s): ${invalid.join(', ') || JSON.stringify(value)}. Falling back to auto.`);
-        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled});
+    if (!requested.length) {
+        throw new Error(`AUTHWALL_FLOWS contains no supported values: ${JSON.stringify(value)}`);
+    }
+    if (invalid.length) {
+        throw new Error(`AUTHWALL_FLOWS contains unsupported value(s): ${invalid.join(', ')}`);
     }
 
     const needs_mailer = requested.some(v => v === 'email' || v.startsWith('magic_'));
