@@ -31,6 +31,7 @@ const make_mailer_mailjet = require('./services/mailer/make_mailer_mailjet');
 const make_mailer_resend = require('./services/mailer/make_mailer_resend');
 const make_mailer_ses = require('./services/mailer/make_mailer_ses');
 const pkg = require('../package.json');
+const render_config_summary = require('./helpers/render/render_config_summary');
 
 cli(main);
 
@@ -42,6 +43,9 @@ async function main()
     await using logger = make_logger();
 
     logger.write(`[authwall_started] v${pkg.version}`);
+    for (const line of render_config_summary(config)) {
+        logger.write(line);
+    }
 
     await using mailer = make_mailer(logger);
 
