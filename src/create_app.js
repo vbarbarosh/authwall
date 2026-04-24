@@ -31,8 +31,6 @@ const LOGGED_HEADERS = new Set([
 
 async function create_app()
 {
-    als.logger.write(`🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure}`);
-
     const app = express();
 
     app.set('trust proxy', true);
