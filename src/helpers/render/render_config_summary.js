@@ -5,7 +5,7 @@ function render_config_summary(config)
         `🌐 Server: ${config.public_url} → ${config.listen}:${config.port} (${config.logger} logger)`,
         `🧭 Target: ${config.target.mode} → ${redact_url(config.target.url)}${format_headers(config)}`,
         `🗄️ Database: ${format_database(config.knexvars)}`,
-        `🍪 Cookies: ${config.cookie.secure ? 'secure' : 'not secure'}, SameSite=${config.cookie.same_site ?? 'default'}, domain=${config.cookie.domain ?? 'host-only'}, maxAge=${config.cookie.max_age_days}d`,
+        `🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure} max_age_days=${config.cookie.max_age_days}`,
         '🔐 Sign-in:',
         format_flows(config.flows).map(v => `  ${v}`),
         `📭 Mailer: ${format_mailer(config.mailer)}`,
