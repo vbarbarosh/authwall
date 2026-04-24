@@ -147,6 +147,10 @@ async function create_app()
         config.pages.sessions,
         config.pages.sign_out,
     ]);
+    const signed_in_redirect_spa_pages = new Set([
+        config.pages.sign_in,
+        config.pages.sign_up,
+    ]);
 
     for (const key in config.pages) {
         const path = config.pages[key];
@@ -154,6 +158,10 @@ async function create_app()
             if (protected_spa_pages.has(path) && !req.session?.user_id) {
                 als.logger.write(`[auth_go_to_login] GET ${path}`);
                 return res.redirect(urlmod(config.pages.sign_in, {return: req.originalUrl}));
+            }
+            if (signed_in_redirect_spa_pages.has(path) && req.session?.user_id) {
+                als.logger.write(`[auth_go_to_profile] GET ${path}`);
+                return res.redirect(config.pages.profile);
             }
 
             const spa = fs_path_resolve(__dirname, '../design/public_html/spa.html');

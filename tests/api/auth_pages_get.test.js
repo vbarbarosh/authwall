@@ -14,4 +14,17 @@ describe('GET protected auth pages', function () {
         });
     }
 
+    for (const path of ['/auth/sign-in', '/auth/sign-up']) {
+        it(`redirects signed-in user from ${path} to profile`, async function () {
+            await this.sign_in({username: 'mocha', password: 'pass123'});
+
+            assert.partialDeepStrictEqual(await this.client.get_json_no_redirects(path), {
+                status: 302,
+                headers: {
+                    location: '/auth/profile',
+                },
+            });
+        });
+    }
+
 });
