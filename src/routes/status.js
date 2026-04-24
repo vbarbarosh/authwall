@@ -59,6 +59,9 @@ async function status_get(req, res)
     if (config.flows.github.enabled) {
         flows.github = {};
     }
+    if (config.flows.microsoft.enabled) {
+        flows.microsoft = {};
+    }
 
     if (!user) {
         res.send({

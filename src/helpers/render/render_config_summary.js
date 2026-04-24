@@ -9,7 +9,8 @@ function render_config_summary(config)
         '🔐 Sign-in:',
         format_flows(config.flows).map(v => `  ${v}`),
         `📭 Mailer: ${format_mailer(config.mailer)}`,
-        `🪪 Access: ${format_access(config.access)}`,
+        `🪪 Access: ${format_access_summary(config.access)}`,
+        format_access(config.access).map(v => `  ${v}`),
         '🚪 Public paths:',
         format_public_paths(config.public_paths).map(v => `  ${v}`),
         '👤 Seed users:',
@@ -76,6 +77,9 @@ function format_flows(flows)
     if (flows.github.enabled) {
         out.push(`- GitHub OAuth${flows.github.redirect_url ? `: ${flows.github.redirect_url}` : ''}`);
     }
+    if (flows.microsoft.enabled) {
+        out.push(`- Microsoft OAuth${flows.microsoft.redirect_url ? `: ${flows.microsoft.redirect_url}` : ''}`);
+    }
 
     return out.length ? out : ['- none'];
 }
@@ -97,20 +101,47 @@ function format_mailer(mailer)
     return mailer.provider;
 }
 
+function format_access_summary(access)
+{
+    const has_denylist = access.denied_emails.length || access.denied_domains.length;
+    const allow = [];
+    if (access.allowed_emails.length) {
+        allow.push('listed emails');
+    }
+    if (access.allowed_domains.length) {
+        allow.push('listed domains');
+    }
+
+    if (allow.length && has_denylist) {
+        return `only ${join_words(allow)} can sign in; denylist also applies`;
+    }
+    if (allow.length) {
+        return `only ${join_words(allow)} can sign in`;
+    }
+    if (has_denylist) {
+        return 'any email can sign in except denied entries';
+    }
+    return 'open to any email';
+}
+
+function join_words(values)
+{
+    return values.length === 1 ? values[0] : `${values.slice(0, -1).join(', ')} and ${values.at(-1)}`;
+}
+
 function format_access(access)
 {
-    const parts = [
-        `allow emails ${access.allowed_emails.length}`,
-        `allow domains ${format_list(access.allowed_domains)}`,
-        `deny emails ${access.denied_emails.length}`,
-        `deny domains ${format_list(access.denied_domains)}`,
+    return [
+        `- allowed emails: ${format_list(access.allowed_emails)}`,
+        `- allowed domains: ${format_list(access.allowed_domains)}`,
+        `- denied emails: ${format_list(access.denied_emails)}`,
+        `- denied domains: ${format_list(access.denied_domains)}`,
     ];
-    return parts.join(', ');
 }
 
 function format_list(values)
 {
-    return values.length ? values.join(', ') : '0';
+    return values.length ? values.join(', ') : 'none';
 }
 
 function format_public_paths(paths)

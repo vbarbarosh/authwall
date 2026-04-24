@@ -58,6 +58,12 @@ describe('render_config_summary', function () {
                     client_secret: null,
                     redirect_url: null,
                 },
+                microsoft: {
+                    enabled: true,
+                    client_id: 'microsoft-client',
+                    client_secret: 'microsoft-secret',
+                    redirect_url: 'https://authwall.test/auth/microsoft/callback',
+                },
             },
             mailer: {
                 enabled: true,
@@ -101,7 +107,13 @@ describe('render_config_summary', function () {
         assert.match(text, /🔐 Sign-in:/);
         assert.match(text, / - password: username, min 8/);
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);
+        assert.match(text, / - Microsoft OAuth: https:\/\/authwall.test\/auth\/microsoft\/callback/);
         assert.match(text, /📭 Mailer: Resend from Authwall <noreply@authwall.test>/);
+        assert.match(text, /🪪 Access: only listed emails and listed domains can sign in/);
+        assert.match(text, /  - allowed emails: admin@authwall.test/);
+        assert.match(text, /  - allowed domains: authwall.test/);
+        assert.match(text, /  - denied emails: none/);
+        assert.match(text, /  - denied domains: none/);
         assert.match(text, /🚪 Public paths:\n\[config]   - \/favicon.ico/);
         assert.match(text, /👤 Seed users:\n\[config]   - admin/);
         assert.match(text, /mysql:\/\/authwall:\*\*\*@mysql\/authwall/);
@@ -109,6 +121,7 @@ describe('render_config_summary', function () {
         assert.doesNotMatch(text, /db-secret/);
         assert.doesNotMatch(text, /resend-secret/);
         assert.doesNotMatch(text, /google-secret/);
+        assert.doesNotMatch(text, /microsoft-secret/);
     });
 
 });

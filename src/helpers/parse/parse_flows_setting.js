@@ -6,6 +6,7 @@ const ALLOWED = new Set([
     'magic_link_and_code',
     'google',
     'github',
+    'microsoft',
 ]);
 
 function parse_flows_setting(value, {
@@ -17,11 +18,12 @@ function parse_flows_setting(value, {
     mailer_enabled = false,
     google_enabled = false,
     github_enabled = false,
+    microsoft_enabled = false,
 } = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
     if (!normalized || normalized === 'auto') {
-        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled});
+        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled});
     }
 
     const requested = normalized.split(',').map(v => v.trim()).filter(Boolean);
@@ -55,6 +57,9 @@ function parse_flows_setting(value, {
     if (requested.includes('github') && !github_enabled) {
         throw new Error('AUTHWALL_FLOWS=github requires configured GitHub OAuth');
     }
+    if (requested.includes('microsoft') && !microsoft_enabled) {
+        throw new Error('AUTHWALL_FLOWS=microsoft requires configured Microsoft OAuth');
+    }
 
     const magic_link = requested.includes('magic_link') || requested.includes('magic_link_and_code');
     const magic_code = requested.includes('magic_code') || requested.includes('magic_link_and_code');
@@ -84,12 +89,15 @@ function parse_flows_setting(value, {
         github: {
             enabled: requested.includes('github'),
         },
+        microsoft: {
+            enabled: requested.includes('microsoft'),
+        },
     };
 }
 
-function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled})
+function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled})
 {
-    const oauth_enabled = google_enabled || github_enabled;
+    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled;
 
     return {
         password: {
@@ -106,6 +114,9 @@ function auto({password_enabled, username_enabled, email_enabled, magic_link_ena
         },
         github: {
             enabled: !!github_enabled,
+        },
+        microsoft: {
+            enabled: !!microsoft_enabled,
         },
     };
 }

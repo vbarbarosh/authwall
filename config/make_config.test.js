@@ -42,6 +42,9 @@ describe('make_config', function () {
                 github: {
                     enabled: false,
                 },
+                microsoft: {
+                    enabled: false,
+                },
             },
         });
         assert.strictEqual(config.target.set_headers.length, 2);

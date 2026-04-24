@@ -1,0 +1,13 @@
+Subject: Microsoft account disconnected
+
+Hi {{display_name}},
+
+Your Microsoft account was disconnected from your account on
+{{date}} from IP address {{ip}}.
+
+If you made this change, no action is needed.
+
+If you did not disconnect your Microsoft account, reset your password immediately:
+{{reset_link}}
+
+— Authwall

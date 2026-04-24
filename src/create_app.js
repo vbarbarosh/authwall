@@ -123,6 +123,9 @@ async function create_app()
     if (config.flows.google.enabled) {
         express_routes(app, require('./routes/oauth_google'));
     }
+    if (config.flows.microsoft.enabled) {
+        express_routes(app, require('./routes/oauth_microsoft'));
+    }
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
     }

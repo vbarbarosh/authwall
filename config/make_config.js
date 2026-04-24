@@ -69,6 +69,10 @@ const known_authwall_env_names = new Set([
     'AUTHWALL_GITHUB_CLIENT_ID',
     'AUTHWALL_GITHUB_CLIENT_SECRET',
     'AUTHWALL_GITHUB_REDIRECT_URL',
+
+    'AUTHWALL_MICROSOFT_CLIENT_ID',
+    'AUTHWALL_MICROSOFT_CLIENT_SECRET',
+    'AUTHWALL_MICROSOFT_REDIRECT_URL',
 ]);
 
 fs.mkdirSync(data_dir, {recursive: true});
@@ -117,6 +121,8 @@ function make_config(input = {})
             [const_email.google_disconnected]: `${emails_dir}/google-disconnected.txt`,
             [const_email.github_connected]: `${emails_dir}/github-connected.txt`,
             [const_email.github_disconnected]: `${emails_dir}/github-disconnected.txt`,
+            [const_email.microsoft_connected]: `${emails_dir}/microsoft-connected.txt`,
+            [const_email.microsoft_disconnected]: `${emails_dir}/microsoft-disconnected.txt`,
             [const_email.password_changed_from_profile]: `${emails_dir}/password-changed-from-profile.txt`,
             [const_email.password_changed_via_reset_link]: `${emails_dir}/password-changed-via-reset-link.txt`,
         },
@@ -195,6 +201,12 @@ function make_config(input = {})
                 client_secret: {type: 'str', nullable: true},
                 redirect_url: {type: 'str', nullable: true},
             },
+            microsoft: {
+                enabled: 'bool',
+                client_id: {type: 'str', nullable: true},
+                client_secret: {type: 'str', nullable: true},
+                redirect_url: {type: 'str', nullable: true},
+            },
         }),
 
         mailer: make(settings.mailer, {
@@ -251,6 +263,16 @@ function make_config(input = {})
         }
     }
 
+    if (config.flows.microsoft.enabled) {
+        const {client_id, client_secret, redirect_url} = config.flows.microsoft;
+        if (!client_id || !client_secret || !redirect_url) {
+            config.flows.microsoft.enabled = false;
+            if (client_id || client_secret || redirect_url) {
+                console.warn('⚠️  Microsoft OAuth disabled: client_id, client_secret, and redirect_url must all be set');
+            }
+        }
+    }
+
     const flows = parse_flows_setting(env.AUTHWALL_FLOWS, {
         password_enabled: config.flows.password.enabled,
         username_enabled: config.flows.password.allow_username,
@@ -260,11 +282,13 @@ function make_config(input = {})
         mailer_enabled: config.mailer.enabled,
         google_enabled: config.flows.google.enabled,
         github_enabled: config.flows.github.enabled,
+        microsoft_enabled: config.flows.microsoft.enabled,
     });
     Object.assign(config.flows.password, flows.password);
     Object.assign(config.flows.magic_link, flows.magic_link);
     Object.assign(config.flows.google, flows.google);
     Object.assign(config.flows.github, flows.github);
+    Object.assign(config.flows.microsoft, flows.microsoft);
 
     if (config.cookie.same_site === 'none' && !config.cookie.secure) {
         throw new Error('cookie.same_site=none requires cookie.secure=true');

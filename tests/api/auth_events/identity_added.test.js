@@ -21,6 +21,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded when GitHub identity is connected', async function () {
+        await db('auth_events').del();
         mock_github();
         await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -39,6 +40,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded when Google identity is connected', async function () {
+        await db('auth_events').del();
         mock_google();
         await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -57,6 +59,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded as noop when GitHub identity is already connected', async function () {
+        await db('auth_events').del();
         mock_github();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
@@ -79,6 +82,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded as noop when Google identity is already connected', async function () {
+        await db('auth_events').del();
         mock_google();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
@@ -101,6 +105,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded as failure when GitHub identity belongs to another user', async function () {
+        await db('auth_events').del();
         mock_github();
 
         // User A has github-user-123
@@ -128,6 +133,7 @@ describe('auth_events • identity_added', function () {
     });
 
     it('should be recorded as failure when Google identity belongs to another user', async function () {
+        await db('auth_events').del();
         mock_google();
 
         // User A has google-user-123
