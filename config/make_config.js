@@ -21,6 +21,56 @@ const secret_key_file = fs_path_resolve(__dirname, '../data/secret.key');
 const emails_dir = fs_path_resolve(__dirname, '../design/emails');
 const settings_file = fs_path_resolve(__dirname, 'settings.yaml');
 
+const known_authwall_env_names = new Set([
+    'AUTHWALL_DB',
+    'AUTHWALL_SECRET',
+    'AUTHWALL_SEED',
+    'AUTHWALL_LOGGER',
+    'AUTHWALL_RATE_LIMITING',
+    'AUTHWALL_BCRYPT_ROUNDS',
+    'AUTHWALL_PUBLIC_URL',
+    'AUTHWALL_TARGET_URL',
+    'AUTHWALL_TARGET_MODE',
+    'AUTHWALL_SET_HEADERS',
+    'AUTHWALL_UNSET_HEADERS',
+
+    'AUTHWALL_PASSWORD_MIN',
+    'AUTHWALL_MAGIC_LINK',
+
+    'AUTHWALL_MAILER',
+
+    'AUTHWALL_RESEND_FROM',
+    'AUTHWALL_RESEND_KEY',
+
+    'AUTHWALL_MAILJET_KEY',
+    'AUTHWALL_MAILJET_SECRET',
+    'AUTHWALL_MAILJET_FROM',
+
+    'AUTHWALL_SES_FROM',
+    'AUTHWALL_SES_KEY',
+    'AUTHWALL_SES_REGION',
+    'AUTHWALL_SES_SECRET',
+    'AUTHWALL_SES_SESSION_TOKEN',
+
+    'AUTHWALL_ALLOWED_DOMAINS',
+    'AUTHWALL_ALLOWED_EMAILS',
+    'AUTHWALL_COOKIE_DOMAIN',
+    'AUTHWALL_COOKIE_PATH',
+    'AUTHWALL_COOKIE_SAMESITE',
+    'AUTHWALL_COOKIE_SECURE',
+    'AUTHWALL_DENIED_DOMAINS',
+    'AUTHWALL_DENIED_EMAILS',
+    'AUTHWALL_FLOWS',
+
+    'AUTHWALL_GOOGLE_CLIENT_ID',
+    'AUTHWALL_GOOGLE_CLIENT_SECRET',
+    'AUTHWALL_GOOGLE_REDIRECT_URL',
+
+    'AUTHWALL_GITHUB_CLIENT_ID',
+    'AUTHWALL_GITHUB_CLIENT_SECRET',
+    'AUTHWALL_GITHUB_REDIRECT_URL',
+]);
+
 fs.mkdirSync(data_dir, {recursive: true});
 fs.mkdirSync(logs_dir, {recursive: true});
 fs.mkdirSync(uploads_dir, {recursive: true});
@@ -28,9 +78,11 @@ fs.mkdirSync(uploads_dir, {recursive: true});
 function make_config(input = {})
 {
     const env = {...input};
+    const settings_text = fs.readFileSync(settings_file, {encoding: 'utf8'});
+    validate_authwall_env_names(env, settings_text);
     const secret = load_secret(env);
     const settings = resolve_yaml_vars(
-        yaml.parse(fs.readFileSync(settings_file, {encoding: 'utf8'})),
+        yaml.parse(settings_text),
         env
     );
     const public_url = settings.public_url ?? 'http://127.0.0.1:3000';
@@ -263,6 +315,19 @@ function validate_secret(secret, source)
 {
     if (secret.length < 32) {
         throw new Error(`${source} must be at least 32 characters`);
+    }
+}
+
+function validate_authwall_env_names(env, settings_text)
+{
+    const allowed = new Set(known_authwall_env_names);
+    for (const match of settings_text.matchAll(/\$\{(AUTHWALL_[A-Z0-9_]+)}/g)) {
+        allowed.add(match[1]);
+    }
+
+    const unknown = Object.keys(env).filter(v => v.startsWith('AUTHWALL_') && !allowed.has(v)).sort();
+    if (unknown.length) {
+        throw new Error(`Unrecognized AUTHWALL env var(s): ${unknown.join(', ')}`);
     }
 }
 

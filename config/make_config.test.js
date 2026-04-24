@@ -95,4 +95,26 @@ describe('make_config', function () {
         }
     });
 
+    it('rejects unrecognized AUTHWALL env vars', function () {
+        assert.throws(
+            () => make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_TAREGT_URL: 'http://typo.test',
+            }),
+            /Unrecognized AUTHWALL env var\(s\): AUTHWALL_TAREGT_URL/
+        );
+    });
+
+    it('allows unrelated env vars', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            NODE_ENV: 'test',
+            PATH: '/bin',
+        });
+
+        assert.strictEqual(config.target.url, 'http://127.0.0.1:8080');
+    });
+
 });
