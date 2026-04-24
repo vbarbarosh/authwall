@@ -45,6 +45,9 @@ describe('make_config', function () {
                 microsoft: {
                     enabled: false,
                 },
+                facebook: {
+                    enabled: false,
+                },
             },
         });
         assert.strictEqual(config.target.set_headers.length, 2);

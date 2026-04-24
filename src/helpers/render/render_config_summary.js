@@ -80,6 +80,9 @@ function format_flows(flows)
     if (flows.microsoft.enabled) {
         out.push(`- Microsoft OAuth${flows.microsoft.redirect_url ? `: ${flows.microsoft.redirect_url}` : ''}`);
     }
+    if (flows.facebook.enabled) {
+        out.push(`- Facebook OAuth${flows.facebook.redirect_url ? `: ${flows.facebook.redirect_url}` : ''}`);
+    }
 
     return out.length ? out : ['- none'];
 }

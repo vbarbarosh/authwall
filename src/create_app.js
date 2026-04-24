@@ -126,6 +126,9 @@ async function create_app()
     if (config.flows.microsoft.enabled) {
         express_routes(app, require('./routes/oauth_microsoft'));
     }
+    if (config.flows.facebook.enabled) {
+        express_routes(app, require('./routes/oauth_facebook'));
+    }
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
     }

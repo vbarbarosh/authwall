@@ -5,6 +5,7 @@ const db = require('../../../db');
 describe('auth_events • session_revoked', function () {
 
     it('should be recorded as success when another session is revoked', async function () {
+        await db('auth_events').del();
         await this.add_user({username: 'mocha', password: 'pass123'});
 
         const cookies_a = new Map();
@@ -33,6 +34,7 @@ describe('auth_events • session_revoked', function () {
     });
 
     it('should be recorded as failure when revoking current session', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
         const sess = await this.client.get_session();
@@ -48,6 +50,7 @@ describe('auth_events • session_revoked', function () {
     });
 
     it('should be recorded as noop when session uid does not belong to the user', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
         await this.http_post_json('/auth/sessions/revoke', {uid: 'nonexistent-session-uid', _csrf: status.csrf_token});

@@ -19,6 +19,8 @@ const const_email = {
     github_disconnected: 'github_disconnected',
     microsoft_connected: 'microsoft_connected',
     microsoft_disconnected: 'microsoft_disconnected',
+    facebook_connected: 'facebook_connected',
+    facebook_disconnected: 'facebook_disconnected',
     password_changed_from_profile: 'password_changed_from_profile',
     password_changed_via_reset_link: 'password_changed_via_reset_link',
 };

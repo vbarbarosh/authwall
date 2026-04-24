@@ -62,6 +62,9 @@ async function status_get(req, res)
     if (config.flows.microsoft.enabled) {
         flows.microsoft = {};
     }
+    if (config.flows.facebook.enabled) {
+        flows.facebook = {};
+    }
 
     if (!user) {
         res.send({

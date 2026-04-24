@@ -1,0 +1,13 @@
+Subject: Facebook account connected
+
+Hi {{display_name}},
+
+Your Facebook account ({{facebook_email}}) was connected to your account on
+{{date}} from IP address {{ip}}.
+
+If you made this change, no action is needed.
+
+If you did not connect a Facebook account, reset your password immediately:
+{{reset_link}}
+
+— Authwall

@@ -7,6 +7,7 @@ const ALLOWED = new Set([
     'google',
     'github',
     'microsoft',
+    'facebook',
 ]);
 
 function parse_flows_setting(value, {
@@ -19,11 +20,12 @@ function parse_flows_setting(value, {
     google_enabled = false,
     github_enabled = false,
     microsoft_enabled = false,
+    facebook_enabled = false,
 } = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
     if (!normalized || normalized === 'auto') {
-        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled});
+        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled});
     }
 
     const requested = normalized.split(',').map(v => v.trim()).filter(Boolean);
@@ -60,6 +62,9 @@ function parse_flows_setting(value, {
     if (requested.includes('microsoft') && !microsoft_enabled) {
         throw new Error('AUTHWALL_FLOWS=microsoft requires configured Microsoft OAuth');
     }
+    if (requested.includes('facebook') && !facebook_enabled) {
+        throw new Error('AUTHWALL_FLOWS=facebook requires configured Facebook OAuth');
+    }
 
     const magic_link = requested.includes('magic_link') || requested.includes('magic_link_and_code');
     const magic_code = requested.includes('magic_code') || requested.includes('magic_link_and_code');
@@ -92,12 +97,15 @@ function parse_flows_setting(value, {
         microsoft: {
             enabled: requested.includes('microsoft'),
         },
+        facebook: {
+            enabled: requested.includes('facebook'),
+        },
     };
 }
 
-function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled})
+function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled})
 {
-    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled;
+    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled || facebook_enabled;
 
     return {
         password: {
@@ -117,6 +125,9 @@ function auto({password_enabled, username_enabled, email_enabled, magic_link_ena
         },
         microsoft: {
             enabled: !!microsoft_enabled,
+        },
+        facebook: {
+            enabled: !!facebook_enabled,
         },
     };
 }

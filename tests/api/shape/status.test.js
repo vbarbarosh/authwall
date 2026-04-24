@@ -8,12 +8,14 @@ describe('shape • status', function () {
         config.flows.google.enabled = true;
         config.flows.github.enabled = true;
         config.flows.microsoft.enabled = true;
+        config.flows.facebook.enabled = true;
     });
 
     afterEach(function () {
         config.flows.google.enabled = false;
         config.flows.github.enabled = false;
         config.flows.microsoft.enabled = false;
+        config.flows.facebook.enabled = false;
     });
 
     it('anonymous', async function () {
@@ -34,6 +36,7 @@ describe('shape • status', function () {
                 google: {},
                 github: {},
                 microsoft: {},
+                facebook: {},
             },
             version: pkg.version,
         };
@@ -58,6 +61,7 @@ describe('shape • status', function () {
                 google: {},
                 github: {},
                 microsoft: {},
+                facebook: {},
             },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',
             user_slug: String, // 'swbwnpmv7h516n8u',
