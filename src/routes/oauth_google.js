@@ -70,7 +70,7 @@ async function google_callback_get(req, res)
 
     delete req.session.oauth_state;
 
-    const token = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
+    const tokens = await http_post_urlencoded('https://oauth2.googleapis.com/token', {
         code,
         client_id: config.flows.google.client_id,
         client_secret: config.flows.google.client_secret,
@@ -78,18 +78,18 @@ async function google_callback_get(req, res)
         grant_type: 'authorization_code',
     });
 
-    const userinfo = await http_get_json('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {Authorization: `Bearer ${token.access_token}`},
+    const user_info = await http_get_json('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {Authorization: `Bearer ${tokens.access_token}`},
     });
 
     const ident = await db('user_identities').where({
         type: const_user_identity.oauth_google,
-        value_normalized: userinfo.sub,
+        value_normalized: user_info.sub,
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
     const verified_emails = await authorize_oauth_verified_emails(
-        userinfo.email_verified && userinfo.email ? [userinfo.email] : [],
+        user_info.email_verified && user_info.email ? [user_info.email] : [],
         {require_one_when_access_rules: oauth_intent === const_oauth_intent.login}
     );
 
@@ -106,8 +106,8 @@ async function google_callback_get(req, res)
                     req,
                     ident: {
                         type: const_user_identity.oauth_google,
-                        value: String(userinfo.sub),
-                        value_normalized: String(userinfo.sub),
+                        value: String(user_info.sub),
+                        value_normalized: String(user_info.sub),
                     },
                     event_type: const_auth_event.identity_added,
                     event_status: 'failure',
@@ -133,8 +133,8 @@ async function google_callback_get(req, res)
             uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: const_user_identity.oauth_google,
-            value: String(userinfo.sub),
-            value_normalized: String(userinfo.sub),
+            value: String(user_info.sub),
+            value_normalized: String(user_info.sub),
             created_at: now,
             updated_at: now,
             verified_at: now,
@@ -144,8 +144,8 @@ async function google_callback_get(req, res)
             req,
             ident: {
                 type: const_user_identity.oauth_google,
-                value: String(userinfo.sub),
-                value_normalized: String(userinfo.sub),
+                value: String(user_info.sub),
+                value_normalized: String(user_info.sub),
             },
             event_type: const_auth_event.identity_added,
         });
@@ -175,7 +175,7 @@ async function google_callback_get(req, res)
                 user,
                 placeholders: {
                     display_name: user.display_name,
-                    google_email: userinfo.email ?? '',
+                    google_email: user_info.email ?? '',
                     date: format_date_pretty_24(new Date()),
                     ip: req.session.ip ?? 'n/a',
                     reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
@@ -198,16 +198,16 @@ async function google_callback_get(req, res)
     else {
         await db.transaction(async function () {
             const now = new Date();
-            const display_name = userinfo.name;
-            const avatar_url = userinfo.picture;
+            const display_name = user_info.name;
+            const avatar_url = user_info.picture;
             const user = await users_create({display_name, avatar_url});
             user_id = user.id;
             await db('user_identities').insert({
                 uid: random_uid_user_identity(),
                 user_id,
                 type: const_user_identity.oauth_google,
-                value: String(userinfo.sub),
-                value_normalized: String(userinfo.sub),
+                value: String(user_info.sub),
+                value_normalized: String(user_info.sub),
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -236,8 +236,8 @@ async function google_callback_get(req, res)
     else {
         await complete_sign_up(req, res, user, null, {
             type: const_user_identity.oauth_google,
-            value: String(userinfo.sub),
-            value_normalized: String(userinfo.sub),
+            value: String(user_info.sub),
+            value_normalized: String(user_info.sub),
         });
     }
 }

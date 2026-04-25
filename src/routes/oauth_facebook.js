@@ -71,27 +71,27 @@ async function facebook_callback_get(req, res)
 
     delete req.session.oauth_state;
 
-    const token = await http_get_json(urlmod(FACEBOOK_TOKEN_URL, {
+    const tokens = await http_get_json(urlmod(FACEBOOK_TOKEN_URL, {
         code,
         client_id: config.flows.facebook.client_id,
         client_secret: config.flows.facebook.client_secret,
         redirect_uri: config.flows.facebook.redirect_url,
     }));
 
-    const userinfo = await http_get_json(urlmod(FACEBOOK_ME_URL, {
+    const user_info = await http_get_json(urlmod(FACEBOOK_ME_URL, {
         fields: 'id,name,email,picture',
     }), {
-        headers: {Authorization: `Bearer ${token.access_token}`},
+        headers: {Authorization: `Bearer ${tokens.access_token}`},
     });
 
     const ident = await db('user_identities').where({
         type: const_user_identity.oauth_facebook,
-        value_normalized: userinfo.id,
+        value_normalized: user_info.id,
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
     const verified_emails = await authorize_oauth_verified_emails(
-        userinfo.email ? [userinfo.email] : [],
+        user_info.email ? [user_info.email] : [],
         {require_one_when_access_rules: oauth_intent === const_oauth_intent.login}
     );
 
@@ -108,8 +108,8 @@ async function facebook_callback_get(req, res)
                     req,
                     ident: {
                         type: const_user_identity.oauth_facebook,
-                        value: String(userinfo.id),
-                        value_normalized: String(userinfo.id),
+                        value: String(user_info.id),
+                        value_normalized: String(user_info.id),
                     },
                     event_type: const_auth_event.identity_added,
                     event_status: 'failure',
@@ -135,8 +135,8 @@ async function facebook_callback_get(req, res)
             uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: const_user_identity.oauth_facebook,
-            value: String(userinfo.id),
-            value_normalized: String(userinfo.id),
+            value: String(user_info.id),
+            value_normalized: String(user_info.id),
             created_at: now,
             updated_at: now,
             verified_at: now,
@@ -146,8 +146,8 @@ async function facebook_callback_get(req, res)
             req,
             ident: {
                 type: const_user_identity.oauth_facebook,
-                value: String(userinfo.id),
-                value_normalized: String(userinfo.id),
+                value: String(user_info.id),
+                value_normalized: String(user_info.id),
             },
             event_type: const_auth_event.identity_added,
         });
@@ -176,7 +176,7 @@ async function facebook_callback_get(req, res)
                 user,
                 placeholders: {
                     display_name: user.display_name,
-                    facebook_email: userinfo.email ?? '',
+                    facebook_email: user_info.email ?? '',
                     date: format_date_pretty_24(new Date()),
                     ip: req.session.ip ?? 'n/a',
                     reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
@@ -199,16 +199,16 @@ async function facebook_callback_get(req, res)
     else {
         await db.transaction(async function () {
             const now = new Date();
-            const display_name = userinfo.name;
-            const avatar_url = userinfo.picture?.data?.url ?? null;
+            const display_name = user_info.name;
+            const avatar_url = user_info.picture?.data?.url ?? null;
             const user = await users_create({display_name, avatar_url});
             user_id = user.id;
             await db('user_identities').insert({
                 uid: random_uid_user_identity(),
                 user_id,
                 type: const_user_identity.oauth_facebook,
-                value: String(userinfo.id),
-                value_normalized: String(userinfo.id),
+                value: String(user_info.id),
+                value_normalized: String(user_info.id),
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -237,8 +237,8 @@ async function facebook_callback_get(req, res)
     else {
         await complete_sign_up(req, res, user, null, {
             type: const_user_identity.oauth_facebook,
-            value: String(userinfo.id),
-            value_normalized: String(userinfo.id),
+            value: String(user_info.id),
+            value_normalized: String(user_info.id),
         });
     }
 }

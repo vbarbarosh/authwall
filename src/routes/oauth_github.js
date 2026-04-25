@@ -70,14 +70,14 @@ async function github_callback_get(req, res)
 
     delete req.session.oauth_state;
 
-    const token = await http_post_json('https://github.com/login/oauth/access_token', {
+    const tokens = await http_post_json('https://github.com/login/oauth/access_token', {
         code,
         client_id: config.flows.github.client_id,
         client_secret: config.flows.github.client_secret,
         redirect_uri: config.flows.github.redirect_url,
     });
 
-    assert_shape(token, {
+    assert_shape(tokens, {
         access_token: String, // 'ghu_xxx',
         expires_in: Number, // 28800,
         refresh_token: String, // 'ghr_xxx',
@@ -86,15 +86,15 @@ async function github_callback_get(req, res)
         scope: String, // ''
     });
 
-    const userinfo = await http_get_json('https://api.github.com/user', {
-        headers: {Authorization: `Bearer ${token.access_token}`},
+    const user_info = await http_get_json('https://api.github.com/user', {
+        headers: {Authorization: `Bearer ${tokens.access_token}`},
     });
 
     let verified_email = null;
     let verified_emails = [];
     try {
         const user_emails = await http_get_json('https://api.github.com/user/emails', {
-            headers: {Authorization: `Bearer ${token.access_token}`},
+            headers: {Authorization: `Bearer ${tokens.access_token}`},
         });
         assert_shape(user_emails, assert_shape.array_of({
             email: String,
@@ -111,7 +111,7 @@ async function github_callback_get(req, res)
 
     const ident = await db('user_identities').where({
         type: const_user_identity.oauth_github,
-        value_normalized: userinfo.id,
+        value_normalized: user_info.id,
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
@@ -132,8 +132,8 @@ async function github_callback_get(req, res)
                     req,
                     ident: {
                         type: const_user_identity.oauth_github,
-                        value: String(userinfo.id),
-                        value_normalized: String(userinfo.id),
+                        value: String(user_info.id),
+                        value_normalized: String(user_info.id),
                     },
                     event_type: const_auth_event.identity_added,
                     event_status: 'failure',
@@ -159,8 +159,8 @@ async function github_callback_get(req, res)
             uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: const_user_identity.oauth_github,
-            value: String(userinfo.id),
-            value_normalized: String(userinfo.id),
+            value: String(user_info.id),
+            value_normalized: String(user_info.id),
             created_at: now,
             updated_at: now,
             verified_at: now,
@@ -170,8 +170,8 @@ async function github_callback_get(req, res)
             req,
             ident: {
                 type: const_user_identity.oauth_github,
-                value: String(userinfo.id),
-                value_normalized: String(userinfo.id),
+                value: String(user_info.id),
+                value_normalized: String(user_info.id),
             },
             event_type: const_auth_event.identity_added,
         });
@@ -208,16 +208,16 @@ async function github_callback_get(req, res)
     else {
         await db.transaction(async function () {
             const now = new Date();
-            const display_name = userinfo.name;
-            const avatar_url = userinfo.avatar_url;
+            const display_name = user_info.name;
+            const avatar_url = user_info.avatar_url;
             const user = await users_create({display_name, avatar_url});
             user_id = user.id;
             await db('user_identities').insert({
                 uid: random_uid_user_identity(),
                 user_id,
                 type: const_user_identity.oauth_github,
-                value: String(userinfo.id),
-                value_normalized: String(userinfo.id),
+                value: String(user_info.id),
+                value_normalized: String(user_info.id),
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -246,8 +246,8 @@ async function github_callback_get(req, res)
     else {
         await complete_sign_up(req, res, user, null, {
             type: const_user_identity.oauth_github,
-            value: String(userinfo.id),
-            value_normalized: String(userinfo.id),
+            value: String(user_info.id),
+            value_normalized: String(user_info.id),
         });
     }
 }
