@@ -112,3 +112,17 @@ Why this default exists:
 - An explicit `AUTHWALL_SECRET` still takes precedence, which is the better fit when secrets are managed by the runtime or an external secret store.
 
 If you rotate either `AUTHWALL_SECRET` or `data/secret.key`, existing sessions and CSRF tokens become invalid by design.
+
+## Related projects
+
+- [Auth0](https://auth0.com/)
+- [WorkOS](https://workos.com/)
+- [Supabase Auth](hhttps://supabase.com/auth)
+- [Netlify GoTrue](https://github.com/netlify/gotrue)
+- [Firebase Auth](https://firebase.google.com/products/auth)
+- [Amazon Cognito](https://aws.amazon.com/cognito/)
+- [Authentik](https://goauthentik.io/)
+- [Keycloak](https://www.keycloak.org/)
+- [Authelia](https://www.authelia.com/)
+- [Zitadel](https://zitadel.com/)
+- [Ory](https://www.ory.com/)
