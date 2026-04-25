@@ -2,7 +2,7 @@ Subject: Google account connected
 
 Hi {{display_name}},
 
-Your Google account ({{google_email}}) was connected to your account on
+Your Google account ({{email}}) was connected to your account on
 {{date}} from IP address {{ip}}.
 
 If you made this change, no action is needed.

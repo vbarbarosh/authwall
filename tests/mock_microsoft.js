@@ -3,9 +3,12 @@ const nock = require('nock');
 function mock_microsoft()
 {
     const user_info = {
-        sub: 'microsoft-user-123',
-        name: 'Test User',
-        email: 'test@example.com',
+        'sub': 'microsoft-user-123',
+        '@odata.context': 'https://substrate.office.com/profileB2/v2.0/me/$metadata#userinfo',
+        'givenname': 'Test',
+        'familyname': 'User',
+        'email': 'test@example.com',
+        'picture': 'https://graph.microsoft.com/v1.0/me/photo/$value'
     };
 
     nock.cleanAll();

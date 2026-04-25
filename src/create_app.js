@@ -10,6 +10,11 @@ const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
+const make_oauth_flow = require('./helpers/make/make_oauth_flow');
+const oauth_provider_facebook = require('./oauth_providers/oauth_provider_facebook');
+const oauth_provider_github = require('./oauth_providers/oauth_provider_github');
+const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
+const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
@@ -118,16 +123,16 @@ async function create_app()
         express_routes(app, require('./routes/magic_link'));
     }
     if (config.flows.github.enabled) {
-        express_routes(app, require('./routes/oauth_github'));
+        express_routes(app, make_oauth_flow(oauth_provider_github));
     }
     if (config.flows.google.enabled) {
-        express_routes(app, require('./routes/oauth_google'));
+        express_routes(app, make_oauth_flow(oauth_provider_google));
     }
     if (config.flows.microsoft.enabled) {
-        express_routes(app, require('./routes/oauth_microsoft'));
+        express_routes(app, make_oauth_flow(oauth_provider_microsoft));
     }
     if (config.flows.facebook.enabled) {
-        express_routes(app, require('./routes/oauth_facebook'));
+        express_routes(app, make_oauth_flow(oauth_provider_facebook));
     }
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
@@ -221,7 +226,7 @@ async function create_app()
 
 async function error_handler(error, req, res, next)
 {
-    als.logger.write(`[error_handler] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
+    als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
 
     if (req.session) {
         if (error instanceof UserFriendlyError) {
