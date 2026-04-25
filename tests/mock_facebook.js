@@ -2,7 +2,7 @@ const nock = require('nock');
 
 function mock_facebook()
 {
-    const userinfo = {
+    const user_info = {
         id: 'facebook-user-123',
         name: 'Test User',
         email: 'test@example.com',
@@ -29,14 +29,10 @@ function mock_facebook()
             expires_in: 3600,
         });
 
-    nock('https://graph.facebook.com', {
-        reqheaders: {
-            authorization: 'Bearer fake-token',
-        },
-    })
+    nock('https://graph.facebook.com', {reqheaders: {authorization: 'Bearer fake-token'}})
         .get('/v22.0/me')
         .query({fields: 'id,name,email,picture'})
-        .reply(200, userinfo);
+        .reply(200, user_info);
 }
 
 module.exports = mock_facebook;

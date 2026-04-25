@@ -2,7 +2,7 @@ const nock = require('nock');
 
 function mock_google()
 {
-    const userinfo = {
+    const user_info = {
         sub: 'google-user-123',
         name: 'Test User',
         picture: 'https://example.com/avatar.jpg',
@@ -18,7 +18,7 @@ function mock_google()
 
     nock('https://www.googleapis.com')
         .get('/oauth2/v3/userinfo')
-        .reply(200, userinfo);
+        .reply(200, user_info);
 }
 
 module.exports = mock_google;

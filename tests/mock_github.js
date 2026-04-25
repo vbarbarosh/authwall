@@ -2,7 +2,7 @@ const nock = require('nock');
 
 function mock_github()
 {
-    const userinfo = {
+    const user_info = {
         id: 'github-user-123',
         name: 'Test User',
         avatar_url: 'https://example.com/avatar.jpg',
@@ -23,7 +23,7 @@ function mock_github()
 
     nock('https://api.github.com')
         .get('/user')
-        .reply(200, userinfo);
+        .reply(200, user_info);
 
     // nock('https://api.github.com')
     //     .get('/user/emails')

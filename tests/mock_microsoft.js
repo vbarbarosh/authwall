@@ -2,7 +2,7 @@ const nock = require('nock');
 
 function mock_microsoft()
 {
-    const userinfo = {
+    const user_info = {
         sub: 'microsoft-user-123',
         name: 'Test User',
         email: 'test@example.com',
@@ -27,7 +27,7 @@ function mock_microsoft()
 
     nock('https://graph.microsoft.com')
         .get('/oidc/userinfo')
-        .reply(200, userinfo);
+        .reply(200, user_info);
 }
 
 module.exports = mock_microsoft;
