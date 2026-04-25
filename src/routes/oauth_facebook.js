@@ -22,6 +22,8 @@ const save_session = require('../helpers/save_session');
 const send_email_nothrow = require('../helpers/send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
+const random_base62 = require('../helpers/random/random_base62');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 
 const FACEBOOK_AUTHORIZE_URL = 'https://www.facebook.com/v22.0/dialog/oauth';
 const FACEBOOK_TOKEN_URL = 'https://graph.facebook.com/v22.0/oauth/access_token';
@@ -42,6 +44,7 @@ async function facebook_get(req, res)
     const state = oauth_state_from_intent(intent);
 
     req.session.oauth_state = state;
+    req.session.oauth_code_verifier = random_base62(64);
     await save_session(req);
 
     res.redirect(urlmod(FACEBOOK_AUTHORIZE_URL, {
@@ -50,6 +53,8 @@ async function facebook_get(req, res)
         response_type: 'code',
         scope: 'email',
         state,
+        code_challenge: crypto_hash_sha256(req.session.oauth_code_verifier).toString('base64url'),
+        code_challenge_method: 'S256',
     }));
 }
 
@@ -57,7 +62,7 @@ async function facebook_get(req, res)
 async function facebook_callback_get(req, res)
 {
     const {code, state} = req.query;
-    const expected_state = req.session.oauth_state;
+    const {oauth_state, oauth_code_verifier} = req.session;
 
     // Prevent accidentally losing state on invalid requests
     // delete req.session.oauth_state;
@@ -65,14 +70,16 @@ async function facebook_callback_get(req, res)
     if (!code) {
         throw new UserFriendlyError('Missing OAuth code');
     }
-    if (!state || state !== expected_state) {
+    if (!state || state !== oauth_state) {
         throw new UserFriendlyError('Invalid OAuth state');
     }
 
     delete req.session.oauth_state;
+    delete req.session.oauth_code_verifier;
 
     const tokens = await http_get_json(urlmod(FACEBOOK_TOKEN_URL, {
         code,
+        code_verifier: oauth_code_verifier,
         client_id: config.flows.facebook.client_id,
         client_secret: config.flows.facebook.client_secret,
         redirect_uri: config.flows.facebook.redirect_url,
