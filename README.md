@@ -117,7 +117,7 @@ If you rotate either `AUTHWALL_SECRET` or `data/secret.key`, existing sessions a
 
 - [Auth0](https://auth0.com/)
 - [WorkOS](https://workos.com/)
-- [Supabase Auth](hhttps://supabase.com/auth)
+- [Supabase Auth](https://supabase.com/auth)
 - [Netlify GoTrue](https://github.com/netlify/gotrue)
 - [Firebase Auth](https://firebase.google.com/products/auth)
 - [Amazon Cognito](https://aws.amazon.com/cognito/)
