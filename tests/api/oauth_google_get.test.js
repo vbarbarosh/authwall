@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../config');
+const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('GET /auth/google', function () {
@@ -27,6 +28,8 @@ describe('GET /auth/google', function () {
             access_type: 'offline',
             prompt: 'select_account',
             state: sess.oauth_state,
+            code_challenge: crypto_hash_sha256(sess.oauth_code_verifier).toString('base64url'),
+            code_challenge_method: 'S256',
         }));
     });
 

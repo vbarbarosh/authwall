@@ -19,6 +19,7 @@ function mock_facebook()
         .get('/v22.0/oauth/access_token')
         .query({
             code: 'fake_code',
+            code_verifier: /^.{24,}$/,
             client_id: 'mocha_facebook_client_id',
             client_secret: 'mocha_facebook_client_secret',
             redirect_uri: 'mocha_facebook_redirect_url',
