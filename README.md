@@ -126,3 +126,4 @@ If you rotate either `AUTHWALL_SECRET` or `data/secret.key`, existing sessions a
 - [Authelia](https://www.authelia.com/)
 - [Zitadel](https://zitadel.com/)
 - [Ory](https://www.ory.com/)
+- [Tinyauth](https://tinyauth.app/)
