@@ -51,7 +51,7 @@ Authwall runs with zero configuration. By default, it uses SQLite and enables op
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_TARGET_URL=https://myapp.test \
     vbarbarosh/authwall
 ```
 
@@ -68,9 +68,9 @@ docker run --rm -p 3000:3000 \
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_TARGET_URL=https://myapp.test \
     -e AUTHWALL_RESEND_KEY=re_xxx \
-    -e AUTHWALL_RESEND_FROM="Authwall <noreply@app.test>" \
+    -e AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test \
     vbarbarosh/authwall
 ```
 
@@ -96,7 +96,7 @@ Then run:
 ```bash
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_PUBLIC_URL=http://localhost:3000 \
-    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_TARGET_URL=https://myapp.test \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
     -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
     -e AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback \
@@ -125,7 +125,7 @@ Then run:
 ```bash
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_PUBLIC_URL=http://localhost:3000 \
-    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_TARGET_URL=https://myapp.test \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
     -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
     -e AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback \

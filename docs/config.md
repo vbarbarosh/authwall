@@ -189,7 +189,7 @@ otherwise to `false`.
 Example:
 
 ```sh
-AUTHWALL_PUBLIC_URL=https://myapp.com
+AUTHWALL_PUBLIC_URL=https://myapp.test
 ```
 
 ## AUTHWALL_TARGET_URL
@@ -319,7 +319,7 @@ Compact format — `username:password:emails`, with multiple users separated by 
 - Either `username` or `emails` may be empty, but not both.
 
 ```sh
-AUTHWALL_SEED='admin:change-me:admin@myapp.com;ops:change-me:ops1@myapp.com,ops2@myapp.com'
+AUTHWALL_SEED='admin:change-me:admin@myapp.test;ops:change-me:ops1@myapp.test,ops2@myapp.test'
 ```
 
 JSON format — an array of objects:
@@ -330,7 +330,7 @@ JSON format — an array of objects:
 - `display_name` — optional string shown in the profile.
 
 ```sh
-AUTHWALL_SEED='[{"username":"admin","password":"change-me","display_name":"Admin","emails":["admin@myapp.com"]}]'
+AUTHWALL_SEED='[{"username":"admin","password":"change-me","display_name":"Admin","emails":["admin@myapp.test"]}]'
 ```
 
 <a id="authwall_cookie_domain"></a>
@@ -357,7 +357,7 @@ The cookie's `Max-Age` is fixed at 30 days and cannot be changed via env vars.
 Example:
 
 ```sh
-AUTHWALL_COOKIE_DOMAIN=myapp.com
+AUTHWALL_COOKIE_DOMAIN=myapp.test
 AUTHWALL_COOKIE_PATH=/
 AUTHWALL_COOKIE_SAMESITE=lax
 AUTHWALL_COOKIE_SECURE=true
@@ -425,20 +425,20 @@ Examples:
 Only one address can sign in; everyone else is denied:
 
 ```sh
-AUTHWALL_ALLOWED_EMAILS=admin@myapp.com
+AUTHWALL_ALLOWED_EMAILS=admin@myapp.test
 ```
 
 A small allowlist — these three addresses can sign in, nobody else:
 
 ```sh
-AUTHWALL_ALLOWED_EMAILS=alice@myapp.com,bob@myapp.com,carol@myapp.com
+AUTHWALL_ALLOWED_EMAILS=alice@myapp.test,bob@myapp.test,carol@myapp.test
 ```
 
-Anyone at `myapp.com` can sign in, except one banned address — `DENIED_EMAILS` overrides `ALLOWED_DOMAINS`:
+Anyone at `myapp.test` can sign in, except one banned address — `DENIED_EMAILS` overrides `ALLOWED_DOMAINS`:
 
 ```sh
-AUTHWALL_ALLOWED_DOMAINS=myapp.com
-AUTHWALL_DENIED_EMAILS=fired@myapp.com
+AUTHWALL_ALLOWED_DOMAINS=myapp.test
+AUTHWALL_DENIED_EMAILS=fired@myapp.test
 ```
 
 ## AUTHWALL_MAILER
@@ -473,7 +473,7 @@ Configures the Resend mailer.
 Both variables are required together; the provider is usable only when both are set.
 
 - `AUTHWALL_RESEND_KEY` — Resend API key. Treat it as a secret: do not commit it or expose it to clients.
-- `AUTHWALL_RESEND_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The domain must be verified in Resend.
+- `AUTHWALL_RESEND_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.test>"`. The domain must be verified in Resend.
 
 With `AUTHWALL_MAILER=auto` (the default), Resend is selected automatically when both are set.
 
@@ -486,7 +486,7 @@ Example:
 
 ```sh
 AUTHWALL_RESEND_KEY=re_...
-AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.com>"
+AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test>"
 ```
 
 <a id="authwall_mailjet_key"></a>
@@ -500,7 +500,7 @@ All three variables are required together; the provider is usable only when all 
 
 - `AUTHWALL_MAILJET_KEY` — Mailjet API key.
 - `AUTHWALL_MAILJET_SECRET` — Mailjet API secret. Treat it as a secret: do not commit it or expose it to clients.
-- `AUTHWALL_MAILJET_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The sender must be verified in Mailjet.
+- `AUTHWALL_MAILJET_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.test>"`. The sender must be verified in Mailjet.
 
 With `AUTHWALL_MAILER=auto` (the default), Mailjet is selected automatically when all three are set and Resend is not configured.
 
@@ -514,7 +514,7 @@ Example:
 ```sh
 AUTHWALL_MAILJET_KEY=...
 AUTHWALL_MAILJET_SECRET=...
-AUTHWALL_MAILJET_FROM="Authwall <noreply@myapp.com>"
+AUTHWALL_MAILJET_FROM="Authwall <noreply@myapp.test>"
 ```
 
 <a id="authwall_ses_key"></a>
@@ -530,7 +530,7 @@ Configures the Amazon SES mailer.
 
 - `AUTHWALL_SES_KEY` — AWS access key ID.
 - `AUTHWALL_SES_SECRET` — AWS secret access key. Treat it as a secret: do not commit it or expose it to clients.
-- `AUTHWALL_SES_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The sender (or its domain) must be verified in SES.
+- `AUTHWALL_SES_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.test>"`. The sender (or its domain) must be verified in SES.
 - `AUTHWALL_SES_REGION` — AWS region for the SES endpoint. Defaults to `us-east-1`.
 - `AUTHWALL_SES_SESSION_TOKEN` — Optional AWS session token for temporary credentials (e.g. STS / assumed roles). Omit when using long-lived IAM access keys.
 
@@ -547,7 +547,7 @@ Example:
 AUTHWALL_SES_KEY=AKIA...
 AUTHWALL_SES_SECRET=...
 AUTHWALL_SES_REGION=us-east-1
-AUTHWALL_SES_FROM="Authwall <noreply@myapp.com>"
+AUTHWALL_SES_FROM="Authwall <noreply@myapp.test>"
 ```
 
 ## AUTHWALL_FLOWS
@@ -627,7 +627,7 @@ Example:
 ```sh
 AUTHWALL_GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
 AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX-...
-AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.com/auth/google/callback
+AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.test/auth/google/callback
 ```
 
 <a id="authwall_github_client_id"></a>
@@ -655,7 +655,7 @@ Example:
 ```sh
 AUTHWALL_GITHUB_CLIENT_ID=Iv1.abcdef1234567890
 AUTHWALL_GITHUB_CLIENT_SECRET=ghs_...
-AUTHWALL_GITHUB_REDIRECT_URL=https://myapp.com/auth/github/callback
+AUTHWALL_GITHUB_REDIRECT_URL=https://myapp.test/auth/github/callback
 ```
 
 <a id="authwall_facebook_client_id"></a>
@@ -683,7 +683,7 @@ Example:
 ```sh
 AUTHWALL_FACEBOOK_CLIENT_ID=1234567890123456
 AUTHWALL_FACEBOOK_CLIENT_SECRET=...
-AUTHWALL_FACEBOOK_REDIRECT_URL=https://myapp.com/auth/facebook/callback
+AUTHWALL_FACEBOOK_REDIRECT_URL=https://myapp.test/auth/facebook/callback
 ```
 
 <a id="authwall_microsoft_client_id"></a>
@@ -711,7 +711,7 @@ Example:
 ```sh
 AUTHWALL_MICROSOFT_CLIENT_ID=00000000-0000-0000-0000-000000000000
 AUTHWALL_MICROSOFT_CLIENT_SECRET=...
-AUTHWALL_MICROSOFT_REDIRECT_URL=https://myapp.com/auth/microsoft/callback
+AUTHWALL_MICROSOFT_REDIRECT_URL=https://myapp.test/auth/microsoft/callback
 ```
 
 <a id="authwall_twitter_client_id"></a>
@@ -741,7 +741,7 @@ Example:
 ```sh
 AUTHWALL_TWITTER_CLIENT_ID=...
 AUTHWALL_TWITTER_CLIENT_SECRET=...
-AUTHWALL_TWITTER_REDIRECT_URL=https://myapp.com/auth/twitter/callback
+AUTHWALL_TWITTER_REDIRECT_URL=https://myapp.test/auth/twitter/callback
 ```
 
 <a id="authwall_discord_client_id"></a>
@@ -769,5 +769,5 @@ Example:
 ```sh
 AUTHWALL_DISCORD_CLIENT_ID=1234567890123456789
 AUTHWALL_DISCORD_CLIENT_SECRET=...
-AUTHWALL_DISCORD_REDIRECT_URL=https://myapp.com/auth/discord/callback
+AUTHWALL_DISCORD_REDIRECT_URL=https://myapp.test/auth/discord/callback
 ```
