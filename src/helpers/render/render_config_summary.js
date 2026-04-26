@@ -83,6 +83,9 @@ function format_flows(flows)
     if (flows.facebook.enabled) {
         out.push(`- Facebook OAuth${flows.facebook.redirect_url ? `: ${flows.facebook.redirect_url}` : ''}`);
     }
+    if (flows.twitter.enabled) {
+        out.push(`- X OAuth${flows.twitter.redirect_url ? `: ${flows.twitter.redirect_url}` : ''}`);
+    }
 
     return out.length ? out : ['- none'];
 }

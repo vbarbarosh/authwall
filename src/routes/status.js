@@ -65,6 +65,9 @@ async function status_get(req, res)
     if (config.flows.facebook.enabled) {
         flows.facebook = {};
     }
+    if (config.flows.twitter.enabled) {
+        flows.twitter = {};
+    }
 
     if (!user) {
         res.send({

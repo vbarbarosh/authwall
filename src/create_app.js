@@ -15,6 +15,7 @@ const oauth_provider_facebook = require('./oauth_providers/oauth_provider_facebo
 const oauth_provider_github = require('./oauth_providers/oauth_provider_github');
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
 const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
+const oauth_provider_twitter = require('./oauth_providers/oauth_provider_twitter');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
@@ -134,6 +135,9 @@ async function create_app()
     if (config.flows.facebook.enabled) {
         express_routes(app, make_oauth_flow(oauth_provider_facebook));
     }
+    if (config.flows.twitter.enabled) {
+        express_routes(app, make_oauth_flow(oauth_provider_twitter));
+    }
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
     }
@@ -226,6 +230,9 @@ async function create_app()
 
 async function error_handler(error, req, res, next)
 {
+    // const details = {status: error.response?.status, body: error.response?.data, headers: error.response?.headers};
+    // als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(details).slice(1, -1)}`);
+
     als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
 
     if (req.session) {

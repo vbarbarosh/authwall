@@ -47,7 +47,7 @@ cookie:
   max_age_days: 30
 
 # AUTHWALL_FLOWS=auto
-# or comma-separated: username,email,magic_link,magic_code,magic_link_and_code,google,github,microsoft,facebook
+# or comma-separated: username,email,magic_link,magic_code,magic_link_and_code,google,github,microsoft,facebook,twitter
 flows:
 
   # I have a password
@@ -89,6 +89,13 @@ flows:
     client_id: ${AUTHWALL_FACEBOOK_CLIENT_ID}
     client_secret: ${AUTHWALL_FACEBOOK_CLIENT_SECRET}
     redirect_url: ${AUTHWALL_FACEBOOK_REDIRECT_URL}
+
+  # Sign in with X
+  twitter:
+    enabled: true
+    client_id: ${AUTHWALL_TWITTER_CLIENT_ID}
+    client_secret: ${AUTHWALL_TWITTER_CLIENT_SECRET}
+    redirect_url: ${AUTHWALL_TWITTER_REDIRECT_URL}
 
 mailer:
   enabled: true

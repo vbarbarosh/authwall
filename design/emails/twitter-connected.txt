@@ -1,0 +1,13 @@
+Subject: X account connected
+
+Hi {{display_name}},
+
+Your X account ({{email}}) was connected to your account on
+{{date}} from IP address {{ip}}.
+
+If you made this change, no action is needed.
+
+If you did not connect an X account, reset your password immediately:
+{{reset_link}}
+
+— Authwall

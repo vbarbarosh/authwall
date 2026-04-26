@@ -48,6 +48,9 @@ describe('make_config', function () {
                 facebook: {
                     enabled: false,
                 },
+                twitter: {
+                    enabled: false,
+                },
             },
         });
         assert.strictEqual(config.target.set_headers.length, 2);

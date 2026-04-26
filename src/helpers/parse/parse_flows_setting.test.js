@@ -10,6 +10,7 @@ describe('parse_flows_setting', function () {
             github_enabled: false,
             microsoft_enabled: false,
             facebook_enabled: false,
+            twitter_enabled: false,
         };
         assert.deepStrictEqual(parse_flows_setting(undefined, env), {
             password: {enabled: true, allow_username: true, allow_email: false},
@@ -18,6 +19,7 @@ describe('parse_flows_setting', function () {
             github: {enabled: false},
             microsoft: {enabled: false},
             facebook: {enabled: false},
+            twitter: {enabled: false},
         });
     });
 
@@ -28,6 +30,7 @@ describe('parse_flows_setting', function () {
             github_enabled: false,
             microsoft_enabled: false,
             facebook_enabled: false,
+            twitter_enabled: false,
         };
         assert.deepStrictEqual(parse_flows_setting('auto', env), {
             password: {enabled: true, allow_username: true, allow_email: true},
@@ -36,6 +39,7 @@ describe('parse_flows_setting', function () {
             github: {enabled: false},
             microsoft: {enabled: false},
             facebook: {enabled: false},
+            twitter: {enabled: false},
         });
     });
 
@@ -46,6 +50,7 @@ describe('parse_flows_setting', function () {
             github_enabled: false,
             microsoft_enabled: true,
             facebook_enabled: false,
+            twitter_enabled: true,
         };
         assert.deepStrictEqual(parse_flows_setting('auto', env), {
             password: {enabled: false, allow_username: false, allow_email: false},
@@ -54,6 +59,7 @@ describe('parse_flows_setting', function () {
             github: {enabled: false},
             microsoft: {enabled: true},
             facebook: {enabled: false},
+            twitter: {enabled: true},
         });
     });
 
@@ -64,14 +70,16 @@ describe('parse_flows_setting', function () {
             github_enabled: true,
             microsoft_enabled: true,
             facebook_enabled: true,
+            twitter_enabled: true,
         };
-        assert.deepStrictEqual(parse_flows_setting('username,email,magic_link,magic_code,google,github,microsoft,facebook', env), {
+        assert.deepStrictEqual(parse_flows_setting('username,email,magic_link,magic_code,google,github,microsoft,facebook,twitter', env), {
             password: {enabled: true, allow_username: true, allow_email: true},
             magic_link: {enabled: true, mode: 'link_and_code'},
             google: {enabled: true},
             github: {enabled: true},
             microsoft: {enabled: true},
             facebook: {enabled: true},
+            twitter: {enabled: true},
         });
     });
 
@@ -136,6 +144,10 @@ describe('parse_flows_setting', function () {
         assert.throws(
             () => parse_flows_setting('facebook', {mailer_enabled: true, google_enabled: true, github_enabled: true, microsoft_enabled: true, facebook_enabled: false}),
             /requires configured Facebook OAuth/
+        );
+        assert.throws(
+            () => parse_flows_setting('twitter', {mailer_enabled: true, google_enabled: true, github_enabled: true, microsoft_enabled: true, facebook_enabled: true, twitter_enabled: false}),
+            /requires configured X OAuth/
         );
     });
 

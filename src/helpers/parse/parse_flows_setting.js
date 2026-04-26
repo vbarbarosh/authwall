@@ -8,6 +8,7 @@ const ALLOWED = new Set([
     'github',
     'microsoft',
     'facebook',
+    'twitter',
 ]);
 
 function parse_flows_setting(value, {
@@ -21,11 +22,12 @@ function parse_flows_setting(value, {
     github_enabled = false,
     microsoft_enabled = false,
     facebook_enabled = false,
+    twitter_enabled = false,
 } = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
     if (!normalized || normalized === 'auto') {
-        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled});
+        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled});
     }
 
     const requested = normalized.split(',').map(v => v.trim()).filter(Boolean);
@@ -65,6 +67,9 @@ function parse_flows_setting(value, {
     if (requested.includes('facebook') && !facebook_enabled) {
         throw new Error('AUTHWALL_FLOWS=facebook requires configured Facebook OAuth');
     }
+    if (requested.includes('twitter') && !twitter_enabled) {
+        throw new Error('AUTHWALL_FLOWS=twitter requires configured X OAuth');
+    }
 
     const magic_link = requested.includes('magic_link') || requested.includes('magic_link_and_code');
     const magic_code = requested.includes('magic_code') || requested.includes('magic_link_and_code');
@@ -100,12 +105,15 @@ function parse_flows_setting(value, {
         facebook: {
             enabled: requested.includes('facebook'),
         },
+        twitter: {
+            enabled: requested.includes('twitter'),
+        },
     };
 }
 
-function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled})
+function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled})
 {
-    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled || facebook_enabled;
+    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled || facebook_enabled || twitter_enabled;
 
     return {
         password: {
@@ -128,6 +136,9 @@ function auto({password_enabled, username_enabled, email_enabled, magic_link_ena
         },
         facebook: {
             enabled: !!facebook_enabled,
+        },
+        twitter: {
+            enabled: !!twitter_enabled,
         },
     };
 }

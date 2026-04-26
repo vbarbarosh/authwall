@@ -49,11 +49,13 @@ The following `data-testid` values are the supported Playwright contract:
 - `signin-submit`
 - `signin-google`
 - `signin-github`
+- `signin-twitter`
 - `signup-view`
 - `signup-email-field`
 - `signup-username-field`
 - `signup-google`
 - `signup-github`
+- `signup-twitter`
 - `profile-view`
 - `profile-connections`
 - `sessions-view`

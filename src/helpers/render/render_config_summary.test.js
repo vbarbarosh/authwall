@@ -70,6 +70,12 @@ describe('render_config_summary', function () {
                     client_secret: 'facebook-secret',
                     redirect_url: 'https://authwall.test/auth/facebook/callback',
                 },
+                twitter: {
+                    enabled: true,
+                    client_id: 'twitter-client',
+                    client_secret: 'twitter-secret',
+                    redirect_url: 'https://authwall.test/auth/twitter/callback',
+                },
             },
             mailer: {
                 enabled: true,
@@ -115,6 +121,7 @@ describe('render_config_summary', function () {
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);
         assert.match(text, / - Microsoft OAuth: https:\/\/authwall.test\/auth\/microsoft\/callback/);
         assert.match(text, / - Facebook OAuth: https:\/\/authwall.test\/auth\/facebook\/callback/);
+        assert.match(text, / - X OAuth: https:\/\/authwall.test\/auth\/twitter\/callback/);
         assert.match(text, /📭 Mailer: Resend from Authwall <noreply@authwall.test>/);
         assert.match(text, /🪪 Access: only listed emails and listed domains can sign in/);
         assert.match(text, /  - allowed emails: admin@authwall.test/);
@@ -130,6 +137,7 @@ describe('render_config_summary', function () {
         assert.doesNotMatch(text, /google-secret/);
         assert.doesNotMatch(text, /microsoft-secret/);
         assert.doesNotMatch(text, /facebook-secret/);
+        assert.doesNotMatch(text, /twitter-secret/);
     });
 
 });

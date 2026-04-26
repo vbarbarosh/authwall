@@ -6,6 +6,7 @@ const const_user_identity = {
     oauth_github: 'oauth_github',
     oauth_microsoft: 'oauth_microsoft',
     oauth_facebook: 'oauth_facebook',
+    oauth_twitter: 'oauth_twitter',
 };
 
 module.exports = const_user_identity;
