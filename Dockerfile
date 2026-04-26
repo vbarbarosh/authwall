@@ -9,6 +9,7 @@ WORKDIR /app
 
 # node -e "require('https').get('https://example.com', v => console.log('OK', v.statusCode)).on('error', e => console.error(e))"
 ENV LISTEN=0.0.0.0 \
+    PORT=3000 \
     AUTHWALL_LOGGER=stdout \
     NODE_ENV=production \
     NODE_OPTIONS=--use-openssl-ca
