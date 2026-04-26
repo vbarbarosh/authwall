@@ -20,72 +20,9 @@ const uploads_dir = fs_path_resolve(__dirname, '../data/uploads');
 const secret_key_file = fs_path_resolve(__dirname, '../data/secret.key');
 const emails_dir = fs_path_resolve(__dirname, '../design/emails');
 const settings_file = fs_path_resolve(__dirname, 'settings.yaml');
+const authwall_env_vars_file = fs_path_resolve(__dirname, 'authwall_env_vars.txt');
 
-const known_authwall_env_names = new Set([
-    'AUTHWALL_DB',
-    'AUTHWALL_SECRET',
-    'AUTHWALL_SEED',
-    'AUTHWALL_LOGGER',
-    'AUTHWALL_RATE_LIMITING',
-    'AUTHWALL_BCRYPT_ROUNDS',
-    'AUTHWALL_PUBLIC_URL',
-    'AUTHWALL_TARGET_URL',
-    'AUTHWALL_TARGET_MODE',
-    'AUTHWALL_SET_HEADERS',
-    'AUTHWALL_UNSET_HEADERS',
-
-    'AUTHWALL_PASSWORD_MIN',
-    'AUTHWALL_MAGIC_LINK',
-
-    'AUTHWALL_MAILER',
-
-    'AUTHWALL_RESEND_FROM',
-    'AUTHWALL_RESEND_KEY',
-
-    'AUTHWALL_MAILJET_KEY',
-    'AUTHWALL_MAILJET_SECRET',
-    'AUTHWALL_MAILJET_FROM',
-
-    'AUTHWALL_SES_FROM',
-    'AUTHWALL_SES_KEY',
-    'AUTHWALL_SES_REGION',
-    'AUTHWALL_SES_SECRET',
-    'AUTHWALL_SES_SESSION_TOKEN',
-
-    'AUTHWALL_ALLOWED_DOMAINS',
-    'AUTHWALL_ALLOWED_EMAILS',
-    'AUTHWALL_COOKIE_DOMAIN',
-    'AUTHWALL_COOKIE_PATH',
-    'AUTHWALL_COOKIE_SAMESITE',
-    'AUTHWALL_COOKIE_SECURE',
-    'AUTHWALL_DENIED_DOMAINS',
-    'AUTHWALL_DENIED_EMAILS',
-    'AUTHWALL_FLOWS',
-
-    'AUTHWALL_GOOGLE_CLIENT_ID',
-    'AUTHWALL_GOOGLE_CLIENT_SECRET',
-    'AUTHWALL_GOOGLE_REDIRECT_URL',
-
-    'AUTHWALL_GITHUB_CLIENT_ID',
-    'AUTHWALL_GITHUB_CLIENT_SECRET',
-    'AUTHWALL_GITHUB_REDIRECT_URL',
-
-    'AUTHWALL_MICROSOFT_CLIENT_ID',
-    'AUTHWALL_MICROSOFT_CLIENT_SECRET',
-    'AUTHWALL_MICROSOFT_REDIRECT_URL',
-
-    'AUTHWALL_FACEBOOK_CLIENT_ID',
-    'AUTHWALL_FACEBOOK_CLIENT_SECRET',
-    'AUTHWALL_FACEBOOK_REDIRECT_URL',
-
-    'AUTHWALL_TWITTER_CLIENT_ID',
-    'AUTHWALL_TWITTER_CLIENT_SECRET',
-    'AUTHWALL_TWITTER_REDIRECT_URL',
-
-    'AUTHWALL_DISCORD_CLIENT_ID',
-    'AUTHWALL_DISCORD_CLIENT_SECRET',
-    'AUTHWALL_DISCORD_REDIRECT_URL',
-]);
+const known_authwall_env_names = load_authwall_env_names();
 
 fs.mkdirSync(data_dir, {recursive: true});
 fs.mkdirSync(logs_dir, {recursive: true});
@@ -425,6 +362,12 @@ function validate_authwall_env_names(env, settings_text)
     if (unknown.length) {
         throw new Error(`Unrecognized AUTHWALL env var(s): ${unknown.join(', ')}`);
     }
+}
+
+function load_authwall_env_names()
+{
+    const text = fs.readFileSync(authwall_env_vars_file, {encoding: 'utf8'});
+    return new Set(text.split(/\r?\n/).map(v => v.trim()).filter(Boolean));
 }
 
 function validate_mailer(mailer)
