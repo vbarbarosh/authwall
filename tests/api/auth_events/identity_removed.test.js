@@ -17,6 +17,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded when GitHub identity is disconnected', async function () {
+        await db('auth_events').del();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -38,6 +39,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded when Google identity is disconnected', async function () {
+        await db('auth_events').del();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -59,6 +61,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded as failure when GitHub is the last identity', async function () {
+        await db('auth_events').del();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -81,6 +84,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded as failure when Google is the last identity', async function () {
+        await db('auth_events').del();
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
 
@@ -103,6 +107,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded as noop when GitHub is not connected', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/github/disconnect', {});
 
@@ -117,6 +122,7 @@ describe('auth_events • identity_removed', function () {
     });
 
     it('should be recorded as noop when Google is not connected', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/google/disconnect', {});
 
