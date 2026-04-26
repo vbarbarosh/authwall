@@ -70,7 +70,7 @@ docker run --rm -p 3000:3000 \
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_TARGET_URL=https://myapp.test \
     -e AUTHWALL_RESEND_KEY=re_xxx \
-    -e AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test \
+    -e AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test>" \
     vbarbarosh/authwall
 ```
 
