@@ -1,6 +1,6 @@
 const nock = require('nock');
 
-const EXPECTED_BASIC = Buffer.from(`mocha_twitter_client_id:mocha_twitter_client_secret`).toString('base64');
+const EXPECTED_BASIC = Buffer.from('mocha_twitter_client_id:mocha_twitter_client_secret').toString('base64');
 
 function mock_twitter({email = 'test@example.com'} = {})
 {
