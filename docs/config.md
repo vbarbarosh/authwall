@@ -58,6 +58,25 @@
 | [`AUTHWALL_DISCORD_CLIENT_SECRET`](#authwall_discord_client_secret) | Discord OAuth client secret. |
 | [`AUTHWALL_DISCORD_REDIRECT_URL`](#authwall_discord_redirect_url) | Discord OAuth redirect URL. |
 
+<a id="listen"></a>
+<a id="port"></a>
+
+## Server
+
+Where the Authwall HTTP server binds.
+
+- `LISTEN` — bind address. Default: `127.0.0.1`. Use `0.0.0.0` to accept connections on every interface (typical inside a container) or a specific address to bind to one interface.
+- `PORT` — TCP port. Default: `3000`.
+
+These configure the local listener only; the externally visible URL is set separately via [AUTHWALL_PUBLIC_URL](#authwall_public_url).
+
+Example:
+
+```sh
+LISTEN=0.0.0.0
+PORT=8000
+```
+
 ## AUTHWALL_SECRET
 
 Root secret used to derive Authwall's session and CSRF secrets.
@@ -76,6 +95,67 @@ Example:
 
 ```sh
 AUTHWALL_SECRET=$(bin/random-secret)
+```
+
+## AUTHWALL_LOGGER
+
+Where Authwall writes its log output.
+
+- Type: enum
+- Values: `daily`, `stdout`
+- Default: `daily`
+
+Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes.
+Use `stdout` to write to standard output, which is the right choice for containerized deployments where a process supervisor or log collector picks up stdout.
+
+Example:
+
+```sh
+AUTHWALL_LOGGER=stdout
+```
+
+<a id="authwall_password_min"></a>
+<a id="authwall_bcrypt_rounds"></a>
+
+## Passwords
+
+Controls how Authwall accepts and stores passwords.
+
+- `AUTHWALL_PASSWORD_MIN` — minimum length for new passwords (sign-up, password change, password reset). Type: integer in `[4, 32]`. Default: `8`. Existing shorter hashes continue to work on sign-in; the limit is only enforced when a password is set.
+- `AUTHWALL_BCRYPT_ROUNDS` — bcrypt cost factor for new password hashes and magic-code hashes. Type: integer in `[4, 31]`. Default: `12`. Each step roughly doubles hashing time; raising this hardens hashes against offline attacks but slows every sign-in proportionally.
+
+> [!WARNING]
+> Out-of-range values abort startup.
+
+Example:
+
+```sh
+AUTHWALL_PASSWORD_MIN=12
+AUTHWALL_BCRYPT_ROUNDS=13
+```
+
+## AUTHWALL_RATE_LIMITING
+
+Toggles Authwall's built-in per-IP rate limiting.
+
+- Type: string flag
+- Values: `0` to disable; any other value (or unset) leaves it enabled
+- Default: enabled
+
+When enabled, the following endpoints are rate-limited per client IP:
+
+- Sign-in — 10 requests per 15 minutes.
+- Sign-up — 5 requests per hour.
+- Password reset — 5 requests per hour.
+- Magic-link request — 5 requests per hour.
+
+Counts are tracked in memory only, so they do not persist across restarts and are not shared between processes.
+Disable rate limiting only in environments where requests are throttled by an upstream proxy or load balancer, or in tests where the limits would interfere.
+
+Example:
+
+```sh
+AUTHWALL_RATE_LIMITING=0
 ```
 
 ## AUTHWALL_PUBLIC_URL
@@ -179,6 +259,9 @@ Database connection URI.
 Leave this unset for the default local SQLite database.
 Set it when Authwall should use MySQL or PostgreSQL instead.
 
+> [!WARNING]
+> Any other scheme aborts startup with `AUTHWALL_DB must use mysql://, postgres://, or postgresql://`.
+
 Examples:
 
 ```sh
@@ -190,18 +273,468 @@ AUTHWALL_DB=postgres://authwall:authwall@postgres/authwall
 
 Bootstrap users created at startup.
 Authwall creates missing users and adds missing username or email identities for existing users.
+Entries with neither a username nor a valid email are logged and skipped.
 
 - Type: compact string or JSON array
 - Default: none
 
-Compact format:
+Compact format — `username:password:emails`, with multiple users separated by `;`:
+
+- `:` separates the three fields per entry: `username`, `password`, `emails`.
+- `,` separates multiple emails within the third field.
+- `;` separates entries.
+- Either `username` or `emails` may be empty, but not both.
 
 ```sh
-AUTHWALL_SEED='admin:change-me:admin@example.com;ops:change-me:ops1@example.com,ops2@example.com'
+AUTHWALL_SEED='admin:change-me:admin@myapp.com;ops:change-me:ops1@myapp.com,ops2@myapp.com'
 ```
 
-JSON format:
+JSON format — an array of objects:
+
+- `username` — string, optional if at least one email is present.
+- `password` — string used when the user is created.
+- `emails` — string or array of strings; optional if `username` is present.
+- `display_name` — optional string shown in the profile.
 
 ```sh
-AUTHWALL_SEED='[{"username":"admin","password":"change-me","emails":["admin@example.com"]}]'
+AUTHWALL_SEED='[{"username":"admin","password":"change-me","display_name":"Admin","emails":["admin@myapp.com"]}]'
+```
+
+<a id="authwall_cookie_domain"></a>
+<a id="authwall_cookie_path"></a>
+<a id="authwall_cookie_samesite"></a>
+<a id="authwall_cookie_secure"></a>
+
+## Session cookie
+
+Configures the session cookie Authwall sets after sign-in.
+
+- `AUTHWALL_COOKIE_DOMAIN` — `Domain` attribute. Default: unset; the cookie is scoped to the exact host of the response.
+- `AUTHWALL_COOKIE_PATH` — `Path` attribute. Default: `/`. Values that do not start with `/` are normalized to `/`.
+- `AUTHWALL_COOKIE_SAMESITE` — `SameSite` attribute. Values: `lax`, `strict`, `none`. Default: `lax`.
+- `AUTHWALL_COOKIE_SECURE` — `Secure` attribute. Values: `yes`, `no`, `true`, `false`. Default: `true` when `AUTHWALL_PUBLIC_URL` starts with `https://`, otherwise `false`.
+
+Modern browsers reject `SameSite=None` cookies that are not also `Secure`.
+
+> [!WARNING]
+> If `AUTHWALL_COOKIE_SAMESITE=none` is set without `AUTHWALL_COOKIE_SECURE=true`, startup aborts with `cookie.same_site=none requires cookie.secure=true`.
+
+The cookie's `Max-Age` is fixed at 30 days and cannot be changed via env vars.
+
+Example:
+
+```sh
+AUTHWALL_COOKIE_DOMAIN=myapp.com
+AUTHWALL_COOKIE_PATH=/
+AUTHWALL_COOKIE_SAMESITE=lax
+AUTHWALL_COOKIE_SECURE=true
+```
+
+<a id="authwall_allowed_emails"></a>
+<a id="authwall_allowed_domains"></a>
+<a id="authwall_denied_emails"></a>
+<a id="authwall_denied_domains"></a>
+
+## Access rules
+
+Restricts which email addresses may sign in.
+All four variables are comma-separated lists. Comparison is case-insensitive (values are normalized to lowercase). Empty lists are ignored.
+
+The four lists are checked in a fixed priority order, where each higher-priority list can override the next:
+
+1. **`AUTHWALL_DENIED_EMAILS`** — highest priority. Listed addresses are always denied.
+2. **`AUTHWALL_ALLOWED_EMAILS`** — next. Listed addresses are always allowed, which is how you make per-address exceptions to `AUTHWALL_DENIED_DOMAINS`.
+3. **`AUTHWALL_DENIED_DOMAINS`** — block whole domains.
+4. **`AUTHWALL_ALLOWED_DOMAINS`** — allow whole domains.
+
+When neither allow list is set, only the deny lists are enforced and everything else is allowed.
+When either allow list is set, the default flips to deny — addresses not matched by any rule are rejected.
+
+Implementation:
+
+```js
+async function authorize_email(email_normalized)
+{
+    const [_, domain] = email_normalized.split('@');
+    const has_allowed_emails = config.access.allowed_emails.length > 0;
+    const has_allowed_domains = config.access.allowed_domains.length > 0;
+
+    if (config.access.denied_emails.includes(email_normalized)) {
+        throw new UserFriendlyError('Email is not allowed');
+    }
+
+    if (config.access.allowed_emails.includes(email_normalized)) {
+        return;
+    }
+
+    // denylist (always enforced)
+    if (config.access.denied_domains.includes(domain)) {
+        throw new UserFriendlyError('Email domain is not allowed');
+    }
+
+    if (has_allowed_domains && config.access.allowed_domains.includes(domain)) {
+        return;
+    }
+
+    // allowlist default deny
+    if (has_allowed_domains) {
+        throw new UserFriendlyError('Email domain is not allowed');
+    }
+
+    if (has_allowed_emails) {
+        throw new UserFriendlyError('Email is not allowed');
+    }
+}
+```
+
+Examples:
+
+Only one address can sign in; everyone else is denied:
+
+```sh
+AUTHWALL_ALLOWED_EMAILS=admin@myapp.com
+```
+
+A small allowlist — these three addresses can sign in, nobody else:
+
+```sh
+AUTHWALL_ALLOWED_EMAILS=alice@myapp.com,bob@myapp.com,carol@myapp.com
+```
+
+Anyone at `myapp.com` can sign in, except one banned address — `DENIED_EMAILS` overrides `ALLOWED_DOMAINS`:
+
+```sh
+AUTHWALL_ALLOWED_DOMAINS=myapp.com
+AUTHWALL_DENIED_EMAILS=fired@myapp.com
+```
+
+## AUTHWALL_MAILER
+
+Selects which mailer Authwall uses to send sign-in, verification, password-reset, magic-link, and notification emails.
+
+- Type: enum
+- Values: `auto`, `fake`, `resend`, `mailjet`, `ses`
+- Default: `auto`
+
+How each value behaves:
+
+- `auto` — picks the first provider whose required env vars are all set, in this order: [Resend](#authwall_resend_key), [Mailjet](#authwall_mailjet_key), [Amazon SES](#authwall_ses_key). If none is configured, falls back to `fake`.
+- `fake` — drops every email instead of sending. Suitable for local development and tests; not safe for production because users will not receive verification or password-reset emails.
+- `resend` / `mailjet` / `ses` — uses the named provider explicitly.
+
+> [!WARNING]
+> When a provider is requested explicitly but not fully configured, Authwall refuses to start.
+
+Example:
+
+```sh
+AUTHWALL_MAILER=resend
+```
+
+<a id="authwall_resend_key"></a>
+<a id="authwall_resend_from"></a>
+
+## Resend
+
+Configures the Resend mailer.
+Both variables are required together; the provider is usable only when both are set.
+
+- `AUTHWALL_RESEND_KEY` — Resend API key. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_RESEND_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The domain must be verified in Resend.
+
+With `AUTHWALL_MAILER=auto` (the default), Resend is selected automatically when both are set.
+
+> [!WARNING]
+> If `AUTHWALL_MAILER=resend` is requested explicitly without both, startup aborts with `mailer.provider=resend requires mailer.resend.key and mailer.resend.from`.
+
+Obtain the API key from Resend → API Keys.
+
+Example:
+
+```sh
+AUTHWALL_RESEND_KEY=re_...
+AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.com>"
+```
+
+<a id="authwall_mailjet_key"></a>
+<a id="authwall_mailjet_secret"></a>
+<a id="authwall_mailjet_from"></a>
+
+## Mailjet
+
+Configures the Mailjet mailer.
+All three variables are required together; the provider is usable only when all of them are set.
+
+- `AUTHWALL_MAILJET_KEY` — Mailjet API key.
+- `AUTHWALL_MAILJET_SECRET` — Mailjet API secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_MAILJET_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The sender must be verified in Mailjet.
+
+With `AUTHWALL_MAILER=auto` (the default), Mailjet is selected automatically when all three are set and Resend is not configured.
+
+> [!WARNING]
+> If `AUTHWALL_MAILER=mailjet` is requested explicitly without all three, startup aborts with `mailer.provider=mailjet requires mailer.mailjet.key, mailer.mailjet.secret, and mailer.mailjet.from`.
+
+Obtain credentials from Mailjet → Account Settings → API Key Management.
+
+Example:
+
+```sh
+AUTHWALL_MAILJET_KEY=...
+AUTHWALL_MAILJET_SECRET=...
+AUTHWALL_MAILJET_FROM="Authwall <noreply@myapp.com>"
+```
+
+<a id="authwall_ses_key"></a>
+<a id="authwall_ses_secret"></a>
+<a id="authwall_ses_region"></a>
+<a id="authwall_ses_session_token"></a>
+<a id="authwall_ses_from"></a>
+
+## Amazon SES
+
+Configures the Amazon SES mailer.
+`AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM` are required together; `AUTHWALL_SES_REGION` and `AUTHWALL_SES_SESSION_TOKEN` are optional.
+
+- `AUTHWALL_SES_KEY` — AWS access key ID.
+- `AUTHWALL_SES_SECRET` — AWS secret access key. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_SES_FROM` — Sender address used in the `From` header. Typically formatted as `"Display Name <noreply@myapp.com>"`. The sender (or its domain) must be verified in SES.
+- `AUTHWALL_SES_REGION` — AWS region for the SES endpoint. Defaults to `us-east-1`.
+- `AUTHWALL_SES_SESSION_TOKEN` — Optional AWS session token for temporary credentials (e.g. STS / assumed roles). Omit when using long-lived IAM access keys.
+
+With `AUTHWALL_MAILER=auto` (the default), SES is selected automatically when `AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM` are all set and neither Resend nor Mailjet is configured.
+
+> [!WARNING]
+> If `AUTHWALL_MAILER=ses` is requested explicitly without `AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM`, startup aborts with `mailer.provider=ses requires mailer.ses.key, mailer.ses.secret, and mailer.ses.from`.
+
+Obtain credentials from AWS IAM; verify the sender or its domain in the SES console for the chosen region.
+
+Example:
+
+```sh
+AUTHWALL_SES_KEY=AKIA...
+AUTHWALL_SES_SECRET=...
+AUTHWALL_SES_REGION=us-east-1
+AUTHWALL_SES_FROM="Authwall <noreply@myapp.com>"
+```
+
+## AUTHWALL_FLOWS
+
+Selects which sign-in flows Authwall offers.
+This is the last step of configuration: every other variable (mailer, OAuth credentials, password options, magic-link mode) is resolved first, and `AUTHWALL_FLOWS` then chooses among the flows those prior settings made available.
+
+- Type: `auto` or comma-separated list of flow names
+- Values: `auto`, or any combination of `username`, `email`, `magic_link`, `magic_code`, `magic_link_and_code`, `google`, `github`, `microsoft`, `facebook`, `twitter`, `discord`
+- Default: `auto`
+
+How each value behaves:
+
+- `auto` — every flow whose prerequisites are already in place is enabled. Configure flows via their own env vars, and they show up automatically.
+- comma-separated list — only the listed flows are enabled, and each one must already be fully configured.
+
+The `magic_link_and_code` value is shorthand for both `magic_link` and `magic_code` together.
+
+> [!WARNING]
+> When an explicit list names a flow that is missing its prerequisites, Authwall refuses to start.
+
+Example — only password sign-in by username and Google:
+
+```sh
+AUTHWALL_FLOWS=username,google
+```
+
+## AUTHWALL_MAGIC_LINK
+
+Controls whether magic-link sign-in is enabled and which channel users get.
+
+- Type: enum
+- Values: `auto`, `off`, `disabled`, `link`, `code`, `link_and_code`
+- Default: `auto`
+
+How each value behaves:
+
+- `auto` — enabled when a mailer is configured, otherwise disabled. The default channel is `link_and_code`.
+- `off` / `disabled` — magic-link sign-in is disabled.
+- `link` — emails contain only a clickable link.
+- `code` — emails contain only a one-time code that the user types into the browser.
+- `link_and_code` — emails contain both.
+
+Any value outside the list above disables the flow and logs a warning.
+
+> [!WARNING]
+> If the value is one of `link`, `code`, or `link_and_code` but no mailer is configured, startup aborts with `AUTHWALL_MAGIC_LINK=<mode> requires a configured mailer`.
+
+Example:
+
+```sh
+AUTHWALL_MAGIC_LINK=code
+```
+
+<a id="authwall_google_client_id"></a>
+<a id="authwall_google_client_secret"></a>
+<a id="authwall_google_redirect_url"></a>
+
+## Google OAuth
+
+Configures sign-in with Google.
+All three variables are required together; the flow is enabled only when all of them are set.
+
+- `AUTHWALL_GOOGLE_CLIENT_ID` — OAuth 2.0 client identifier issued by Google.
+- `AUTHWALL_GOOGLE_CLIENT_SECRET` — OAuth 2.0 client secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_GOOGLE_REDIRECT_URL` — Callback URL Google redirects to after the user authorizes Authwall. It must match an Authorized Redirect URI registered on the OAuth client in Google Cloud Console; otherwise Google rejects the request. Authwall handles the callback at `/auth/google/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/google/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the Google flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=google` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=google requires configured Google OAuth`.
+
+Obtain values from Google Cloud Console → APIs & Services → Credentials.
+
+Example:
+
+```sh
+AUTHWALL_GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX-...
+AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.com/auth/google/callback
+```
+
+<a id="authwall_github_client_id"></a>
+<a id="authwall_github_client_secret"></a>
+<a id="authwall_github_redirect_url"></a>
+
+## GitHub OAuth
+
+Configures sign-in with GitHub.
+All three variables are required together; the flow is enabled only when all of them are set.
+
+- `AUTHWALL_GITHUB_CLIENT_ID` — OAuth client identifier issued by GitHub.
+- `AUTHWALL_GITHUB_CLIENT_SECRET` — OAuth client secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_GITHUB_REDIRECT_URL` — Callback URL GitHub redirects to after the user authorizes Authwall. It must match the Authorization callback URL registered on the OAuth App in GitHub; otherwise GitHub rejects the request. Authwall handles the callback at `/auth/github/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/github/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the GitHub flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=github` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=github requires configured GitHub OAuth`.
+
+Obtain values from GitHub → Settings → Developer settings → OAuth Apps.
+
+Example:
+
+```sh
+AUTHWALL_GITHUB_CLIENT_ID=Iv1.abcdef1234567890
+AUTHWALL_GITHUB_CLIENT_SECRET=ghs_...
+AUTHWALL_GITHUB_REDIRECT_URL=https://myapp.com/auth/github/callback
+```
+
+<a id="authwall_facebook_client_id"></a>
+<a id="authwall_facebook_client_secret"></a>
+<a id="authwall_facebook_redirect_url"></a>
+
+## Facebook OAuth
+
+Configures sign-in with Facebook.
+All three variables are required together; the flow is enabled only when all of them are set.
+
+- `AUTHWALL_FACEBOOK_CLIENT_ID` — App ID issued by Meta.
+- `AUTHWALL_FACEBOOK_CLIENT_SECRET` — App Secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_FACEBOOK_REDIRECT_URL` — Callback URL Facebook redirects to after the user authorizes Authwall. It must match a Valid OAuth Redirect URI configured on the app in Meta for Developers; otherwise Facebook rejects the request. Authwall handles the callback at `/auth/facebook/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/facebook/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the Facebook flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=facebook` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=facebook requires configured Facebook OAuth`.
+
+Obtain values from Meta for Developers → My Apps → your app → Facebook Login → Settings.
+
+Example:
+
+```sh
+AUTHWALL_FACEBOOK_CLIENT_ID=1234567890123456
+AUTHWALL_FACEBOOK_CLIENT_SECRET=...
+AUTHWALL_FACEBOOK_REDIRECT_URL=https://myapp.com/auth/facebook/callback
+```
+
+<a id="authwall_microsoft_client_id"></a>
+<a id="authwall_microsoft_client_secret"></a>
+<a id="authwall_microsoft_redirect_url"></a>
+
+## Microsoft OAuth
+
+Configures sign-in with Microsoft.
+All three variables are required together; the flow is enabled only when all of them are set.
+
+- `AUTHWALL_MICROSOFT_CLIENT_ID` — Application (client) ID from the app registration.
+- `AUTHWALL_MICROSOFT_CLIENT_SECRET` — Client secret value. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_MICROSOFT_REDIRECT_URL` — Callback URL Microsoft redirects to after the user authorizes Authwall. It must match a Redirect URI registered on the app registration in Microsoft Entra; otherwise Microsoft rejects the request. Authwall handles the callback at `/auth/microsoft/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/microsoft/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the Microsoft flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=microsoft` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=microsoft requires configured Microsoft OAuth`.
+
+Obtain values from Microsoft Entra admin center → Identity → Applications → App registrations.
+
+Example:
+
+```sh
+AUTHWALL_MICROSOFT_CLIENT_ID=00000000-0000-0000-0000-000000000000
+AUTHWALL_MICROSOFT_CLIENT_SECRET=...
+AUTHWALL_MICROSOFT_REDIRECT_URL=https://myapp.com/auth/microsoft/callback
+```
+
+<a id="authwall_twitter_client_id"></a>
+<a id="authwall_twitter_client_secret"></a>
+<a id="authwall_twitter_redirect_url"></a>
+
+## X OAuth
+
+Configures sign-in with X (formerly Twitter).
+All three variables are required together; the flow is enabled only when all of them are set.
+
+The variables keep their `TWITTER` names for compatibility, even though the product is now called X.
+
+- `AUTHWALL_TWITTER_CLIENT_ID` — OAuth 2.0 Client ID from the X app.
+- `AUTHWALL_TWITTER_CLIENT_SECRET` — OAuth 2.0 Client Secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_TWITTER_REDIRECT_URL` — Callback URL X redirects to after the user authorizes Authwall. It must match a Callback URI registered on the OAuth 2.0 client in the X Developer Portal; otherwise X rejects the request. Authwall handles the callback at `/auth/twitter/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/twitter/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the X flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=twitter` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=twitter requires configured X OAuth`.
+
+Obtain values from X Developer Portal → Projects & Apps → your app → User authentication settings.
+
+Example:
+
+```sh
+AUTHWALL_TWITTER_CLIENT_ID=...
+AUTHWALL_TWITTER_CLIENT_SECRET=...
+AUTHWALL_TWITTER_REDIRECT_URL=https://myapp.com/auth/twitter/callback
+```
+
+<a id="authwall_discord_client_id"></a>
+<a id="authwall_discord_client_secret"></a>
+<a id="authwall_discord_redirect_url"></a>
+
+## Discord OAuth
+
+Configures sign-in with Discord.
+All three variables are required together; the flow is enabled only when all of them are set.
+
+- `AUTHWALL_DISCORD_CLIENT_ID` — Application's Client ID.
+- `AUTHWALL_DISCORD_CLIENT_SECRET` — Application's Client Secret. Treat it as a secret: do not commit it or expose it to clients.
+- `AUTHWALL_DISCORD_REDIRECT_URL` — Callback URL Discord redirects to after the user authorizes Authwall. It must match a Redirect registered on the application in the Discord Developer Portal; otherwise Discord rejects the request. Authwall handles the callback at `/auth/discord/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/discord/callback`.
+
+If only some of the three are set, Authwall logs a warning and disables the Discord flow.
+
+> [!WARNING]
+> If `AUTHWALL_FLOWS=discord` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=discord requires configured Discord OAuth`.
+
+Obtain values from Discord Developer Portal → Applications → your application → OAuth2.
+
+Example:
+
+```sh
+AUTHWALL_DISCORD_CLIENT_ID=1234567890123456789
+AUTHWALL_DISCORD_CLIENT_SECRET=...
+AUTHWALL_DISCORD_REDIRECT_URL=https://myapp.com/auth/discord/callback
 ```
