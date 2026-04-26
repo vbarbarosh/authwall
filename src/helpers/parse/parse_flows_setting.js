@@ -9,6 +9,7 @@ const ALLOWED = new Set([
     'microsoft',
     'facebook',
     'twitter',
+    'discord',
 ]);
 
 function parse_flows_setting(value, {
@@ -23,11 +24,12 @@ function parse_flows_setting(value, {
     microsoft_enabled = false,
     facebook_enabled = false,
     twitter_enabled = false,
+    discord_enabled = false,
 } = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
     if (!normalized || normalized === 'auto') {
-        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled});
+        return auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled, discord_enabled});
     }
 
     const requested = normalized.split(',').map(v => v.trim()).filter(Boolean);
@@ -70,6 +72,9 @@ function parse_flows_setting(value, {
     if (requested.includes('twitter') && !twitter_enabled) {
         throw new Error('AUTHWALL_FLOWS=twitter requires configured X OAuth');
     }
+    if (requested.includes('discord') && !discord_enabled) {
+        throw new Error('AUTHWALL_FLOWS=discord requires configured Discord OAuth');
+    }
 
     const magic_link = requested.includes('magic_link') || requested.includes('magic_link_and_code');
     const magic_code = requested.includes('magic_code') || requested.includes('magic_link_and_code');
@@ -108,12 +113,15 @@ function parse_flows_setting(value, {
         twitter: {
             enabled: requested.includes('twitter'),
         },
+        discord: {
+            enabled: requested.includes('discord'),
+        },
     };
 }
 
-function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled})
+function auto({password_enabled, username_enabled, email_enabled, magic_link_enabled, magic_link_mode, mailer_enabled, google_enabled, github_enabled, microsoft_enabled, facebook_enabled, twitter_enabled, discord_enabled})
 {
-    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled || facebook_enabled || twitter_enabled;
+    const oauth_enabled = google_enabled || github_enabled || microsoft_enabled || facebook_enabled || twitter_enabled || discord_enabled;
 
     return {
         password: {
@@ -139,6 +147,9 @@ function auto({password_enabled, username_enabled, email_enabled, magic_link_ena
         },
         twitter: {
             enabled: !!twitter_enabled,
+        },
+        discord: {
+            enabled: !!discord_enabled,
         },
     };
 }

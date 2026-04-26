@@ -76,6 +76,12 @@ describe('render_config_summary', function () {
                     client_secret: 'twitter-secret',
                     redirect_url: 'https://authwall.test/auth/twitter/callback',
                 },
+                discord: {
+                    enabled: true,
+                    client_id: 'discord-client',
+                    client_secret: 'discord-secret',
+                    redirect_url: 'https://authwall.test/auth/discord/callback',
+                },
             },
             mailer: {
                 enabled: true,
@@ -122,6 +128,7 @@ describe('render_config_summary', function () {
         assert.match(text, / - Microsoft OAuth: https:\/\/authwall.test\/auth\/microsoft\/callback/);
         assert.match(text, / - Facebook OAuth: https:\/\/authwall.test\/auth\/facebook\/callback/);
         assert.match(text, / - X OAuth: https:\/\/authwall.test\/auth\/twitter\/callback/);
+        assert.match(text, / - Discord OAuth: https:\/\/authwall.test\/auth\/discord\/callback/);
         assert.match(text, /📭 Mailer: Resend from Authwall <noreply@authwall.test>/);
         assert.match(text, /🪪 Access: only listed emails and listed domains can sign in/);
         assert.match(text, /  - allowed emails: admin@authwall.test/);

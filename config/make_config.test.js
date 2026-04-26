@@ -51,6 +51,9 @@ describe('make_config', function () {
                 twitter: {
                     enabled: false,
                 },
+                discord: {
+                    enabled: false,
+                },
             },
         });
         assert.strictEqual(config.target.set_headers.length, 2);

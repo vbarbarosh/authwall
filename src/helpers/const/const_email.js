@@ -23,6 +23,8 @@ const const_email = {
     facebook_disconnected: 'facebook_disconnected',
     twitter_connected: 'twitter_connected',
     twitter_disconnected: 'twitter_disconnected',
+    discord_connected: 'discord_connected',
+    discord_disconnected: 'discord_disconnected',
     password_changed_from_profile: 'password_changed_from_profile',
     password_changed_via_reset_link: 'password_changed_via_reset_link',
 };

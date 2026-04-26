@@ -1,0 +1,13 @@
+Subject: Discord account connected
+
+Hi {{display_name}},
+
+Your Discord account ({{email}}) was connected to your account on
+{{date}} from IP address {{ip}}.
+
+If you made this change, no action is needed.
+
+If you did not connect a Discord account, reset your password immediately:
+{{reset_link}}
+
+— Authwall

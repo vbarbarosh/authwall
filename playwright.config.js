@@ -88,7 +88,7 @@ module.exports = defineConfig({
             AUTHWALL_SECRET: require('crypto').randomBytes(32).toString('hex'),
             AUTHWALL_RATE_LIMITING: '0',
             AUTHWALL_MAILER: 'fake',
-            AUTHWALL_FLOWS: 'username,email,magic_link_and_code,google,github',
+            AUTHWALL_FLOWS: 'username,email,magic_link_and_code,google,github,discord',
             AUTHWALL_SEED: 'foo:foo',
             AUTHWALL_GOOGLE_CLIENT_ID: 'playwright_google_client_id',
             AUTHWALL_GOOGLE_CLIENT_SECRET: 'playwright_google_client_secret',
@@ -96,6 +96,9 @@ module.exports = defineConfig({
             AUTHWALL_GITHUB_CLIENT_ID: 'playwright_github_client_id',
             AUTHWALL_GITHUB_CLIENT_SECRET: 'playwright_github_client_secret',
             AUTHWALL_GITHUB_REDIRECT_URL: 'http://localhost:3000/auth/github/callback',
+            AUTHWALL_DISCORD_CLIENT_ID: 'playwright_discord_client_id',
+            AUTHWALL_DISCORD_CLIENT_SECRET: 'playwright_discord_client_secret',
+            AUTHWALL_DISCORD_REDIRECT_URL: 'http://localhost:3000/auth/discord/callback',
         },
     },
 });

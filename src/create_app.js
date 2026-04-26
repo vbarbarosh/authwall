@@ -11,6 +11,7 @@ const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
+const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
 const oauth_provider_facebook = require('./oauth_providers/oauth_provider_facebook');
 const oauth_provider_github = require('./oauth_providers/oauth_provider_github');
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
@@ -137,6 +138,9 @@ async function create_app()
     }
     if (config.flows.twitter.enabled) {
         express_routes(app, make_oauth_flow(oauth_provider_twitter));
+    }
+    if (config.flows.discord.enabled) {
+        express_routes(app, make_oauth_flow(oauth_provider_discord));
     }
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));

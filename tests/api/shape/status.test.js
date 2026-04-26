@@ -10,6 +10,7 @@ describe('shape • status', function () {
         config.flows.microsoft.enabled = true;
         config.flows.facebook.enabled = true;
         config.flows.twitter.enabled = true;
+        config.flows.discord.enabled = true;
     });
 
     afterEach(function () {
@@ -18,6 +19,7 @@ describe('shape • status', function () {
         config.flows.microsoft.enabled = false;
         config.flows.facebook.enabled = false;
         config.flows.twitter.enabled = false;
+        config.flows.discord.enabled = false;
     });
 
     it('anonymous', async function () {
@@ -40,6 +42,7 @@ describe('shape • status', function () {
                 microsoft: {},
                 facebook: {},
                 twitter: {},
+                discord: {},
             },
             version: pkg.version,
         };
@@ -66,6 +69,7 @@ describe('shape • status', function () {
                 microsoft: {},
                 facebook: {},
                 twitter: {},
+                discord: {},
             },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',
             user_slug: String, // 'swbwnpmv7h516n8u',

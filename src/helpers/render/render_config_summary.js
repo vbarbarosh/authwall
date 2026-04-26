@@ -86,6 +86,9 @@ function format_flows(flows)
     if (flows.twitter.enabled) {
         out.push(`- X OAuth${flows.twitter.redirect_url ? `: ${flows.twitter.redirect_url}` : ''}`);
     }
+    if (flows.discord.enabled) {
+        out.push(`- Discord OAuth${flows.discord.redirect_url ? `: ${flows.discord.redirect_url}` : ''}`);
+    }
 
     return out.length ? out : ['- none'];
 }

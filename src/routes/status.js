@@ -68,6 +68,9 @@ async function status_get(req, res)
     if (config.flows.twitter.enabled) {
         flows.twitter = {};
     }
+    if (config.flows.discord.enabled) {
+        flows.discord = {};
+    }
 
     if (!user) {
         res.send({

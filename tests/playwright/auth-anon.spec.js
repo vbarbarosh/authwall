@@ -14,6 +14,7 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('signin-submit')).toBeVisible();
         await expect(page.getByTestId('signin-google')).toBeVisible();
         await expect(page.getByTestId('signin-github')).toBeVisible();
+        await expect(page.getByTestId('signin-discord')).toBeVisible();
         await expect(page.getByTestId('version-link')).toHaveText(`authwall v${pkg.version}`);
         await expect(page.getByTestId('version-link')).toHaveAttribute('href', `https://github.com/vbarbarosh/authwall/releases/tag/v${pkg.version}`);
     });
@@ -24,6 +25,7 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('signup-view')).toBeVisible();
         await expect(page.getByTestId('signup-google')).toBeVisible();
         await expect(page.getByTestId('signup-github')).toBeVisible();
+        await expect(page.getByTestId('signup-discord')).toBeVisible();
     });
 
     test('sign-up footer sign-in link returns to sign-in', async function ({page}) {
