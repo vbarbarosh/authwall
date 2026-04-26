@@ -1,6 +1,6 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const assert = require('assert');
-const {prepare_sentry_event, sanitize_sentry_event} = require('./sentry');
+const {sentry_before_send, sanitize_sentry_event} = require('./sentry');
 
 class InvalidPassword extends UserFriendlyError {
     constructor() {
@@ -38,13 +38,13 @@ describe('sentry', function () {
     it('drops UserFriendlyError events', function () {
         const error = new UserFriendlyError('Missing token');
 
-        assert.strictEqual(prepare_sentry_event({}, {originalException: error}), null);
+        assert.strictEqual(sentry_before_send({}, {originalException: error}), null);
     });
 
     it('drops UserFriendlyError subclasses', function () {
         const error = new InvalidPassword();
 
-        assert.strictEqual(prepare_sentry_event({}, {originalException: error}), null);
+        assert.strictEqual(sentry_before_send({}, {originalException: error}), null);
     });
 
 });

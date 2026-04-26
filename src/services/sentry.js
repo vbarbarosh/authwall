@@ -18,7 +18,7 @@ function init_sentry(config)
         dsn: config.sentry.dsn,
         release: `${pkg.name}@${pkg.version}`,
         sendDefaultPii: false,
-        beforeSend: prepare_sentry_event,
+        beforeSend: sentry_before_send,
     };
 
     if (config.sentry.environment) {
@@ -49,7 +49,7 @@ function setup_sentry_error_handler(app)
     }
 }
 
-function prepare_sentry_event(event, hint)
+function sentry_before_send(event, hint)
 {
     if (hint?.originalException instanceof UserFriendlyError) {
         return null;
@@ -117,7 +117,7 @@ function is_sensitive_query_param(key)
 
 module.exports = {
     init_sentry,
-    prepare_sentry_event,
+    sentry_before_send,
     sentry_request_context,
     setup_sentry_error_handler,
     sanitize_sentry_event,
