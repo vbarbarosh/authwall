@@ -14,62 +14,62 @@ fell back to a different option.
 
 | Varname | Short description |
 |---|---|
-| [`LISTEN`](#listen) | Bind address for the HTTP server. |
-| [`PORT`](#port) | HTTP listen port. |
-| [`AUTHWALL_SECRET`](#authwall_secret) | Root secret for sessions and CSRF protection. |
-| [`AUTHWALL_LOGGER`](#authwall_logger) | Log destination. |
-| [`AUTHWALL_PASSWORD_MIN`](#authwall_password_min) | Minimum password length for new passwords. |
-| [`AUTHWALL_BCRYPT_ROUNDS`](#authwall_bcrypt_rounds) | bcrypt cost for new password hashes. |
-| [`AUTHWALL_RATE_LIMITING`](#authwall_rate_limiting) | Enables or disables in-memory rate limiting. |
-| [`AUTHWALL_SENTRY_DSN`](#authwall_sentry_dsn) | Sentry DSN for error reporting. |
-| [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment) | Sentry environment name. |
-| [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate. |
-| [`AUTHWALL_PUBLIC_URL`](#authwall_public_url) | Public base URL used for redirects and generated links. |
-| [`AUTHWALL_TARGET_URL`](#authwall_target_url) | Upstream application URL. |
-| [`AUTHWALL_TARGET_MODE`](#authwall_target_mode) | Upstream proxy behavior mode. |
-| [`AUTHWALL_SET_HEADERS`](#authwall_set_headers) | Headers to add to upstream requests. |
-| [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers) | Headers to remove from upstream requests. |
-| [`AUTHWALL_DB`](#authwall_db) | Database connection URI. |
-| [`AUTHWALL_SEED`](#authwall_seed) | Bootstrap users created at startup. |
-| [`AUTHWALL_COOKIE_DOMAIN`](#authwall_cookie_domain) | Session cookie domain. |
-| [`AUTHWALL_COOKIE_PATH`](#authwall_cookie_path) | Session cookie path. |
-| [`AUTHWALL_COOKIE_SAMESITE`](#authwall_cookie_samesite) | SameSite value for the session cookie. |
-| [`AUTHWALL_COOKIE_SECURE`](#authwall_cookie_secure) | Whether session cookies require HTTPS. |
-| [`AUTHWALL_ALLOWED_EMAILS`](#authwall_allowed_emails) | Exact email addresses allowed to sign in. |
-| [`AUTHWALL_ALLOWED_DOMAINS`](#authwall_allowed_domains) | Email domains allowed to sign in. |
-| [`AUTHWALL_DENIED_EMAILS`](#authwall_denied_emails) | Exact email addresses denied sign-in. |
-| [`AUTHWALL_DENIED_DOMAINS`](#authwall_denied_domains) | Email domains denied sign-in. |
-| [`AUTHWALL_MAILER`](#authwall_mailer) | Mailer provider selection. |
-| [`AUTHWALL_RESEND_KEY`](#authwall_resend_key) | Resend API key. |
-| [`AUTHWALL_RESEND_FROM`](#authwall_resend_from) | Resend sender address. |
-| [`AUTHWALL_MAILJET_KEY`](#authwall_mailjet_key) | Mailjet API key. |
-| [`AUTHWALL_MAILJET_SECRET`](#authwall_mailjet_secret) | Mailjet API secret. |
-| [`AUTHWALL_MAILJET_FROM`](#authwall_mailjet_from) | Mailjet sender address. |
-| [`AUTHWALL_SES_KEY`](#authwall_ses_key) | AWS access key id for SES. |
-| [`AUTHWALL_SES_SECRET`](#authwall_ses_secret) | AWS secret access key for SES. |
-| [`AUTHWALL_SES_REGION`](#authwall_ses_region) | AWS SES region. |
-| [`AUTHWALL_SES_SESSION_TOKEN`](#authwall_ses_session_token) | Optional AWS session token for SES. |
-| [`AUTHWALL_SES_FROM`](#authwall_ses_from) | AWS SES sender address. |
-| [`AUTHWALL_FLOWS`](#authwall_flows) | Enabled sign-in flows. |
-| [`AUTHWALL_MAGIC_LINK`](#authwall_magic_link) | Magic-link and magic-code mode. |
-| [`AUTHWALL_GOOGLE_CLIENT_ID`](#authwall_google_client_id) | Google OAuth client id. |
-| [`AUTHWALL_GOOGLE_CLIENT_SECRET`](#authwall_google_client_secret) | Google OAuth client secret. |
-| [`AUTHWALL_GOOGLE_REDIRECT_URL`](#authwall_google_redirect_url) | Google OAuth redirect URL. |
-| [`AUTHWALL_GITHUB_CLIENT_ID`](#authwall_github_client_id) | GitHub OAuth client id. |
-| [`AUTHWALL_GITHUB_CLIENT_SECRET`](#authwall_github_client_secret) | GitHub OAuth client secret. |
-| [`AUTHWALL_GITHUB_REDIRECT_URL`](#authwall_github_redirect_url) | GitHub OAuth redirect URL. |
-| [`AUTHWALL_FACEBOOK_CLIENT_ID`](#authwall_facebook_client_id) | Facebook OAuth client id. |
-| [`AUTHWALL_FACEBOOK_CLIENT_SECRET`](#authwall_facebook_client_secret) | Facebook OAuth client secret. |
-| [`AUTHWALL_FACEBOOK_REDIRECT_URL`](#authwall_facebook_redirect_url) | Facebook OAuth redirect URL. |
-| [`AUTHWALL_MICROSOFT_CLIENT_ID`](#authwall_microsoft_client_id) | Microsoft OAuth client id. |
-| [`AUTHWALL_MICROSOFT_CLIENT_SECRET`](#authwall_microsoft_client_secret) | Microsoft OAuth client secret. |
-| [`AUTHWALL_MICROSOFT_REDIRECT_URL`](#authwall_microsoft_redirect_url) | Microsoft OAuth redirect URL. |
-| [`AUTHWALL_TWITTER_CLIENT_ID`](#authwall_twitter_client_id) | X OAuth client id. |
-| [`AUTHWALL_TWITTER_CLIENT_SECRET`](#authwall_twitter_client_secret) | X OAuth client secret. |
-| [`AUTHWALL_TWITTER_REDIRECT_URL`](#authwall_twitter_redirect_url) | X OAuth redirect URL. |
-| [`AUTHWALL_DISCORD_CLIENT_ID`](#authwall_discord_client_id) | Discord OAuth client id. |
-| [`AUTHWALL_DISCORD_CLIENT_SECRET`](#authwall_discord_client_secret) | Discord OAuth client secret. |
-| [`AUTHWALL_DISCORD_REDIRECT_URL`](#authwall_discord_redirect_url) | Discord OAuth redirect URL. |
+| [`LISTEN`](#listen) | Bind address for the HTTP server |
+| [`PORT`](#port) | HTTP listen port |
+| [`AUTHWALL_SECRET`](#authwall_secret) | Root secret for sessions and CSRF protection |
+| [`AUTHWALL_LOGGER`](#authwall_logger) | Log destination |
+| [`AUTHWALL_PASSWORD_MIN`](#authwall_password_min) | Minimum password length for new passwords |
+| [`AUTHWALL_BCRYPT_ROUNDS`](#authwall_bcrypt_rounds) | bcrypt cost for new password hashes |
+| [`AUTHWALL_RATE_LIMITING`](#authwall_rate_limiting) | Enables or disables in-memory rate limiting |
+| [`AUTHWALL_SENTRY_DSN`](#authwall_sentry_dsn) | Sentry DSN for error reporting |
+| [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment) | Sentry environment name |
+| [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate |
+| [`AUTHWALL_PUBLIC_URL`](#authwall_public_url) | Public base URL used for redirects and generated links |
+| [`AUTHWALL_TARGET_URL`](#authwall_target_url) | Upstream application URL |
+| [`AUTHWALL_TARGET_MODE`](#authwall_target_mode) | Upstream proxy behavior mode |
+| [`AUTHWALL_SET_HEADERS`](#authwall_set_headers) | Headers to add to upstream requests |
+| [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers) | Headers to remove from upstream requests |
+| [`AUTHWALL_DB`](#authwall_db) | Database connection URI |
+| [`AUTHWALL_SEED`](#authwall_seed) | Bootstrap users created at startup |
+| [`AUTHWALL_COOKIE_DOMAIN`](#authwall_cookie_domain) | Session cookie domain |
+| [`AUTHWALL_COOKIE_PATH`](#authwall_cookie_path) | Session cookie path |
+| [`AUTHWALL_COOKIE_SAMESITE`](#authwall_cookie_samesite) | SameSite value for the session cookie |
+| [`AUTHWALL_COOKIE_SECURE`](#authwall_cookie_secure) | Whether session cookies require HTTPS |
+| [`AUTHWALL_ALLOWED_EMAILS`](#authwall_allowed_emails) | Exact email addresses allowed to sign in |
+| [`AUTHWALL_ALLOWED_DOMAINS`](#authwall_allowed_domains) | Email domains allowed to sign in |
+| [`AUTHWALL_DENIED_EMAILS`](#authwall_denied_emails) | Exact email addresses denied sign-in |
+| [`AUTHWALL_DENIED_DOMAINS`](#authwall_denied_domains) | Email domains denied sign-in |
+| [`AUTHWALL_MAILER`](#authwall_mailer) | Mailer provider selection |
+| [`AUTHWALL_RESEND_KEY`](#authwall_resend_key) | Resend API key |
+| [`AUTHWALL_RESEND_FROM`](#authwall_resend_from) | Resend sender address |
+| [`AUTHWALL_MAILJET_KEY`](#authwall_mailjet_key) | Mailjet API key |
+| [`AUTHWALL_MAILJET_SECRET`](#authwall_mailjet_secret) | Mailjet API secret |
+| [`AUTHWALL_MAILJET_FROM`](#authwall_mailjet_from) | Mailjet sender address |
+| [`AUTHWALL_SES_KEY`](#authwall_ses_key) | AWS access key id for SES |
+| [`AUTHWALL_SES_SECRET`](#authwall_ses_secret) | AWS secret access key for SES |
+| [`AUTHWALL_SES_REGION`](#authwall_ses_region) | AWS SES region |
+| [`AUTHWALL_SES_SESSION_TOKEN`](#authwall_ses_session_token) | Optional AWS session token for SES |
+| [`AUTHWALL_SES_FROM`](#authwall_ses_from) | AWS SES sender address |
+| [`AUTHWALL_FLOWS`](#authwall_flows) | Enabled sign-in flows |
+| [`AUTHWALL_MAGIC_LINK`](#authwall_magic_link) | Magic-link and magic-code mode |
+| [`AUTHWALL_GOOGLE_CLIENT_ID`](#authwall_google_client_id) | Google OAuth client id |
+| [`AUTHWALL_GOOGLE_CLIENT_SECRET`](#authwall_google_client_secret) | Google OAuth client secret |
+| [`AUTHWALL_GOOGLE_REDIRECT_URL`](#authwall_google_redirect_url) | Google OAuth redirect URL |
+| [`AUTHWALL_GITHUB_CLIENT_ID`](#authwall_github_client_id) | GitHub OAuth client id |
+| [`AUTHWALL_GITHUB_CLIENT_SECRET`](#authwall_github_client_secret) | GitHub OAuth client secret |
+| [`AUTHWALL_GITHUB_REDIRECT_URL`](#authwall_github_redirect_url) | GitHub OAuth redirect URL |
+| [`AUTHWALL_FACEBOOK_CLIENT_ID`](#authwall_facebook_client_id) | Facebook OAuth client id |
+| [`AUTHWALL_FACEBOOK_CLIENT_SECRET`](#authwall_facebook_client_secret) | Facebook OAuth client secret |
+| [`AUTHWALL_FACEBOOK_REDIRECT_URL`](#authwall_facebook_redirect_url) | Facebook OAuth redirect URL |
+| [`AUTHWALL_MICROSOFT_CLIENT_ID`](#authwall_microsoft_client_id) | Microsoft OAuth client id |
+| [`AUTHWALL_MICROSOFT_CLIENT_SECRET`](#authwall_microsoft_client_secret) | Microsoft OAuth client secret |
+| [`AUTHWALL_MICROSOFT_REDIRECT_URL`](#authwall_microsoft_redirect_url) | Microsoft OAuth redirect URL |
+| [`AUTHWALL_TWITTER_CLIENT_ID`](#authwall_twitter_client_id) | X OAuth client id |
+| [`AUTHWALL_TWITTER_CLIENT_SECRET`](#authwall_twitter_client_secret) | X OAuth client secret |
+| [`AUTHWALL_TWITTER_REDIRECT_URL`](#authwall_twitter_redirect_url) | X OAuth redirect URL |
+| [`AUTHWALL_DISCORD_CLIENT_ID`](#authwall_discord_client_id) | Discord OAuth client id |
+| [`AUTHWALL_DISCORD_CLIENT_SECRET`](#authwall_discord_client_secret) | Discord OAuth client secret |
+| [`AUTHWALL_DISCORD_REDIRECT_URL`](#authwall_discord_redirect_url) | Discord OAuth redirect URL |
 
 <a id="listen"></a>
 <a id="port"></a>
