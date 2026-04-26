@@ -237,10 +237,20 @@ async function create_app()
 
 async function error_handler(error, req, res, next)
 {
-    // const details = {status: error.response?.status, body: error.response?.data, headers: error.response?.headers};
-    // als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(details).slice(1, -1)}`);
-
-    als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
+    try {
+        const details = {
+            status: error.response?.status,
+            body: error.response?.data,
+            headers: error.response?.headers,
+            stack: error.stack,
+            url: req.url,
+            originalUrl: req.originalUrl,
+        };
+        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(details)}`);
+    }
+    catch (error2) {
+        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
+    }
 
     if (req.session) {
         if (error instanceof UserFriendlyError) {
