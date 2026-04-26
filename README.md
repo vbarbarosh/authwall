@@ -110,6 +110,36 @@ docker run --rm -p 3000:3000 \
 * email identity: **added only when Google reports a verified email**
 * email features: **disabled unless a mailer is configured**
 
+---
+
+### Google OAuth with exact user emails
+
+Create a Google OAuth client and add this authorized redirect URI:
+
+```
+http://localhost:3000/auth/google/callback
+```
+
+Then run:
+
+```bash
+docker run --rm -p 3000:3000 \
+    -e AUTHWALL_PUBLIC_URL=http://localhost:3000 \
+    -e AUTHWALL_TARGET_URL=https://app.test \
+    -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
+    -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
+    -e AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback \
+    -e AUTHWALL_ALLOWED_EMAILS=alice@example.com,bob@example.com \
+    vbarbarosh/authwall
+```
+
+**Behavior:**
+
+* sign-in: **Google OAuth**
+* registration: **open for listed Google accounts**
+* allowed users: **only verified Google emails listed in `AUTHWALL_ALLOWED_EMAILS`**
+* everyone else: **rejected**
+
 ## Notes
 
 * If no mailer is configured, **email-based flows are disabled automatically**

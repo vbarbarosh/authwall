@@ -23,6 +23,7 @@ Testable now
 - [x] user with a Gmail address signs up as `john.doe@gmail.com`; a second sign-up attempt with `johndoe@gmail.com` must be rejected (Gmail ignores dots) → `gmail_dots.test.js`
 - [x] user is signed in as account A, then tries to connect an OAuth provider already linked to account B; the operation should fail without cross-account takeover → `oauth_cross_account.test.js`
 - [x] user uses an expired magic link after already signing in another way; the link should fail cleanly and should not change session state → `expired_magic_link.test.js`
+- [x] Google OAuth is restricted to exact email addresses; a listed verified email signs in and an unlisted verified email is rejected → `google_oauth_exact_emails.test.js`
 
 Needs product decision
 
