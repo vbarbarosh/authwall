@@ -775,6 +775,18 @@
             <span class="text-sm text-muted">Manage active sessions</span>
             <button class="btn btn-ghost btn-sm" onclick="showView('sessions')">View sessions →</button>
           </div>
+
+          <hr>
+          <div class="section-title">Danger zone</div>
+          <div class="field">
+            <label for="p-remove-confirm">Delete account</label>
+            <input type="text" id="p-remove-confirm" placeholder="Type DELETE" autocomplete="off" data-testid="profile-remove-confirm">
+          </div>
+          <div id="p-remove-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="p-remove-error-msg"></span>
+          </div>
+          <button id="p-remove" class="btn btn-danger" data-testid="profile-remove-account">Delete account</button>
         </div>
       </div>
       <div class="card-footer">
@@ -1560,6 +1572,18 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   document.getElementById('p-curpass').value = '';
   document.getElementById('p-newpass').value = '';
   document.getElementById('p-newpass2').value = '';
+});
+
+// ── Profile — Remove account ────────────────────────────────────────────────
+document.getElementById('p-remove').addEventListener('click', async () => {
+  hide_error('p-remove-error');
+  const confirmation = document.getElementById('p-remove-confirm').value;
+  if (confirmation !== 'DELETE') return show_error('p-remove-error-msg', 'p-remove-error', 'Type DELETE to remove account');
+  set_loading('p-remove', true);
+  const { final_url, error } = await api_post('/auth/account/remove', { confirmation });
+  set_loading('p-remove', false);
+  if (error) return show_error('p-remove-error-msg', 'p-remove-error', error);
+  navigate_after(final_url);
 });
 
 // ── OAuth — Disconnect ───────────────────────────────────────────────────────

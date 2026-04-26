@@ -60,6 +60,7 @@ The following `data-testid` values are the supported Playwright contract:
 - `signup-discord`
 - `profile-view`
 - `profile-connections`
+- `profile-remove-account`
 - `sessions-view`
 - `sessions-current-badge`
 - `signout-view`

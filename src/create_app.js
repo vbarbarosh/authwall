@@ -145,6 +145,7 @@ async function create_app()
     if (config.flows.password.enabled) {
         express_routes(app, require('./routes/password'));
     }
+    express_routes(app, require('./routes/account'));
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
     if (config.mailer.enabled) {

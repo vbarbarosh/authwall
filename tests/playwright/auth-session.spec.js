@@ -26,6 +26,7 @@ test.describe('auth spa session', function () {
         await page.goto('/auth/profile');
         await expect(page.getByTestId('profile-view')).toBeVisible();
         await expect(page.getByTestId('profile-connections')).toBeVisible();
+        await expect(page.getByTestId('profile-remove-account')).toBeVisible();
     });
 
     test('sessions view shows the current device badge', async function ({page}) {

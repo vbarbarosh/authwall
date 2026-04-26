@@ -2,6 +2,7 @@ const const_auth_event = {
     sign_in: 'sign_in',
     sign_out: 'sign_out',
     sign_up: 'sign_up',
+    account_removed: 'account_removed',
     profile_updated: 'profile_updated',
     avatar_updated: 'avatar_updated',
     identity_added: 'identity_added',
