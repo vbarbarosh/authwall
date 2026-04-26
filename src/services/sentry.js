@@ -1,4 +1,5 @@
 const Sentry = require('@sentry/node');
+const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const pkg = require('../../package.json');
 
 let initialized = false;
@@ -17,7 +18,7 @@ function init_sentry(config)
         dsn: config.sentry.dsn,
         release: `${pkg.name}@${pkg.version}`,
         sendDefaultPii: false,
-        beforeSend: sanitize_sentry_event,
+        beforeSend: prepare_sentry_event,
     };
 
     if (config.sentry.environment) {
@@ -46,6 +47,15 @@ function setup_sentry_error_handler(app)
     if (Sentry.isInitialized()) {
         Sentry.setupExpressErrorHandler(app);
     }
+}
+
+function prepare_sentry_event(event, hint)
+{
+    if (hint?.originalException instanceof UserFriendlyError) {
+        return null;
+    }
+
+    return sanitize_sentry_event(event);
 }
 
 function sanitize_sentry_event(event)
@@ -107,6 +117,7 @@ function is_sensitive_query_param(key)
 
 module.exports = {
     init_sentry,
+    prepare_sentry_event,
     sentry_request_context,
     setup_sentry_error_handler,
     sanitize_sentry_event,
