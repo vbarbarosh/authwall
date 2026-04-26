@@ -1,5 +1,15 @@
 # Configuration
 
+By default, Authwall does its best to configure flows, mailers,
+and other integrations from whatever settings are present.
+But when you explicitly ask for something — a specific mailer,
+a specific sign-in flow, a specific cookie mode — Authwall
+refuses to start unless that request is fully satisfied.
+
+This is intentional: it prevents the situation where you believe
+a setting took effect the way you wanted, but Authwall silently
+fell back to a different option.
+
 ## Overview
 
 | Varname | Short description |
