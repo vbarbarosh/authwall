@@ -3,6 +3,7 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_password_change = require('../actions/complete_password_change');
 const config = require('../../config');
+const const_auth_event = require('../helpers/const/const_auth_event');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
@@ -10,6 +11,7 @@ const fs_mkdirp = require('@vbarbarosh/node-helpers/src/fs_mkdirp');
 const fs_path_dirname = require('@vbarbarosh/node-helpers/src/fs_path_dirname');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const fs_rm = require('@vbarbarosh/node-helpers/src/fs_rm');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const multer = require('multer');
 const plural = require('@vbarbarosh/node-helpers/src/plural');
 const redirect = require('../helpers/redirect');
@@ -94,6 +96,22 @@ async function profile_post(req, res)
 
     const now = new Date();
     await db('users').where({id: user.id}).update({...update, updated_at: now});
+
+    if ('display_name' in update) {
+        await insert_auth_event({
+            req,
+            event_type: const_auth_event.profile_updated,
+            custom: {fields: ['display_name']},
+        });
+    }
+
+    if ('avatar_url' in update) {
+        await insert_auth_event({
+            req,
+            event_type: const_auth_event.avatar_updated,
+            custom: {avatar_url: update.avatar_url},
+        });
+    }
 
     if (is_password_change) {
         await complete_password_change(req, res, user.id);
