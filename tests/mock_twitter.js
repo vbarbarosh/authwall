@@ -4,12 +4,19 @@ const EXPECTED_BASIC = Buffer.from(`mocha_twitter_client_id:mocha_twitter_client
 
 function mock_twitter({email = 'test@example.com'} = {})
 {
+    const tokens = {
+        access_token: 'fake-token',
+        token_type: 'bearer',
+        expires_in: 7200,
+        scope: 'tweet.read users.read users.email',
+    };
+
     const user_info = {
-        "data": {
-            "id": "123456789",
-            "name": "Test User",
-            "username": "testuser",
-            "profile_image_url": "https://example.com/twitter-avatar.jpg",
+        data: {
+            id: "123456789",
+            name: "Test User",
+            username: "testuser",
+            profile_image_url: "https://example.com/twitter-avatar.jpg",
         }
     };
 
@@ -32,12 +39,7 @@ function mock_twitter({email = 'test@example.com'} = {})
                 && params.get('redirect_uri') === 'mocha_twitter_redirect_url'
                 && /^.{24,}$/.test(params.get('code_verifier') || '');
         })
-        .reply(200, {
-            access_token: 'fake-token',
-            token_type: 'bearer',
-            expires_in: 7200,
-            scope: 'tweet.read users.read users.email',
-        });
+        .reply(200, tokens);
 
     nock('https://api.x.com', {reqheaders: {authorization: 'Bearer fake-token'}})
         .get('/2/users/me')

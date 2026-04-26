@@ -2,6 +2,14 @@ const nock = require('nock');
 
 function mock_discord({email = 'test@example.com', verified = true} = {})
 {
+    const tokens = {
+        access_token: 'fake-token',
+        token_type: 'Bearer',
+        expires_in: 604800,
+        refresh_token: 'fake-refresh-token',
+        scope: 'identify email',
+    };
+
     const user_info = {
         id: '123456789123456789',
         username: 'testuser',
@@ -27,17 +35,10 @@ function mock_discord({email = 'test@example.com', verified = true} = {})
                 && params.get('code') === 'fake_code'
                 && /^.{24,}$/.test(params.get('code_verifier') || '');
         })
-        .reply(200, {
-            access_token: 'fake-token',
-            token_type: 'Bearer',
-            expires_in: 604800,
-            refresh_token: 'fake-refresh-token',
-            scope: 'identify email',
-        });
+        .reply(200, tokens);
 
     nock('https://discord.com', {reqheaders: {authorization: 'Bearer fake-token'}})
-        .get('/api/users/@me')
-        .reply(200, user_info);
+        .get('/api/users/@me').reply(200, user_info);
 }
 
 module.exports = mock_discord;
