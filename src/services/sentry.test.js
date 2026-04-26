@@ -2,7 +2,8 @@ const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFrien
 const assert = require('assert');
 const {sentry_before_send, sanitize_sentry_event} = require('./sentry');
 
-class InvalidPassword extends UserFriendlyError {
+class InvalidPassword extends UserFriendlyError
+{
     constructor() {
         super('Invalid password');
     }
