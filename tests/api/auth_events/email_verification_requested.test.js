@@ -7,6 +7,7 @@ const normalize_email = require('../../../src/helpers/normalize/normalize_email'
 describe('auth_events • email_verification_requested', function () {
 
     it('should be recorded as success when verification email is sent', async function () {
+        await db('auth_events').del();
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
@@ -22,6 +23,7 @@ describe('auth_events • email_verification_requested', function () {
     });
 
     it('should be recorded as noop when no unverified email exists', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/email-verify/request');
 
@@ -35,6 +37,7 @@ describe('auth_events • email_verification_requested', function () {
     });
 
     it('should be recorded as noop when rate-limited', async function () {
+        await db('auth_events').del();
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);

@@ -7,6 +7,7 @@ const normalize_email = require('../../../src/helpers/normalize/normalize_email'
 describe('auth_events • email_verified', function () {
 
     it('should be recorded when email is verified', async function () {
+        await db('auth_events').del();
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);

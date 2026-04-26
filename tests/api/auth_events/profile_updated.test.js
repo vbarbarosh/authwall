@@ -5,6 +5,7 @@ const db = require('../../../db');
 describe('auth_events • profile_updated', function () {
 
     it('should be recorded when display name is updated from profile', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/profile', {display_name: 'Mocha 123'});
 

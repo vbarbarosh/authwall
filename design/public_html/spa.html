@@ -706,6 +706,10 @@
       </div>
       <div class="card-body">
         <div class="form">
+          <div id="p-profile-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="p-profile-error-msg"></span>
+          </div>
 
           <!-- Avatar + name block -->
           <div class="avatar-upload">
@@ -741,6 +745,17 @@
           <div class="section-title">Connected identities</div>
           <div id="p-connections" data-testid="profile-connections">
             <div class="text-sm text-muted" style="padding:8px 0">Loading…</div>
+          </div>
+          <div id="p-add-email" style="display:none">
+            <div class="field mt-16">
+              <label for="p-add-email-input">Email address</label>
+              <input type="email" id="p-add-email-input" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div id="p-add-email-error" class="alert alert-error" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span id="p-add-email-error-msg"></span>
+            </div>
+            <button id="p-add-email-submit" class="btn btn-outline mt-4">Add email</button>
           </div>
 
           <div data-flow="password" style="display:contents">
@@ -865,10 +880,6 @@
       </div>
       <div class="card-body">
         <div class="form">
-          <div class="alert alert-warn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>Your email address has not been verified. Verify it to secure your account.</span>
-          </div>
           <div id="ev-error" class="alert alert-error" style="display:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span id="ev-error-msg"></span>
@@ -921,6 +932,40 @@
     </div>
   </div>
 
+  <!-- ── 15. EMAIL CHANGE — SENT ── -->
+  <div data-view="email-change-sent">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body text-center">
+        <div class="notice-icon info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h1 class="page-title">Check your email</h1>
+        <p class="page-sub mt-8">We've sent a confirmation link to your email address. The link expires in <strong>30 minutes</strong>.</p>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
+    </div>
+  </div>
+
+  <!-- ── 16. EMAIL CHANGE — SUCCESS ── -->
+  <div data-view="email-change-success">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body text-center">
+        <div class="notice-icon success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1 class="page-title">Email updated</h1>
+        <p class="page-sub mt-8">Your email address has been successfully updated.</p>
+        <button class="btn btn-primary mt-20" onclick="showView('profile')">Go to profile</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /viewport -->
 
 <footer class="app-footer">
@@ -946,6 +991,8 @@ const ROUTES = {
   '/auth/email-verify':          'email-verify-req',
   '/auth/email-verify/sent':     'email-verify-sent',
   '/auth/email-verify/success':  'email-verify-success',
+  '/auth/email-change/sent':     'email-change-sent',
+  '/auth/email-change/success':  'email-change-success',
 };
 const PATH_FOR = Object.fromEntries(Object.entries(ROUTES).map(([p, v]) => [v, p]));
 
@@ -1206,6 +1253,14 @@ function apply_flows(flows) {
 // RENDER USER DATA (profile + sessions + sign-out)
 // ═══════════════════════════════════════════════════════════════════════════════
 function render_user_data(s) {
+  if (viewFromPath(window.location.pathname) === 'profile') {
+    if (s.error) {
+      show_error('p-profile-error-msg', 'p-profile-error', s.error);
+    } else {
+      hide_error('p-profile-error');
+    }
+  }
+
   // Avatar
   const av = document.getElementById('p-avatar');
   const av_init = document.getElementById('p-avatar-initials');
@@ -1233,6 +1288,7 @@ function render_user_data(s) {
   if (conn_el && s.providers) {
     const flows = s.flows || {};
     const providers = s.providers;
+    const email_identity = providers.find(p => p.type === 'email');
     const PROVIDER_META = {
       username:     { label: 'Username', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, bg: '#e0e7ff' },
       email:        { label: 'Email', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, bg: '#e0e7ff' },
@@ -1294,6 +1350,9 @@ function render_user_data(s) {
       let action = '';
       if (p.type === 'email' && !p.verified_at) {
         action = `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-verify-req')">Verify →</button>`;
+      }
+      if (p.type === 'email' && providers.length > 1) {
+        action += `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('/auth/email/remove')">Remove</button>`;
       } else if ((p.type === 'oauth_google' || p.type === 'oauth_github' || p.type === 'oauth_microsoft' || p.type === 'oauth_facebook' || p.type === 'oauth_twitter' || p.type === 'oauth_discord') && providers.length > 1) {
         const endpoint = {
           oauth_google: '/auth/google/disconnect',
@@ -1316,6 +1375,11 @@ function render_user_data(s) {
         ${action}
       </div>`;
     }).join('');
+
+    const add_email_el = document.getElementById('p-add-email');
+    if (add_email_el) {
+      add_email_el.style.display = (!email_identity && s.actions?.can_change_email) ? '' : 'none';
+    }
   }
 
   // Sessions
@@ -1572,6 +1636,18 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   document.getElementById('p-curpass').value = '';
   document.getElementById('p-newpass').value = '';
   document.getElementById('p-newpass2').value = '';
+});
+
+// ── Profile — Add email ─────────────────────────────────────────────────────
+document.getElementById('p-add-email-submit').addEventListener('click', async () => {
+  hide_error('p-add-email-error');
+  const email = document.getElementById('p-add-email-input').value.trim();
+  if (!email) return show_error('p-add-email-error-msg', 'p-add-email-error', 'Please enter your email address.');
+  set_loading('p-add-email-submit', true);
+  const { final_url, error } = await api_post('/auth/email/add', { email });
+  set_loading('p-add-email-submit', false);
+  if (error) return show_error('p-add-email-error-msg', 'p-add-email-error', error);
+  navigate_after(final_url);
 });
 
 // ── Profile — Remove account ────────────────────────────────────────────────

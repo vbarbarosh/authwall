@@ -148,7 +148,9 @@ async function create_app()
     express_routes(app, require('./routes/account'));
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
+    express_routes(app, require('./routes/email_remove'));
     if (config.mailer.enabled) {
+        express_routes(app, require('./routes/email_add'));
         express_routes(app, require('./routes/email_change'));
         express_routes(app, require('./routes/email_verify'));
     }

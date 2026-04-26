@@ -60,6 +60,23 @@ describe('auth_events • identity_removed', function () {
         });
     });
 
+    it('should be recorded when email identity is removed', async function () {
+        await db('auth_events').del();
+
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+
+        await this.http_post_json('/auth/email/remove');
+
+        const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');
+        assert.strictEqual(events.length, 1);
+        assert.partialDeepStrictEqual(events[0], {
+            event_type: const_auth_event.identity_removed,
+            event_status: 'success',
+            identity_type: const_user_identity.email,
+            identity_value_normalized: 'mocha@authwall.test',
+        });
+    });
+
     it('should be recorded as failure when GitHub is the last identity', async function () {
         await db('auth_events').del();
 
@@ -106,6 +123,23 @@ describe('auth_events • identity_removed', function () {
         assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'last_identity'});
     });
 
+    it('should be recorded as failure when email is the last identity', async function () {
+        await db('auth_events').del();
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
+
+        await this.http_post_json('/auth/email/remove');
+
+        const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');
+        assert.strictEqual(events.length, 1);
+        assert.partialDeepStrictEqual(events[0], {
+            event_type: const_auth_event.identity_removed,
+            event_status: 'failure',
+            identity_type: const_user_identity.email,
+        });
+        assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'last_identity'});
+    });
+
     it('should be recorded as noop when GitHub is not connected', async function () {
         await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
@@ -132,6 +166,21 @@ describe('auth_events • identity_removed', function () {
             event_type: const_auth_event.identity_removed,
             event_status: 'noop',
             identity_type: const_user_identity.oauth_google,
+        });
+        assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'not_connected'});
+    });
+
+    it('should be recorded as noop when email is not connected', async function () {
+        await db('auth_events').del();
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.http_post_json('/auth/email/remove', {});
+
+        const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');
+        assert.strictEqual(events.length, 1);
+        assert.partialDeepStrictEqual(events[0], {
+            event_type: const_auth_event.identity_removed,
+            event_status: 'noop',
+            identity_type: const_user_identity.email,
         });
         assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'not_connected'});
     });

@@ -44,6 +44,9 @@ describe('shape • status', function () {
                 twitter: {},
                 discord: {},
             },
+            actions: {
+                can_change_email: true,
+            },
             version: pkg.version,
         };
         assert_shape(actual, expected);
@@ -70,6 +73,9 @@ describe('shape • status', function () {
                 facebook: {},
                 twitter: {},
                 discord: {},
+            },
+            actions: {
+                can_change_email: true,
             },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',
             user_slug: String, // 'swbwnpmv7h516n8u',

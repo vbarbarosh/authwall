@@ -7,6 +7,7 @@ const normalize_email = require('../../../src/helpers/normalize/normalize_email'
 describe('auth_events • email_change_requested', function () {
 
     it('should be recorded as success when change is requested', async function () {
+        await db('auth_events').del();
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
         await this.wait_for_emails(1);
@@ -22,6 +23,7 @@ describe('auth_events • email_change_requested', function () {
     });
 
     it('should be recorded as failure when new email is already registered', async function () {
+        await db('auth_events').del();
         await this.add_user({email: 'taken@authwall.test', password: 'pass123'});
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/email-change/request', {email: 'taken@authwall.test'});
@@ -38,6 +40,7 @@ describe('auth_events • email_change_requested', function () {
     });
 
     it('should be recorded as noop when rate-limited', async function () {
+        await db('auth_events').del();
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
         await this.wait_for_emails(1);

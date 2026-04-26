@@ -42,4 +42,15 @@ describe('GET /auth/email-change/confirm', function () {
         assert.deepStrictEqual(this.sent_emails, []);
     });
 
+    it('fails when the user has no email identity to change', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+
+        await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.error, 'No email found');
+        assert.strictEqual(status.providers.find(v => v.type === 'email'), undefined);
+        assert.deepStrictEqual(this.sent_emails, []);
+    });
+
 });

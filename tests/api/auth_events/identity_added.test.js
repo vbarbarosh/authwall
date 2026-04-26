@@ -58,6 +58,23 @@ describe('auth_events • identity_added', function () {
         });
     });
 
+    it('should be recorded when email identity is added from profile', async function () {
+        await db('auth_events').del();
+
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+
+        await this.http_post_json('/auth/email/add', {email: 'mocha@authwall.test'});
+
+        const events = await db('auth_events').where({event_type: const_auth_event.identity_added}).orderBy('id');
+        assert.strictEqual(events.length, 1);
+        assert.partialDeepStrictEqual(events[0], {
+            event_type: const_auth_event.identity_added,
+            event_status: 'success',
+            identity_type: const_user_identity.email,
+            identity_value_normalized: 'mocha@authwall.test',
+        });
+    });
+
     it('should be recorded as noop when GitHub identity is already connected', async function () {
         await db('auth_events').del();
         mock_github();

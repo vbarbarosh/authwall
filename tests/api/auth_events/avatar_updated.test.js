@@ -6,6 +6,7 @@ const db = require('../../../db');
 describe('auth_events • avatar_updated', function () {
 
     it('should be recorded when avatar is updated from profile', async function () {
+        await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
         await this.client.post_multipart('/auth/profile', {

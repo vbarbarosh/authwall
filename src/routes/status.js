@@ -78,6 +78,9 @@ async function status_get(req, res)
             authenticated: false,
             csrf_token: req.session.csrf_token,
             flows,
+            actions: {
+                can_change_email: config.mailer.enabled,
+            },
             version: pkg.version,
         });
         return;
@@ -87,6 +90,9 @@ async function status_get(req, res)
         error,
         authenticated: true,
         flows,
+        actions: {
+            can_change_email: config.mailer.enabled,
+        },
         user_uid: user.uid,
         user_slug: user.slug,
         csrf_token: req.session.csrf_token,

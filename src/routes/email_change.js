@@ -50,6 +50,12 @@ async function email_change_request_post(req, res)
         throw new UserFriendlyError('Email already registered');
     }
 
+    const user_id = req.session.user_id;
+    const current_email_ident = await db('user_identities').where({user_id, type: const_user_identity.email}).first();
+    if (!current_email_ident) {
+        throw new UserFriendlyError('No email found');
+    }
+
     // Rate-limit: prevent spamming
     const recent = await db('email_change_tokens').where({email_normalized}).orderBy('id', 'desc').first();
     if (recent && (Date.now() - new Date(recent.created_at).getTime()) < 60 * SECOND) {
@@ -67,7 +73,6 @@ async function email_change_request_post(req, res)
         throw new UserFriendlyError('Email change already requested. Please wait.');
     }
 
-    const user_id = req.session.user_id;
     const token = random_hex();
 
     const now = new Date();
@@ -106,14 +111,17 @@ async function email_change_confirm_get(req, res)
         throw new UserFriendlyError('Invalid or expired email change link');
     }
 
+    const ident = await db('user_identities')
+        .where({user_id: email_change.user_id, type: const_user_identity.email})
+        .first();
+    if (!ident) {
+        throw new UserFriendlyError('No email found');
+    }
+
     await db.transaction(async function () {
         await db('email_change_tokens').where({id: email_change.id}).update({used_at: now, updated_at: now});
 
-        const ident = await db('user_identities')
-            .where({user_id: email_change.user_id, type: const_user_identity.email})
-            .first();
-
-        const old_email = ident?.value ?? null;
+        const old_email = ident.value;
 
         await db('user_identities').where({id: ident.id}).del();
 
