@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
+    "@sentry/node": "^10.50.0",
     "@vbarbarosh/express-helpers": "^2.2.1",
     "@vbarbarosh/node-helpers": "^3.74.0",
     "@vbarbarosh/type-helpers": "^0.2.0",

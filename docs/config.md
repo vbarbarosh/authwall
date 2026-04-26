@@ -21,6 +21,9 @@ fell back to a different option.
 | [`AUTHWALL_PASSWORD_MIN`](#authwall_password_min) | Minimum password length for new passwords. |
 | [`AUTHWALL_BCRYPT_ROUNDS`](#authwall_bcrypt_rounds) | bcrypt cost for new password hashes. |
 | [`AUTHWALL_RATE_LIMITING`](#authwall_rate_limiting) | Enables or disables in-memory rate limiting. |
+| [`AUTHWALL_SENTRY_DSN`](#authwall_sentry_dsn) | Sentry DSN for error reporting. |
+| [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment) | Sentry environment name. |
+| [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate. |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url) | Public base URL used for redirects and generated links. |
 | [`AUTHWALL_TARGET_URL`](#authwall_target_url) | Upstream application URL. |
 | [`AUTHWALL_TARGET_MODE`](#authwall_target_mode) | Upstream proxy behavior mode. |
@@ -169,6 +172,29 @@ Example:
 
 ```sh
 AUTHWALL_RATE_LIMITING=0
+```
+
+<a id="authwall_sentry_dsn"></a>
+<a id="authwall_sentry_environment"></a>
+<a id="authwall_sentry_traces_sample_rate"></a>
+
+## Sentry
+
+Configures Sentry error reporting for the Node/Express process.
+
+- `AUTHWALL_SENTRY_DSN` — enables Sentry when set. Leave unset to disable Sentry.
+- `AUTHWALL_SENTRY_ENVIRONMENT` — optional environment label, such as `production` or `staging`.
+- `AUTHWALL_SENTRY_TRACES_SAMPLE_RATE` — optional performance tracing sample rate in `[0, 1]`. Leave unset to disable tracing.
+
+Authwall registers Sentry's Express error handler before its own redirecting error handler, so exceptions are reported while users still receive Authwall's normal error redirect behavior.
+Authwall does not enable `sendDefaultPii`, strips cookies and authorization headers, drops request bodies, and redacts OAuth-style `code`, `state`, and `token` query parameters before events are sent.
+
+Example:
+
+```sh
+AUTHWALL_SENTRY_DSN=https://public@example.ingest.sentry.io/1
+AUTHWALL_SENTRY_ENVIRONMENT=production
+AUTHWALL_SENTRY_TRACES_SAMPLE_RATE=0.05
 ```
 
 ## AUTHWALL_PUBLIC_URL

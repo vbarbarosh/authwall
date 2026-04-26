@@ -16,11 +16,14 @@ process.on('warning', function (event) {
     process.stderr.write(event.stack + '\n');
 });
 
+// ⚠️ Sentry must initialize before `require('express')`
+const config = require('../config');
+require('./services/sentry').init_sentry(config);
+
 const als = require('./helpers/als');
 const bootstrap_database = require('./helpers/bootstrap_database');
 const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
-const config = require('../config');
 const create_app = require('./create_app');
 const express_run = require('./helpers/express/express_run');
 const knex = require('knex');

@@ -39,6 +39,11 @@ access:
 
 bcrypt_rounds: ${AUTHWALL_BCRYPT_ROUNDS}
 
+sentry:
+  dsn: ${AUTHWALL_SENTRY_DSN}
+  environment: ${AUTHWALL_SENTRY_ENVIRONMENT}
+  traces_sample_rate: ${AUTHWALL_SENTRY_TRACES_SAMPLE_RATE}
+
 cookie:
   domain: ${AUTHWALL_COOKIE_DOMAIN}
   path: ${AUTHWALL_COOKIE_PATH}

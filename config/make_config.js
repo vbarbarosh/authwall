@@ -115,6 +115,12 @@ function make_config(input = {})
         logs_dir,
         uploads_dir,
 
+        sentry: make(settings.sentry, {
+            dsn: {type: 'str', nullable: true},
+            environment: {type: 'str', nullable: true},
+            traces_sample_rate: {type: 'float', min: 0, max: 1, nullable: true},
+        }),
+
         listen: env.LISTEN ?? '127.0.0.1',
         port: env.PORT ?? 3000,
         secrets: {
@@ -213,6 +219,8 @@ function make_config(input = {})
     if (config.mailer.provider === 'fake' && (settings.mailer?.provider !== 'fake')) {
         config.mailer.enabled = false;
     }
+
+    config.sentry.enabled = Boolean(config.sentry.dsn);
 
     Object.assign(config.flows.magic_link, parse_magic_link_setting(config.flows.magic_link.mode, {mailer_enabled: config.mailer.enabled}));
 

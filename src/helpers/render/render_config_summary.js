@@ -6,6 +6,7 @@ function render_config_summary(config)
         `🧭 Target: ${config.target.mode} → ${redact_url(config.target.url)}${format_headers(config)}`,
         `🗄️ Database: ${format_database(config.knexvars)}`,
         `🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure} max_age_days=${config.cookie.max_age_days}`,
+        `🧯 Sentry: ${format_sentry(config.sentry)}`,
         '🔐 Sign-in:',
         format_flows(config.flows).map(v => `  ${v}`),
         `📭 Mailer: ${format_mailer(config.mailer)}`,
@@ -22,6 +23,20 @@ function render_config_summary(config)
 function flat(items)
 {
     return items.flatMap(v => Array.isArray(v) ? v : [v]);
+}
+
+function format_sentry(sentry)
+{
+    if (!sentry.enabled) {
+        return 'disabled';
+    }
+
+    const parts = ['enabled'];
+    if (sentry.environment) {
+        parts.push(`environment=${sentry.environment}`);
+    }
+    parts.push(`traces=${sentry.traces_sample_rate ?? 'off'}`);
+    return parts.join(' ');
 }
 
 function format_headers(config)

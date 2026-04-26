@@ -17,6 +17,9 @@ describe('make_config', function () {
 
         assert.partialDeepStrictEqual(config, {
             public_url: 'https://notes.example.com',
+            sentry: {
+                enabled: false,
+            },
             cookie: {
                 secure: true,
                 same_site: 'lax',
@@ -58,6 +61,25 @@ describe('make_config', function () {
         });
         assert.strictEqual(config.target.set_headers.length, 2);
         assert.strictEqual(config.target.unset_headers.length, 1);
+    });
+
+    it('configures Sentry when AUTHWALL_SENTRY_DSN is set', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_SENTRY_DSN: 'https://public@example.com/1',
+            AUTHWALL_SENTRY_ENVIRONMENT: 'production',
+            AUTHWALL_SENTRY_TRACES_SAMPLE_RATE: '0.25',
+        });
+
+        assert.partialDeepStrictEqual(config, {
+            sentry: {
+                enabled: true,
+                dsn: 'https://public@example.com/1',
+                environment: 'production',
+                traces_sample_rate: 0.25,
+            },
+        });
     });
 
     it('does not leak resolved settings across calls', function () {

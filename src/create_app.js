@@ -23,6 +23,7 @@ const random_uid_session = require('./helpers/random/random_uid_session');
 const save_session = require('./helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('./helpers/urlparts');
+const {sentry_request_context, setup_sentry_error_handler} = require('./services/sentry');
 
 const LOGGED_HEADERS = new Set([
     'user-agent',
@@ -105,6 +106,7 @@ async function create_app()
         }
         next();
     });
+    app.use(sentry_request_context);
 
     app.get('/auth', function (req, res) {
         if (req.session?.user_id) {
@@ -230,6 +232,7 @@ async function create_app()
         },
     }));
 
+    setup_sentry_error_handler(app);
     app.use(error_handler);
 
     return app;

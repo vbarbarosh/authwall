@@ -35,6 +35,12 @@ describe('render_config_summary', function () {
                 same_site: 'none',
                 max_age_days: 30,
             },
+            sentry: {
+                enabled: true,
+                dsn: 'https://public@example.com/1',
+                environment: 'production',
+                traces_sample_rate: 0.25,
+            },
             flows: {
                 password: {
                     enabled: true,
@@ -122,6 +128,7 @@ describe('render_config_summary', function () {
         assert.match(text, /🌐 Server: https:\/\/authwall.test → 0.0.0.0:3000/);
         assert.match(text, /🧭 Target: proxy → http:\/\/app:8080\/ \(set Authorization; unset X-Auth-User\)/);
         assert.match(text, /🗄️ Database: MySQL mysql:\/\/authwall:\*\*\*@mysql\/authwall/);
+        assert.match(text, /🧯 Sentry: enabled environment=production traces=0.25/);
         assert.match(text, /🔐 Sign-in:/);
         assert.match(text, / - password: username, min 8/);
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);
@@ -145,6 +152,7 @@ describe('render_config_summary', function () {
         assert.doesNotMatch(text, /microsoft-secret/);
         assert.doesNotMatch(text, /facebook-secret/);
         assert.doesNotMatch(text, /twitter-secret/);
+        assert.doesNotMatch(text, /public@example.com/);
     });
 
 });
