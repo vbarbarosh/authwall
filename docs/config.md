@@ -260,7 +260,7 @@ Leave this unset for the default local SQLite database.
 Set it when Authwall should use MySQL or PostgreSQL instead.
 
 > [!WARNING]
-> Any other scheme aborts startup with `AUTHWALL_DB must use mysql://, postgres://, or postgresql://`.
+> Any other scheme aborts startup with `AUTHWALL_DB` must use `mysql://`, `postgres://`, or `postgresql://`.
 
 Examples:
 
