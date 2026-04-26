@@ -116,6 +116,11 @@ docker run --rm -p 3000:3000 \
 * First user is created via sign-up (no bootstrap user required)
 * Data is stored inside the container unless a volume is mounted
 
+## Documentation
+
+* [Configuration reference](docs/config.md)
+* [Glossary](docs/glossary.md)
+
 ## Philosophy
 
 * **Zero-config start**
