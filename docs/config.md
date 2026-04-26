@@ -65,7 +65,7 @@
 
 Where the Authwall HTTP server binds.
 
-- `LISTEN` — bind address. Default: `127.0.0.1`. Use `0.0.0.0` to accept connections on every interface (typical inside a container) or a specific address to bind to one interface.
+- `LISTEN` — bind address. Default: `127.0.0.1` when running from source; the published Docker image bakes in `LISTEN=0.0.0.0` so the container is reachable on every interface. Override to a specific address to bind to one interface.
 - `PORT` — TCP port. Default: `3000`.
 
 These configure the local listener only; the externally visible URL is set separately via [AUTHWALL_PUBLIC_URL](#authwall_public_url).
@@ -125,7 +125,7 @@ Controls how Authwall accepts and stores passwords.
 - `AUTHWALL_BCRYPT_ROUNDS` — bcrypt cost factor for new password hashes and magic-code hashes. Type: integer in `[4, 31]`. Default: `12`. Each step roughly doubles hashing time; raising this hardens hashes against offline attacks but slows every sign-in proportionally.
 
 > [!WARNING]
-> Out-of-range values abort startup.
+> If either value is out of range, Authwall refuses to start.
 
 Example:
 
@@ -260,7 +260,7 @@ Leave this unset for the default local SQLite database.
 Set it when Authwall should use MySQL or PostgreSQL instead.
 
 > [!WARNING]
-> Any other scheme aborts startup with `AUTHWALL_DB` must use `mysql://`, `postgres://`, or `postgresql://`.
+> If the URI uses any other scheme, Authwall refuses to start.
 
 Examples:
 
@@ -317,7 +317,7 @@ Configures the session cookie Authwall sets after sign-in.
 Modern browsers reject `SameSite=None` cookies that are not also `Secure`.
 
 > [!WARNING]
-> If `AUTHWALL_COOKIE_SAMESITE=none` is set without `AUTHWALL_COOKIE_SECURE=true`, startup aborts with `cookie.same_site=none requires cookie.secure=true`.
+> If `AUTHWALL_COOKIE_SAMESITE=none` is set without `AUTHWALL_COOKIE_SECURE=true`, Authwall refuses to start.
 
 The cookie's `Max-Age` is fixed at 30 days and cannot be changed via env vars.
 
@@ -445,7 +445,7 @@ Both variables are required together; the provider is usable only when both are 
 With `AUTHWALL_MAILER=auto` (the default), Resend is selected automatically when both are set.
 
 > [!WARNING]
-> If `AUTHWALL_MAILER=resend` is requested explicitly without both, startup aborts with `mailer.provider=resend requires mailer.resend.key and mailer.resend.from`.
+> If `AUTHWALL_MAILER=resend` is requested explicitly without both, Authwall refuses to start.
 
 Obtain the API key from Resend → API Keys.
 
@@ -472,7 +472,7 @@ All three variables are required together; the provider is usable only when all 
 With `AUTHWALL_MAILER=auto` (the default), Mailjet is selected automatically when all three are set and Resend is not configured.
 
 > [!WARNING]
-> If `AUTHWALL_MAILER=mailjet` is requested explicitly without all three, startup aborts with `mailer.provider=mailjet requires mailer.mailjet.key, mailer.mailjet.secret, and mailer.mailjet.from`.
+> If `AUTHWALL_MAILER=mailjet` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain credentials from Mailjet → Account Settings → API Key Management.
 
@@ -504,7 +504,7 @@ Configures the Amazon SES mailer.
 With `AUTHWALL_MAILER=auto` (the default), SES is selected automatically when `AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM` are all set and neither Resend nor Mailjet is configured.
 
 > [!WARNING]
-> If `AUTHWALL_MAILER=ses` is requested explicitly without `AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM`, startup aborts with `mailer.provider=ses requires mailer.ses.key, mailer.ses.secret, and mailer.ses.from`.
+> If `AUTHWALL_MAILER=ses` is requested explicitly without `AUTHWALL_SES_KEY`, `AUTHWALL_SES_SECRET`, and `AUTHWALL_SES_FROM`, Authwall refuses to start.
 
 Obtain credentials from AWS IAM; verify the sender or its domain in the SES console for the chosen region.
 
@@ -561,7 +561,7 @@ How each value behaves:
 Any value outside the list above disables the flow and logs a warning.
 
 > [!WARNING]
-> If the value is one of `link`, `code`, or `link_and_code` but no mailer is configured, startup aborts with `AUTHWALL_MAGIC_LINK=<mode> requires a configured mailer`.
+> If the value is one of `link`, `code`, or `link_and_code` but no mailer is configured, Authwall refuses to start.
 
 Example:
 
@@ -585,7 +585,7 @@ All three variables are required together; the flow is enabled only when all of 
 If only some of the three are set, Authwall logs a warning and disables the Google flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=google` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=google requires configured Google OAuth`.
+> If `AUTHWALL_FLOWS=google` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from Google Cloud Console → APIs & Services → Credentials.
 
@@ -613,7 +613,7 @@ All three variables are required together; the flow is enabled only when all of 
 If only some of the three are set, Authwall logs a warning and disables the GitHub flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=github` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=github requires configured GitHub OAuth`.
+> If `AUTHWALL_FLOWS=github` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from GitHub → Settings → Developer settings → OAuth Apps.
 
@@ -641,7 +641,7 @@ All three variables are required together; the flow is enabled only when all of 
 If only some of the three are set, Authwall logs a warning and disables the Facebook flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=facebook` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=facebook requires configured Facebook OAuth`.
+> If `AUTHWALL_FLOWS=facebook` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from Meta for Developers → My Apps → your app → Facebook Login → Settings.
 
@@ -669,7 +669,7 @@ All three variables are required together; the flow is enabled only when all of 
 If only some of the three are set, Authwall logs a warning and disables the Microsoft flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=microsoft` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=microsoft requires configured Microsoft OAuth`.
+> If `AUTHWALL_FLOWS=microsoft` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from Microsoft Entra admin center → Identity → Applications → App registrations.
 
@@ -699,7 +699,7 @@ The variables keep their `TWITTER` names for compatibility, even though the prod
 If only some of the three are set, Authwall logs a warning and disables the X flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=twitter` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=twitter requires configured X OAuth`.
+> If `AUTHWALL_FLOWS=twitter` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from X Developer Portal → Projects & Apps → your app → User authentication settings.
 
@@ -727,7 +727,7 @@ All three variables are required together; the flow is enabled only when all of 
 If only some of the three are set, Authwall logs a warning and disables the Discord flow.
 
 > [!WARNING]
-> If `AUTHWALL_FLOWS=discord` is requested explicitly without all three, startup aborts with `AUTHWALL_FLOWS=discord requires configured Discord OAuth`.
+> If `AUTHWALL_FLOWS=discord` is requested explicitly without all three, Authwall refuses to start.
 
 Obtain values from Discord Developer Portal → Applications → your application → OAuth2.
 
