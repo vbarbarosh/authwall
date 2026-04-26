@@ -91,6 +91,9 @@ if that file does not exist, Authwall generates a random secret and writes it th
 
 Rotating this value invalidates existing sessions and CSRF tokens.
 
+> [!WARNING]
+> If the value (env var or `data/secret.key`) is shorter than 32 characters, Authwall refuses to start.
+
 Example:
 
 ```sh
@@ -169,6 +172,10 @@ Authwall uses this value when building redirects and generated links that must p
 Set this to the externally visible URL users and OAuth providers use to reach Authwall.
 For production, this should usually be an HTTPS URL.
 
+This value also drives the default of `AUTHWALL_COOKIE_SECURE`: when `AUTHWALL_PUBLIC_URL` starts
+with `https://`, the session cookie's `Secure` attribute defaults to `true`
+otherwise to `false`.
+
 Example:
 
 ```sh
@@ -178,7 +185,7 @@ AUTHWALL_PUBLIC_URL=https://myapp.com
 ## AUTHWALL_TARGET_URL
 
 URL of the upstream application protected by Authwall.
-Requests that pass Authwall authentication and are not handled by `/auth` routes are proxied to this target.
+Every request whose path is not under `/auth` is proxied here.
 
 - Type: URL string
 - Default: `http://127.0.0.1:8080`
@@ -186,6 +193,12 @@ Requests that pass Authwall authentication and are not handled by `/auth` routes
 Use the URL that Authwall can reach from its own runtime environment.
 In Docker Compose, this is usually a service URL such as `http://echo-server:8080`;
 outside Docker it is often a loopback URL.
+
+How requests reach the upstream:
+
+- **Authenticated requests** — Authwall adds `X-Auth-User: <user_uid>` to the proxied request.
+- **Public paths** (configured in `config/settings.yaml` under `public_paths`, e.g. `/favicon.ico`, `/robots.txt`) are always proxied, with or without a session, and never receive the `X-Auth-User` header.
+- **Other paths without a session** — the user is redirected to the sign-in page; no upstream request is made.
 
 Example:
 
@@ -217,7 +230,6 @@ AUTHWALL_TARGET_MODE=proxy
 ## AUTHWALL_SET_HEADERS
 
 Headers to add to requests before Authwall forwards them to `AUTHWALL_TARGET_URL`.
-These headers are applied after Authwall adds its own authenticated-user header.
 
 - Type: semicolon-separated `Header-Name=value` entries
 - Default: none
@@ -225,6 +237,12 @@ These headers are applied after Authwall adds its own authenticated-user header.
 
 Use this for static headers the upstream expects on every proxied request.
 Header values may be empty.
+
+Outgoing headers are assembled in this order, so later steps override earlier ones:
+
+1. Authwall adds `X-Auth-User` for authenticated, non-public-path requests.
+2. `AUTHWALL_SET_HEADERS` entries are applied (and may overwrite `X-Auth-User`).
+3. `AUTHWALL_UNSET_HEADERS` entries are removed.
 
 Example:
 
@@ -235,12 +253,17 @@ AUTHWALL_SET_HEADERS='X-Team=notes;Authorization=Basic abc:def==;X-Empty='
 ## AUTHWALL_UNSET_HEADERS
 
 Headers to remove from requests before Authwall forwards them to `AUTHWALL_TARGET_URL`.
+Removal happens last, after Authwall's own headers and `AUTHWALL_SET_HEADERS` have been
+applied — see the order in [AUTHWALL_SET_HEADERS](#authwall_set_headers).
 
 - Type: semicolon-separated header names
 - Default: none
 - Validation: each header name must be valid for Node's HTTP client
 
-Use this to prevent client-supplied headers from reaching the upstream, especially headers that the upstream treats as trusted identity or authorization input.
+Use this to drop headers the upstream should not see — typically session cookies or upstream-trusted
+authorization headers leaking through from the client.
+Authwall already strips every `x-auth-*` header from incoming requests in middleware,
+so client-supplied `X-Auth-User` cannot reach the proxy in any case.
 
 Example:
 
