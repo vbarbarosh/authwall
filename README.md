@@ -51,7 +51,7 @@ Authwall runs with zero configuration. By default, it uses SQLite and enables op
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_TARGET_URL=https://myapp.test \
+    -e AUTHWALL_TARGET_URL=http://internal:8080 \
     vbarbarosh/authwall
 ```
 
@@ -68,7 +68,7 @@ docker run --rm -p 3000:3000 \
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_TARGET_URL=https://myapp.test \
+    -e AUTHWALL_TARGET_URL=http://internal:8080 \
     -e AUTHWALL_RESEND_KEY=re_xxx \
     -e AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test>" \
     vbarbarosh/authwall
@@ -88,18 +88,18 @@ docker run --rm -p 3000:3000 \
 Create a Google OAuth client and add this authorized redirect URI:
 
 ```
-http://localhost:3000/auth/google/callback
+https://myapp.test/auth/google/callback
 ```
 
 Then run:
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_PUBLIC_URL=http://localhost:3000 \
-    -e AUTHWALL_TARGET_URL=https://myapp.test \
+    -e AUTHWALL_PUBLIC_URL=https://myapp.test \
+    -e AUTHWALL_TARGET_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
     -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
-    -e AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback \
+    -e AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.test/auth/google/callback \
     vbarbarosh/authwall
 ```
 
@@ -117,18 +117,18 @@ docker run --rm -p 3000:3000 \
 Create a Google OAuth client and add this authorized redirect URI:
 
 ```
-http://localhost:3000/auth/google/callback
+https://myapp.test/auth/google/callback
 ```
 
 Then run:
 
 ```bash
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_PUBLIC_URL=http://localhost:3000 \
-    -e AUTHWALL_TARGET_URL=https://myapp.test \
+    -e AUTHWALL_PUBLIC_URL=https://myapp.test \
+    -e AUTHWALL_TARGET_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
     -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
-    -e AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback \
+    -e AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.test/auth/google/callback \
     -e AUTHWALL_ALLOWED_EMAILS=alice@example.com,bob@example.com \
     vbarbarosh/authwall
 ```
