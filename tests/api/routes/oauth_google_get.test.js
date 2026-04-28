@@ -1,5 +1,5 @@
 const assert = require('assert');
-const config = require('../../config');
+const config = require('../../../config');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -9,10 +9,6 @@ describe('GET /auth/google', function () {
         config.flows.google.enabled = true;
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
-    });
-
-    afterEach(function () {
-        config.flows.google.enabled = false;
     });
 
     it('redirects to google oauth with login intent', async function () {

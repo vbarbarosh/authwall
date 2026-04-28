@@ -13,10 +13,6 @@ describe('emails • google_disconnected', function () {
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-    });
-
     it('should be sent after disconnecting a Google account', async function () {
 
         const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});

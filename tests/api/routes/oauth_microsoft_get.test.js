@@ -1,5 +1,5 @@
 const assert = require('assert');
-const config = require('../../config');
+const config = require('../../../config');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -9,10 +9,6 @@ describe('GET /auth/microsoft', function () {
         config.flows.microsoft.enabled = true;
         config.flows.microsoft.client_id = 'mocha_microsoft_client_id';
         config.flows.microsoft.redirect_url = 'mocha_microsoft_redirect_url';
-    });
-
-    afterEach(function () {
-        config.flows.microsoft.enabled = false;
     });
 
     it('redirects to microsoft oauth with login intent', async function () {

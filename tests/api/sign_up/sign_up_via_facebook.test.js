@@ -18,10 +18,6 @@ describe('sign up via facebook | scenarios', function () {
         mock_facebook();
     });
 
-    afterEach(function () {
-        config.flows.facebook.enabled = false;
-    });
-
     it('signup via facebook should mark the email as verified', async function () {
         const r = await this.client.get_json_no_redirects('/auth/facebook');
         const sess = await this.client.get_session();

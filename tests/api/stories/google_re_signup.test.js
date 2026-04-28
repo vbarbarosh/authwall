@@ -28,11 +28,6 @@ describe('Google re-signup after disconnect | stories', function () {
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-        config.flows.google.enabled = false;
-    });
-
     async function sign_in_via_google(client, opts) {
         mock_google(opts);
         await client.get_json_no_redirects('/auth/google');

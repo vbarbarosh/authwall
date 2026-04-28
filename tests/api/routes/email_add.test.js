@@ -1,5 +1,5 @@
 const assert = require('assert');
-const const_user_identity = require('../../src/helpers/const/const_user_identity');
+const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 
 describe('POST /auth/email/add', function () {
 

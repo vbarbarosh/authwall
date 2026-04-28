@@ -13,10 +13,6 @@ describe('emails • github_disconnected', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-    });
-
     it('should be sent after disconnecting a GitHub account', async function () {
 
         const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});

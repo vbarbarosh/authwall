@@ -1,5 +1,5 @@
 const assert = require('assert');
-const config = require('../../config');
+const config = require('../../../config');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -9,10 +9,6 @@ describe('GET /auth/discord', function () {
         config.flows.discord.enabled = true;
         config.flows.discord.client_id = 'mocha_discord_client_id';
         config.flows.discord.redirect_url = 'mocha_discord_redirect_url';
-    });
-
-    afterEach(function () {
-        config.flows.discord.enabled = false;
     });
 
     it('redirects to discord oauth with login intent', async function () {

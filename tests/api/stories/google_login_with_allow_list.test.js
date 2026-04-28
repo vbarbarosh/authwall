@@ -85,16 +85,6 @@ describe('OAuth login with allow-list | stories', function () {
         config.access.denied_emails = [];
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-        config.flows.google.enabled = false;
-        config.access.allowed_emails = access.allowed_emails;
-        config.access.denied_emails = access.denied_emails;
-        config.access.allowed_domains = access.allowed_domains;
-        config.access.denied_domains = access.denied_domains;
-        nock.cleanAll();
-    });
-
     it('rejects google login when no verified email is provided and access rules are active', async function () {
         await sign_in_via_google(this.client, {email: null});
 

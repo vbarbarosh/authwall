@@ -1,6 +1,6 @@
 const assert = require('assert');
-const config = require('../../config');
-const const_email = require('../../src/helpers/const/const_email');
+const config = require('../../../config');
+const const_email = require('../../../src/helpers/const/const_email');
 
 describe('POST /auth/profile', function () {
 
@@ -27,7 +27,7 @@ describe('POST /auth/profile', function () {
         await this.client.post_multipart('/auth/profile', {
             _csrf: status.csrf_token,
             avatar: {
-                path: `${__dirname}/../../logo.png`,
+                path: `${__dirname}/../../../logo.png`,
                 filename: 'avatar.png',
                 contentType: 'image/png',
             },

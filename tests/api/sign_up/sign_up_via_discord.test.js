@@ -14,10 +14,6 @@ describe('sign up via discord | scenarios', function () {
         mock_discord();
     });
 
-    afterEach(function () {
-        config.flows.discord.enabled = false;
-    });
-
     it('signup via discord should mark the email as verified', async function () {
         const r = await this.client.get_json_no_redirects('/auth/discord');
         const sess = await this.client.get_session();

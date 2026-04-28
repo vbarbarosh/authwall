@@ -1,6 +1,6 @@
 const assert = require('assert');
-const config = require('../../config');
-const mock_google = require('../mock_google');
+const config = require('../../../config');
+const mock_google = require('../../mock_google');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function start_oauth_flow(client)
@@ -15,10 +15,6 @@ describe('GET /auth/google/callback', function () {
         config.flows.google.enabled = true;
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
-    });
-
-    afterEach(function () {
-        config.flows.google.enabled = false;
     });
 
     it('signs in existing google user', async function () {

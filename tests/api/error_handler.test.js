@@ -11,10 +11,6 @@ describe('error_handler', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.github.enabled = false;
-    });
-
     // GET /auth/email-verify/confirm without ?token throws UserFriendlyError('Missing token')
     // — a convenient way to trigger a user-facing error on a non-sign_in route.
 

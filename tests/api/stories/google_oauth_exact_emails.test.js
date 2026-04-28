@@ -48,15 +48,6 @@ describe('Google OAuth with exact email allow-list | stories', function () {
         config.access.denied_domains = [];
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-        config.access.allowed_emails = access.allowed_emails;
-        config.access.denied_emails = access.denied_emails;
-        config.access.allowed_domains = access.allowed_domains;
-        config.access.denied_domains = access.denied_domains;
-        nock.cleanAll();
-    });
-
     it('allows a Google login with a listed verified email', async function () {
         await sign_in_via_google(this.client, {
             sub: 'google-alice',

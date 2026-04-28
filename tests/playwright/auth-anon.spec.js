@@ -1,6 +1,6 @@
+const pkg = require('../../package.json');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const {test, expect} = require('@playwright/test');
-const pkg = require('../../package.json');
 
 test.describe('auth spa anonymous', function () {
 

@@ -1,6 +1,6 @@
 const assert = require('assert');
-const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
-const db = require('../../db');
+const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
+const db = require('../../../db');
 
 describe('POST /auth/magic-link/confirm', function () {
 

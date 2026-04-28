@@ -18,10 +18,6 @@ describe('sign up via microsoft | scenarios', function () {
         mock_microsoft();
     });
 
-    afterEach(function () {
-        config.flows.microsoft.enabled = false;
-    });
-
     it('signup via microsoft should mark the email as verified', async function () {
         const r = await this.client.get_json_no_redirects('/auth/microsoft');
         const sess = await this.client.get_session();

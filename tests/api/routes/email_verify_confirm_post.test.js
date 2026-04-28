@@ -1,7 +1,7 @@
 const assert = require('assert');
-const config = require('../../config');
-const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
-const db = require('../../db');
+const config = require('../../../config');
+const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
+const db = require('../../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('GET /auth/email-verify/confirm', function () {

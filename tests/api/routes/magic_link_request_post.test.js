@@ -1,6 +1,6 @@
 const assert = require('assert');
-const const_email = require('../../src/helpers/const/const_email');
-const db = require('../../db');
+const const_email = require('../../../src/helpers/const/const_email');
+const db = require('../../../db');
 
 describe('POST /auth/magic-link/request', function () {
 

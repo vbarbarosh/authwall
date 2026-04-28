@@ -1,5 +1,5 @@
 const assert = require('assert');
-const const_email = require('../../src/helpers/const/const_email');
+const const_email = require('../../../src/helpers/const/const_email');
 
 describe('POST /auth/password-reset/request', function () {
 

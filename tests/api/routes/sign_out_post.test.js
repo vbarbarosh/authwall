@@ -2,9 +2,6 @@ const assert = require('assert');
 
 describe('POST /auth/sign-out', function () {
 
-    it('requires authentication', async function () {
-    });
-
     it('signs out authenticated user', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');

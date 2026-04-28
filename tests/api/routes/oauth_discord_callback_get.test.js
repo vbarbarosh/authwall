@@ -1,6 +1,6 @@
 const assert = require('assert');
-const config = require('../../config');
-const mock_discord = require('../mock_discord');
+const config = require('../../../config');
+const mock_discord = require('../../mock_discord');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function start_oauth_flow(client)
@@ -20,10 +20,6 @@ describe('GET /auth/discord/callback', function () {
         config.access.allowed_domains = [];
         config.access.denied_emails = [];
         config.access.denied_domains = [];
-    });
-
-    afterEach(function () {
-        config.flows.discord.enabled = false;
     });
 
     it('signs in existing discord user', async function () {

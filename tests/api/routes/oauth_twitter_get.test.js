@@ -1,5 +1,5 @@
 const assert = require('assert');
-const config = require('../../config');
+const config = require('../../../config');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 

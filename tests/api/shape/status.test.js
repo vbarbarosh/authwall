@@ -13,15 +13,6 @@ describe('shape • status', function () {
         config.flows.discord.enabled = true;
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-        config.flows.github.enabled = false;
-        config.flows.microsoft.enabled = false;
-        config.flows.facebook.enabled = false;
-        config.flows.twitter.enabled = false;
-        config.flows.discord.enabled = false;
-    });
-
     it('anonymous', async function () {
         const actual = await this.http_get_json('/auth/status');
         const expected = {

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const config = require('../../config');
+const config = require('../../../config');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -9,10 +9,6 @@ describe('GET /auth/facebook', function () {
         config.flows.facebook.enabled = true;
         config.flows.facebook.client_id = 'mocha_facebook_client_id';
         config.flows.facebook.redirect_url = 'mocha_facebook_redirect_url';
-    });
-
-    afterEach(function () {
-        config.flows.facebook.enabled = false;
     });
 
     it('redirects to facebook oauth with login intent', async function () {

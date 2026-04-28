@@ -1,6 +1,6 @@
 const assert = require('assert');
-const config = require('../../config');
-const db = require('../../db');
+const config = require('../../../config');
+const db = require('../../../db');
 
 describe('GET /auth/email-change/confirm', function () {
 

@@ -34,11 +34,6 @@ describe('Last auth method cannot be removed | stories', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    afterEach(function () {
-        config.flows.google.enabled = false;
-        config.flows.github.enabled = false;
-    });
-
     async function sign_in_via_google(client, {sub = 'google-only-sub', email = null} = {}) {
         nock('https://oauth2.googleapis.com').post('/token').reply(200, {access_token: 'fake-token'});
         nock('https://www.googleapis.com').get('/oauth2/v3/userinfo').reply(200, {

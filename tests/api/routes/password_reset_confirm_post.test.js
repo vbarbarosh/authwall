@@ -1,8 +1,8 @@
 const assert = require('assert');
-const config = require('../../config');
-const const_email = require('../../src/helpers/const/const_email');
-const date_trunc_ms = require('../../src/helpers/date/date_trunc_ms');
-const db = require('../../db');
+const config = require('../../../config');
+const const_email = require('../../../src/helpers/const/const_email');
+const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
+const db = require('../../../db');
 
 describe('POST /auth/password-reset/confirm', function () {
 

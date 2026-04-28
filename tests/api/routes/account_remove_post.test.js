@@ -1,6 +1,6 @@
 const assert = require('assert');
-const const_auth_event = require('../../src/helpers/const/const_auth_event');
-const db = require('../../db');
+const const_auth_event = require('../../../src/helpers/const/const_auth_event');
+const db = require('../../../db');
 
 describe('POST /auth/account/remove', function () {
 
