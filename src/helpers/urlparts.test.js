@@ -4,29 +4,29 @@ const urlparts = require('./urlparts');
 
 const extra_edge_values = [
     // whitespace strings
-    {label: "' '", value: ' '},
-    {label: "'\\t'", value: '\t'},
-    {label: "'\\n'", value: '\n'},
-    {label: "'\\r\\n'", value: '\r\n'},
+    {label: '" "', value: ' '},
+    {label: '"\\t"', value: '\t'},
+    {label: '"\\n"', value: '\n'},
+    {label: '"\\r\\n"', value: '\r\n'},
 
     // numeric strings
-    {label: "'0'", value: '0'},
-    {label: "'1'", value: '1'},
-    {label: "'NaN'", value: 'NaN'},
-    {label: "'Infinity'", value: 'Infinity'},
+    {label: '"0"', value: '0'},
+    {label: '"1"', value: '1'},
+    {label: '"NaN"', value: 'NaN'},
+    {label: '"Infinity"', value: 'Infinity'},
 
     // weird unicode
-    {label: "'💩'", value: '💩'},
-    {label: "'😀'", value: '😀'},
-    {label: "'привет'", value: 'привет'},
-    {label: "'こんにちは'", value: 'こんにちは'},
+    {label: '"💩"', value: '💩'},
+    {label: '"😀"', value: '😀'},
+    {label: '"привет"', value: 'привет'},
+    {label: '"こんにちは"', value: 'こんにちは'},
 
     // dangerous chars
-    {label: "'<script>'", value: '<script>'},
-    {label: "'../'", value: '../'},
-    {label: "'%20'", value: '%20'},
-    {label: "'a?b=c'", value: 'a?b=c'},
-    {label: "'a#b'", value: 'a#b'},
+    {label: '"<script>"', value: '<script>'},
+    {label: '"../"', value: '../'},
+    {label: '"%20"', value: '%20'},
+    {label: '"a?b=c"', value: 'a?b=c'},
+    {label: '"a#b"', value: 'a#b'},
 
     // arrays
     {label: '[1,2,3]', value: [1, 2, 3]},
