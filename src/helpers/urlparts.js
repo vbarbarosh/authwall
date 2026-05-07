@@ -1,12 +1,19 @@
 function urlparts(url)
 {
-    const tmp_url = new URL(url||'', 'fake://fake/');
+    const tmp = url instanceof URL
+        ? url
+        : new URL((typeof url === 'string' ? url : ''), 'fake://fake/');
     return {
-        protocol: tmp_url.protocol,
-        host: tmp_url.host,
-        port: tmp_url.port,
-        path: tmp_url.pathname,
-        search: tmp_url.search,
+        href: tmp.href,
+        protocol: tmp.protocol,
+        hostname: tmp.hostname,
+        username: tmp.username,
+        password: tmp.password,
+        host: tmp.host,
+        port: tmp.port,
+        path: tmp.pathname,
+        search: tmp.search,
+        hash: tmp.hash,
     };
 }
 
