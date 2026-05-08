@@ -1,7 +1,10 @@
 const assert = require('assert');
 const config = require('../../../config');
+const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
 const db = require('../../../db');
+const normalize_email = require('../../../src/helpers/normalize/normalize_email');
+const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 
 describe('session', function () {
 
@@ -59,6 +62,69 @@ describe('session', function () {
         const session2 = await this.client.get_session();
 
         assert.notStrictEqual(session1.uid, session2.uid);
+    });
+
+    it('does not store email verification fields when enforcement is disabled', async function () {
+        config.email_verification.required = false;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
+        const session = await this.client.get_session();
+
+        assert.strictEqual('email' in session, false);
+        assert.strictEqual('email_verified_at' in session, false);
+    });
+
+    it('stores unverified email in session when enforcement is enabled', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        const session = await this.client.get_session();
+
+        assert.strictEqual(session.email, 'mocha@authwall.test');
+        assert.strictEqual(session.email_verified_at, null);
+    });
+
+    it('stores verified email timestamp in session when enforcement is enabled', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
+        const session = await this.client.get_session();
+
+        assert.strictEqual(session.email, 'mocha@authwall.test');
+        assert.match(session.email_verified_at, /^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('stores null email fields for username-only sessions when enforcement is enabled', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const session = await this.client.get_session();
+
+        assert.strictEqual(session.email, null);
+        assert.strictEqual(session.email_verified_at, null);
+    });
+
+    it('prefers verified email identity for enforced session fields', async function () {
+        config.email_verification.required = true;
+
+        const {user_id} = await this.add_user({email: 'unverified@authwall.test', password: 'pass123', verified: false});
+        const now = new Date();
+        await db('user_identities').insert({
+            uid: random_uid_user_identity(),
+            user_id,
+            type: const_user_identity.email,
+            value: 'verified@authwall.test',
+            value_normalized: normalize_email('verified@authwall.test'),
+            created_at: now,
+            updated_at: now,
+            verified_at: now,
+        });
+
+        await this.http_post_json('/auth/sign-in', {username: 'unverified@authwall.test', password: 'pass123'});
+        const session = await this.client.get_session();
+
+        assert.strictEqual(session.email, 'verified@authwall.test');
+        assert.match(session.email_verified_at, /^\d{4}-\d{2}-\d{2}T/);
     });
 
     it('password change from profile keeps current session and revokes others', async function () {

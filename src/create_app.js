@@ -2,6 +2,7 @@ const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const config = require('../config');
+const email_verification_required = require('./helpers/email_verification_required');
 const express = require('express');
 const express_fingerprint = require('@vbarbarosh/express-helpers/src/express_fingerprint');
 const express_routes = require('./helpers/express/express_routes');
@@ -292,6 +293,13 @@ function sign_in_required(req, res, next)
     if (!req.session.user_id) {
         als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
         return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+    }
+
+    if (email_verification_required(req)) {
+        als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
+        req.session.error = 'Email verification required';
+        save_session(req).then(() => res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl})), next);
+        return;
     }
 
     als.logger.write(`[auth_next] ${req.method} ${req.path}`);

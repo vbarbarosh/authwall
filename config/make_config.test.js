@@ -118,6 +118,51 @@ describe('make_config', function () {
         assert.deepStrictEqual(config.access.allowed_emails, ['jonnysmall@gmail.com']);
     });
 
+    it('auto-enables email verification when email flow is enabled', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_MAILER: 'fake',
+            AUTHWALL_FLOWS: 'username,email',
+        });
+
+        assert.strictEqual(config.email_verification.required, true);
+    });
+
+    it('auto-disables email verification when email flow is disabled', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_FLOWS: 'username',
+        });
+
+        assert.strictEqual(config.email_verification.required, false);
+    });
+
+    it('allows explicit email verification disable with email flow enabled', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_MAILER: 'fake',
+            AUTHWALL_FLOWS: 'username,email',
+            AUTHWALL_EMAIL_VERIFICATION_REQUIRED: 'false',
+        });
+
+        assert.strictEqual(config.email_verification.required, false);
+    });
+
+    it('rejects explicit email verification enable without email flow', function () {
+        assert.throws(
+            () => make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_FLOWS: 'username',
+                AUTHWALL_EMAIL_VERIFICATION_REQUIRED: 'true',
+            }),
+            /AUTHWALL_EMAIL_VERIFICATION_REQUIRED requires the email flow to be enabled/
+        );
+    });
+
     it('rejects invalid access-list emails instead of silently dropping them', function () {
         assert.throws(run, /AUTHWALL_ALLOWED_EMAILS contains invalid email/);
         function run() {

@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 
 describe('POST /auth/email-verify/request', function () {
@@ -17,6 +18,18 @@ describe('POST /auth/email-verify/request', function () {
         const sent_email = this.sent_emails.find(v => v.name === const_email.confirm_email);
         assert.ok(sent_email);
         assert.ok(sent_email.placeholders.link);
+        assert.strictEqual(sent_email.to, 'mocha@authwall.test');
+    });
+
+    it('allows requesting verification when email verification is enforced', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        await this.http_post_json('/auth/email-verify/request');
+        await this.wait_for_emails(1);
+
+        const sent_email = this.sent_emails.find(v => v.name === const_email.confirm_email);
+        assert.ok(sent_email);
         assert.strictEqual(sent_email.to, 'mocha@authwall.test');
     });
 

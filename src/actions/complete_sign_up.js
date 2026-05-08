@@ -19,7 +19,7 @@ async function complete_sign_up(req, res, user, token, ident, auth_event_custom 
         custom: {...auth_event_custom, replaced_session_uid},
     });
 
-    redirect(req, res);
+    redirect(req, res, token && config.email_verification.required ? config.pages.email_verify_notice : '/');
 
     if (token) {
         await send_email_nothrow({

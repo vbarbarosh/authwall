@@ -111,6 +111,10 @@ function make_config(input = {})
             allowed_domains: parse_domains(settings.access.allowed_domains),
         },
 
+        email_verification: make(settings.email_verification, {
+            required: {type: 'bool', default: null, nullable: true, before: parse_bool_flag},
+        }),
+
         logger: make(env.AUTHWALL_LOGGER, {type: 'enum', options: ['daily', 'stdout']}),
         logs_dir,
         uploads_dir,
@@ -307,6 +311,9 @@ function make_config(input = {})
     Object.assign(config.flows.twitter, flows.twitter);
     Object.assign(config.flows.discord, flows.discord);
 
+    resolve_email_verification_required(config);
+    validate_email_verification_required(config);
+
     if (config.cookie.same_site === 'none' && !config.cookie.secure) {
         throw new Error('cookie.same_site=none requires cookie.secure=true');
     }
@@ -357,6 +364,11 @@ function validate_secret(secret, source)
     if (secret.length < 32) {
         throw new Error(`${source} must be at least 32 characters`);
     }
+}
+
+function parse_bool_flag(value)
+{
+    return {yes: 1, no: 0, true: 1, false: 0, on: 1, off: 0}[value] ?? value;
 }
 
 function validate_authwall_env_names(env, settings_text)
@@ -410,6 +422,29 @@ function validate_mailer(mailer)
     }
 
     throw new Error(`Invalid mailer.provider: ${mailer.provider}`);
+}
+
+function validate_email_verification_required(config)
+{
+    if (!config.email_verification.required) {
+        return;
+    }
+
+    if (!email_flow_enabled(config)) {
+        throw new Error('AUTHWALL_EMAIL_VERIFICATION_REQUIRED requires the email flow to be enabled');
+    }
+}
+
+function resolve_email_verification_required(config)
+{
+    if (config.email_verification.required === null) {
+        config.email_verification.required = email_flow_enabled(config);
+    }
+}
+
+function email_flow_enabled(config)
+{
+    return config.flows.password.enabled && config.flows.password.allow_email;
 }
 
 function resolve_mailer_provider(mailer)

@@ -20,6 +20,17 @@ describe('POST /auth/profile', function () {
         assert.strictEqual(status2.display_name, 'Mocha 123');
     });
 
+    it('requires verified email when email verification is enforced', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        await this.http_post_json('/auth/profile', {display_name: 'Mocha 123'});
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.error, 'Email verification required');
+        assert.strictEqual(status.display_name, null);
+    });
+
     it('uploads avatar image', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');

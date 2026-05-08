@@ -1,6 +1,7 @@
 const assert = require('assert');
 const axios = require('axios');
 const config = require('../../../config');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('proxy', function () {
 
@@ -55,6 +56,33 @@ describe('proxy', function () {
             echo_server: 'authwall_testing_echo_server',
             method: 'POST',
             url: '/private',
+            headers: {
+                'x-auth-user': sess.user_uid,
+            },
+        });
+    });
+
+    it('auth url redirects to email verification when enforcement requires it', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass1234', verified: false});
+        const res = await this.client.get_json_no_redirects('/private');
+
+        assert.strictEqual(res.status, 302);
+        assert.strictEqual(res.headers.location, urlmod(config.pages.email_verify_request, {return: '/private'}));
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Email verification required',
+        });
+    });
+
+    it('auth url reaches upstream when enforced email is verified', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass1234', verified: true});
+        const sess = await this.client.get_session();
+
+        assert.partialDeepStrictEqual(await this.http_get_json('/private'), {
+            echo_server: 'authwall_testing_echo_server',
             headers: {
                 'x-auth-user': sess.user_uid,
             },

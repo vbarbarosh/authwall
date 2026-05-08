@@ -24,6 +24,26 @@ describe('POST /auth/sign-up', function () {
         assert.strictEqual(this.sent_emails[0].name, const_email.welcome_and_confirm_email);
     });
 
+    it('redirects email sign-up to verification notice when verification is enforced', async function () {
+        config.email_verification.required = true;
+        config.flows.password.min_password_length = 4;
+
+        const csrf_token = (await this.http_get_json('/auth/status')).csrf_token;
+        const res = await this.client.post_json_no_redirects('/auth/sign-up', {
+            _csrf: csrf_token,
+            email: 'mocha@authwall.test',
+            password: 'pass1',
+            password_confirm: 'pass1',
+        });
+
+        assert.strictEqual(res.status, 302);
+        assert.strictEqual(res.headers.location, config.pages.email_verify_notice);
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: true,
+        });
+    });
+
     it('signs up with both email and username', async function () {
         config.flows.password.min_password_length = 4;
         await this.http_post_json('/auth/sign-up', {username: 'mocha', email: 'mocha@authwall.test', password: 'pass1', password_confirm: 'pass1'});

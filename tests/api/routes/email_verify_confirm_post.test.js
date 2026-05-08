@@ -25,6 +25,26 @@ describe('GET /auth/email-verify/confirm', function () {
         assert.ok(status2.providers.find(v => v.type === 'email').verified_at !== null);
     });
 
+    it('refreshes email verification fields in the current session', async function () {
+        config.email_verification.required = true;
+
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        const session = await this.client.get_session();
+        assert.strictEqual(session.email, 'mocha@authwall.test');
+        assert.strictEqual(session.email_verified_at, null);
+
+        await this.http_post_json('/auth/email-verify/request');
+        await this.wait_for_emails(1);
+        const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
+        const token = new URL(link).searchParams.get('token');
+
+        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+
+        const session2 = await this.client.get_session();
+        assert.strictEqual(session2.email, 'mocha@authwall.test');
+        assert.match(session2.email_verified_at, /^\d{4}-\d{2}-\d{2}T/);
+    });
+
     it('fails with missing token', async function () {
         await this.http_get_json(config.pages.email_verify_confirm);
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
