@@ -1,7 +1,12 @@
 const assert = require('assert');
 const config = require('../../../config');
+const const_auth_event = require('../../../src/helpers/const/const_auth_event');
+const const_user_identity = require('../../../src/helpers/const/const_user_identity');
+const db = require('../../../db');
 const nock = require('nock');
+const normalize_email = require('../../../src/helpers/normalize/normalize_email');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+const const_auth_event_status = require('../../../src/helpers/const/const_auth_event_status');
 
 function mock_google({sub = 'google-sub-123', email = null} = {})
 {
@@ -103,6 +108,31 @@ describe('OAuth login with allow-list | stories', function () {
             error: null,
         });
         assert.ok(status.providers.find(v => v.type === 'email' && v.value === 'person@authwall.test'));
+    });
+
+    it('records one failed auth event when Google login email is not allowed', async function () {
+        config.access.allowed_domains = [];
+        config.access.allowed_emails = ['allowed@authwall.test'];
+        await db('auth_events').del();
+
+        await sign_in_via_google(this.client, {
+            sub: 'google-blocked-new',
+            email: 'other@authwall.test',
+        });
+
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            authenticated: false,
+            error: 'Email is not allowed',
+        });
+
+        console.log(await db('auth_events'));
+
+        const events = await db('auth_events').orderBy('id');
+        assert.strictEqual(events.length, 1);
+        assert.partialDeepStrictEqual(events[0], {
+            event_type: const_auth_event.change_me_email_not_authorized,
+            event_status: const_auth_event_status.failure,
+        });
     });
 
     it('rejects github login when no verified email is provided and access rules are active', async function () {

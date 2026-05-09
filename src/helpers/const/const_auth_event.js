@@ -16,6 +16,7 @@ const const_auth_event = {
     email_changed: 'email_changed',
     session_revoked: 'session_revoked',
     session_revoked_all: 'session_revoked_all',
+    change_me_email_not_authorized: 'change_me_email_not_authorized',
 };
 
 module.exports = const_auth_event;
