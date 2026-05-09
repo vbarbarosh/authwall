@@ -9,6 +9,7 @@ const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -261,7 +262,7 @@ async function password_reset_request_post(req, res)
             value_normalized: email_normalized,
         },
         event_type: const_auth_event.password_reset_requested,
-        event_status: 'noop',
+        event_status: const_auth_event_status.noop,
         custom: {reason: 'email_not_found'},
     });
 
@@ -359,7 +360,7 @@ async function insert_auth_event_sign_in_failure(req, ident, custom)
         req,
         ident,
         event_type: const_auth_event.sign_in,
-        event_status: 'failure',
+        event_status: const_auth_event_status.failure,
         custom: {method: 'sign_in_form', ...custom},
     });
 }

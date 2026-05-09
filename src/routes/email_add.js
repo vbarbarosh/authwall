@@ -3,6 +3,7 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const complete_email_verify_request = require('../actions/complete_email_verify_request');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -38,7 +39,7 @@ async function email_add_post(req, res)
             req,
             ident: current_email_ident,
             event_type: const_auth_event.identity_added,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'email_already_connected'},
         });
         throw new UserFriendlyError('Email already connected');
@@ -50,7 +51,7 @@ async function email_add_post(req, res)
             req,
             ident: existing_ident,
             event_type: const_auth_event.identity_added,
-            event_status: 'failure',
+            event_status: const_auth_event_status.failure,
             custom: {reason: 'email_already_registered'},
         });
         throw new UserFriendlyError('Email already registered');

@@ -3,6 +3,7 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const complete_sign_out = require('../actions/complete_sign_out');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
@@ -31,7 +32,7 @@ async function sessions_revoke_post(req, res)
         await insert_auth_event({
             req,
             event_type: const_auth_event.session_revoked,
-            event_status: 'failure',
+            event_status: const_auth_event_status.failure,
             custom: {reason: 'cannot_revoke_current_session'},
         });
         throw new UserFriendlyError('Cannot revoke current session');
@@ -41,7 +42,7 @@ async function sessions_revoke_post(req, res)
     await insert_auth_event({
         req,
         event_type: const_auth_event.session_revoked,
-        event_status: deleted ? 'success' : 'noop',
+        event_status: deleted ? const_auth_event_status.success : const_auth_event_status.noop,
         custom: {target_session_uid: uid, deleted},
     });
 
@@ -59,7 +60,7 @@ async function sessions_revoke_all_post(req, res)
     await insert_auth_event({
         req,
         event_type: const_auth_event.session_revoked_all,
-        event_status: deleted ? 'success' : 'noop',
+        event_status: deleted ? const_auth_event_status.success : const_auth_event_status.noop,
         custom: {deleted},
     });
     redirect(req, res, config.pages.sessions);

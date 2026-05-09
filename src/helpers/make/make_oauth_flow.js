@@ -5,6 +5,7 @@ const complete_sign_in = require('../../actions/complete_sign_in');
 const complete_sign_up = require('../../actions/complete_sign_up');
 const config = require('../../../config');
 const const_auth_event = require('../const/const_auth_event');
+const const_auth_event_status = require('../const/const_auth_event_status');
 const const_oauth_intent = require('../const/const_oauth_intent');
 const const_user_identity = require('../const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
@@ -99,7 +100,7 @@ async function callback_get(oauth_provider, req, res)
                         value_normalized: String(user_info.sub),
                     },
                     event_type: const_auth_event.identity_added,
-                    event_status: 'failure',
+                    event_status: const_auth_event_status.failure,
                     custom: {
                         reason: 'linked_to_another_user',
                     },
@@ -111,7 +112,7 @@ async function callback_get(oauth_provider, req, res)
                 req,
                 ident,
                 event_type: const_auth_event.identity_added,
-                event_status: 'noop',
+                event_status: const_auth_event_status.noop,
                 custom: {reason: 'already_connected'},
             });
             return redirect(req, res, '/auth/profile');
@@ -243,7 +244,7 @@ async function disconnect_post(oauth_provider, req, res)
             req,
             ident: {type: oauth_provider.user_identity_type},
             event_type: const_auth_event.identity_removed,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'not_connected'},
         });
         return redirect(req, res, '/auth/profile');
@@ -254,7 +255,7 @@ async function disconnect_post(oauth_provider, req, res)
             req,
             ident,
             event_type: const_auth_event.identity_removed,
-            event_status: 'failure',
+            event_status: const_auth_event_status.failure,
             custom: {reason: 'last_identity'},
         });
         throw new UserFriendlyError(oauth_provider.error_last_auth_method);

@@ -5,6 +5,7 @@ const complete_email_change_confirm = require('../actions/complete_email_change_
 const complete_email_change_request = require('../actions/complete_email_change_request');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -44,7 +45,7 @@ async function email_change_request_post(req, res)
             req,
             ident,
             event_type: const_auth_event.email_change_requested,
-            event_status: 'failure',
+            event_status: const_auth_event_status.failure,
             custom: {reason: 'email_already_registered'},
         });
         throw new UserFriendlyError('Email already registered');
@@ -67,7 +68,7 @@ async function email_change_request_post(req, res)
                 value_normalized: email_normalized,
             },
             event_type: const_auth_event.email_change_requested,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'email_changed_already_requested'},
         });
         throw new UserFriendlyError('Email change already requested. Please wait.');

@@ -1,3 +1,4 @@
+const const_auth_event_status = require('./const/const_auth_event_status');
 const db = require('../../db');
 const random_uid_auth_event = require('./random/random_uid_auth_event');
 
@@ -15,7 +16,7 @@ async function insert_auth_event(params)
         user_id: params.user?.id ?? req.session?.user_id ?? null,
         session_uid: req.sessionID ?? null,
         event_type: params.event_type,
-        event_status: params.event_status ?? 'success',
+        event_status: params.event_status ?? const_auth_event_status.success,
         identity_type: params.ident?.type ?? null,
         identity_value: params.ident?.value ?? null,
         identity_value_normalized: params.ident?.value_normalized ?? null,

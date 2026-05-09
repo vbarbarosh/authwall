@@ -2,6 +2,7 @@ const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFrien
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
@@ -24,7 +25,7 @@ async function email_remove_post(req, res)
             req,
             ident: {type: const_user_identity.email},
             event_type: const_auth_event.identity_removed,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'not_connected'},
         });
         return redirect(req, res, config.pages.profile);
@@ -35,7 +36,7 @@ async function email_remove_post(req, res)
             req,
             ident,
             event_type: const_auth_event.identity_removed,
-            event_status: 'failure',
+            event_status: const_auth_event_status.failure,
             custom: {reason: 'last_identity'},
         });
         throw new UserFriendlyError('Cannot remove email: it is your only sign-in method');

@@ -4,6 +4,7 @@ const complete_email_verify_confirm = require('../actions/complete_email_verify_
 const complete_email_verify_request = require('../actions/complete_email_verify_request');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -31,7 +32,7 @@ async function email_verify_request_post(req, res)
         await insert_auth_event({
             req,
             event_type: const_auth_event.email_verification_requested,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'no_unverified_email'},
         });
         throw new UserFriendlyError('No unverified email found');
@@ -46,7 +47,7 @@ async function email_verify_request_post(req, res)
             req,
             ident,
             event_type: const_auth_event.email_verification_requested,
-            event_status: 'noop',
+            event_status: const_auth_event_status.noop,
             custom: {reason: 'verification_email_already_sent'},
         });
         throw new UserFriendlyError('Verification email already sent. Please wait.');
