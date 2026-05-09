@@ -1,4 +1,5 @@
 const const_auth_event = require('../const/const_auth_event');
+const db = require('../../../db');
 
 const day_ms = 24 * 60 * 60 * 1000;
 const hour_ms = 60 * 60 * 1000;
@@ -115,19 +116,9 @@ function parse_activity_summary_args(argv, now = new Date())
     return options;
 }
 
-async function load_activity_summary_events(db, options)
+async function load_activity_summary_events(options)
 {
     return db('auth_events')
-        .select([
-            'id',
-            'user_id',
-            'session_uid',
-            'event_type',
-            'event_status',
-            'identity_type',
-            'ip',
-            'created_at',
-        ])
         .where('created_at', '>=', options.since)
         .where('created_at', '<', options.until)
         .orderBy('created_at', 'asc');
@@ -135,7 +126,7 @@ async function load_activity_summary_events(db, options)
 
 function summarize_activity_events(events, options)
 {
-    const summary = {
+    const out = {
         label: options.label,
         since: options.since.toISOString(),
         until: options.until.toISOString(),
@@ -161,11 +152,11 @@ function summarize_activity_events(events, options)
     const timeline = {};
 
     for (const event of events) {
-        increment(summary.statuses, event.event_status || 'unknown');
-        increment(summary.event_types, event.event_type || 'unknown');
+        increment(out.statuses, event.event_status || 'unknown');
+        increment(out.event_types, event.event_type || 'unknown');
 
         if (event.identity_type) {
-            increment(summary.identity_types, event.identity_type);
+            increment(out.identity_types, event.identity_type);
         }
         if (event.user_id) {
             users.add(event.user_id);
@@ -180,7 +171,7 @@ function summarize_activity_events(events, options)
             increment(top_failure_ips, event.ip);
         }
 
-        const bucket = format_bucket(parse_event_date(event.created_at), summary.bucket);
+        const bucket = format_bucket(parse_event_date(event.created_at), out.bucket);
         timeline[bucket] ??= {bucket, total: 0, success: 0, failure: 0, noop: 0};
         ++timeline[bucket].total;
         if (event.event_status && Object.hasOwn(timeline[bucket], event.event_status)) {
@@ -188,20 +179,20 @@ function summarize_activity_events(events, options)
         }
     }
 
-    summary.actors.users = users.size;
-    summary.actors.sessions = sessions.size;
-    summary.actors.ips = ips.size;
-    summary.highlights = make_highlights(summary);
-    add_failed_sign_ins(summary, events);
-    summary.top_failure_ips = top_entries(top_failure_ips, 5);
-    summary.timeline = Object.values(timeline);
+    out.actors.users = users.size;
+    out.actors.sessions = sessions.size;
+    out.actors.ips = ips.size;
+    out.highlights = make_highlights(out);
+    add_failed_sign_ins(out, events);
+    out.top_failure_ips = top_entries(top_failure_ips, 5);
+    out.timeline = Object.values(timeline);
 
-    return summary;
+    return out;
 }
 
 function render_activity_summary(summary)
 {
-    const lines = [
+    const out = [
         'Authwall activity summary',
         `Period: ${summary.label} (${summary.since} to ${summary.until})`,
         `Events: ${summary.total} total, ${count(summary.statuses.success)} success, ${count(summary.statuses.failure)} failure, ${count(summary.statuses.noop)} noop`,
@@ -209,11 +200,11 @@ function render_activity_summary(summary)
     ];
 
     if (!summary.total) {
-        lines.push('No auth events found in this period.');
-        return lines;
+        out.push('No auth events found in this period.');
+        return out;
     }
 
-    lines.push(
+    out.push(
         `Core flow: ${summary.highlights.sign_ups} sign-ups, ${summary.highlights.sign_ins} sign-ins (${summary.highlights.failed_sign_ins} failed), ${summary.highlights.sign_outs} sign-outs`,
         `Account changes: ${summary.highlights.profile_updates} profile, ${summary.highlights.identity_added} identities added, ${summary.highlights.identity_removed} removed, ${summary.highlights.email_changes} email changes, ${summary.highlights.password_changes} password changes, ${summary.highlights.account_removals} account removals`,
         `Recovery and verification: ${summary.highlights.password_reset_requests} password reset requests, ${summary.highlights.password_reset_completed} reset completions, ${summary.highlights.email_verification_requests} email verification requests, ${summary.highlights.email_verified} verified emails`,
@@ -227,7 +218,7 @@ function render_activity_summary(summary)
         ...summary.timeline.map(v => `  ${v.bucket}: ${v.total} total, ${v.success} success, ${v.failure} failure, ${v.noop} noop`)
     );
 
-    return lines;
+    return out;
 }
 
 function make_highlights(summary)
@@ -348,7 +339,6 @@ function usage()
 }
 
 module.exports = {
-    add_failed_sign_ins,
     load_activity_summary_events,
     parse_activity_summary_args,
     render_activity_summary,

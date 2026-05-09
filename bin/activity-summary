@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const als = require('../src/helpers/als');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
 const knex = require('knex');
@@ -25,17 +26,7 @@ async function main()
     const db = knex(config.knexvars);
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
-    let events;
-    try {
-        events = await load_activity_summary_events(db, options);
-    }
-    catch (error) {
-        if (is_missing_auth_events_table(error)) {
-            throw new Error('auth_events table was not found. Run bin/migrate before using bin/activity-summary.');
-        }
-        throw error;
-    }
-
+    const events = await als.run({db}, () => load_activity_summary_events(options))
     const summary = summarize_activity_events(events, options);
 
     if (options.json) {
@@ -44,10 +35,4 @@ async function main()
     }
 
     process.stdout.write(render_activity_summary(summary).join('\n') + '\n');
-}
-
-function is_missing_auth_events_table(error)
-{
-    const message = String(error?.message || '');
-    return /auth_events/.test(message) && /(no such table|does not exist|doesn't exist|undefined table)/i.test(message);
 }
