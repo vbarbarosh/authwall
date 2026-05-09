@@ -1,7 +1,9 @@
+const EmailNotAuthorized = require('./helpers/errors/EmailNotAuthorized');
 const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const config = require('../config');
+const const_auth_event_status = require('./helpers/const/const_auth_event_status');
 const email_verification_required = require('./helpers/email_verification_required');
 const express = require('express');
 const express_fingerprint = require('@vbarbarosh/express-helpers/src/express_fingerprint');
@@ -11,6 +13,7 @@ const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
+const insert_auth_event = require('./helpers/insert_auth_event');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
 const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
 const oauth_provider_facebook = require('./oauth_providers/oauth_provider_facebook');
@@ -256,6 +259,10 @@ async function error_handler(error, req, res, next)
         als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
     }
 
+    if (error instanceof EmailNotAuthorized) {
+        await insert_email_not_authorized_event(req, error);
+    }
+
     if (req.session) {
         if (error instanceof UserFriendlyError) {
             req.session.error = error.message;
@@ -281,6 +288,18 @@ async function error_handler(error, req, res, next)
     else {
         res.redirect(req.url);
     }
+}
+
+async function insert_email_not_authorized_event(req, error)
+{
+    await insert_auth_event({
+        req,
+        event_status: const_auth_event_status.failure,
+        custom: {
+            reason: 'email_not_authorized',
+            error: error.message,
+        },
+    });
 }
 
 function sign_in_required(req, res, next)
