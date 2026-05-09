@@ -294,6 +294,7 @@ async function insert_email_not_authorized_event(req, error)
 {
     await insert_auth_event({
         req,
+        event_type: 'change_me_email_not_authorized',
         event_status: const_auth_event_status.failure,
         custom: {
             reason: 'email_not_authorized',
