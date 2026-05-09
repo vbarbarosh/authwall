@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+
+const cli = require('@vbarbarosh/node-helpers/src/cli');
+const config = require('../config');
+const knex = require('knex');
+const {
+    load_activity_summary_events,
+    parse_activity_summary_args,
+    render_activity_summary,
+    summarize_activity_events,
+    usage,
+} = require('../src/helpers/render/render_activity_summary');
+
+cli(main);
+
+async function main()
+{
+    const options = parse_activity_summary_args(process.argv.slice(2));
+
+    if (options.help) {
+        process.stdout.write(usage().join('\n') + '\n');
+        return;
+    }
+
+    const db = knex(config.knexvars);
+    await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
+
+    let events;
+    try {
+        events = await load_activity_summary_events(db, options);
+    }
+    catch (error) {
+        if (is_missing_auth_events_table(error)) {
+            throw new Error('auth_events table was not found. Run bin/migrate before using bin/activity-summary.');
+        }
+        throw error;
+    }
+
+    const summary = summarize_activity_events(events, options);
+
+    if (options.json) {
+        process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
+        return;
+    }
+
+    process.stdout.write(render_activity_summary(summary).join('\n') + '\n');
+}
+
+function is_missing_auth_events_table(error)
+{
+    const message = String(error?.message || '');
+    return /auth_events/.test(message) && /(no such table|does not exist|doesn't exist|undefined table)/i.test(message);
+}
