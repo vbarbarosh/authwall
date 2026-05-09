@@ -1,4 +1,5 @@
 const const_auth_event = require('../const/const_auth_event');
+const const_user_identity = require('../const/const_user_identity');
 const db = require('../../../db');
 
 const day_ms = 24 * 60 * 60 * 1000;
@@ -118,10 +119,32 @@ function parse_activity_summary_args(argv, now = new Date())
 
 async function load_activity_summary_events(options)
 {
-    return db('auth_events')
+    const events = await db('auth_events')
         .where('created_at', '>=', options.since)
         .where('created_at', '<', options.until)
         .orderBy('created_at', 'asc');
+    await attach_user_emails(events);
+    return events;
+}
+
+async function attach_user_emails(events)
+{
+    const user_ids = Array.from(new Set(events.map(v => v.user_id).filter(Boolean)));
+    if (!user_ids.length) {
+        return;
+    }
+
+    const identities = await db('user_identities')
+        .where({type: const_user_identity.email})
+        .whereIn('user_id', user_ids)
+        .orderBy('id', 'asc');
+    const emails = {};
+    for (const ident of identities) {
+        emails[ident.user_id] ??= ident.value;
+    }
+    for (const event of events) {
+        event.user_email = emails[event.user_id] ?? null;
+    }
 }
 
 function summarize_activity_events(events, options)
@@ -134,14 +157,15 @@ function summarize_activity_events(events, options)
         total: events.length,
         statuses: {},
         event_types: {},
+        event_statuses: {},
         identity_types: {},
+        events: [],
         actors: {
             users: 0,
             sessions: 0,
             ips: 0,
         },
         highlights: {},
-        attempts: [],
         top_failure_ips: [],
         timeline: [],
     };
@@ -155,6 +179,8 @@ function summarize_activity_events(events, options)
     for (const event of events) {
         increment(out.statuses, event.event_status || 'unknown');
         increment(out.event_types, event.event_type || 'unknown');
+        increment_event_status(out.event_statuses, event.event_type || 'unknown', event.event_status || 'unknown');
+        out.events.push(format_event(event));
 
         if (event.identity_type) {
             increment(out.identity_types, event.identity_type);
@@ -171,10 +197,6 @@ function summarize_activity_events(events, options)
         if (event.event_status === 'failure' && event.ip) {
             increment(top_failure_ips, event.ip);
         }
-        if (event.event_type === const_auth_event.sign_in || event.event_type === const_auth_event.sign_up) {
-            out.attempts.push(format_attempt(event));
-        }
-
         const bucket = format_bucket(parse_event_date(event.created_at), out.bucket);
         timeline[bucket] ??= {bucket, total: 0, success: 0, failure: 0, noop: 0};
         ++timeline[bucket].total;
@@ -198,9 +220,6 @@ function render_activity_summary(summary)
 {
     const out = [
         'Authwall activity summary',
-        `Period: ${summary.label} (${summary.since} to ${summary.until})`,
-        `Events: ${summary.total} total, ${count(summary.statuses.success)} success, ${count(summary.statuses.failure)} failure, ${count(summary.statuses.noop)} noop`,
-        `Actors: ${summary.actors.users} users, ${summary.actors.sessions} sessions, ${summary.actors.ips} IPs`,
     ];
 
     if (!summary.total) {
@@ -209,19 +228,14 @@ function render_activity_summary(summary)
     }
 
     out.push(
-        `Core flow: ${summary.highlights.sign_ups} sign-ups, ${summary.highlights.sign_ins} sign-ins (${summary.highlights.failed_sign_ins} failed), ${summary.highlights.sign_outs} sign-outs`,
-        'Sign-in/sign-up attempts:',
-        ...format_attempts(summary.attempts).map(v => `  ${v}`),
-        `Account changes: ${summary.highlights.profile_updates} profile, ${summary.highlights.identity_added} identities added, ${summary.highlights.identity_removed} removed, ${summary.highlights.email_changes} email changes, ${summary.highlights.password_changes} password changes, ${summary.highlights.account_removals} account removals`,
-        `Recovery and verification: ${summary.highlights.password_reset_requests} password reset requests, ${summary.highlights.password_reset_completed} reset completions, ${summary.highlights.email_verification_requests} email verification requests, ${summary.highlights.email_verified} verified emails`,
-        'Top event types:',
-        ...format_top(summary.event_types, 8).map(v => `  ${v}`),
-        'Identity types:',
-        ...format_top(summary.identity_types, 8).map(v => `  ${v}`),
-        'Failure sources:',
-        ...format_top_entries(summary.top_failure_ips).map(v => `  ${v}`),
-        `Timeline by ${summary.bucket}:`,
-        ...summary.timeline.map(v => `  ${v.bucket}: ${v.total} total, ${v.success} success, ${v.failure} failure, ${v.noop} noop`)
+        'Auth events:',
+        ...format_events(summary.events).map(v => `  ${v}`),
+        'Summary:',
+        `  Period: ${summary.label} (${summary.since} to ${summary.until})`,
+        `  Events: ${summary.total} total, ${count(summary.statuses.success)} success, ${count(summary.statuses.failure)} failure, ${count(summary.statuses.noop)} noop`,
+        `  Actors: ${summary.actors.users} users, ${summary.actors.sessions} sessions, ${summary.actors.ips} IPs`,
+        'Events by type/status:',
+        ...format_event_statuses(summary.event_statuses).map(v => `  ${v}`)
     );
 
     return out;
@@ -252,51 +266,55 @@ function add_failed_sign_ins(summary, events)
     summary.highlights.failed_sign_ins = events.filter(v => v.event_type === const_auth_event.sign_in && v.event_status === 'failure').length;
 }
 
-function format_attempt(event)
+function format_event(event)
 {
     return {
         at: parse_event_date(event.created_at).toISOString(),
-        event_type: event.event_type,
-        event_status: event.event_status || 'unknown',
-        identity_type: event.identity_type || null,
-        identity_value: event.identity_value ?? event.identity_value_normalized ?? null,
-        identity_value_normalized: event.identity_value_normalized ?? null,
+        event_type: event.event_type || '',
+        event_status: event.event_status || '',
         user_id: event.user_id ?? null,
+        user_email: event.user_email ?? null,
+        identity_type: event.identity_type ?? null,
+        identity_value: event.identity_value ?? null,
+        identity_value_normalized: event.identity_value_normalized ?? null,
         ip: event.ip ?? null,
     };
 }
 
-function format_attempts(attempts)
+function format_events(events)
 {
-    if (!attempts.length) {
+    if (!events.length) {
         return ['none'];
     }
-    const rows = attempts.map(function (attempt) {
-        const identity = attempt.identity_type
-            ? `${attempt.identity_type}=${attempt.identity_value ?? ''}`
-            : 'identity=unknown';
+    const rows = events.map(function (event) {
         return [
-            format_attempt_marker(attempt),
-            attempt.at,
-            attempt.event_type,
-            attempt.event_status,
-            identity,
-            attempt.user_id ? String(attempt.user_id) : '-',
-            attempt.ip || '-',
+            format_event_marker(event),
+            event.at,
+            event.event_type,
+            event.event_status,
+            format_user(event),
+            event.identity_type || '-',
+            event.identity_value || event.identity_value_normalized || '-',
+            event.ip || '-',
         ];
     });
-    return format_table(['', 'Time', 'Event', 'Status', 'Identity', 'User', 'IP'], rows);
+    return format_table(['', 'Time', 'Event', 'Status', 'User', 'Identity Type', 'Identity', 'IP'], rows);
 }
 
-function format_attempt_marker(attempt)
+function format_user(event)
 {
-    if (attempt.event_status === 'failure') {
+    if (!event.user_id) {
+        return '-';
+    }
+    return `${event.user_id}:${event.user_email || '-'}`;
+}
+
+function format_event_marker(event)
+{
+    if (event.event_status === 'failure') {
         return '🚨';
     }
-    if (attempt.event_type === const_auth_event.sign_up) {
-        return '🆕';
-    }
-    if (attempt.event_status === 'noop') {
+    if (event.event_status === 'noop') {
         return '➖';
     }
     return '';
@@ -361,6 +379,12 @@ function increment(obj, key)
     obj[key] = count(obj[key]) + 1;
 }
 
+function increment_event_status(obj, event_type, event_status)
+{
+    obj[event_type] ??= {};
+    increment(obj[event_type], event_status);
+}
+
 function count(value)
 {
     return value || 0;
@@ -374,7 +398,7 @@ function top_entries(obj, limit)
         .map(([name, value]) => ({name, value}));
 }
 
-function format_top(obj, limit)
+function format_top(obj, limit = Infinity)
 {
     const entries = top_entries(obj, limit);
     return entries.length ? format_top_entries(entries) : ['none'];
@@ -383,6 +407,26 @@ function format_top(obj, limit)
 function format_top_entries(entries)
 {
     return entries.length ? entries.map(v => `${v.name}: ${v.value}`) : ['none'];
+}
+
+function format_event_statuses(values)
+{
+    const entries = Object.entries(values)
+        .sort((a, b) => total_statuses(b[1]) - total_statuses(a[1]) || a[0].localeCompare(b[0]));
+    if (!entries.length) {
+        return ['none'];
+    }
+    return entries.map(function ([event_type, statuses]) {
+        const parts = ['success', 'failure', 'noop', 'unknown']
+            .filter(v => statuses[v])
+            .map(v => `${v}=${statuses[v]}`);
+        return `${event_type}: ${parts.join(' ')}`;
+    });
+}
+
+function total_statuses(statuses)
+{
+    return Object.values(statuses).reduce((a, b) => a + b, 0);
 }
 
 function usage()
