@@ -141,6 +141,7 @@ function summarize_activity_events(events, options)
             ips: 0,
         },
         highlights: {},
+        attempts: [],
         top_failure_ips: [],
         timeline: [],
     };
@@ -169,6 +170,9 @@ function summarize_activity_events(events, options)
         }
         if (event.event_status === 'failure' && event.ip) {
             increment(top_failure_ips, event.ip);
+        }
+        if (event.event_type === const_auth_event.sign_in || event.event_type === const_auth_event.sign_up) {
+            out.attempts.push(format_attempt(event));
         }
 
         const bucket = format_bucket(parse_event_date(event.created_at), out.bucket);
@@ -206,6 +210,8 @@ function render_activity_summary(summary)
 
     out.push(
         `Core flow: ${summary.highlights.sign_ups} sign-ups, ${summary.highlights.sign_ins} sign-ins (${summary.highlights.failed_sign_ins} failed), ${summary.highlights.sign_outs} sign-outs`,
+        'Sign-in/sign-up attempts:',
+        ...format_attempts(summary.attempts).map(v => `  ${v}`),
         `Account changes: ${summary.highlights.profile_updates} profile, ${summary.highlights.identity_added} identities added, ${summary.highlights.identity_removed} removed, ${summary.highlights.email_changes} email changes, ${summary.highlights.password_changes} password changes, ${summary.highlights.account_removals} account removals`,
         `Recovery and verification: ${summary.highlights.password_reset_requests} password reset requests, ${summary.highlights.password_reset_completed} reset completions, ${summary.highlights.email_verification_requests} email verification requests, ${summary.highlights.email_verified} verified emails`,
         'Top event types:',
@@ -244,6 +250,67 @@ function make_highlights(summary)
 function add_failed_sign_ins(summary, events)
 {
     summary.highlights.failed_sign_ins = events.filter(v => v.event_type === const_auth_event.sign_in && v.event_status === 'failure').length;
+}
+
+function format_attempt(event)
+{
+    return {
+        at: parse_event_date(event.created_at).toISOString(),
+        event_type: event.event_type,
+        event_status: event.event_status || 'unknown',
+        identity_type: event.identity_type || null,
+        identity_value: event.identity_value ?? event.identity_value_normalized ?? null,
+        identity_value_normalized: event.identity_value_normalized ?? null,
+        user_id: event.user_id ?? null,
+        ip: event.ip ?? null,
+    };
+}
+
+function format_attempts(attempts)
+{
+    if (!attempts.length) {
+        return ['none'];
+    }
+    const rows = attempts.map(function (attempt) {
+        const identity = attempt.identity_type
+            ? `${attempt.identity_type}=${attempt.identity_value ?? ''}`
+            : 'identity=unknown';
+        return [
+            format_attempt_marker(attempt),
+            attempt.at,
+            attempt.event_type,
+            attempt.event_status,
+            identity,
+            attempt.user_id ? String(attempt.user_id) : '-',
+            attempt.ip || '-',
+        ];
+    });
+    return format_table(['', 'Time', 'Event', 'Status', 'Identity', 'User', 'IP'], rows);
+}
+
+function format_attempt_marker(attempt)
+{
+    if (attempt.event_status === 'failure') {
+        return '🚨';
+    }
+    if (attempt.event_type === const_auth_event.sign_up) {
+        return '🆕';
+    }
+    if (attempt.event_status === 'noop') {
+        return '➖';
+    }
+    return '';
+}
+
+function format_table(headers, rows)
+{
+    const widths = headers.map((header, i) => Math.max(header.length, ...rows.map(row => row[i].length)));
+    const format_row = row => row.map((cell, i) => cell.padEnd(widths[i])).join('  ').trimEnd();
+    return [
+        format_row(headers),
+        format_row(widths.map(width => '-'.repeat(width))),
+        ...rows.map(format_row),
+    ];
 }
 
 function parse_days(value, name)

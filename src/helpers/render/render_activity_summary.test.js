@@ -36,9 +36,9 @@ describe('render_activity_summary', function () {
     it('summarizes auth events into activity metrics', function () {
         const options = parse_activity_summary_args(['week'], new Date('2026-05-09T12:00:00.000Z'));
         const summary = summarize_activity_events([
-            event({event_type: 'sign_up', user_id: 1, session_uid: 's1', identity_type: 'email', ip: '10.0.0.1', created_at: '2026-05-03T10:15:00.000Z'}),
-            event({event_type: 'sign_in', user_id: 1, session_uid: 's1', identity_type: 'email', ip: '10.0.0.1', created_at: '2026-05-03T11:15:00.000Z'}),
-            event({event_type: 'sign_in', event_status: 'failure', identity_type: 'email', ip: '10.0.0.2', created_at: '2026-05-03T11:20:00.000Z'}),
+            event({event_type: 'sign_up', user_id: 1, session_uid: 's1', identity_type: 'email', identity_value: 'Alice@Example.com', identity_value_normalized: 'alice@example.com', ip: '10.0.0.1', created_at: '2026-05-03T10:15:00.000Z'}),
+            event({event_type: 'sign_in', user_id: 1, session_uid: 's1', identity_type: 'username', identity_value: 'alice', ip: '10.0.0.1', created_at: '2026-05-03T11:15:00.000Z'}),
+            event({event_type: 'sign_in', event_status: 'failure', identity_type: 'email', identity_value: 'bob@example.com', ip: '10.0.0.2', created_at: '2026-05-03T11:20:00.000Z'}),
             event({event_type: 'password_reset_requested', event_status: 'noop', user_id: 1, ip: '10.0.0.1', created_at: '2026-05-04T12:00:00.000Z'}),
             event({event_type: 'identity_added', user_id: 1, session_uid: 's1', identity_type: 'google', ip: '10.0.0.1', created_at: '2026-05-05T12:00:00.000Z'}),
         ], options);
@@ -52,6 +52,38 @@ describe('render_activity_summary', function () {
         assert.strictEqual(summary.highlights.sign_ins, 2);
         assert.strictEqual(summary.highlights.failed_sign_ins, 1);
         assert.strictEqual(summary.highlights.password_reset_requests, 1);
+        assert.deepStrictEqual(summary.attempts, [
+            {
+                at: '2026-05-03T10:15:00.000Z',
+                event_type: 'sign_up',
+                event_status: 'success',
+                identity_type: 'email',
+                identity_value: 'Alice@Example.com',
+                identity_value_normalized: 'alice@example.com',
+                user_id: 1,
+                ip: '10.0.0.1',
+            },
+            {
+                at: '2026-05-03T11:15:00.000Z',
+                event_type: 'sign_in',
+                event_status: 'success',
+                identity_type: 'username',
+                identity_value: 'alice',
+                identity_value_normalized: null,
+                user_id: 1,
+                ip: '10.0.0.1',
+            },
+            {
+                at: '2026-05-03T11:20:00.000Z',
+                event_type: 'sign_in',
+                event_status: 'failure',
+                identity_type: 'email',
+                identity_value: 'bob@example.com',
+                identity_value_normalized: null,
+                user_id: null,
+                ip: '10.0.0.2',
+            },
+        ]);
         assert.deepStrictEqual(summary.top_failure_ips, [{name: '10.0.0.2', value: 1}]);
         assert.deepStrictEqual(summary.timeline, [
             {bucket: '2026-05-03', total: 3, success: 2, failure: 1, noop: 0},
@@ -62,7 +94,10 @@ describe('render_activity_summary', function () {
         const text = render_activity_summary(summary).join('\n');
         assert.match(text, /Events: 5 total, 3 success, 1 failure, 1 noop/);
         assert.match(text, /Core flow: 1 sign-ups, 2 sign-ins \(1 failed\), 0 sign-outs/);
-        assert.match(text, /Identity types:\n  email: 3\n  google: 1/);
+        assert.match(text, /Sign-in\/sign-up attempts:\n\s+Time\s+Event\s+Status\s+Identity\s+User\s+IP\n\s+--\s+-+\s+-+\s+-+\s+-+\s+-+\s+-+\n\s+🆕\s+2026-05-03T10:15:00.000Z\s+sign_up\s+success\s+email=Alice@Example.com\s+1\s+10\.0\.0\.1\n\s+2026-05-03T11:15:00.000Z\s+sign_in\s+success\s+username=alice\s+1\s+10\.0\.0\.1\n\s+🚨\s+2026-05-03T11:20:00.000Z\s+sign_in\s+failure\s+email=bob@example\.com\s+-\s+10\.0\.0\.2/);
+        assert.doesNotMatch(text, /🔐/);
+        assert.doesNotMatch(text, /session=/);
+        assert.match(text, /Identity types:\n  email: 2\n  google: 1\n  username: 1/);
         assert.match(text, /Failure sources:\n  10\.0\.0\.2: 1/);
     });
 
@@ -88,6 +123,8 @@ function event(overrides)
         event_type: 'sign_in',
         event_status: 'success',
         identity_type: null,
+        identity_value: null,
+        identity_value_normalized: null,
         ip: null,
         created_at: '2026-05-03T10:00:00.000Z',
         ...overrides,
