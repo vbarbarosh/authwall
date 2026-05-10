@@ -21,7 +21,7 @@ async function main()
     }
 
     const requests = load_log_summary_requests(options);
-    const summary = summarize_log_requests(requests);
+    const summary = summarize_log_requests(requests, options);
 
     if (options.json) {
         process.stdout.write(JSON.stringify(summary, null, 2) + '\n');

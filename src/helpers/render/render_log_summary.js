@@ -12,6 +12,7 @@ function parse_log_summary_args(argv, now = new Date())
         json: false,
         help: false,
         include_query: false,
+        groups: [],
     };
 
     for (let i = 0; i < args.length; ++i) {
@@ -29,6 +30,16 @@ function parse_log_summary_args(argv, now = new Date())
 
         if (arg === '--query') {
             options.include_query = true;
+            continue;
+        }
+
+        if (arg === '--group') {
+            options.groups.push(require_value(args[++i], '--group'));
+            continue;
+        }
+
+        if (arg.startsWith('--group=')) {
+            options.groups.push(require_value(arg.slice('--group='.length), '--group'));
             continue;
         }
 
@@ -146,16 +157,24 @@ function parse_log_summary_requests(text, options = {})
     }
 }
 
-function summarize_log_requests(requests)
+function summarize_log_requests(requests, options = {})
 {
     const rows_by_key = {};
+    const group_matchers = (options.groups || []).map(pattern => ({
+        pattern,
+        regexp: glob_to_regexp(pattern),
+    }));
 
     for (const request of requests) {
-        const key = [request.ip, request.status, request.request].join('\0');
+        const group_matcher = group_matchers.find(v => v.regexp.test(request.request));
+        const row = group_matcher
+            ? {ip: '*', status: '*', request: group_matcher.pattern}
+            : request;
+        const key = [row.ip, row.status, row.request].join('\0');
         rows_by_key[key] ??= {
-            ip: request.ip,
-            status: request.status,
-            request: request.request,
+            ip: row.ip,
+            status: row.status,
+            request: row.request,
             counter: 0,
         };
         rows_by_key[key].counter++;
@@ -315,6 +334,19 @@ function compare_rows(a, b)
         || a.request.localeCompare(b.request);
 }
 
+function glob_to_regexp(glob)
+{
+    return new RegExp(`^${glob.split('').map(function (char) {
+        if (char === '*') {
+            return '.*';
+        }
+        if (char === '?') {
+            return '.';
+        }
+        return char.replace(/[|\\{}()[\]^$+?.]/g, '\\$&');
+    }).join('')}$`);
+}
+
 function parse_date(value, name)
 {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) {
@@ -346,6 +378,7 @@ function usage()
         '  --file PATH        Read an explicit log file',
         '  --logs-dir DIR     Directory containing daily app-YYYY-MM-DD.log files',
         '  --query            Group by full URL path including query string',
+        '  --group GLOB       Collapse matching METHOD path values into one count row',
         '  --json             Print the summary as JSON',
         '  -h, --help         Show this help',
         '',
@@ -353,6 +386,7 @@ function usage()
         '  bin/log-summary today',
         '  bin/log-summary yesterday',
         '  bin/log-summary 2026-04-26 --logs-dir data/authwall/logs',
+        '  bin/log-summary today --group "GET /t/1024/***"',
         '  bin/log-summary --file data/authwall/logs/app-2026-04-26.log',
     ];
 }
