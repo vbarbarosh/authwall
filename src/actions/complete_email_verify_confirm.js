@@ -12,7 +12,7 @@ async function complete_email_verify_confirm(req, res, ident)
         event_type: const_auth_event.email_verified,
     });
 
-    if (config.email_verification.required && req.session?.user_id === ident.user_id) {
+    if (config.confirm_email.required && req.session?.user_id === ident.user_id) {
         req.session.email = ident.value;
         req.session.email_verified_at = ident.verified_at ? new Date(ident.verified_at).toJSON() : null;
         await save_session(req);

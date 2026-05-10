@@ -63,7 +63,7 @@ describe('proxy', function () {
     });
 
     it('auth url redirects to email verification when enforcement requires it', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass1234', verified: false});
         const res = await this.client.get_json_no_redirects('/private');
@@ -76,7 +76,7 @@ describe('proxy', function () {
     });
 
     it('auth url reaches upstream when enforced email is verified', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass1234', verified: true});
         const sess = await this.client.get_session();

@@ -26,7 +26,7 @@ describe('GET /auth/email-verify/confirm', function () {
     });
 
     it('refreshes email verification fields in the current session', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         const session = await this.client.get_session();

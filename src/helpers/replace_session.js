@@ -13,7 +13,7 @@ async function replace_session(req, user)
     req.session.ip = normalize_ip(req.ip);
     req.session.ua = req.headers['user-agent'] ?? 'n/a';
     req.session.csrf_token = random_base62();
-    if (config.email_verification.required) {
+    if (config.confirm_email.required) {
         const {email, email_verified_at} = await session_email_verification(user.id);
         req.session.email = email;
         req.session.email_verified_at = email_verified_at;

@@ -111,7 +111,7 @@ function make_config(input = {})
             allowed_domains: parse_domains(settings.access.allowed_domains),
         },
 
-        email_verification: make(settings.email_verification, {
+        confirm_email: make(settings.confirm_email, {
             required: {type: 'bool', default: null, nullable: true, before: parse_bool_flag},
         }),
 
@@ -426,19 +426,19 @@ function validate_mailer(mailer)
 
 function validate_email_verification_required(config)
 {
-    if (!config.email_verification.required) {
+    if (!config.confirm_email.required) {
         return;
     }
 
     if (!email_flow_enabled(config)) {
-        throw new Error('AUTHWALL_EMAIL_VERIFICATION_REQUIRED requires the email flow to be enabled');
+        throw new Error('AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow to be enabled');
     }
 }
 
 function resolve_email_verification_required(config)
 {
-    if (config.email_verification.required === null) {
-        config.email_verification.required = email_flow_enabled(config);
+    if (config.confirm_email.required === null) {
+        config.confirm_email.required = email_flow_enabled(config);
     }
 }
 

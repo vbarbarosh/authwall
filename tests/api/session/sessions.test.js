@@ -65,7 +65,7 @@ describe('session', function () {
     });
 
     it('does not store email verification fields when enforcement is disabled', async function () {
-        config.email_verification.required = false;
+        config.confirm_email.required = false;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
         const session = await this.client.get_session();
@@ -75,7 +75,7 @@ describe('session', function () {
     });
 
     it('stores unverified email in session when enforcement is enabled', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         const session = await this.client.get_session();
@@ -85,7 +85,7 @@ describe('session', function () {
     });
 
     it('stores verified email timestamp in session when enforcement is enabled', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
         const session = await this.client.get_session();
@@ -95,7 +95,7 @@ describe('session', function () {
     });
 
     it('stores null email fields for username-only sessions when enforcement is enabled', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const session = await this.client.get_session();
@@ -105,7 +105,7 @@ describe('session', function () {
     });
 
     it('prefers verified email identity for enforced session fields', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         const {user_id} = await this.add_user({email: 'unverified@authwall.test', password: 'pass123', verified: false});
         const now = new Date();

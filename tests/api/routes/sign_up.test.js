@@ -25,7 +25,7 @@ describe('POST /auth/sign-up', function () {
     });
 
     it('redirects email sign-up to verification notice when verification is enforced', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
         config.flows.password.min_password_length = 4;
 
         const csrf_token = (await this.http_get_json('/auth/status')).csrf_token;

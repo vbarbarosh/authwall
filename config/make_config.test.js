@@ -126,7 +126,7 @@ describe('make_config', function () {
             AUTHWALL_FLOWS: 'username,email',
         });
 
-        assert.strictEqual(config.email_verification.required, true);
+        assert.strictEqual(config.confirm_email.required, true);
     });
 
     it('auto-disables email verification when email flow is disabled', function () {
@@ -136,7 +136,7 @@ describe('make_config', function () {
             AUTHWALL_FLOWS: 'username',
         });
 
-        assert.strictEqual(config.email_verification.required, false);
+        assert.strictEqual(config.confirm_email.required, false);
     });
 
     it('allows explicit email verification disable with email flow enabled', function () {
@@ -145,10 +145,10 @@ describe('make_config', function () {
             AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
             AUTHWALL_MAILER: 'fake',
             AUTHWALL_FLOWS: 'username,email',
-            AUTHWALL_EMAIL_VERIFICATION_REQUIRED: 'false',
+            AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'false',
         });
 
-        assert.strictEqual(config.email_verification.required, false);
+        assert.strictEqual(config.confirm_email.required, false);
     });
 
     it('rejects explicit email verification enable without email flow', function () {
@@ -157,9 +157,9 @@ describe('make_config', function () {
                 AUTHWALL_SECRET: '12345678901234567890123456789012',
                 AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
                 AUTHWALL_FLOWS: 'username',
-                AUTHWALL_EMAIL_VERIFICATION_REQUIRED: 'true',
+                AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'true',
             }),
-            /AUTHWALL_EMAIL_VERIFICATION_REQUIRED requires the email flow to be enabled/
+            /AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow to be enabled/
         );
     });
 

@@ -39,8 +39,8 @@ access:
 
 bcrypt_rounds: ${AUTHWALL_BCRYPT_ROUNDS}
 
-email_verification:
-  required: ${AUTHWALL_EMAIL_VERIFICATION_REQUIRED}
+confirm_email:
+  required: ${AUTHWALL_CONFIRM_EMAIL_REQUIRED}
 
 sentry:
   dsn: ${AUTHWALL_SENTRY_DSN}

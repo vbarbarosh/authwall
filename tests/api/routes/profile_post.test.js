@@ -21,7 +21,7 @@ describe('POST /auth/profile', function () {
     });
 
     it('requires verified email when email verification is enforced', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/profile', {display_name: 'Mocha 123'});

@@ -19,7 +19,7 @@ process.env.AUTHWALL_SECRET ??= require('crypto').randomBytes(32).toString('base
 process.env.AUTHWALL_RATE_LIMITING ??= '0';
 process.env.AUTHWALL_MAILER = 'fake';
 process.env.AUTHWALL_FLOWS = 'username,email,magic_link_and_code';
-process.env.AUTHWALL_EMAIL_VERIFICATION_REQUIRED = 'false';
+process.env.AUTHWALL_CONFIRM_EMAIL_REQUIRED = 'false';
 process.env.AUTHWALL_BCRYPT_ROUNDS = '4';
 
 const Runnable = require('mocha/lib/runnable');

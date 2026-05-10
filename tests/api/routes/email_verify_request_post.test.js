@@ -22,7 +22,7 @@ describe('POST /auth/email-verify/request', function () {
     });
 
     it('allows requesting verification when email verification is enforced', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/email-verify/request');

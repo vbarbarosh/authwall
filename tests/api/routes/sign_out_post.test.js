@@ -13,7 +13,7 @@ describe('POST /auth/sign-out', function () {
     });
 
     it('allows sign-out when email verification is enforced', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         const status = await this.http_get_json('/auth/status');

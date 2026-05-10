@@ -85,7 +85,7 @@ module.exports = defineConfig({
         stderr: 'pipe',
         env: {
             AUTHWALL_LOGGER: 'daily',
-            AUTHWALL_EMAIL_VERIFICATION_REQUIRED: 'false',
+            AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'false',
             AUTHWALL_SENTRY_DSN: '',
             AUTHWALL_SECRET: require('crypto').randomBytes(32).toString('hex'),
             AUTHWALL_RATE_LIMITING: '0',

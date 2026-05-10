@@ -10,7 +10,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 describe('Email verification link opened in another session | stories', function () {
 
     it('verifies the token owner without changing the current session email fields', async function () {
-        config.email_verification.required = true;
+        config.confirm_email.required = true;
 
         const cookies_a = new Map();
         const cookies_b = new Map();
