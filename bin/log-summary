@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+const cli = require('@vbarbarosh/node-helpers/src/cli');
+const {
+    load_log_summary_requests,
+    parse_log_summary_args,
+    render_log_summary,
+    summarize_log_requests,
+    usage,
+} = require('../src/helpers/render/render_log_summary');
+
+cli(main);
+
+async function main()
+{
+    const options = parse_log_summary_args(process.argv.slice(2));
+
+    if (options.help) {
+        process.stdout.write(usage().join('\n') + '\n');
+        return;
+    }
+
+    const requests = load_log_summary_requests(options);
+    const summary = summarize_log_requests(requests);
+
+    if (options.json) {
+        process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
+        return;
+    }
+
+    process.stdout.write(render_log_summary(summary, options).join('\n') + '\n');
+}
