@@ -147,6 +147,7 @@ function parse_log_summary_requests(text, options = {})
         }
         out.push({
             ip: request.ip,
+            ua: request.ua,
             status: response.status,
             method: request.method,
             path: request.path,
@@ -168,11 +169,12 @@ function summarize_log_requests(requests, options = {})
     for (const request of requests) {
         const group_matcher = group_matchers.find(v => v.regexp.test(request.request));
         const row = group_matcher
-            ? {ip: '*', status: '*', request: group_matcher.pattern}
+            ? {ip: '*', ua: '*', status: '*', request: group_matcher.pattern}
             : request;
-        const key = [row.ip, row.status, row.request].join('\0');
+        const key = [row.ip, row.ua, row.status, row.request].join('\0');
         rows_by_key[key] ??= {
             ip: row.ip,
+            ua: row.ua,
             status: row.status,
             request: row.request,
             counter: 0,
@@ -198,15 +200,14 @@ function render_log_summary(summary, options)
         return out;
     }
 
-    out.push(
-        `Requests: ${summary.total}`,
-        ...format_table(['IP', 'Status', 'METHOD path', 'Counter'], summary.rows.map(v => [
-            v.ip,
-            v.status,
-            v.request,
-            String(v.counter),
-        ]))
-    );
+    out.push(`Requests: ${summary.total}`);
+
+    const has_ua = summary.rows.some(v => v.ua && v.ua !== '-' && v.ua !== '*');
+    const headers = has_ua ? ['IP', 'Status', 'METHOD path', 'Counter', 'UA'] : ['IP', 'Status', 'METHOD path', 'Counter'];
+    const rows = summary.rows.map(v => has_ua
+        ? [v.ip, v.status, v.request, String(v.counter), v.ua || '-']
+        : [v.ip, v.status, v.request, String(v.counter)]);
+    out.push(...format_table(headers, rows));
 
     return out;
 }
@@ -248,11 +249,14 @@ function parse_req_begin(message, options)
     const url_value = consume_json_string(message, i, 'request URL');
     i = url_value.next;
     const fingerprint_value = consume_json_string(message, i, 'request fingerprint');
+    i = fingerprint_value.next;
+    const headers = parse_headers(message.slice(i).trimStart());
 
     return {
         method: method_match[1],
         path: format_request_path(url_value.value, options),
-        ip: parse_fingerprint_ip(fingerprint_value.value),
+        ip: parse_request_ip(fingerprint_value.value, headers),
+        ua: format_user_agent(parse_fingerprint_ua(fingerprint_value.value) || headers['user-agent']),
     };
 }
 
@@ -302,6 +306,136 @@ function parse_fingerprint_ip(fingerprint)
     return match && match[1] ? match[1] : 'n/a';
 }
 
+function parse_fingerprint_forwarded(fingerprint)
+{
+    const match = fingerprint.match(/\[forwarded=([^\]]*)]/);
+    return match && match[1] ? match[1] : 'n/a';
+}
+
+function parse_request_ip(fingerprint, headers)
+{
+    return first_forwarded_ip(headers['x-forwarded-for'])
+        || first_forwarded_ip(headers['x-real-ip'])
+        || first_forwarded_ip(parse_fingerprint_forwarded(fingerprint))
+        || parse_fingerprint_ip(fingerprint);
+}
+
+function first_forwarded_ip(value)
+{
+    if (!value || value === 'n/a') {
+        return null;
+    }
+    const first = String(value).split(',')[0].trim();
+    return first && first !== 'n/a' ? first : null;
+}
+
+function parse_fingerprint_ua(fingerprint)
+{
+    const match = fingerprint.match(/\[ua=([^\]]*)]/);
+    if (!match || !match[1] || match[1] === 'n/a') {
+        return null;
+    }
+    return match[1];
+}
+
+function parse_headers(s)
+{
+    if (!s) {
+        return {};
+    }
+    try {
+        return JSON.parse(s);
+    }
+    catch {
+        return {};
+    }
+}
+
+function format_user_agent(ua)
+{
+    if (!ua || ua === 'n/a') {
+        return '-';
+    }
+
+    const browser = format_user_agent_browser(ua);
+    const os = format_user_agent_os(ua);
+    return [browser, os].filter(Boolean).join(' / ') || ua;
+}
+
+function format_user_agent_browser(ua)
+{
+    let match = ua.match(/\bEdg\/([0-9.]+)/);
+    if (match) {
+        return `Edge ${format_major_version(match[1])}`;
+    }
+
+    match = ua.match(/\bOPR\/([0-9.]+)/);
+    if (match) {
+        return `Opera ${format_major_version(match[1])}`;
+    }
+
+    match = ua.match(/\bChrome\/([0-9.]+)/);
+    if (match) {
+        return `Chrome ${format_major_version(match[1])}`;
+    }
+
+    match = ua.match(/\bFirefox\/([0-9.]+)/);
+    if (match) {
+        return `Firefox ${format_major_version(match[1])}`;
+    }
+
+    match = ua.match(/\bVersion\/([0-9.]+).*?\bSafari\//);
+    if (match) {
+        return `Safari ${format_major_minor_version(match[1])}`;
+    }
+
+    match = ua.match(/\bSafari\/([0-9.]+)/);
+    if (match) {
+        return `Safari ${format_major_version(match[1])}`;
+    }
+
+    return null;
+}
+
+function format_user_agent_os(ua)
+{
+    let match = ua.match(/\bWindows NT ([0-9.]+)/);
+    if (match) {
+        return 'Windows';
+    }
+
+    match = ua.match(/\bMac OS X ([0-9_]+)/);
+    if (match) {
+        return `macOS ${match[1].replace(/_/g, '.')}`;
+    }
+
+    match = ua.match(/\bAndroid ([0-9.]+)/);
+    if (match) {
+        return `Android ${format_major_version(match[1])}`;
+    }
+
+    match = ua.match(/\bOS ([0-9_]+).* like Mac OS X/);
+    if (match) {
+        return `iOS ${match[1].replace(/_/g, '.')}`;
+    }
+
+    if (ua.includes('Linux')) {
+        return 'Linux';
+    }
+
+    return null;
+}
+
+function format_major_version(version)
+{
+    return version.split('.')[0];
+}
+
+function format_major_minor_version(version)
+{
+    return version.split('.').slice(0, 2).join('.');
+}
+
 function format_request_path(url, options)
 {
     if (options.include_query) {
@@ -330,6 +464,7 @@ function compare_rows(a, b)
 {
     return b.counter - a.counter
         || a.ip.localeCompare(b.ip)
+        || a.ua.localeCompare(b.ua)
         || a.status.localeCompare(b.status)
         || a.request.localeCompare(b.request);
 }
