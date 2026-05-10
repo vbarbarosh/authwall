@@ -1,6 +1,8 @@
 const const_email = {
     welcome: 'welcome',
     welcome_and_confirm_email: 'welcome_and_confirm_email',
+    welcome_and_confirm_email_without_code: 'welcome_and_confirm_email_without_code',
+    welcome_and_confirm_email_without_link: 'welcome_and_confirm_email_without_link',
 
     magic_link: 'magic_link',
     magic_link_without_code: 'magic_link_without_code',
@@ -8,6 +10,8 @@ const const_email = {
     password_reset: 'password_reset',
 
     confirm_email: 'confirm_email',
+    confirm_email_without_code: 'confirm_email_without_code',
+    confirm_email_without_link: 'confirm_email_without_link',
     email_change_requested: 'email_change_requested',
     email_changed: 'email_changed', // sent to old email: "your email is being changed"
 

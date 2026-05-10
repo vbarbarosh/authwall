@@ -41,6 +41,11 @@ bcrypt_rounds: ${AUTHWALL_BCRYPT_ROUNDS}
 
 confirm_email:
   required: ${AUTHWALL_CONFIRM_EMAIL_REQUIRED}
+  mode: ${AUTHWALL_CONFIRM_EMAIL} # auto | off | disabled | link | code | link_and_code
+  expires_minutes: 15
+  code_length: 6
+  max_attempts: 5
+  resend_cooldown_seconds: 60
 
 sentry:
   dsn: ${AUTHWALL_SENTRY_DSN}

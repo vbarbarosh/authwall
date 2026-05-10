@@ -2,7 +2,7 @@ const DEFAULT_MODE = 'link_and_code';
 const DISABLED_VALUES = new Set(['off', 'disabled']);
 const MODES = new Set(['link', 'code', 'link_and_code']);
 
-function parse_magic_link_setting(value, {mailer_enabled, warn = console.warn} = {})
+function parse_magic_link_setting(value, {mailer_enabled, warn = console.warn, env_name = 'AUTHWALL_MAGIC_LINK', label = 'Magic link'} = {})
 {
     const normalized = String(value ?? 'auto').trim().toLowerCase();
 
@@ -22,7 +22,7 @@ function parse_magic_link_setting(value, {mailer_enabled, warn = console.warn} =
 
     if (MODES.has(normalized)) {
         if (!mailer_enabled) {
-            throw new Error(`AUTHWALL_MAGIC_LINK=${normalized} requires a configured mailer`);
+            throw new Error(`${env_name}=${normalized} requires a configured mailer`);
         }
         return {
             enabled: true,
@@ -30,7 +30,7 @@ function parse_magic_link_setting(value, {mailer_enabled, warn = console.warn} =
         };
     }
 
-    warn(`⚠️ Magic link disabled: AUTHWALL_MAGIC_LINK must be one of auto, off, disabled, link, code, link_and_code; got ${JSON.stringify(value)}`);
+    warn(`⚠️ ${label} disabled: ${env_name} must be one of auto, off, disabled, link, code, link_and_code; got ${JSON.stringify(value)}`);
     return {
         enabled: false,
         mode: DEFAULT_MODE,

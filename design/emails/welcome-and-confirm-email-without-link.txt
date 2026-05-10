@@ -1,0 +1,14 @@
+Subject: Welcome!
+
+Hi {{display_name}},
+
+Your account has been created.
+
+Use this code on the confirmation page to verify your email address:
+
+{{code}}
+
+This code expires in {{expires_minutes}} minutes. If you did not create this account,
+you can safely ignore this email.
+
+— Authwall

@@ -129,6 +129,35 @@ describe('make_config', function () {
         assert.strictEqual(config.confirm_email.required, true);
     });
 
+    it('configures email confirmation mode like magic link mode', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_MAILER: 'fake',
+            AUTHWALL_CONFIRM_EMAIL: 'code',
+        });
+
+        assert.partialDeepStrictEqual(config.confirm_email, {
+            enabled: true,
+            mode: 'code',
+            expires_minutes: 15,
+            code_length: 6,
+            max_attempts: 5,
+            resend_cooldown_seconds: 60,
+        });
+    });
+
+    it('rejects explicit email confirmation mode without a configured mailer', function () {
+        assert.throws(
+            () => make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_CONFIRM_EMAIL: 'code',
+            }),
+            /AUTHWALL_CONFIRM_EMAIL=code requires a configured mailer/
+        );
+    });
+
     it('auto-disables email verification when email flow is disabled', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',

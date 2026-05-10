@@ -11,6 +11,7 @@ const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
+const create_email_verify_token = require('../helpers/create_email_verify_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
@@ -198,16 +199,8 @@ async function sign_up_post(req, res)
             await complete_sign_up(req, res, user, null, ident, {method: 'signup_form', email, username});
         }
         else {
-            const token = random_hex();
-            await db('email_verify_tokens').insert({
-                user_id: user.id,
-                email_normalized,
-                token_hash: crypto_hash_sha256(token).toString('base64url'),
-                created_at: now,
-                updated_at: now,
-                expires_at: date_add_minutes(new Date(), 30),
-            });
-            await complete_sign_up(req, res, user, token, ident, {method: 'signup_form', email, username});
+            const {token, code} = await create_email_verify_token(user.id, email_normalized, now);
+            await complete_sign_up(req, res, user, token, ident, {method: 'signup_form', email, username}, code);
         }
     }
     catch (error) {

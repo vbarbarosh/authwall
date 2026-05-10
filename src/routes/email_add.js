@@ -5,13 +5,11 @@ const complete_email_verify_request = require('../actions/complete_email_verify_
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
+const create_email_verify_token = require('../helpers/create_email_verify_token');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
-const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const normalize_email = require('../helpers/normalize/normalize_email');
-const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 
 const routes = [
@@ -57,7 +55,6 @@ async function email_add_post(req, res)
         throw new UserFriendlyError('Email already registered');
     }
 
-    const token = random_hex();
     const now = new Date();
     const uid = random_uid_user_identity();
     await db.transaction(async function () {
@@ -71,15 +68,8 @@ async function email_add_post(req, res)
             updated_at: now,
             verified_at: null,
         });
-        await db('email_verify_tokens').insert({
-            user_id,
-            email_normalized,
-            token_hash: crypto_hash_sha256(token).toString('base64url'),
-            created_at: now,
-            updated_at: now,
-            expires_at: date_add_minutes(new Date(), 30),
-        });
     });
+    const {token, code} = await create_email_verify_token(user_id, email_normalized, now);
 
     const ident = await db('user_identities').where({uid}).first();
     await insert_auth_event({
@@ -87,7 +77,7 @@ async function email_add_post(req, res)
         ident,
         event_type: const_auth_event.identity_added,
     });
-    await complete_email_verify_request(req, res, user_id, ident, token);
+    await complete_email_verify_request(req, res, user_id, ident, token, code);
 }
 
 module.exports = routes;

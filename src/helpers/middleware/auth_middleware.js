@@ -3,6 +3,7 @@ const email_verification_required = require('../email_verification_required');
 
 const EMAIL_VERIFICATION_ALLOWED_PATHS = new Set([
     '/auth/email-verify/request',
+    '/auth/email-verify/confirm',
     '/auth/sign-out',
 ]);
 

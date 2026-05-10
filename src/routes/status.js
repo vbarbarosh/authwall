@@ -1,4 +1,5 @@
 const config = require('../../config');
+const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
@@ -53,6 +54,12 @@ async function status_get(req, res)
             mode: config.flows.magic_link.mode,
         };
     }
+    if (config.mailer.enabled && config.confirm_email.enabled) {
+        flows.confirm_email = {
+            mode: config.confirm_email.mode,
+            code_length: config.confirm_email.code_length,
+        };
+    }
     if (config.flows.google.enabled) {
         flows.google = {};
     }
@@ -86,10 +93,14 @@ async function status_get(req, res)
         return;
     }
 
+    const identities = await db('user_identities').where('user_id', req.session.user_id);
+    const confirm_email = await get_confirm_email_status(user.id, identities);
+
     res.send({
         error,
         authenticated: true,
         flows,
+        ...(confirm_email ? {confirm_email} : {}),
         actions: {
             can_change_email: config.mailer.enabled,
         },
@@ -98,11 +109,42 @@ async function status_get(req, res)
         csrf_token: req.session.csrf_token,
         display_name: user.display_name,
         avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
-        providers: frontend_user_identities(await db('user_identities').where('user_id', req.session.user_id)),
+        providers: frontend_user_identities(identities),
         current_session_uid: req.sessionID,
         sessions: frontend_sessions(await db('sessions').where('user_id', req.session.user_id)),
         version: pkg.version,
     });
+}
+
+async function get_confirm_email_status(user_id, identities)
+{
+    if (!config.mailer.enabled || !config.confirm_email.enabled) {
+        return null;
+    }
+
+    const ident = identities.find(v => v.type === const_user_identity.email && !v.verified_at);
+    if (!ident) {
+        return null;
+    }
+
+    const record = await db('email_verify_tokens')
+        .where({
+            user_id,
+            email_normalized: ident.value_normalized,
+        })
+        .whereNull('used_at')
+        .orderBy('id', 'desc')
+        .first();
+
+    if (!record) {
+        return null;
+    }
+
+    const resend_available_at = new Date(new Date(record.created_at).getTime() + config.confirm_email.resend_cooldown_seconds * 1000);
+    return {
+        expires_at: new Date(record.expires_at).toJSON(),
+        resend_available_at: resend_available_at.toJSON(),
+    };
 }
 
 // GET /auth/sidecar

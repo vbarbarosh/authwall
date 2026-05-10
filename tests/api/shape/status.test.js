@@ -28,6 +28,10 @@ describe('shape • status', function () {
                 magic_link: {
                     mode: 'link_and_code',
                 },
+                confirm_email: {
+                    mode: 'link_and_code',
+                    code_length: 6,
+                },
                 google: {},
                 github: {},
                 microsoft: {},
@@ -57,6 +61,10 @@ describe('shape • status', function () {
                 },
                 magic_link: {
                     mode: 'link_and_code',
+                },
+                confirm_email: {
+                    mode: 'link_and_code',
+                    code_length: 6,
                 },
                 google: {},
                 github: {},

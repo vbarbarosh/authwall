@@ -31,10 +31,20 @@ describe('GET /auth/status', function () {
 
         const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.flows.magic_link, undefined);
+        assert.strictEqual(status.flows.confirm_email, undefined);
         assert.partialDeepStrictEqual(status.flows.password, {
             allow_username: true,
             allow_email: false,
         });
+    });
+
+    it('returns pending email confirmation expiration when a token exists', async function () {
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        await this.http_post_json('/auth/email-verify/request');
+
+        const status = await this.http_get_json('/auth/status');
+        assert.match(status.confirm_email.expires_at, /^\d{4}-\d{2}-\d{2}T/);
+        assert.match(status.confirm_email.resend_available_at, /^\d{4}-\d{2}-\d{2}T/);
     });
 
 });

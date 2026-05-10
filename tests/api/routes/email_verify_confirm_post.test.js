@@ -91,3 +91,32 @@ describe('GET /auth/email-verify/confirm', function () {
     });
 
 });
+
+describe('POST /auth/email-verify/confirm', function () {
+
+    it('verifies email with valid code', async function () {
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        await this.http_post_json('/auth/email-verify/request');
+        await this.wait_for_emails(1);
+
+        await this.http_post_json('/auth/email-verify/confirm', {
+            code: this.sent_emails[0].placeholders.code,
+        });
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.error, null);
+        assert.ok(status.providers.find(v => v.type === 'email').verified_at !== null);
+    });
+
+    it('fails with wrong code', async function () {
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        await this.http_post_json('/auth/email-verify/request');
+
+        await this.http_post_json('/auth/email-verify/confirm', {code: '000000'});
+
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: 'Invalid or expired verification code',
+        });
+    });
+
+});

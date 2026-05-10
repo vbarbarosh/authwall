@@ -55,6 +55,8 @@ function make_config(input = {})
         emails: {
             [const_email.welcome]: `${emails_dir}/welcome.txt`,
             [const_email.welcome_and_confirm_email]: `${emails_dir}/welcome-and-confirm-email.txt`,
+            [const_email.welcome_and_confirm_email_without_code]: `${emails_dir}/welcome-and-confirm-email-without-code.txt`,
+            [const_email.welcome_and_confirm_email_without_link]: `${emails_dir}/welcome-and-confirm-email-without-link.txt`,
 
             [const_email.magic_link]: `${emails_dir}/magic-link.txt`,
             [const_email.magic_link_without_code]: `${emails_dir}/magic-link-without-code.txt`,
@@ -62,6 +64,8 @@ function make_config(input = {})
             [const_email.password_reset]: `${emails_dir}/password-reset.txt`,
 
             [const_email.confirm_email]: `${emails_dir}/confirm-email.txt`,
+            [const_email.confirm_email_without_code]: `${emails_dir}/confirm-email-without-code.txt`,
+            [const_email.confirm_email_without_link]: `${emails_dir}/confirm-email-without-link.txt`,
             [const_email.email_change_requested]: `${emails_dir}/email-change-request.txt`,
             [const_email.email_changed]: `${emails_dir}/email-changed.txt`,
 
@@ -113,6 +117,11 @@ function make_config(input = {})
 
         confirm_email: make(settings.confirm_email, {
             required: {type: 'bool', default: null, nullable: true, before: parse_bool_flag},
+            mode: {type: 'str', default: 'auto'},
+            expires_minutes: {type: 'int', min: 1, default: 15},
+            code_length: {type: 'int', min: 4, max: 32, default: 6},
+            max_attempts: {type: 'int', min: 1, default: 5},
+            resend_cooldown_seconds: {type: 'int', min: 0, default: 60},
         }),
 
         logger: make(env.AUTHWALL_LOGGER, {type: 'enum', options: ['daily', 'stdout']}),
@@ -227,6 +236,11 @@ function make_config(input = {})
     config.sentry.enabled = Boolean(config.sentry.dsn);
 
     Object.assign(config.flows.magic_link, parse_magic_link_setting(config.flows.magic_link.mode, {mailer_enabled: config.mailer.enabled}));
+    Object.assign(config.confirm_email, parse_magic_link_setting(config.confirm_email.mode, {
+        mailer_enabled: config.mailer.enabled,
+        env_name: 'AUTHWALL_CONFIRM_EMAIL',
+        label: 'Confirm email',
+    }));
 
     if (config.flows.google.enabled) {
         const {client_id, client_secret, redirect_url} = config.flows.google;

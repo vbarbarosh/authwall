@@ -7,7 +7,13 @@ const replace_session = require('../helpers/replace_session');
 const send_email_nothrow = require('../helpers/send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-async function complete_sign_up(req, res, user, token, ident, auth_event_custom = {})
+const welcome_and_confirm_email_mode_to_email = {
+    link: const_email.welcome_and_confirm_email_without_code,
+    code: const_email.welcome_and_confirm_email_without_link,
+    link_and_code: const_email.welcome_and_confirm_email,
+};
+
+async function complete_sign_up(req, res, user, token, ident, auth_event_custom = {}, code = null)
 {
     const replaced_session_uid = req.session.uid;
     await replace_session(req, user);
@@ -23,12 +29,14 @@ async function complete_sign_up(req, res, user, token, ident, auth_event_custom 
 
     if (token) {
         await send_email_nothrow({
-            name: const_email.welcome_and_confirm_email,
+            name: welcome_and_confirm_email_mode_to_email[config.confirm_email.mode],
             user,
             placeholders: {
                 display_name: user.display_name,
                 sign_in_link: config.public_url + config.pages.sign_in,
                 link: config.public_url + urlmod(config.pages.email_verify_confirm, {token}),
+                code,
+                expires_minutes: config.confirm_email.expires_minutes,
             },
         });
     }

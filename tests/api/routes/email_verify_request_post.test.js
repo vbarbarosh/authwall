@@ -18,6 +18,7 @@ describe('POST /auth/email-verify/request', function () {
         const sent_email = this.sent_emails.find(v => v.name === const_email.confirm_email);
         assert.ok(sent_email);
         assert.ok(sent_email.placeholders.link);
+        assert.match(sent_email.placeholders.code, /^\d{6}$/);
         assert.strictEqual(sent_email.to, 'mocha@authwall.test');
     });
 
