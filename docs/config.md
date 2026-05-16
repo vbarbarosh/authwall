@@ -39,6 +39,8 @@ fell back to a different option.
 | [`AUTHWALL_ALLOWED_DOMAINS`](#authwall_allowed_domains) | Email domains allowed to sign in |
 | [`AUTHWALL_DENIED_EMAILS`](#authwall_denied_emails) | Exact email addresses denied sign-in |
 | [`AUTHWALL_DENIED_DOMAINS`](#authwall_denied_domains) | Email domains denied sign-in |
+| [`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](#authwall_confirm_email_required) | Whether a confirmed email is required for access |
+| [`AUTHWALL_CONFIRM_EMAIL`](#authwall_confirm_email) | Email-confirmation channel: link, code, or both |
 | [`AUTHWALL_MAILER`](#authwall_mailer) | Mailer provider selection |
 | [`AUTHWALL_RESEND_KEY`](#authwall_resend_key) | Resend API key |
 | [`AUTHWALL_RESEND_FROM`](#authwall_resend_from) | Resend sender address |
@@ -465,6 +467,41 @@ Anyone at `myapp.test` can sign in, except one banned address — `DENIED_EMAILS
 ```sh
 AUTHWALL_ALLOWED_DOMAINS=myapp.test
 AUTHWALL_DENIED_EMAILS=fired@myapp.test
+```
+
+<a id="authwall_confirm_email_required"></a>
+<a id="authwall_confirm_email"></a>
+
+## Email confirmation
+
+Controls whether Authwall asks users to confirm an email address, and how the confirmation message is delivered.
+
+- `AUTHWALL_CONFIRM_EMAIL_REQUIRED` — whether a confirmed email is required to reach the protected app. Type: boolean flag. Values: `yes`, `no`, `true`, `false`, `on`, `off`. Default: unset, which resolves to enabled whenever the email sign-in flow is enabled. When enabled, users without a confirmed email are held at the confirmation step instead of being proxied upstream.
+- `AUTHWALL_CONFIRM_EMAIL` — confirmation delivery mode. Type: enum. Values: `auto`, `off`, `disabled`, `link`, `code`, `link_and_code`. Default: `auto`.
+
+How each `AUTHWALL_CONFIRM_EMAIL` value behaves:
+
+- `auto` — enabled when a mailer is configured, otherwise disabled. The default channel is `link_and_code`.
+- `off` / `disabled` — email confirmation is disabled.
+- `link` — confirmation emails contain only a clickable link.
+- `code` — confirmation emails contain only a one-time code that the user types into the confirmation page.
+- `link_and_code` — confirmation emails contain both.
+
+Any value outside the list above disables confirmation and logs a warning.
+
+> [!WARNING]
+> If `AUTHWALL_CONFIRM_EMAIL` is one of `link`, `code`, or `link_and_code` but no mailer is configured, Authwall refuses to start.
+
+> [!WARNING]
+> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is enabled while the email sign-in flow is disabled, Authwall refuses to start.
+
+A few related knobs are not exposed as environment variables and are tuned in `config/settings.yaml` under `confirm_email`: `expires_minutes` (default `15`), `code_length` (default `6`), `max_attempts` (default `5`), and `resend_cooldown_seconds` (default `60`).
+
+Example:
+
+```sh
+AUTHWALL_CONFIRM_EMAIL_REQUIRED=true
+AUTHWALL_CONFIRM_EMAIL=code
 ```
 
 ## AUTHWALL_MAILER
