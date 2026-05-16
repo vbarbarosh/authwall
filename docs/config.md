@@ -246,17 +246,31 @@ AUTHWALL_TARGET_URL=https://internal-service:8080
 
 ## AUTHWALL_TARGET_MODE
 
-Controls how Authwall identifies itself when forwarding requests to `AUTHWALL_TARGET_URL`.
+Controls how Authwall rewrites requests when forwarding them to its single
+upstream, `AUTHWALL_TARGET_URL`. Choose the mode by how many domains sit behind
+Authwall.
 
 - Type: enum
 - Values: `direct`, `proxy`
 - Default: `direct`
 
-Use `direct` when the upstream should receive requests as if they were sent directly to the target URL.
-In this mode, the `Host` header is filled with the domain from `AUTHWALL_TARGET_URL`.
+Authwall always forwards to exactly one upstream and cannot route by domain on
+its own. The mode decides whether that upstream is the app itself or a reverse
+proxy that fans out to several apps:
 
-Use `proxy` when the upstream should be aware that Authwall is acting as a reverse proxy.
-This enables forwarded headers such as `X-Forwarded-For`, `X-Forwarded-Host`,
+```
+direct   client → authwall → app
+proxy    client → authwall → reverse proxy → apps
+```
+
+Use `direct` when **one** app sits behind Authwall. Authwall rewrites the
+`Host` header to the domain of `AUTHWALL_TARGET_URL`, so the app receives the
+request as if it had been sent straight to it.
+
+Use `proxy` when **several** domains sit behind Authwall. The upstream is a
+reverse proxy (such as nginx or Caddy) that routes each domain to its own app.
+Authwall preserves the client's original `Host` header so that proxy can tell
+the domains apart, and additionally sends `X-Forwarded-For`, `X-Forwarded-Host`,
 and `X-Forwarded-Proto`.
 
 Example:

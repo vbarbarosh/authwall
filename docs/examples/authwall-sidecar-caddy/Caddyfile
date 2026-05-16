@@ -1,0 +1,42 @@
+# Authwall as a sidecar auth checker, several domains behind Caddy.
+#
+# Caddy serves each domain's app directly and consults Authwall only for an
+# auth decision (forward_auth → /auth/sidecar). Authwall is not in the data
+# path; its UI is served under /auth on every domain.
+#
+# The (gate) snippet holds the shared logic; each domain is a site block that
+# imports it with its own backend app.
+
+(gate) {
+	# Authwall's UI and endpoints.
+	handle /auth/* {
+		reverse_proxy authwall:3000
+	}
+
+	# The protected app, gated by an auth subrequest to Authwall.
+	handle {
+		forward_auth authwall:3000 {
+			uri /auth/sidecar
+			copy_headers X-Auth-User
+
+			# No session → send the browser to the sign-in page.
+			@unauthorized status 401
+			handle_response @unauthorized {
+				redir /auth/sign-in?return={http.request.uri.path}
+			}
+		}
+		reverse_proxy {args[0]}
+	}
+}
+
+http://apps.mydomain.test {
+	import gate apps:8080
+}
+
+http://notes.mydomain.test {
+	import gate notes:8080
+}
+
+http://echo.mydomain.test {
+	import gate echo:8080
+}

@@ -148,6 +148,8 @@ docker run --rm -p 3000:3000 \
 
 ## Documentation
 
+* [Documentation index](docs/README.md)
+* [Getting started](docs/getting-started.md)
 * [Configuration reference](docs/config.md)
 * [Glossary](docs/glossary.md)
 

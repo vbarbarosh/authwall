@@ -1,0 +1,22 @@
+services:
+
+  # Authwall is the entrypoint. Clients connect to it directly on port 3000,
+  # and it proxies authenticated requests to the upstream `app` service.
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_TARGET_URL: http://app:8080
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - app
+
+  # Stand-in upstream app. echo-server echoes each request it receives,
+  # so you can see the `X-Auth-User` header Authwall adds.
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped

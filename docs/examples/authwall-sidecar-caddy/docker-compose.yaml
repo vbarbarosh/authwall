@@ -1,0 +1,45 @@
+services:
+
+  # Caddy is the entrypoint and the only published service. It serves each
+  # app's domain directly — gating every request with a `forward_auth` to
+  # Authwall's /auth/sidecar endpoint — and serves the Authwall UI under /auth
+  # on every domain.
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - 3000:80
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - authwall
+      - apps
+      - notes
+      - echo
+
+  # Authwall runs beside Caddy as an auth checker, reached under /auth on every
+  # domain. It is not in the data path and never proxies, so it needs no
+  # AUTHWALL_TARGET_URL. AUTHWALL_COOKIE_DOMAIN shares the session across every
+  # *.mydomain.test host, so one sign-in covers them all.
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://apps.mydomain.test:3000
+      AUTHWALL_COOKIE_DOMAIN: mydomain.test
+    volumes:
+      - ./data:/app/data
+
+  # Stand-in upstream apps, one per domain. echo-server echoes each request,
+  # so the response shows which Host reached which app.
+  apps:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+
+  notes:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+
+  echo:
+    image: jmalloc/echo-server
+    restart: unless-stopped

@@ -1,0 +1,46 @@
+services:
+
+  # Authwall is the entrypoint and the only published service. It authenticates
+  # every request, then forwards it to its single upstream — the nginx router.
+  # AUTHWALL_TARGET_MODE=proxy keeps the client's original Host header so nginx
+  # can route by domain. AUTHWALL_COOKIE_DOMAIN shares the session across the
+  # subdomains, so one sign-in covers all of them.
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://apps.mydomain.test:3000
+      AUTHWALL_TARGET_URL: http://nginx
+      AUTHWALL_TARGET_MODE: proxy
+      AUTHWALL_COOKIE_DOMAIN: mydomain.test
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - nginx
+
+  # Reverse proxy behind Authwall. Routes each domain to its own app by Host.
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - apps
+      - notes
+      - echo
+
+  # Stand-in upstream apps, one per domain. echo-server echoes each request,
+  # so the response shows which Host reached which app.
+  apps:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+
+  notes:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+
+  echo:
+    image: jmalloc/echo-server
+    restart: unless-stopped
