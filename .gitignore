@@ -3,6 +3,7 @@
 /.idea
 /data
 /node_modules
+/build/docs/
 
 # Coverage
 /coverage/

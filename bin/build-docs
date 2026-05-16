@@ -1,0 +1,690 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const MarkdownIt = require('markdown-it');
+const anchor = require('markdown-it-anchor');
+const shiki = require('shiki');
+const yaml = require('yaml');
+
+const repo_root = path.resolve(__dirname, '..');
+const config_file = path.join(repo_root, '.docs', 'config.yaml');
+
+main().catch(function (err) {
+    console.error(err.stack || err.message || err);
+    process.exit(1);
+});
+
+async function main()
+{
+    const config = read_config();
+    const source_dir = resolve_repo_path(config.source || 'docs');
+    const output_dir = resolve_repo_path(config.output || 'build/docs');
+    const static_dir = resolve_repo_path(config.static || '.docs/static');
+    const nav = normalize_nav(config.nav || []);
+    const pages = collect_pages(nav);
+    const highlighter = await create_highlighter();
+
+    validate_pages(source_dir, pages);
+    prepare_output_dir(output_dir);
+
+    if (fs.existsSync(static_dir)) {
+        fs.cpSync(static_dir, path.join(output_dir, 'static'), {recursive: true});
+    }
+
+    fs.writeFileSync(path.join(output_dir, '.nojekyll'), '');
+
+    if (config.build?.classic !== false) {
+        build_classic({config, source_dir, output_dir, nav, pages, highlighter});
+    }
+
+    if (config.build?.single !== false) {
+        build_single({config, source_dir, output_dir, nav, pages, highlighter});
+    }
+
+    console.log(`Built docs into ${path.relative(repo_root, output_dir) || '.'}`);
+}
+
+function read_config()
+{
+    if (!fs.existsSync(config_file)) {
+        throw new Error(`Missing docs config: ${path.relative(repo_root, config_file)}`);
+    }
+    return yaml.parse(fs.readFileSync(config_file, 'utf8')) || {};
+}
+
+function resolve_repo_path(value)
+{
+    return path.resolve(repo_root, value);
+}
+
+async function create_highlighter()
+{
+    return shiki.createHighlighter({
+        themes: ['catppuccin-latte', 'ayu-dark'],
+        langs: ['bash', 'docker', 'javascript', 'js', 'mermaid', 'nginx', 'sh', 'shell', 'yaml'],
+    });
+}
+
+function normalize_nav(items)
+{
+    if (!Array.isArray(items)) {
+        throw new Error('docs nav must be an array');
+    }
+
+    return items.map(function (item) {
+        if (!item || typeof item !== 'object') {
+            throw new Error('docs nav items must be objects');
+        }
+        if (!item.title || !item.file) {
+            throw new Error('docs nav items require title and file');
+        }
+        return {
+            title: String(item.title),
+            file: normalize_doc_path(item.file),
+            config_files: normalize_config_files(item.config_files || []),
+            children: normalize_nav(item.children || []),
+        };
+    });
+}
+
+function normalize_config_files(files)
+{
+    if (!Array.isArray(files)) {
+        throw new Error('docs nav config_files must be an array');
+    }
+    return files.map(function (file) {
+        return normalize_doc_path(file);
+    });
+}
+
+function collect_pages(nav)
+{
+    const pages = [];
+    const by_file = new Map();
+
+    function add(item)
+    {
+        const existing = by_file.get(item.file);
+        if (existing) {
+            return existing;
+        }
+
+        const page = {
+            title: item.title,
+            file: item.file,
+            config_files: item.config_files,
+            output: output_path_for_doc(item.file),
+            slug: page_slug_for_doc(item.file),
+        };
+        pages.push(page);
+        by_file.set(page.file, page);
+        return page;
+    }
+
+    function walk(items)
+    {
+        for (const item of items) {
+            item.page = add(item);
+            walk(item.children);
+        }
+    }
+
+    walk(nav);
+
+    return {all: pages, by_file};
+}
+
+function validate_pages(source_dir, pages)
+{
+    for (const page of pages.all) {
+        const file_path = path.join(source_dir, page.file);
+        if (!fs.existsSync(file_path)) {
+            throw new Error(`Missing docs page: ${path.relative(repo_root, file_path)}`);
+        }
+        for (const config_file of page.config_files) {
+            const config_file_path = path.join(source_dir, path.posix.dirname(page.file), config_file);
+            if (!fs.existsSync(config_file_path)) {
+                throw new Error(`Missing docs config file: ${path.relative(repo_root, config_file_path)}`);
+            }
+        }
+    }
+}
+
+function prepare_output_dir(output_dir)
+{
+    const relative = path.relative(repo_root, output_dir);
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+        throw new Error(`Refusing to write outside repository: ${output_dir}`);
+    }
+    if (relative !== path.join('build', 'docs')) {
+        throw new Error(`Refusing to clean unexpected output directory: ${relative}`);
+    }
+
+    fs.rmSync(output_dir, {recursive: true, force: true});
+    fs.mkdirSync(output_dir, {recursive: true});
+}
+
+function build_classic({config, source_dir, output_dir, nav, pages, highlighter})
+{
+    for (const page of pages.all) {
+        const rendered = render_markdown({source_dir, page, mode: 'classic', pages, highlighter});
+        const html = render_shell({
+            config,
+            nav,
+            page,
+            mode: 'classic',
+            page_output: page.output,
+            content: [
+                `<article class="doc-content">${rendered.html}</article>`,
+                render_page_pager(page, pages, page.output),
+            ].join('\n'),
+            toc: rendered.toc,
+        });
+
+        write_output(output_dir, page.output, html);
+    }
+}
+
+function build_single({config, source_dir, output_dir, nav, pages, highlighter})
+{
+    const sections = [];
+
+    for (const page of pages.all) {
+        const rendered = render_markdown({source_dir, page, mode: 'single', pages, highlighter});
+        page.toc = rendered.toc;
+        sections.push([
+            `<section class="doc-page" id="${escape_html(page.slug)}">`,
+            rendered.html,
+            '</section>',
+        ].join('\n'));
+    }
+
+    const html = render_shell({
+        config,
+        nav,
+        page: {
+            title: 'Single page',
+            file: '',
+            output: 'single/index.html',
+            slug: 'single',
+        },
+        mode: 'single',
+        page_output: 'single/index.html',
+        content: sections.join('\n'),
+        toc: [],
+    });
+
+    write_output(output_dir, 'single/index.html', html);
+}
+
+function render_markdown({source_dir, page, mode, pages, highlighter})
+{
+    const toc = [];
+    const md = create_markdown({page, mode, pages, toc, highlighter});
+    const source = [
+        fs.readFileSync(path.join(source_dir, page.file), 'utf8'),
+        render_config_files_markdown(source_dir, page),
+    ].filter(Boolean).join('\n\n');
+    let html = md.render(source, {page, mode});
+
+    if (mode === 'single') {
+        html = prefix_html_ids(html, page.slug);
+    }
+
+    return {html, toc};
+}
+
+function render_config_files_markdown(source_dir, page)
+{
+    if (!page.config_files.length) {
+        return '';
+    }
+
+    const parts = ['## Configuration files'];
+    for (const file of page.config_files) {
+        const file_path = path.join(source_dir, path.posix.dirname(page.file), file);
+        const contents = fs.readFileSync(file_path, 'utf8').replace(/\s+$/, '');
+        const fence = code_fence_for(contents);
+        parts.push([
+            `### \`${file}\``,
+            `${fence}${language_for_config_file(file)}`,
+            contents,
+            fence,
+        ].join('\n'));
+    }
+
+    return parts.join('\n\n');
+}
+
+function code_fence_for(contents)
+{
+    const matches = contents.match(/`{3,}/g) || [];
+    const longest = matches.reduce(function (max, value) {
+        return Math.max(max, value.length);
+    }, 2);
+    return '`'.repeat(longest + 1);
+}
+
+function language_for_config_file(file)
+{
+    const basename = path.posix.basename(file).toLowerCase();
+    const ext = path.posix.extname(file).toLowerCase();
+    if (ext === '.yaml' || ext === '.yml') {
+        return 'yaml';
+    }
+    if (basename === 'nginx.conf') {
+        return 'nginx';
+    }
+    if (basename === 'caddyfile') {
+        return 'caddyfile';
+    }
+    if (ext === '.conf') {
+        return 'conf';
+    }
+    return '';
+}
+
+function create_markdown({page, mode, pages, toc, highlighter})
+{
+    const md = new MarkdownIt({
+        html: true,
+        linkify: true,
+        typographer: false,
+    });
+
+    md.use(anchor, {
+        level: [1, 2, 3, 4],
+        slugify,
+        permalink: anchor.permalink.headerLink(),
+        callback(token, info) {
+            const level = Number(token.tag.slice(1));
+            if (level >= 2 && level <= 3) {
+                toc.push({
+                    level,
+                    title: info.title,
+                    id: mode === 'single' ? `${page.slug}-${info.slug}` : info.slug,
+                });
+            }
+        },
+    });
+
+    use_github_alerts(md);
+    use_syntax_highlight(md, highlighter);
+
+    const default_link_open = md.renderer.rules.link_open || render_token;
+    md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+        rewrite_token_attr(tokens[idx], 'href', function (href) {
+            return rewrite_href(href, page, mode, pages);
+        });
+        return default_link_open(tokens, idx, options, env, self);
+    };
+
+    return md;
+}
+
+function use_syntax_highlight(md, highlighter)
+{
+    md.renderer.rules.fence = function (tokens, idx) {
+        const token = tokens[idx];
+        const lang = shiki_lang_from_info(token.info);
+        return highlighter.codeToHtml(token.content.replace(/[\r\n]+$/, ''), {
+            lang,
+            themes: {
+                light: 'catppuccin-latte',
+                dark: 'ayu-dark',
+            },
+        });
+    };
+}
+
+function shiki_lang_from_info(info)
+{
+    const lang = String(info || '').trim().split(/\s+/)[0].toLowerCase();
+    if (!lang) {
+        return 'text';
+    }
+    if (lang === 'caddyfile' || lang === 'conf') {
+        return 'text';
+    }
+    if (lang === 'javascript') {
+        return 'js';
+    }
+    return lang;
+}
+
+function use_github_alerts(md)
+{
+    md.core.ruler.after('inline', 'github_alerts', function (state) {
+        const tokens = state.tokens;
+
+        for (let i = 0; i < tokens.length - 2; i++) {
+            const blockquote = tokens[i];
+            const paragraph = tokens[i + 1];
+            const inline = tokens[i + 2];
+
+            if (blockquote.type !== 'blockquote_open' || paragraph.type !== 'paragraph_open' || inline.type !== 'inline') {
+                continue;
+            }
+
+            const alert = parse_alert_marker(inline);
+            if (!alert) {
+                continue;
+            }
+
+            blockquote.attrJoin('class', `alert alert-${alert.type}`);
+            blockquote.attrSet('data-alert', alert.label);
+        }
+    });
+}
+
+function parse_alert_marker(inline)
+{
+    const children = inline.children || [];
+    const first = children[0];
+    if (!first || first.type !== 'text') {
+        return null;
+    }
+
+    const match = first.content.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](.*)$/i);
+    if (!match) {
+        return null;
+    }
+
+    const type = match[1].toLowerCase();
+    const label = match[1].slice(0, 1).toUpperCase() + match[1].slice(1).toLowerCase();
+    first.content = match[2].trimStart();
+
+    if (!first.content && (children[1]?.type === 'softbreak' || children[1]?.type === 'hardbreak')) {
+        children.splice(0, 2);
+    }
+    else if (!first.content) {
+        children.splice(0, 1);
+    }
+
+    inline.content = inline.content.replace(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i, '');
+
+    return {type, label};
+}
+
+function render_token(tokens, idx, options, env, self)
+{
+    return self.renderToken(tokens, idx, options);
+}
+
+function rewrite_token_attr(token, attr_name, rewrite)
+{
+    const index = token.attrIndex(attr_name);
+    if (index < 0) {
+        return;
+    }
+    token.attrs[index][1] = rewrite(token.attrs[index][1]);
+}
+
+function rewrite_href(href, current_page, mode, pages)
+{
+    if (!href || is_external_href(href)) {
+        return href;
+    }
+
+    const {target, hash} = split_href(href);
+
+    if (!target) {
+        if (!hash) {
+            return href;
+        }
+        return mode === 'single' ? `#${current_page.slug}-${hash}` : `#${hash}`;
+    }
+
+    const target_page = resolve_target_page(current_page.file, target, pages);
+    if (!target_page) {
+        return href;
+    }
+
+    if (mode === 'single') {
+        return hash ? `#${target_page.slug}-${hash}` : `#${target_page.slug}`;
+    }
+
+    const relative = path.posix.relative(
+        path.posix.dirname(current_page.output),
+        target_page.output
+    );
+
+    return `${relative || path.posix.basename(target_page.output)}${hash ? `#${hash}` : ''}`;
+}
+
+function split_href(href)
+{
+    const index = href.indexOf('#');
+    if (index === -1) {
+        return {target: href, hash: ''};
+    }
+    return {
+        target: href.slice(0, index),
+        hash: href.slice(index + 1),
+    };
+}
+
+function is_external_href(href)
+{
+    return /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
+}
+
+function resolve_target_page(current_file, target, pages)
+{
+    const base = path.posix.dirname(current_file);
+    const joined = normalize_doc_path(path.posix.join(base, target));
+    const candidates = [];
+
+    if (target.endsWith('/')) {
+        candidates.push(normalize_doc_path(path.posix.join(joined, 'README.md')));
+    } else if (path.posix.extname(joined) === '') {
+        candidates.push(normalize_doc_path(path.posix.join(joined, 'README.md')));
+        candidates.push(`${joined}.md`);
+    } else {
+        candidates.push(joined);
+    }
+
+    for (const candidate of candidates) {
+        const page = pages.by_file.get(candidate);
+        if (page) {
+            return page;
+        }
+    }
+
+    return null;
+}
+
+function render_shell({config, nav, page, mode, page_output, content, toc})
+{
+    const title = page.title === config.title ? config.title : `${page.title} - ${config.title}`;
+    const css_href = relative_output_href(page_output, 'static/docs.css');
+    const js_href = relative_output_href(page_output, 'static/docs.js');
+    const mode_href = mode === 'single'
+        ? relative_output_href(page_output, 'index.html')
+        : relative_output_href(page_output, 'single/index.html');
+    const mode_label = mode === 'single' ? 'Classic' : 'Single page';
+
+    return `<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="${escape_html(config.description || '')}">
+    <title>${escape_html(title)}</title>
+    <link rel="stylesheet" href="${escape_html(css_href)}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="${escape_html(relative_output_href(page_output, 'index.html'))}">${escape_html(config.title || 'Docs')}</a>
+        <div class="header-actions">
+            <a class="mode-link" href="${escape_html(mode_href)}">${escape_html(mode_label)}</a>
+            <button class="theme-toggle" type="button" data-theme-toggle>Theme</button>
+        </div>
+    </header>
+    <div class="docs-shell">
+        <aside class="sidebar" aria-label="Documentation navigation">
+            <p class="sidebar-title">Documentation</p>
+            ${render_nav(nav, page, mode, page_output)}
+        </aside>
+        <main class="content">
+            ${content}
+        </main>
+        <aside class="toc" aria-label="Page table of contents">
+            ${render_toc(toc)}
+        </aside>
+    </div>
+    <script src="${escape_html(js_href)}"></script>
+</body>
+</html>
+`;
+}
+
+function render_nav(items, current_page, mode, current_output)
+{
+    if (!items.length) {
+        return '';
+    }
+
+    const body = items.map(function (item) {
+        const href = mode === 'single'
+            ? `#${item.page.slug}`
+            : relative_output_href(current_output, item.page.output);
+        const active = item.page.file === current_page.file ? ' is-active' : '';
+        const sections = mode === 'single' ? render_nav_sections(item.page.toc || []) : '';
+        const children = render_nav(item.children, current_page, mode, current_output);
+        return [
+            '<li>',
+            `<a class="nav-link${active}" href="${escape_html(href)}">${escape_html(item.title)}</a>`,
+            sections,
+            children,
+            '</li>',
+        ].join('');
+    }).join('');
+
+    return `<ul class="nav-list">${body}</ul>`;
+}
+
+function render_nav_sections(toc)
+{
+    const sections = toc.filter(function (item) {
+        return item.level === 2;
+    });
+
+    if (!sections.length) {
+        return '';
+    }
+
+    const body = sections.map(function (item) {
+        return `<li><a class="nav-link nav-section" href="#${escape_html(item.id)}">${escape_html(item.title)}</a></li>`;
+    }).join('');
+
+    return `<ul class="nav-list nav-sections">${body}</ul>`;
+}
+
+function render_page_pager(page, pages, current_output)
+{
+    const index = pages.all.indexOf(page);
+    const prev = index > 0 ? pages.all[index - 1] : null;
+    const next = index >= 0 && index < pages.all.length - 1 ? pages.all[index + 1] : null;
+
+    if (!prev && !next) {
+        return '';
+    }
+
+    return [
+        '<nav class="page-pager" aria-label="Previous and next pages">',
+        prev ? render_page_pager_link('Previous', prev, current_output, 'prev') : '<span></span>',
+        next ? render_page_pager_link('Next', next, current_output, 'next') : '<span></span>',
+        '</nav>',
+    ].join('');
+}
+
+function render_page_pager_link(label, page, current_output, direction)
+{
+    const href = relative_output_href(current_output, page.output);
+    return [
+        `<a class="page-pager-link page-pager-${escape_html(direction)}" href="${escape_html(href)}">`,
+        `<span class="page-pager-label">${escape_html(label)}</span>`,
+        `<span class="page-pager-title">${escape_html(page.title)}</span>`,
+        '</a>',
+    ].join('');
+}
+
+function render_toc(toc)
+{
+    if (!toc.length) {
+        return '';
+    }
+
+    const items = toc.map(function (item) {
+        const indent = item.level === 3 ? ' style="padding-left: 14px"' : '';
+        return `<li><a class="toc-link" href="#${escape_html(item.id)}"${indent}>${escape_html(item.title)}</a></li>`;
+    }).join('');
+
+    return `<p class="toc-title">On this page</p><ul class="toc-list">${items}</ul>`;
+}
+
+function normalize_doc_path(value)
+{
+    return path.posix.normalize(String(value).replaceAll(path.sep, '/')).replace(/^\.\//, '');
+}
+
+function output_path_for_doc(file)
+{
+    const parsed = path.posix.parse(file);
+    if (parsed.base.toLowerCase() === 'readme.md') {
+        return parsed.dir ? path.posix.join(parsed.dir, 'index.html') : 'index.html';
+    }
+    return path.posix.join(parsed.dir, `${parsed.name}.html`);
+}
+
+function page_slug_for_doc(file)
+{
+    const output = output_path_for_doc(file);
+    const without_index = output.endsWith('/index.html') ? output.slice(0, -'/index.html'.length) : output.replace(/\.html$/, '');
+    return slugify((without_index || 'index').replace(/\//g, '-'));
+}
+
+function relative_output_href(from_output, to_output)
+{
+    const relative = path.posix.relative(path.posix.dirname(from_output), to_output);
+    return relative || path.posix.basename(to_output);
+}
+
+function prefix_html_ids(html, prefix)
+{
+    return html.replace(/(\s)id=(["'])([^"']+)\2/g, function (match, space, quote, id) {
+        return `${space}id=${quote}${prefix}-${id}${quote}`;
+    });
+}
+
+function write_output(output_dir, output_path, html)
+{
+    const file_path = path.join(output_dir, output_path);
+    fs.mkdirSync(path.dirname(file_path), {recursive: true});
+    fs.writeFileSync(file_path, html);
+}
+
+function slugify(value)
+{
+    return String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9 _.-]+/g, '')
+        .replace(/[\s.-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'section';
+}
+
+function escape_html(value)
+{
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

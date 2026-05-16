@@ -1,0 +1,58 @@
+title: Authwall Docs
+description: Authwall documentation
+source: docs
+output: build/docs
+static: .docs/static
+
+build:
+  classic: true
+  single: true
+
+nav:
+  - title: Overview
+    file: README.md
+  - title: Getting started
+    file: getting-started.md
+  - title: Deployment
+    file: deployment.md
+  - title: Deployment examples
+    file: examples/README.md
+    children:
+      - title: Direct
+        file: examples/authwall-direct/README.md
+        config_files:
+          - docker-compose.yaml
+      - title: Proxy with nginx
+        file: examples/authwall-proxy-nginx/README.md
+        config_files:
+          - docker-compose.yaml
+          - nginx.conf
+      - title: Proxy with Caddy
+        file: examples/authwall-proxy-caddy/README.md
+        config_files:
+          - docker-compose.yaml
+          - Caddyfile
+      - title: Sidecar with nginx
+        file: examples/authwall-sidecar-nginx/README.md
+        config_files:
+          - docker-compose.yaml
+          - nginx.conf
+      - title: Sidecar with Caddy
+        file: examples/authwall-sidecar-caddy/README.md
+        config_files:
+          - docker-compose.yaml
+          - Caddyfile
+  - title: Sign-in flows
+    file: sign-in-flows.md
+  - title: OAuth providers
+    file: oauth-providers.md
+  - title: Emails
+    file: emails.md
+  - title: CLI tools
+    file: cli.md
+  - title: Security model
+    file: security.md
+  - title: Configuration
+    file: config.md
+  - title: Glossary
+    file: glossary.md
