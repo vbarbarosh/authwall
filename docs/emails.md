@@ -11,7 +11,7 @@ Email requires a configured mailer. Set one up with
 [`AUTHWALL_MAILER`](config.md#authwall_mailer) and a provider (Resend, Mailjet,
 or Amazon SES). With no mailer configured, Authwall uses a `fake` mailer that
 silently drops every message — fine for local development, but it means
-verification and password-reset emails never arrive, so it is not safe for
+confirmation and password-reset emails never arrive, so it is not safe for
 production.
 
 Authwall only sends to **verified** email addresses.

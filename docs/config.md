@@ -520,7 +520,7 @@ AUTHWALL_CONFIRM_EMAIL=code
 
 ## AUTHWALL_MAILER
 
-Selects which mailer Authwall uses to send sign-in, verification, password-reset, magic-link, and notification emails.
+Selects which mailer Authwall uses to send sign-in, confirmation, password-reset, magic-link, and notification emails.
 
 - Type: enum
 - Values: `auto`, `fake`, `resend`, `mailjet`, `ses`
@@ -529,7 +529,7 @@ Selects which mailer Authwall uses to send sign-in, verification, password-reset
 How each value behaves:
 
 - `auto` — picks the first provider whose required env vars are all set, in this order: [Resend](#authwall_resend_key), [Mailjet](#authwall_mailjet_key), [Amazon SES](#authwall_ses_key). If none is configured, falls back to `fake`.
-- `fake` — drops every email instead of sending. Suitable for local development and tests; not safe for production because users will not receive verification or password-reset emails.
+- `fake` — drops every email instead of sending. Suitable for local development and tests; not safe for production because users will not receive confirmation or password-reset emails.
 - `resend` / `mailjet` / `ses` — uses the named provider explicitly.
 
 > [!WARNING]

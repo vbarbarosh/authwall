@@ -4,7 +4,7 @@ Hi {{display_name}},
 
 Your account has been created.
 
-Use this code on the confirmation page to verify your email address:
+Use this code on the confirmation page to confirm your email address:
 
 {{code}}
 

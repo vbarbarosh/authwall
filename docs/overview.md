@@ -65,7 +65,7 @@ docker run --rm -p 3000:3000 \
 
 * sign-in: **username/email + password**
 * magic link: **enabled**
-* email verification: **enabled**
+* email confirmation: **enabled**
 * registration: **open**
 
 ---
