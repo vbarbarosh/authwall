@@ -22,7 +22,9 @@ client → authwall → your app
 
 ## Documentation
 
-Full documentation lives in [`docs/`](docs/README.md):
+📖 Full documentation: **<https://vbarbarosh.github.io/authwall/>**
+
+It also lives in [`docs/`](docs/README.md) in this repo:
 
 * [Overview & quick start](docs/overview.md) — what Authwall is, with runnable `docker run` recipes
 * [Getting started](docs/getting-started.md) — quick start and the full Docker Compose walkthrough
