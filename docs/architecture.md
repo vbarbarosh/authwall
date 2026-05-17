@@ -6,8 +6,6 @@ high-level map of its big blocks — follow the links for detail.
 
 ```mermaid
 flowchart TB
-    client([Client])
-
     subgraph authwall [Authwall]
         server[HTTP server / proxy]
         flows[Sign-in flows]
@@ -21,7 +19,6 @@ flowchart TB
     oauth[OAuth providers]
     obs[Logger / Sentry]
 
-    client --> authwall
     authwall -->|X-Auth-User| app
     authwall --> db
     authwall --> mailer
