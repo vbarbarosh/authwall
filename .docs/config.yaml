@@ -11,6 +11,8 @@ build:
 nav:
   - title: Overview
     file: README.md
+  - title: Overview & quick start
+    file: overview.md
   - title: Getting started
     file: getting-started.md
   - title: Deployment
