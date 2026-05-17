@@ -137,10 +137,13 @@ mailer:
     session_token: ${AUTHWALL_SES_SESSION_TOKEN}
     from: ${AUTHWALL_SES_FROM}
 
-targets:
-  apps.authwall.test: http://apps:8080
-  echo.authwall.test: http://echo:8080
-  notes.authwall.test: http://notes:8080
+# Personal memo — not read by the app. Just a note to myself of the
+# domain -> upstream mapping I have in mind. Authwall forwards to a single
+# upstream (see `target` above) and does not route by domain.
+# targets:
+#   apps.authwall.test: http://apps:8080
+#   echo.authwall.test: http://echo:8080
+#   notes.authwall.test: http://notes:8080
 
 seed_users: ${AUTHWALL_SEED}
 
