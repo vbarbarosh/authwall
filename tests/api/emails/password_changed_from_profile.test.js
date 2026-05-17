@@ -2,7 +2,7 @@ const assert = require('assert');
 const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 
-describe('emails • password_changed_via_reset_link', function () {
+describe('emails • password_changed_from_profile', function () {
 
     it('should be sent after changing password from profile', async function () {
         config.flows.password.min_password_length = 4;
