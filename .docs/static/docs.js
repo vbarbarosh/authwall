@@ -2,6 +2,7 @@
     const theme_key = 'authwall-docs-theme';
     const root = document.documentElement;
     const button = document.querySelector('[data-theme-toggle]');
+    let mermaid_rerender = null;
 
     function preferred_theme()
     {
@@ -24,12 +25,16 @@
     apply_theme(preferred_theme());
     setup_code_copy_buttons();
     setup_current_section();
+    setup_mermaid();
 
     if (button) {
         button.addEventListener('click', function () {
             const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
             localStorage.setItem(theme_key, next);
             apply_theme(next);
+            if (mermaid_rerender) {
+                mermaid_rerender();
+            }
         });
     }
 
@@ -90,9 +95,50 @@
         window.addEventListener('resize', update_current_section);
     }
 
+    function setup_mermaid()
+    {
+        const nodes = Array.from(document.querySelectorAll('pre.mermaid'));
+        if (!nodes.length) {
+            return;
+        }
+
+        // Keep the original diagram source so the theme toggle can re-render.
+        for (const node of nodes) {
+            node.dataset.source = node.textContent;
+        }
+
+        import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs').then(function (module) {
+            const mermaid = module.default;
+            let counter = 0;
+
+            function render()
+            {
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: root.dataset.theme === 'dark' ? 'dark' : 'default',
+                });
+
+                for (const node of nodes) {
+                    const id = 'mermaid-svg-' + (counter++);
+                    mermaid.render(id, node.dataset.source).then(function (result) {
+                        node.innerHTML = result.svg;
+                        node.classList.add('mermaid-rendered');
+                    }).catch(function () {
+                        // Leave the diagram source visible if it fails to parse.
+                    });
+                }
+            }
+
+            render();
+            mermaid_rerender = render;
+        }).catch(function () {
+            // Mermaid could not be loaded (e.g. offline) — the source stays visible.
+        });
+    }
+
     function setup_code_copy_buttons()
     {
-        const blocks = Array.from(document.querySelectorAll('pre'));
+        const blocks = Array.from(document.querySelectorAll('pre:not(.mermaid)'));
 
         for (const pre of blocks) {
             const wrapper = document.createElement('div');

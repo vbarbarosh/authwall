@@ -417,6 +417,21 @@ pre {
     color: var(--code-text);
 }
 
+pre.mermaid {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel-soft);
+    color: var(--text);
+    text-align: center;
+    overflow-x: auto;
+}
+
+pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
 .code-block {
     position: relative;
     margin-bottom: 18px;

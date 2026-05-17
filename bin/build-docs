@@ -65,7 +65,7 @@ async function create_highlighter()
 {
     return shiki.createHighlighter({
         themes: ['catppuccin-latte', 'ayu-dark'],
-        langs: ['bash', 'docker', 'javascript', 'js', 'mermaid', 'nginx', 'sh', 'shell', 'yaml'],
+        langs: ['bash', 'docker', 'javascript', 'js', 'nginx', 'sh', 'shell', 'yaml'],
     });
 }
 
@@ -331,6 +331,9 @@ function use_syntax_highlight(md, highlighter)
     md.renderer.rules.fence = function (tokens, idx) {
         const token = tokens[idx];
         const lang = shiki_lang_from_info(token.info);
+        if (lang === 'mermaid') {
+            return render_mermaid_block(token.content);
+        }
         return highlighter.codeToHtml(token.content.replace(/[\r\n]+$/, ''), {
             lang,
             themes: {
@@ -339,6 +342,15 @@ function use_syntax_highlight(md, highlighter)
             },
         });
     };
+}
+
+// A ```mermaid fence is not syntax-highlighted — its source is emitted verbatim
+// for the client-side mermaid runtime (see .docs/static/docs.js) to render into
+// an SVG diagram. The source stays visible as plain text if mermaid fails to
+// load (e.g. offline).
+function render_mermaid_block(content)
+{
+    return `<pre class="mermaid">${escape_html(content.replace(/[\r\n]+$/, ''))}</pre>`;
 }
 
 function shiki_lang_from_info(info)
