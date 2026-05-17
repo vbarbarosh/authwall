@@ -263,6 +263,18 @@ direct   client → authwall → app
 proxy    client → authwall → reverse proxy → apps
 ```
 
+```mermaid
+flowchart LR
+    subgraph direct
+        direction LR
+        dc[client] --> da[authwall] --> dapp[app]
+    end
+    subgraph proxy
+        direction LR
+        pc[client] --> pa[authwall] --> prp["reverse proxy"] --> papps[apps]
+    end
+```
+
 Use `direct` when **one** app sits behind Authwall. Authwall rewrites the
 `Host` header to the domain of `AUTHWALL_TARGET_URL`, so the app receives the
 request as if it had been sent straight to it.

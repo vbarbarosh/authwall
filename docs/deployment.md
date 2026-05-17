@@ -37,6 +37,11 @@ holds the certificate and forwards plain HTTP to Authwall:
 client → TLS terminator (HTTPS) → authwall → your app
 ```
 
+```mermaid
+flowchart LR
+    client -->|HTTPS| tls["TLS terminator"] -->|HTTP| authwall --> app["your app"]
+```
+
 Set [`AUTHWALL_PUBLIC_URL`](config.md#authwall_public_url) to the externally
 visible HTTPS URL. This value builds the links in emails and OAuth redirects,
 and — importantly — it drives the default of

@@ -8,6 +8,14 @@ app.
 client → authwall → caddy → { apps, notes, echo }
 ```
 
+```mermaid
+flowchart LR
+    client --> authwall --> caddy
+    caddy --> apps
+    caddy --> notes
+    caddy --> echo
+```
+
 Authwall always has exactly one upstream. Here that upstream is the Caddy
 router, and `AUTHWALL_TARGET_MODE=proxy` makes Authwall preserve the client's
 original `Host` header so Caddy can tell the domains apart.

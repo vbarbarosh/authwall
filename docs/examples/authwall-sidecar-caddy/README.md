@@ -11,6 +11,15 @@ client → caddy → { apps, notes, echo }
          authwall
 ```
 
+```mermaid
+flowchart LR
+    client --> caddy
+    caddy --> apps
+    caddy --> notes
+    caddy --> echo
+    caddy -.auth check.-> authwall
+```
+
 Use this topology when you want Authwall out of the request path — for
 performance or isolation — and only need it to answer "is this user signed
 in?" on each request.

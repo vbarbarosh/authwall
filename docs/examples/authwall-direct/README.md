@@ -7,6 +7,11 @@ sign-in and proxies authenticated requests to the upstream app.
 client → authwall → app
 ```
 
+```mermaid
+flowchart LR
+    client --> authwall --> app
+```
+
 This is the simplest topology — no reverse proxy involved. It matches the
 `docker-compose.yaml` shipped at the repository root, minus the external
 database (this example uses SQLite).

@@ -11,6 +11,15 @@ client → nginx → { apps, notes, echo }
          authwall
 ```
 
+```mermaid
+flowchart LR
+    client --> nginx
+    nginx --> apps
+    nginx --> notes
+    nginx --> echo
+    nginx -.auth check.-> authwall
+```
+
 Use this topology when you want Authwall out of the request path — for
 performance or isolation — and only need it to answer "is this user signed
 in?" on each request.

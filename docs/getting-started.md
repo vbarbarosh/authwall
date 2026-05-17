@@ -8,6 +8,11 @@ header:
 client → authwall → your app
 ```
 
+```mermaid
+flowchart LR
+    client --> authwall --> app["your app"]
+```
+
 There are two paths below: a one-command **Quick start** to see Authwall
 running immediately, and a **full Docker Compose setup** that puts it in front
 of a real app with a persistent database.

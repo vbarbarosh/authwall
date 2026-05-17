@@ -8,6 +8,14 @@ app.
 client → authwall → nginx → { apps, notes, echo }
 ```
 
+```mermaid
+flowchart LR
+    client --> authwall --> nginx
+    nginx --> apps
+    nginx --> notes
+    nginx --> echo
+```
+
 Authwall always has exactly one upstream. Here that upstream is the nginx
 router, and `AUTHWALL_TARGET_MODE=proxy` makes Authwall preserve the client's
 original `Host` header so nginx can tell the domains apart.
