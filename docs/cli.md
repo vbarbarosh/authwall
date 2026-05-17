@@ -108,7 +108,7 @@ Examples:
   bin/log-summary today
   bin/log-summary yesterday
   bin/log-summary 2026-04-26 --logs-dir data/authwall/logs
-  bin/log-summary today --group "GET /t/1024/***"
+  bin/log-summary today --group "GET /t/1024/*"
   bin/log-summary --file data/authwall/logs/app-2026-04-26.log
 ```
 
