@@ -1,7 +1,7 @@
 # Overview
 
 **Authwall** is an authentication proxy — it sits between clients and an internal app,
-handling sign-in (email/password, magic links, Google OAuth, GitHub OAuth) and forwarding
+handling sign-in (email/password, magic links, and OAuth) and forwarding
 authenticated requests with an `X-Auth-User` header.
 
 ```
