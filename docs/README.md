@@ -8,6 +8,7 @@ app, handles sign-in, and forwards authenticated requests with an optional
 
 - [Overview](overview.md) — what Authwall is, runnable `docker run` recipes, the
   project's philosophy, secret management, and related projects.
+- [Architecture](architecture.md) — a high-level map of Authwall's big blocks.
 - [Getting started](getting-started.md) — a one-command quick start, then the
   full Docker Compose setup in front of a real app.
 - [Deployment](deployment.md) — HTTPS, the session secret, production

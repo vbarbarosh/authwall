@@ -13,6 +13,8 @@ nav:
     file: README.md
   - title: Overview & quick start
     file: overview.md
+  - title: Architecture
+    file: architecture.md
   - title: Getting started
     file: getting-started.md
   - title: Deployment
