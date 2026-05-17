@@ -32,6 +32,24 @@ sidecar   client → nginx/caddy → app
                       authwall
 ```
 
+```mermaid
+flowchart TB
+    subgraph direct
+        direction LR
+        dc[client] --> da[authwall] --> dapp[app]
+    end
+    subgraph proxy
+        direction LR
+        pc[client] --> pa[authwall] --> prp["nginx/caddy"] --> papps[apps]
+    end
+    subgraph sidecar
+        direction LR
+        sc[client] --> srp["nginx/caddy"] --> sapp[app]
+        srp -.auth check.-> sa[authwall]
+    end
+    direct ~~~ proxy ~~~ sidecar
+```
+
 ## Examples
 
 - [`authwall-direct/`](authwall-direct/) — one app behind Authwall.
