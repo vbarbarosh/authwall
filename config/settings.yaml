@@ -3,6 +3,7 @@ public_url: ${AUTHWALL_PUBLIC_URL}
 public_paths:
   # Only paths listed here are publicly accessible.
   # Entries ending in /* are treated as prefixes, e.g. /lib/* matches /lib/app.js.
+  # Can be overridden with AUTHWALL_PUBLIC_PATHS=/favicon.ico,/lib/*,/designs/*
   # Default: all paths are private.
   #
   # Avoid exposing the root path (/), as it may implicitly expose
