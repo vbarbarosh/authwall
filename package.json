@@ -1,7 +1,7 @@
 {
   "name": "authwall",
   "author": "Vladimir Barbaros <authwall@vbarbarosh.com>",
-  "version": "1.8.4",
+  "version": "1.9.0",
   "license": "MIT",
   "main": "src/index.js",
   "private": true,
