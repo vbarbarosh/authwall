@@ -6,7 +6,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 describe('proxy', function () {
 
     beforeEach(function () {
-        config.public_paths = ['/terms.html', '/custom/public/path'];
+        config.public_paths = ['/terms.html', '/custom/public/path', '/lib/*', '/designs/*'];
         config.target.set_headers = [];
         config.target.unset_headers = [];
     });
@@ -23,6 +23,31 @@ describe('proxy', function () {
         const r = await this.http_get_json('/terms.html');
         const auth_headers = Object.keys(r.headers).filter(v => v.startsWith('x-auth-'));
         assert.partialDeepStrictEqual(r, {echo_server: 'authwall_testing_echo_server'});
+        assert.deepStrictEqual(auth_headers, []);
+    });
+
+    it('public url prefix reaches upstream without a session', async function () {
+        const r = await axios.get('/lib/app.js', {
+            baseURL: config.public_url,
+            maxRedirects: 0,
+            validateStatus: v => v < 400,
+        });
+        const auth_headers = Object.keys(r.data.headers).filter(v => v.startsWith('x-auth-'));
+        assert.partialDeepStrictEqual(r.data, {
+            echo_server: 'authwall_testing_echo_server',
+            url: '/lib/app.js',
+        });
+        assert.deepStrictEqual(auth_headers, []);
+    });
+
+    it('public url prefix has no x-auth-* headers at upstream even when signed in', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const r = await this.http_get_json('/designs/main.css');
+        const auth_headers = Object.keys(r.headers).filter(v => v.startsWith('x-auth-'));
+        assert.partialDeepStrictEqual(r, {
+            echo_server: 'authwall_testing_echo_server',
+            url: '/designs/main.css',
+        });
         assert.deepStrictEqual(auth_headers, []);
     });
 

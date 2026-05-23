@@ -219,7 +219,7 @@ async function create_app()
                 //         proxy_req.removeHeader(header);
                 //     }
                 // }
-                if (req.session.user_uid && !config.public_paths.includes(req.path)) {
+                if (req.session.user_uid && !is_public_path(req.path)) {
                     proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
                 }
                 for (let i = 0, ii = config.target.set_headers.length; i < ii; ++i) {
@@ -306,7 +306,7 @@ async function insert_email_not_authorized_event(req, error)
 
 function sign_in_required(req, res, next)
 {
-    if (config.public_paths.includes(req.path)) {
+    if (is_public_path(req.path)) {
         next();
         return;
     }
@@ -325,6 +325,16 @@ function sign_in_required(req, res, next)
 
     als.logger.write(`[auth_next] ${req.method} ${req.path}`);
     next();
+}
+
+function is_public_path(path)
+{
+    return config.public_paths.some(function (public_path) {
+        if (public_path.endsWith('/*')) {
+            return path.startsWith(public_path.slice(0, -1));
+        }
+        return path === public_path;
+    });
 }
 
 function clean_headers(req, res, next)

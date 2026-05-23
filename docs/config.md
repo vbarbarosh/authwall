@@ -235,8 +235,18 @@ outside Docker it is often a loopback URL.
 How requests reach the upstream:
 
 - **Authenticated requests** — Authwall adds `X-Auth-User: <user_uid>` to the proxied request.
-- **Public paths** (configured in `config/settings.yaml` under `public_paths`, e.g. `/favicon.ico`, `/robots.txt`) are always proxied, with or without a session, and never receive the `X-Auth-User` header.
+- **Public paths** (configured in `config/settings.yaml` under `public_paths`) are always proxied, with or without a session, and never receive the `X-Auth-User` header.
 - **Other paths without a session** — the user is redirected to the sign-in page; no upstream request is made.
+
+Public paths support exact entries and prefix entries. Prefix entries end with `/*`, so `/lib/*` matches `/lib/app.js` and `/lib/vendor/react.js`; `/designs/*` matches `/designs/default.css`.
+
+```yaml
+public_paths:
+  - /favicon.ico
+  - /robots.txt
+  - /lib/*
+  - /designs/*
+```
 
 Example:
 
