@@ -43,7 +43,7 @@ function make_config(input = {})
     const config = {
         seed_users: parse_authwall_seed(settings.seed_users),
         public_url,
-        public_paths: Array.from(settings.public_paths || []).filter(v => v && v[0] === '/'),
+        public_paths: parse_public_paths(env.AUTHWALL_PUBLIC_PATHS ?? settings.public_paths),
 
         target: make(settings.target, {
             url: {type: 'str', default: 'http://127.0.0.1:8080'},
@@ -383,6 +383,15 @@ function validate_secret(secret, source)
 function parse_bool_flag(value)
 {
     return {yes: 1, no: 0, true: 1, false: 0, on: 1, off: 0}[value] ?? value;
+}
+
+function parse_public_paths(value)
+{
+    if (!value) {
+        return [];
+    }
+    const items = Array.isArray(value) ? value : String(value).split(/[;,\r\n]+/);
+    return items.map(v => String(v).trim()).filter(v => v && v[0] === '/');
 }
 
 function validate_authwall_env_names(env, settings_text)

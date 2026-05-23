@@ -25,6 +25,7 @@ fell back to a different option.
 | [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment)               | Sentry environment name                                |
 | [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate                    |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
+| [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
 | [`AUTHWALL_TARGET_URL`](#authwall_target_url)                               | Upstream application URL                               |
 | [`AUTHWALL_TARGET_MODE`](#authwall_target_mode)                             | Upstream proxy behavior mode                           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
@@ -218,6 +219,24 @@ Example:
 
 ```sh
 AUTHWALL_PUBLIC_URL=https://myapp.test
+```
+
+## AUTHWALL_PUBLIC_PATHS
+
+Public upstream paths that bypass sign-in. These paths are proxied to `AUTHWALL_TARGET_URL` with or without a session and never receive the `X-Auth-User` header.
+
+- Type: list of path strings
+- Default: the `public_paths` list in `config/settings.yaml`
+- Delimiters: comma, semicolon, or newline
+
+Entries may be exact paths or prefix entries ending in `/*`. For example, `/lib/*` matches `/lib/app.js` and `/lib/vendor/react.js`.
+
+When `AUTHWALL_PUBLIC_PATHS` is set, it replaces the `public_paths` list from `config/settings.yaml`.
+
+Example:
+
+```sh
+AUTHWALL_PUBLIC_PATHS="/favicon.ico,/robots.txt,/lib/*,/designs/*"
 ```
 
 ## AUTHWALL_TARGET_URL

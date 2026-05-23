@@ -12,7 +12,7 @@ function render_config_summary(config)
         `📭 Mailer: ${format_mailer(config.mailer)}`,
         `🪪 Access: ${format_access_summary(config.access)}`,
         format_access(config.access).map(v => `  ${v}`),
-        '🚪 Public paths:',
+        "🚪 Public paths (" + config.public_paths.length + "):",
         format_public_paths(config.public_paths).map(v => `  ${v}`),
         '👤 Seed users:',
         format_seed_users(config.seed_users).map(v => `  ${v}`),
