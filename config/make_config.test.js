@@ -8,6 +8,7 @@ describe('make_config', function () {
             AUTHWALL_SECRET: '12345678901234567890123456789012',
             AUTHWALL_PUBLIC_URL: 'https://notes.example.com',
             AUTHWALL_PUBLIC_PATHS: '/favicon.ico,/lib/*;/designs/*\n/robots.txt',
+            AUTHWALL_OPTIONAL_AUTH_PATHS: '/,/landing/*;/home',
             AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
             AUTHWALL_TARGET_MODE: 'proxy',
             AUTHWALL_SET_HEADERS: 'X-Team=notes;X-Empty=',
@@ -19,6 +20,7 @@ describe('make_config', function () {
         assert.partialDeepStrictEqual(config, {
             public_url: 'https://notes.example.com',
             public_paths: ['/favicon.ico', '/lib/*', '/designs/*', '/robots.txt'],
+            optional_auth_paths: ['/', '/landing/*', '/home'],
             sentry: {
                 enabled: false,
             },

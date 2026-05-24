@@ -22,6 +22,14 @@ public_paths:
   # well-known endpoints
   - /.well-known/appspecific/com.chrome.devtools.json
 
+optional_auth_paths:
+  # Paths listed here are accessible without sign-in, but signed-in users
+  # are proxied with X-Auth-User like private paths.
+  # Entries ending in /* are treated as prefixes.
+  # Can be overridden with AUTHWALL_OPTIONAL_AUTH_PATHS=/,/landing/*
+  # - /
+  # - /landing/*
+
 target:
   url: ${AUTHWALL_TARGET_URL}
   mode: ${AUTHWALL_TARGET_MODE}

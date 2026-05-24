@@ -26,6 +26,7 @@ fell back to a different option.
 | [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate                    |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
 | [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
+| [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)                 | Public paths that receive auth headers when signed in  |
 | [`AUTHWALL_TARGET_URL`](#authwall_target_url)                               | Upstream application URL                               |
 | [`AUTHWALL_TARGET_MODE`](#authwall_target_mode)                             | Upstream proxy behavior mode                           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
@@ -239,6 +240,24 @@ Example:
 AUTHWALL_PUBLIC_PATHS="/favicon.ico,/robots.txt,/lib/*,/designs/*"
 ```
 
+## AUTHWALL_OPTIONAL_AUTH_PATHS
+
+Public upstream paths that bypass sign-in for guests, but behave like private paths when a user is signed in. Anonymous requests are proxied without `X-Auth-User`; signed-in requests are proxied with `X-Auth-User`.
+
+- Type: list of path strings
+- Default: the `optional_auth_paths` list in `config/settings.yaml`
+- Delimiters: comma, semicolon, or newline
+
+Entries may be exact paths or prefix entries ending in `/*`. This is useful for a landing page that should render guest content for anonymous users and signed-in content for authenticated users at the same URL.
+
+When `AUTHWALL_OPTIONAL_AUTH_PATHS` is set, it replaces the `optional_auth_paths` list from `config/settings.yaml`.
+
+Example:
+
+```sh
+AUTHWALL_OPTIONAL_AUTH_PATHS="/,/landing/*"
+```
+
 ## AUTHWALL_TARGET_URL
 
 URL of the upstream application protected by Authwall.
@@ -255,6 +274,7 @@ How requests reach the upstream:
 
 - **Authenticated requests** — Authwall adds `X-Auth-User: <user_uid>` to the proxied request.
 - **Public paths** (configured in `config/settings.yaml` under `public_paths`) are always proxied, with or without a session, and never receive the `X-Auth-User` header.
+- **Optional auth paths** (configured in `config/settings.yaml` under `optional_auth_paths`) are proxied without requiring sign-in. Anonymous requests receive no `X-Auth-User`; signed-in requests receive `X-Auth-User` and follow the same email-verification checks as private paths.
 - **Other paths without a session** — the user is redirected to the sign-in page; no upstream request is made.
 
 Public paths support exact entries and prefix entries. Prefix entries end with `/*`, so `/lib/*` matches `/lib/app.js` and `/lib/vendor/react.js`; `/designs/*` matches `/designs/default.css`.
@@ -265,6 +285,9 @@ public_paths:
   - /robots.txt
   - /lib/*
   - /designs/*
+optional_auth_paths:
+  - /
+  - /landing/*
 ```
 
 Example:

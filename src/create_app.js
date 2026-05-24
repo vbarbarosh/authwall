@@ -306,7 +306,7 @@ async function insert_email_not_authorized_event(req, error)
 
 function sign_in_required(req, res, next)
 {
-    if (is_public_path(req.path)) {
+    if (is_public_path(req.path) || (!req.session.user_id && is_optional_auth_path(req.path))) {
         next();
         return;
     }
@@ -329,11 +329,21 @@ function sign_in_required(req, res, next)
 
 function is_public_path(path)
 {
-    return config.public_paths.some(function (public_path) {
-        if (public_path.endsWith('/*')) {
-            return path.startsWith(public_path.slice(0, -1));
+    return path_matches(config.public_paths, path);
+}
+
+function is_optional_auth_path(path)
+{
+    return path_matches(config.optional_auth_paths, path);
+}
+
+function path_matches(paths, path)
+{
+    return paths.some(function (configured_path) {
+        if (configured_path.endsWith('/*')) {
+            return path.startsWith(configured_path.slice(0, -1));
         }
-        return path === public_path;
+        return path === configured_path;
     });
 }
 

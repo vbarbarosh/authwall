@@ -7,6 +7,7 @@ describe('proxy', function () {
 
     beforeEach(function () {
         config.public_paths = ['/terms.html', '/custom/public/path', '/lib/*', '/designs/*'];
+        config.optional_auth_paths = ['/', '/landing/*'];
         config.target.set_headers = [];
         config.target.unset_headers = [];
     });
@@ -49,6 +50,32 @@ describe('proxy', function () {
             url: '/designs/main.css',
         });
         assert.deepStrictEqual(auth_headers, []);
+    });
+
+    it('optional auth url reaches upstream without a session and without x-auth-* headers', async function () {
+        const r = await axios.get('/landing/home', {
+            baseURL: config.public_url,
+            maxRedirects: 0,
+            validateStatus: v => v < 400,
+        });
+        const auth_headers = Object.keys(r.data.headers).filter(v => v.startsWith('x-auth-'));
+        assert.partialDeepStrictEqual(r.data, {
+            echo_server: 'authwall_testing_echo_server',
+            url: '/landing/home',
+        });
+        assert.deepStrictEqual(auth_headers, []);
+    });
+
+    it('optional auth url has x-auth-user header at upstream when signed in', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const sess = await this.client.get_session();
+        assert.partialDeepStrictEqual(await this.http_get_json('/landing/home'), {
+            echo_server: 'authwall_testing_echo_server',
+            url: '/landing/home',
+            headers: {
+                'x-auth-user': sess.user_uid,
+            },
+        });
     });
 
     it('public url strips spoofed x-auth-* headers', async function () {

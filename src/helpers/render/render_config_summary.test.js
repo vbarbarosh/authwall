@@ -16,6 +16,7 @@ describe('render_config_summary', function () {
                 unset_headers: ['X-Auth-User'],
             },
             public_paths: ['/favicon.ico', '/robots.txt', '/lib/*', '/designs/*'],
+            optional_auth_paths: ['/', '/landing/*'],
             knexvars: {
                 client: 'mysql2',
                 connection: {
@@ -143,6 +144,7 @@ describe('render_config_summary', function () {
         assert.match(text, /  - denied emails: none/);
         assert.match(text, /  - denied domains: none/);
         assert.match(text, /🚪 Public paths \(4\):\n\[config\]   - \/favicon.ico\n\[config\]   - \/robots.txt\n\[config\]   - \/lib\/\*\n\[config\]   - \/designs\/\*/);
+        assert.match(text, /🌓 Optional auth paths \(2\):\n\[config\]   - \/\n\[config\]   - \/landing\/\*/);
         assert.match(text, /👤 Seed users:\n\[config]   - admin/);
         assert.match(text, /mysql:\/\/authwall:\*\*\*@mysql\/authwall/);
         assert.doesNotMatch(text, /Bearer secret/);

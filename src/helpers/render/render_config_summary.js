@@ -14,6 +14,8 @@ function render_config_summary(config)
         format_access(config.access).map(v => `  ${v}`),
         "🚪 Public paths (" + config.public_paths.length + "):",
         format_public_paths(config.public_paths).map(v => `  ${v}`),
+        "🌓 Optional auth paths (" + config.optional_auth_paths.length + "):",
+        format_public_paths(config.optional_auth_paths).map(v => `  ${v}`),
         '👤 Seed users:',
         format_seed_users(config.seed_users).map(v => `  ${v}`),
         `🗂️ Storage: logs=${config.logs_dir}, uploads=${config.uploads_dir}`,
