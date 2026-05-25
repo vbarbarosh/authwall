@@ -65,7 +65,7 @@ async function create_highlighter()
 {
     return shiki.createHighlighter({
         themes: ['catppuccin-latte', 'ayu-dark'],
-        langs: ['bash', 'docker', 'javascript', 'js', 'nginx', 'sh', 'shell', 'yaml'],
+        langs: ['bash', 'docker', 'http', 'javascript', 'js', 'nginx', 'sh', 'shell', 'yaml'],
     });
 }
 
