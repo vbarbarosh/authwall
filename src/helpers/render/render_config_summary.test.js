@@ -9,7 +9,7 @@ describe('render_config_summary', function () {
             port: 3000,
             public_url: 'https://authwall.test',
             logger: 'stdout',
-            target: {
+            upstream: {
                 url: 'http://app:8080',
                 mode: 'proxy',
                 set_headers: [{name: 'Authorization', value: 'Bearer secret'}],
@@ -130,7 +130,7 @@ describe('render_config_summary', function () {
 
         assert.match(text, /⚙️ Config summary/);
         assert.match(text, /🌐 Server: https:\/\/authwall.test → 0.0.0.0:3000/);
-        assert.match(text, /🧭 Target: proxy → http:\/\/app:8080\/ \(set Authorization; unset X-Auth-User\)/);
+        assert.match(text, /🧭 Upstream: proxy → http:\/\/app:8080\/ \(set Authorization; unset X-Auth-User\)/);
         assert.match(text, /🗄️ Database: MySQL mysql:\/\/authwall:\*\*\*@mysql\/authwall/);
         assert.match(text, /🧯 Sentry: enabled environment=production traces=0.25/);
         assert.match(text, /🔑 Personal access tokens: enabled/);

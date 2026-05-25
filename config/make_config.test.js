@@ -9,8 +9,8 @@ describe('make_config', function () {
             AUTHWALL_PUBLIC_URL: 'https://notes.example.com',
             AUTHWALL_PUBLIC_PATHS: '/favicon.ico,/lib/*;/designs/*\n/robots.txt',
             AUTHWALL_OPTIONAL_AUTH_PATHS: '/,/landing/*;/home',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
-            AUTHWALL_TARGET_MODE: 'proxy',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_MODE: 'proxy',
             AUTHWALL_SET_HEADERS: 'X-Team=notes;X-Empty=',
             AUTHWALL_UNSET_HEADERS: 'X-Auth-User',
             AUTHWALL_COOKIE_SAMESITE: 'lax',
@@ -28,7 +28,7 @@ describe('make_config', function () {
                 secure: true,
                 same_site: 'lax',
             },
-            target: {
+            upstream: {
                 set_headers: [
                     {name: 'X-Team', value: 'notes'},
                     {name: 'X-Empty', value: ''},
@@ -66,14 +66,14 @@ describe('make_config', function () {
                 },
             },
         });
-        assert.strictEqual(config.target.set_headers.length, 2);
-        assert.strictEqual(config.target.unset_headers.length, 1);
+        assert.strictEqual(config.upstream.set_headers.length, 2);
+        assert.strictEqual(config.upstream.unset_headers.length, 1);
     });
 
     it('configures personal access tokens as disabled by default', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
         });
 
         assert.deepStrictEqual(config.personal_access_tokens, {
@@ -84,7 +84,7 @@ describe('make_config', function () {
     it('enables personal access tokens with AUTHWALL_PERSONAL_ACCESS_TOKENS', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_PERSONAL_ACCESS_TOKENS: 'on',
         });
 
@@ -96,7 +96,7 @@ describe('make_config', function () {
     it('configures Sentry when AUTHWALL_SENTRY_DSN is set', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_SENTRY_DSN: 'https://public@example.com/1',
             AUTHWALL_SENTRY_ENVIRONMENT: 'production',
             AUTHWALL_SENTRY_TRACES_SAMPLE_RATE: '0.25',
@@ -116,12 +116,12 @@ describe('make_config', function () {
         const config1 = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
             AUTHWALL_PUBLIC_URL: 'https://first.example.com',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
         });
         const config2 = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
             AUTHWALL_PUBLIC_URL: 'http://second.example.com',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
         });
 
         assert.partialDeepStrictEqual(config1, {
@@ -141,7 +141,7 @@ describe('make_config', function () {
     it('normalizes access email allowlists the same way as login emails', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_ALLOWED_EMAILS: 'jonny.small@gmail.com',
         });
 
@@ -151,7 +151,7 @@ describe('make_config', function () {
     it('auto-enables email verification when email flow is enabled', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_MAILER: 'fake',
             AUTHWALL_FLOWS: 'username,email',
         });
@@ -162,7 +162,7 @@ describe('make_config', function () {
     it('configures email confirmation mode like magic link mode', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_MAILER: 'fake',
             AUTHWALL_CONFIRM_EMAIL: 'code',
         });
@@ -181,7 +181,7 @@ describe('make_config', function () {
         assert.throws(
             () => make_config({
                 AUTHWALL_SECRET: '12345678901234567890123456789012',
-                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
                 AUTHWALL_CONFIRM_EMAIL: 'code',
             }),
             /AUTHWALL_CONFIRM_EMAIL=code requires a configured mailer/
@@ -191,7 +191,7 @@ describe('make_config', function () {
     it('auto-disables email verification when email flow is disabled', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_FLOWS: 'username',
         });
 
@@ -201,7 +201,7 @@ describe('make_config', function () {
     it('allows explicit email verification disable with email flow enabled', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             AUTHWALL_MAILER: 'fake',
             AUTHWALL_FLOWS: 'username,email',
             AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'false',
@@ -214,7 +214,7 @@ describe('make_config', function () {
         assert.throws(
             () => make_config({
                 AUTHWALL_SECRET: '12345678901234567890123456789012',
-                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
                 AUTHWALL_FLOWS: 'username',
                 AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'true',
             }),
@@ -227,7 +227,7 @@ describe('make_config', function () {
         function run() {
             make_config({
                 AUTHWALL_SECRET: '12345678901234567890123456789012',
-                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
                 AUTHWALL_ALLOWED_EMAILS: 'jonny.small@gmail.com;',
             });
         }
@@ -237,22 +237,22 @@ describe('make_config', function () {
         assert.throws(
             () => make_config({
                 AUTHWALL_SECRET: '12345678901234567890123456789012',
-                AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
-                AUTHWALL_TAREGT_URL: 'http://typo.test',
+                AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+                AUTHWALL_UPSTRAEM_URL: 'http://typo.test',
             }),
-            /Unrecognized AUTHWALL env var\(s\): AUTHWALL_TAREGT_URL/
+            /Unrecognized AUTHWALL env var\(s\): AUTHWALL_UPSTRAEM_URL/
         );
     });
 
     it('allows unrelated env vars', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
-            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
             NODE_ENV: 'test',
             PATH: '/bin',
         });
 
-        assert.strictEqual(config.target.url, 'http://127.0.0.1:8080');
+        assert.strictEqual(config.upstream.url, 'http://127.0.0.1:8080');
     });
 
 });

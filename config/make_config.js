@@ -46,7 +46,7 @@ function make_config(input = {})
         public_paths: parse_paths(env.AUTHWALL_PUBLIC_PATHS ?? settings.public_paths),
         optional_auth_paths: parse_paths(env.AUTHWALL_OPTIONAL_AUTH_PATHS ?? settings.optional_auth_paths),
 
-        target: make(settings.target, {
+        upstream: make(settings.upstream, {
             url: {type: 'str', default: 'http://127.0.0.1:8080'},
             mode: {type: 'enum', options: ['direct', 'proxy']},
             set_headers: {type: 'any', default: []},
@@ -229,8 +229,8 @@ function make_config(input = {})
         }),
     };
 
-    config.target.set_headers = parse_set_headers(config.target.set_headers);
-    config.target.unset_headers = parse_unset_headers(config.target.unset_headers);
+    config.upstream.set_headers = parse_set_headers(config.upstream.set_headers);
+    config.upstream.unset_headers = parse_unset_headers(config.upstream.unset_headers);
 
     config.mailer.provider = resolve_mailer_provider(config.mailer);
     validate_mailer(config.mailer);

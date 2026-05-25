@@ -3,7 +3,7 @@ function render_config_summary(config)
     return flat([
         '⚙️ Config summary',
         `🌐 Server: ${config.public_url} → ${config.listen}:${config.port} (${config.logger} logger)`,
-        `🧭 Target: ${config.target.mode} → ${redact_url(config.target.url)}${format_headers(config)}`,
+        `🧭 Upstream: ${config.upstream.mode} → ${redact_url(config.upstream.url)}${format_headers(config)}`,
         `🗄️ Database: ${format_database(config.knexvars)}`,
         `🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure} max_age_days=${config.cookie.max_age_days}`,
         `🧯 Sentry: ${format_sentry(config.sentry)}`,
@@ -44,8 +44,8 @@ function format_sentry(sentry)
 
 function format_headers(config)
 {
-    const set = config.target.set_headers.map(v => v.name);
-    const unset = config.target.unset_headers;
+    const set = config.upstream.set_headers.map(v => v.name);
+    const unset = config.upstream.unset_headers;
     const parts = [];
     if (set.length) {
         parts.push(`set ${set.join(', ')}`);

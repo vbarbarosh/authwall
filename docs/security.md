@@ -12,7 +12,7 @@ Authwall's core guarantee: the upstream app can trust the `X-Auth-User` header.
   Authwall deletes every `x-auth-*` header it received from the client. A client
   cannot smuggle `X-Auth-User: admin` through Authwall.
 - **Authwall sets `X-Auth-User` itself**, to the signed-in user's id, only on
-  authenticated requests that are not for a [public path](config.md#authwall_target_url).
+  authenticated requests that are not for a [public path](config.md#authwall_public_paths).
 - Unauthenticated requests are never proxied — they are redirected to sign-in —
   so the app only ever receives requests Authwall has vetted.
 - When [personal access tokens](config.md#authwall_personal_access_tokens) are

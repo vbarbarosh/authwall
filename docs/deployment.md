@@ -103,11 +103,11 @@ The cookie lifetime is fixed at 30 days.
 ## Forwarding to the upstream
 
 Requests that are not under `/auth` are proxied to
-[`AUTHWALL_TARGET_URL`](config.md#authwall_target_url) — Authwall's single
+[`AUTHWALL_UPSTREAM_URL`](config.md#authwall_upstream_url) — Authwall's single
 upstream. For authenticated, non-public requests Authwall adds an `X-Auth-User`
 header so the upstream can identify the user.
 
-[`AUTHWALL_TARGET_MODE`](config.md#authwall_target_mode) decides how requests
+[`AUTHWALL_UPSTREAM_MODE`](config.md#authwall_upstream_mode) decides how requests
 are forwarded: `direct` when one app sits behind Authwall, or `proxy` when the
 upstream is a reverse proxy that fans out to several domains. Use
 [`AUTHWALL_SET_HEADERS` / `AUTHWALL_UNSET_HEADERS`](config.md#authwall_set_headers)

@@ -19,7 +19,7 @@ services:
 
   # Authwall runs beside nginx as an auth checker, reached under /auth on every
   # domain. It is not in the data path and never proxies, so it needs no
-  # AUTHWALL_TARGET_URL. AUTHWALL_COOKIE_DOMAIN shares the session across every
+  # AUTHWALL_UPSTREAM_URL. AUTHWALL_COOKIE_DOMAIN shares the session across every
   # *.mydomain.test host, so one sign-in covers them all.
   authwall:
     image: vbarbarosh/authwall

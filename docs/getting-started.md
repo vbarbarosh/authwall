@@ -23,7 +23,7 @@ The fastest way to see Authwall. This needs only Docker and a free port `3000`:
 
 ```sh
 docker run --rm -p 3000:3000 \
-    -e AUTHWALL_TARGET_URL=http://localhost:8080 \
+    -e AUTHWALL_UPSTREAM_URL=http://localhost:8080 \
     vbarbarosh/authwall
 ```
 
@@ -38,7 +38,7 @@ What this gives you:
 - **Sign-in:** username + password, with open registration.
 - **Email features:** disabled, since no mailer is configured.
 
-Point `AUTHWALL_TARGET_URL` at your own app to see authenticated requests
+Point `AUTHWALL_UPSTREAM_URL` at your own app to see authenticated requests
 proxied through it. For a lasting setup, continue with the Compose walkthrough
 below.
 
@@ -69,13 +69,13 @@ The `authwall` service is configured entirely through environment variables:
 ```yaml
 environment:
   AUTHWALL_PUBLIC_URL: http://localhost:3000
-  AUTHWALL_TARGET_URL: http://echo-server:8080
+  AUTHWALL_UPSTREAM_URL: http://echo-server:8080
   AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall
 ```
 
 - `AUTHWALL_PUBLIC_URL` — the URL users reach Authwall on. Used to build links
   and redirects.
-- `AUTHWALL_TARGET_URL` — the upstream app. Here it points at the `echo-server`
+- `AUTHWALL_UPSTREAM_URL` — the upstream app. Here it points at the `echo-server`
   service by its Compose name. Swap this for your own app's URL.
 - `AUTHWALL_DB` — the database connection. When it is unset, Authwall falls
   back to a local SQLite database (as in the Quick start above); the Compose
@@ -169,7 +169,7 @@ docker compose down && rm -rf data  # stop and wipe users, sessions, secret
 ## Next steps
 
 - [Configuration reference](config.md) — every environment variable.
-- Point `AUTHWALL_TARGET_URL` at your own app instead of `echo-server`.
+- Point `AUTHWALL_UPSTREAM_URL` at your own app instead of `echo-server`.
 - Add a mailer to unlock magic-link sign-in and email confirmation
   (see the `AUTHWALL_MAILER` section of the configuration reference).
 - Add OAuth providers (Google, GitHub, Microsoft, Facebook, X, Discord) via

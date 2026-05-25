@@ -1,7 +1,7 @@
 # Reverse proxy behind Authwall.
 #
 # Authwall has already authenticated the request and forwarded it here with the
-# client's original Host header preserved (AUTHWALL_TARGET_MODE=proxy). Caddy
+# client's original Host header preserved (AUTHWALL_UPSTREAM_MODE=proxy). Caddy
 # matches that Host and sends each domain to its own app.
 #
 # This Caddy sits behind Authwall and never faces clients directly, so it

@@ -30,9 +30,9 @@ optional_auth_paths:
   # - /
   # - /landing/*
 
-target:
-  url: ${AUTHWALL_TARGET_URL}
-  mode: ${AUTHWALL_TARGET_MODE}
+upstream:
+  url: ${AUTHWALL_UPSTREAM_URL}
+  mode: ${AUTHWALL_UPSTREAM_MODE}
   set_headers: ${AUTHWALL_SET_HEADERS}
   unset_headers: ${AUTHWALL_UNSET_HEADERS}
 
@@ -154,8 +154,8 @@ mailer:
 
 # Personal memo — not read by the app. Just a note to myself of the
 # domain -> upstream mapping I have in mind. Authwall forwards to a single
-# upstream (see `target` above) and does not route by domain.
-# targets:
+# upstream (see `upstream` above) and does not route by domain.
+# upstreams:
 #   apps.authwall.test: http://apps:8080
 #   echo.authwall.test: http://echo:8080
 #   notes.authwall.test: http://notes:8080

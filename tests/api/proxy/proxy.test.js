@@ -8,8 +8,8 @@ describe('proxy', function () {
     beforeEach(function () {
         config.public_paths = ['/terms.html', '/custom/public/path', '/lib/*', '/designs/*'];
         config.optional_auth_paths = ['/', '/landing/*'];
-        config.target.set_headers = [];
-        config.target.unset_headers = [];
+        config.upstream.set_headers = [];
+        config.upstream.unset_headers = [];
     });
 
     it('public url has no x-auth-* headers at upstream', async function () {
@@ -167,7 +167,7 @@ describe('proxy', function () {
     });
 
     it('auth url adds configured upstream headers after authwall headers', async function () {
-        config.target.set_headers = [
+        config.upstream.set_headers = [
             {name: 'X-Team', value: 'notes'},
             {name: 'X-Env', value: 'prod'},
         ];
@@ -185,7 +185,7 @@ describe('proxy', function () {
     });
 
     it('auth url can set an empty upstream header value', async function () {
-        config.target.set_headers = [
+        config.upstream.set_headers = [
             {name: 'X-Empty', value: ''},
             {name: 'X-Team', value: 'notes'},
         ];
@@ -203,10 +203,10 @@ describe('proxy', function () {
     });
 
     it('auth url can remove x-auth-user with configured unset headers', async function () {
-        config.target.set_headers = [
+        config.upstream.set_headers = [
             {name: 'X-Team', value: 'notes'},
         ];
-        config.target.unset_headers = ['X-Auth-User'];
+        config.upstream.unset_headers = ['X-Auth-User'];
 
         await this.sign_in({username: 'mocha', password: 'pass1234'});
         const r = await this.http_get_json('/private');

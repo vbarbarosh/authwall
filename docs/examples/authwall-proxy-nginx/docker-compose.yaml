@@ -2,7 +2,7 @@ services:
 
   # Authwall is the entrypoint and the only published service. It authenticates
   # every request, then forwards it to its single upstream — the nginx router.
-  # AUTHWALL_TARGET_MODE=proxy keeps the client's original Host header so nginx
+  # AUTHWALL_UPSTREAM_MODE=proxy keeps the client's original Host header so nginx
   # can route by domain. AUTHWALL_COOKIE_DOMAIN shares the session across the
   # subdomains, so one sign-in covers all of them.
   authwall:
@@ -10,8 +10,8 @@ services:
     restart: unless-stopped
     environment:
       AUTHWALL_PUBLIC_URL: http://apps.mydomain.test:3000
-      AUTHWALL_TARGET_URL: http://nginx
-      AUTHWALL_TARGET_MODE: proxy
+      AUTHWALL_UPSTREAM_URL: http://nginx
+      AUTHWALL_UPSTREAM_MODE: proxy
       AUTHWALL_COOKIE_DOMAIN: mydomain.test
     ports:
       - 3000:3000

@@ -28,9 +28,9 @@ request back — look for the `X-Auth-User` header Authwall added.
 
 ## What to change for your app
 
-- `AUTHWALL_TARGET_URL` — point it at your own app instead of `app:8080`.
+- `AUTHWALL_UPSTREAM_URL` — point it at your own app instead of `app:8080`.
 - `AUTHWALL_PUBLIC_URL` — set it to the URL users actually reach Authwall on.
-- `AUTHWALL_TARGET_MODE` — leave it `direct` while one app sits behind
+- `AUTHWALL_UPSTREAM_MODE` — leave it `direct` while one app sits behind
   Authwall. Switch to `proxy` only when the upstream is a reverse proxy serving
   several domains (see the [`authwall-proxy-nginx`](../authwall-proxy-nginx/)
   example).

@@ -213,9 +213,9 @@ async function create_app()
     app.use(clean_headers);
     app.use(sign_in_required);
     app.use(http_proxy_middleware.createProxyMiddleware({
-        target: config.target.url,
-        xfwd: (config.target.mode === 'proxy'),
-        changeOrigin: (config.target.mode === 'direct'),
+        target: config.upstream.url,
+        xfwd: (config.upstream.mode === 'proxy'),
+        changeOrigin: (config.upstream.mode === 'direct'),
         pathFilter: function (pathname) {
             return !(pathname === '/auth' || pathname.startsWith('/auth/'));
         },
@@ -236,12 +236,12 @@ async function create_app()
                 if (user_uid && !is_public_path(req.path)) {
                     proxy_req.setHeader('X-Auth-User', user_uid);
                 }
-                for (let i = 0, ii = config.target.set_headers.length; i < ii; ++i) {
-                    const header = config.target.set_headers[i];
+                for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
+                    const header = config.upstream.set_headers[i];
                     proxy_req.setHeader(header.name, header.value);
                 }
-                for (let i = 0, ii = config.target.unset_headers.length; i < ii; ++i) {
-                    proxy_req.removeHeader(config.target.unset_headers[i]);
+                for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
+                    proxy_req.removeHeader(config.upstream.unset_headers[i]);
                 }
             },
             error: function (error, req, res) {

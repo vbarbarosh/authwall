@@ -49,7 +49,7 @@ describe('Basic Google login only 2 | stories', function () {
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.client_secret = 'mocha_google_client_secret';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
-        config.target.unset_headers = ['x-auth-user'];
+        config.upstream.unset_headers = ['x-auth-user'];
         config.access.allowed_emails = ['jonny@gmail.com'];
         config.access.denied_emails = [];
         config.access.allowed_domains = [];

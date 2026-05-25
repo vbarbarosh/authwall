@@ -28,8 +28,8 @@ fell back to a different option.
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
 | [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)                 | Public paths that receive auth headers when signed in  |
-| [`AUTHWALL_TARGET_URL`](#authwall_target_url)                               | Upstream application URL                               |
-| [`AUTHWALL_TARGET_MODE`](#authwall_target_mode)                             | Upstream proxy behavior mode                           |
+| [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                               | Upstream application URL                               |
+| [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                             | Upstream proxy behavior mode                           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
@@ -289,7 +289,7 @@ AUTHWALL_PUBLIC_URL=https://myapp.test
 
 ## AUTHWALL_PUBLIC_PATHS
 
-Public upstream paths that bypass sign-in. These paths are proxied to `AUTHWALL_TARGET_URL` with or without a session and never receive the `X-Auth-User` header.
+Public upstream paths that bypass sign-in. These paths are proxied to `AUTHWALL_UPSTREAM_URL` with or without a session and never receive the `X-Auth-User` header.
 
 - Type: list of path strings
 - Default: the `public_paths` list in `config/settings.yaml`
@@ -323,7 +323,7 @@ Example:
 AUTHWALL_OPTIONAL_AUTH_PATHS="/,/landing/*"
 ```
 
-## AUTHWALL_TARGET_URL
+## AUTHWALL_UPSTREAM_URL
 
 URL of the upstream application protected by Authwall.
 Every request whose path is not under `/auth` is proxied here.
@@ -358,13 +358,13 @@ optional_auth_paths:
 Example:
 
 ```sh
-AUTHWALL_TARGET_URL=https://internal-service:8080
+AUTHWALL_UPSTREAM_URL=https://internal-service:8080
 ```
 
-## AUTHWALL_TARGET_MODE
+## AUTHWALL_UPSTREAM_MODE
 
 Controls how Authwall rewrites requests when forwarding them to its single
-upstream, `AUTHWALL_TARGET_URL`. Choose the mode by how many domains sit behind
+upstream, `AUTHWALL_UPSTREAM_URL`. Choose the mode by how many domains sit behind
 Authwall.
 
 - Type: enum
@@ -393,7 +393,7 @@ flowchart LR
 ```
 
 Use `direct` when **one** app sits behind Authwall. Authwall rewrites the
-`Host` header to the domain of `AUTHWALL_TARGET_URL`, so the app receives the
+`Host` header to the domain of `AUTHWALL_UPSTREAM_URL`, so the app receives the
 request as if it had been sent straight to it.
 
 Use `proxy` when **several** domains sit behind Authwall. The upstream is a
@@ -405,12 +405,12 @@ and `X-Forwarded-Proto`.
 Example:
 
 ```sh
-AUTHWALL_TARGET_MODE=proxy
+AUTHWALL_UPSTREAM_MODE=proxy
 ```
 
 ## AUTHWALL_SET_HEADERS
 
-Headers to add to requests before Authwall forwards them to `AUTHWALL_TARGET_URL`.
+Headers to add to requests before Authwall forwards them to `AUTHWALL_UPSTREAM_URL`.
 
 - Type: semicolon-separated `Header-Name=value` entries
 - Default: none
@@ -433,7 +433,7 @@ AUTHWALL_SET_HEADERS='X-Team=notes;Authorization=Basic abc:def==;X-Empty='
 
 ## AUTHWALL_UNSET_HEADERS
 
-Headers to remove from requests before Authwall forwards them to `AUTHWALL_TARGET_URL`.
+Headers to remove from requests before Authwall forwards them to `AUTHWALL_UPSTREAM_URL`.
 Removal happens last, after Authwall's own headers and `AUTHWALL_SET_HEADERS` have been
 applied — see the order in [AUTHWALL_SET_HEADERS](#authwall_set_headers).
 

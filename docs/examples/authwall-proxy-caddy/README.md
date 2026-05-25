@@ -17,7 +17,7 @@ flowchart LR
 ```
 
 Authwall always has exactly one upstream. Here that upstream is the Caddy
-router, and `AUTHWALL_TARGET_MODE=proxy` makes Authwall preserve the client's
+router, and `AUTHWALL_UPSTREAM_MODE=proxy` makes Authwall preserve the client's
 original `Host` header so Caddy can tell the domains apart.
 
 ## Set up local hostnames
@@ -55,7 +55,7 @@ preserved the `Host` and Caddy routed on it.
 
 - `authwall` is the only published service (port 3000); all three domains
   resolve to it.
-- `AUTHWALL_TARGET_MODE=proxy` tells Authwall to keep the client's original
+- `AUTHWALL_UPSTREAM_MODE=proxy` tells Authwall to keep the client's original
   `Host` header when forwarding to its single upstream, `http://caddy`.
 - The `Caddyfile` listens on plain HTTP and uses a `host` matcher per domain,
   routing each to its app (`apps`, `notes`, `echo`).
