@@ -7,6 +7,7 @@ function render_config_summary(config)
         `🗄️ Database: ${format_database(config.knexvars)}`,
         `🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure} max_age_days=${config.cookie.max_age_days}`,
         `🧯 Sentry: ${format_sentry(config.sentry)}`,
+        `🔑 Personal access tokens: ${config.personal_access_tokens.enabled ? 'enabled' : 'disabled'}`,
         '🔐 Sign-in:',
         format_flows(config.flows).map(v => `  ${v}`),
         `📭 Mailer: ${format_mailer(config.mailer)}`,

@@ -13,7 +13,7 @@ async function insert_auth_event(params)
 
     await db('auth_events').insert({
         uid,
-        user_id: params.user?.id ?? req.session?.user_id ?? null,
+        user_id: params.user?.id ?? req.auth?.user_id ?? req.session?.user_id ?? null,
         session_uid: req.sessionID ?? null,
         event_type: params.event_type,
         event_status: params.event_status ?? const_auth_event_status.success,

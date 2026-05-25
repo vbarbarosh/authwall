@@ -24,6 +24,7 @@ fell back to a different option.
 | [`AUTHWALL_SENTRY_DSN`](#authwall_sentry_dsn)                               | Sentry DSN for error reporting                         |
 | [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment)               | Sentry environment name                                |
 | [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate                    |
+| [`AUTHWALL_PERSONAL_ACCESS_TOKENS`](#authwall_personal_access_tokens)       | Enables bearer tokens for API clients                  |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
 | [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)                 | Public paths that receive auth headers when signed in  |
@@ -168,6 +169,8 @@ When enabled, the following endpoints are rate-limited per client IP:
 - Sign-up — 5 requests per hour.
 - Password reset — 5 requests per hour.
 - Magic-link request — 5 requests per hour.
+- Personal access token creation — 5 requests per hour.
+- Failed bearer-token validation — 20 requests per 15 minutes (returns `429` with `Retry-After`).
 
 Counts are tracked in memory only, so they do not persist across restarts and are not shared between processes.
 Disable rate limiting only in environments where requests are throttled by an upstream proxy or load balancer, or in tests where the limits would interfere.
@@ -199,6 +202,68 @@ Example:
 AUTHWALL_SENTRY_DSN=https://public@example.ingest.sentry.io/1
 AUTHWALL_SENTRY_ENVIRONMENT=production
 AUTHWALL_SENTRY_TRACES_SAMPLE_RATE=0.05
+```
+
+<a id="authwall_personal_access_tokens"></a>
+
+## AUTHWALL_PERSONAL_ACCESS_TOKENS
+
+Enables personal access tokens for API clients.
+
+- Type: boolean flag
+- Values: `yes`, `no`, `true`, `false`, `on`, `off`
+- Default: `false`
+
+When disabled, Authwall does not expose the token management UI, does not
+register the token management routes, and does not accept bearer tokens for
+upstream authentication.
+
+When enabled, signed-in users can create tokens from the profile page. The raw
+token is shown once, only a SHA-256 hash is stored, and API clients send it as:
+
+```http
+Authorization: Bearer awp_...
+```
+
+Valid bearer tokens authenticate proxied upstream requests and Authwall forwards
+the same trusted `X-Auth-User` header it uses for browser sessions. Authwall
+removes the bearer `Authorization` header before proxying the request.
+
+Bearer tokens also work against `GET /auth/status`, so an API client can
+introspect the signed-in identity without holding a browser session.
+
+### What bearer tokens cannot do
+
+Bearer tokens are intentionally **not** accepted by the `/auth/*` account
+management endpoints — creating or revoking personal access tokens, revoking
+browser sessions, changing email or password, deleting the account, and so on.
+Those flows require an active browser session and a CSRF token. A leaked PAT
+can act on the upstream app as its owner, but it cannot escalate by reshaping
+the owner's authwall account.
+
+### Usage from an API client
+
+Once a user has minted a token from the profile page, an API client sends it
+as the `Authorization` header on every request:
+
+```sh
+curl -H 'Authorization: Bearer awp_…' https://authwall.example.com/api/things
+```
+
+The same token works against `/auth/status` for identity introspection:
+
+```sh
+curl -H 'Authorization: Bearer awp_…' https://authwall.example.com/auth/status
+```
+
+To **rotate** a token, revoke the old one from the profile page and create a
+new one. Authwall does not expose a regenerate endpoint by design; the explicit
+revoke + create steps keep the audit log clear about what happened.
+
+Example:
+
+```sh
+AUTHWALL_PERSONAL_ACCESS_TOKENS=true
 ```
 
 ## AUTHWALL_PUBLIC_URL

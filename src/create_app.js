@@ -5,6 +5,8 @@ const als = require('./helpers/als');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
+const const_user_identity = require('./helpers/const/const_user_identity');
+const db = require('../db');
 const email_verification_required = require('./helpers/email_verification_required');
 const express = require('express');
 const express_fingerprint = require('@vbarbarosh/express-helpers/src/express_fingerprint');
@@ -15,6 +17,7 @@ const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const insert_auth_event = require('./helpers/insert_auth_event');
+const make_failure_counter = require('./helpers/middleware/make_failure_counter');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
 const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
 const oauth_provider_facebook = require('./oauth_providers/oauth_provider_facebook');
@@ -22,6 +25,7 @@ const oauth_provider_github = require('./oauth_providers/oauth_provider_github')
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
 const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
 const oauth_provider_twitter = require('./oauth_providers/oauth_provider_twitter');
+const {personal_access_token_hash} = require('./helpers/personal_access_tokens');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
@@ -113,6 +117,11 @@ async function create_app()
     });
     app.use(sentry_request_context);
 
+    if (config.personal_access_tokens.enabled) {
+        const bearer_miss_limiter = make_failure_counter(20, 15*60*1000);
+        app.use(make_personal_access_token_auth(bearer_miss_limiter));
+    }
+
     app.get('/auth', function (req, res) {
         if (req.session?.user_id) {
             res.redirect(config.pages.profile);
@@ -156,6 +165,9 @@ async function create_app()
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
     express_routes(app, require('./routes/email_remove'));
+    if (config.personal_access_tokens.enabled) {
+        express_routes(app, require('./routes/personal_access_tokens'));
+    }
     if (config.mailer.enabled) {
         express_routes(app, require('./routes/email_add'));
         express_routes(app, require('./routes/email_change'));
@@ -168,6 +180,7 @@ async function create_app()
     const protected_spa_pages = new Set([
         config.pages.profile,
         config.pages.sessions,
+        config.pages.personal_access_tokens,
         config.pages.sign_out,
     ]);
     const signed_in_redirect_spa_pages = new Set([
@@ -219,8 +232,9 @@ async function create_app()
                 //         proxy_req.removeHeader(header);
                 //     }
                 // }
-                if (req.session.user_uid && !is_public_path(req.path)) {
-                    proxy_req.setHeader('X-Auth-User',  req.session.user_uid);
+                const user_uid = authenticated_user_uid(req);
+                if (user_uid && !is_public_path(req.path)) {
+                    proxy_req.setHeader('X-Auth-User', user_uid);
                 }
                 for (let i = 0, ii = config.target.set_headers.length; i < ii; ++i) {
                     const header = config.target.set_headers[i];
@@ -306,17 +320,22 @@ async function insert_email_not_authorized_event(req, error)
 
 function sign_in_required(req, res, next)
 {
-    if (is_public_path(req.path) || (!req.session.user_id && is_optional_auth_path(req.path))) {
+    const user_id = authenticated_user_id(req);
+
+    if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
         next();
         return;
     }
 
-    if (!req.session.user_id) {
+    if (!user_id) {
         als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
         return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
     }
 
-    if (email_verification_required(req)) {
+    // Bearer-authenticated requests have email verification enforced earlier,
+    // in personal_access_token_auth (with a 403). Redirecting an API client to
+    // a browser verify-email page wouldn't make sense.
+    if (!req.auth?.personal_access_token_uid && email_verification_required(req)) {
         als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
         req.session.error = 'Email verification required';
         save_session(req).then(() => res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl})), next);
@@ -325,6 +344,105 @@ function sign_in_required(req, res, next)
 
     als.logger.write(`[auth_next] ${req.method} ${req.path}`);
     next();
+}
+
+function make_personal_access_token_auth(bearer_miss_limiter)
+{
+    return async function personal_access_token_auth(req, res, next) {
+        try {
+            const authorization = req.headers.authorization;
+            if (!authorization) {
+                next();
+                return;
+            }
+
+            const match = /^Bearer\s+(.+)$/i.exec(authorization);
+            if (!match) {
+                next();
+                return;
+            }
+
+            if (bearer_miss_limiter.is_blocked(req.ip)) {
+                res.set('Retry-After', String(bearer_miss_limiter.retry_after_seconds(req.ip)));
+                res.status(429).type('text').send('Too many failed authentication attempts, please try again later');
+                return;
+            }
+
+            const now = new Date();
+            const token_hash = personal_access_token_hash(match[1].trim());
+            const personal_access_token = await db('personal_access_tokens')
+                .where({token_hash})
+                .whereNull('revoked_at')
+                .where(function () {
+                    this.whereNull('expires_at').orWhere('expires_at', '>', now);
+                })
+                .first();
+
+            if (!personal_access_token) {
+                bearer_miss_limiter.record_failure(req.ip);
+                res.status(401).type('text').send('Invalid personal access token');
+                return;
+            }
+
+            const user = await db('users').where({id: personal_access_token.user_id}).first();
+            if (!user) {
+                bearer_miss_limiter.record_failure(req.ip);
+                res.status(401).type('text').send('Invalid personal access token');
+                return;
+            }
+
+            if (config.confirm_email.required) {
+                const verified_email = await db('user_identities')
+                    .where({user_id: user.id, type: const_user_identity.email})
+                    .whereNotNull('verified_at')
+                    .first();
+                if (!verified_email) {
+                    // 403 (not 401) because the credential is valid — the user is just not authorized to use it yet.
+                    // Not counted as a miss either: the credential matched, the owner is just unverified.
+                    res.status(403).type('text').send('Email verification required');
+                    return;
+                }
+            }
+
+            req.auth = {
+                user_id: user.id,
+                user_uid: user.uid,
+                personal_access_token_uid: personal_access_token.uid,
+            };
+            delete req.headers.authorization;
+
+            await touch_personal_access_token(req, personal_access_token, now);
+            next();
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+}
+
+async function touch_personal_access_token(req, personal_access_token, now)
+{
+    const last_used_at = personal_access_token.last_used_at && new Date(personal_access_token.last_used_at);
+    if (last_used_at && now.getTime() - last_used_at.getTime() < 5*60000) {
+        return;
+    }
+
+    await db('personal_access_tokens').where({id: personal_access_token.id}).update({
+        last_used_at: now,
+        last_used_ip: req.ip ?? null,
+        last_used_ua: req.headers['user-agent'] ?? null,
+        updated_at: now,
+    });
+}
+
+function authenticated_user_id(req)
+{
+    return req.auth?.user_id ?? req.session?.user_id ?? null;
+}
+
+function authenticated_user_uid(req)
+{
+    return req.auth?.user_uid ?? req.session?.user_uid ?? null;
 }
 
 function is_public_path(path)

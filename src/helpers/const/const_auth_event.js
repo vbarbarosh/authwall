@@ -16,6 +16,8 @@ const const_auth_event = {
     email_changed: 'email_changed',
     session_revoked: 'session_revoked',
     session_revoked_all: 'session_revoked_all',
+    personal_access_token_created: 'personal_access_token_created',
+    personal_access_token_revoked: 'personal_access_token_revoked',
     change_me_email_not_authorized: 'change_me_email_not_authorized',
 };
 

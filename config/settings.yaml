@@ -64,6 +64,9 @@ sentry:
   environment: ${AUTHWALL_SENTRY_ENVIRONMENT}
   traces_sample_rate: ${AUTHWALL_SENTRY_TRACES_SAMPLE_RATE}
 
+personal_access_tokens:
+  enabled: ${AUTHWALL_PERSONAL_ACCESS_TOKENS}
+
 cookie:
   domain: ${AUTHWALL_COOKIE_DOMAIN}
   path: ${AUTHWALL_COOKIE_PATH}

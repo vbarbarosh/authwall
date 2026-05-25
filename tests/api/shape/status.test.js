@@ -11,6 +11,7 @@ describe('shape • status', function () {
         config.flows.facebook.enabled = true;
         config.flows.twitter.enabled = true;
         config.flows.discord.enabled = true;
+        config.personal_access_tokens.enabled = true;
     });
 
     it('anonymous', async function () {
@@ -41,6 +42,7 @@ describe('shape • status', function () {
             },
             actions: {
                 can_change_email: true,
+                can_manage_personal_access_tokens: false,
             },
             version: pkg.version,
         };
@@ -75,6 +77,7 @@ describe('shape • status', function () {
             },
             actions: {
                 can_change_email: true,
+                can_manage_personal_access_tokens: true,
             },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',
             user_slug: String, // 'swbwnpmv7h516n8u',
@@ -112,6 +115,7 @@ describe('shape • status', function () {
                     last_seen_at: String, // '2026-04-17T23:37:01.160Z'
                 }
             ],
+            personal_access_tokens: [],
             version: pkg.version,
         };
         assert_shape(actual, expected);

@@ -9,6 +9,12 @@ const EMAIL_VERIFICATION_ALLOWED_PATHS = new Set([
 
 async function auth_middleware(req, res, next)
 {
+    // Intentionally checks req.session.user_id only — req.auth (bearer/PAT) is
+    // not accepted. The /auth/* management endpoints (creating/revoking PATs,
+    // revoking sessions, changing email/password, deleting the account) are
+    // browser-only flows: they require an active session + CSRF token. A PAT
+    // can authenticate proxied upstream requests, but cannot escalate by
+    // managing its owner's authwall account.
     if (!req.session.user_id) {
         next(new UserFriendlyError('Authentication required'));
         return;

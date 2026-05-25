@@ -15,6 +15,13 @@ Authwall's core guarantee: the upstream app can trust the `X-Auth-User` header.
   authenticated requests that are not for a [public path](config.md#authwall_target_url).
 - Unauthenticated requests are never proxied — they are redirected to sign-in —
   so the app only ever receives requests Authwall has vetted.
+- When [personal access tokens](config.md#authwall_personal_access_tokens) are
+  enabled, a valid `Authorization: Bearer ...` token is another way to establish
+  the same upstream identity. Authwall validates the token, strips the bearer
+  credential, and forwards `X-Auth-User`.
+- Email-verification enforcement (`AUTHWALL_CONFIRM_EMAIL_REQUIRED`) applies to
+  bearer tokens too: a valid token whose owner has no verified email is rejected
+  with `403 Email verification required`.
 
 For this guarantee to hold, the app must be reachable **only** through Authwall.
 If the app is also exposed directly, a client can reach it without Authwall and
@@ -49,12 +56,14 @@ frontend through the `GET /auth/status` response.
 When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled
 (the default), the sensitive entry points are throttled **per client IP**:
 
-| Endpoint           | Limit                    |
-|--------------------|--------------------------|
-| Sign-in            | 10 requests / 15 minutes |
-| Sign-up            | 5 requests / hour        |
-| Password reset     | 5 requests / hour        |
-| Magic-link request | 5 requests / hour        |
+| Endpoint                          | Limit                    |
+|-----------------------------------|--------------------------|
+| Sign-in                           | 10 requests / 15 minutes |
+| Sign-up                           | 5 requests / hour        |
+| Password reset                    | 5 requests / hour        |
+| Magic-link request                | 5 requests / hour        |
+| Personal access token creation    | 5 requests / hour        |
+| Failed bearer-token validation    | 20 requests / 15 minutes |
 
 Counts are held in memory, so they are not shared between processes and reset
 on restart. This slows credential stuffing and brute-force attempts; it is not
@@ -107,17 +116,31 @@ the request body are removed, and query parameters that look like secrets
 
 ## Running behind a proxy
 
-Authwall sets Express's `trust proxy`, so `req.ip` — used for rate-limit keys
-and logging — is taken from the `X-Forwarded-For` header. Deploy Authwall behind
-a reverse proxy or load balancer that sets `X-Forwarded-For` from the real
-client connection, and do not expose Authwall directly to the internet: a
-directly reachable instance would let a client spoof `X-Forwarded-For` and so
-forge its apparent IP.
+Authwall sets Express's `trust proxy`, so `req.ip` is taken from the
+`X-Forwarded-For` header. That single trust assumption is load-bearing for
+several user-visible signals:
+
+- Per-IP **rate-limit keys** (sign-in, sign-up, PAT creation, bearer-token
+  validation, etc.).
+- **Last-used IP** shown for browser sessions and for personal access tokens.
+- **Source IP** recorded on every row in the `auth_events` audit log.
+
+Deploy Authwall **behind a reverse proxy or load balancer that overwrites
+`X-Forwarded-For`** with the real client connection (nginx's `real_ip_header`,
+Caddy's `trusted_proxies`, an LB that strips inbound and appends its own, etc.)
+— and do not expose Authwall directly to the internet. A directly reachable
+instance lets any client send `X-Forwarded-For: 1.2.3.4` and have that value
+become the recorded IP everywhere above. The "last used from 8.8.8.8" line on a
+token row is only meaningful if the operator has actually constrained who can
+write that header.
 
 ## Hardening checklist
 
 - [ ] The upstream app is reachable only through Authwall, never directly.
 - [ ] Authwall runs behind a TLS terminator; `AUTHWALL_PUBLIC_URL` is `https://`.
+- [ ] The upstream proxy or load balancer **overwrites `X-Forwarded-For`** from
+      the real client (see [Running behind a proxy](#running-behind-a-proxy)).
+      Otherwise rate-limit keys, last-used IPs, and audit IPs are spoofable.
 - [ ] `AUTHWALL_SECRET` is managed deliberately, or `data/` is persisted.
 - [ ] Rate limiting is left enabled (or handled by an upstream proxy).
 - [ ] Registration is restricted with the access rules if sign-up is not meant

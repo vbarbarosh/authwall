@@ -48,6 +48,15 @@ describe('POST /auth/account/remove', function () {
             updated_at: now,
             expires_at: now,
         });
+        await db('personal_access_tokens').insert({
+            uid: 'awpat_account_remove_token',
+            user_id,
+            label: 'Account remove token',
+            token_hash: 'account-remove-personal-access-token-hash',
+            token_prefix: 'awp_account_rem',
+            created_at: now,
+            updated_at: now,
+        });
 
         const cookies_a = new Map();
         const cookies_b = new Map();
@@ -80,6 +89,7 @@ describe('POST /auth/account/remove', function () {
         assert.deepStrictEqual(await db('password_reset_tokens').where({user_id}).count('* as c'), [{c: 0}]);
         assert.deepStrictEqual(await db('email_verify_tokens').where({user_id}).count('* as c'), [{c: 0}]);
         assert.deepStrictEqual(await db('email_change_tokens').where({user_id}).count('* as c'), [{c: 0}]);
+        assert.deepStrictEqual(await db('personal_access_tokens').where({user_id}).count('* as c'), [{c: 0}]);
 
         const events_for_deleted_user = await db('auth_events').where({user_id});
         assert.deepStrictEqual(events_for_deleted_user, []);

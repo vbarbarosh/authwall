@@ -106,6 +106,7 @@ function make_config(input = {})
             magic_link_notice: '/auth/magic-link/sent',
             profile: '/auth/profile',
             sessions: '/auth/sessions',
+            personal_access_tokens: '/auth/personal-access-tokens',
             sign_out: '/auth/sign-out',
         },
 
@@ -133,6 +134,10 @@ function make_config(input = {})
             dsn: {type: 'str', nullable: true},
             environment: {type: 'str', nullable: true},
             traces_sample_rate: {type: 'float', min: 0, max: 1, nullable: true},
+        }),
+
+        personal_access_tokens: make(settings.personal_access_tokens, {
+            enabled: {type: 'bool', default: false, before: parse_bool_flag},
         }),
 
         listen: env.LISTEN ?? '127.0.0.1',

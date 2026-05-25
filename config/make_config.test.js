@@ -37,6 +37,9 @@ describe('make_config', function () {
                     'X-Auth-User',
                 ],
             },
+            personal_access_tokens: {
+                enabled: false,
+            },
             flows: {
                 password: {
                     enabled: true,
@@ -65,6 +68,29 @@ describe('make_config', function () {
         });
         assert.strictEqual(config.target.set_headers.length, 2);
         assert.strictEqual(config.target.unset_headers.length, 1);
+    });
+
+    it('configures personal access tokens as disabled by default', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+        });
+
+        assert.deepStrictEqual(config.personal_access_tokens, {
+            enabled: false,
+        });
+    });
+
+    it('enables personal access tokens with AUTHWALL_PERSONAL_ACCESS_TOKENS', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_TARGET_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_PERSONAL_ACCESS_TOKENS: 'on',
+        });
+
+        assert.deepStrictEqual(config.personal_access_tokens, {
+            enabled: true,
+        });
     });
 
     it('configures Sentry when AUTHWALL_SENTRY_DSN is set', function () {

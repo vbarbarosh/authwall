@@ -1,6 +1,7 @@
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
+const frontend_personal_access_tokens = require('../helpers/models/frontend_personal_access_tokens');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
 const pkg = require('../../package.json');
@@ -15,9 +16,12 @@ async function status_get(req, res)
 {
     res.set('Cache-Control', 'no-store');
 
+    const bearer = !!req.auth?.personal_access_token_uid;
+    const user_id = req.auth?.user_id ?? req.session?.user_id ?? null;
+
     let user = null;
-    if (req.session.user_id) {
-        user = await db('users').where({id: req.session.user_id}).first();
+    if (user_id) {
+        user = await db('users').where({id: user_id}).first();
     }
 
     const error = req.session.error ?? null;
@@ -87,31 +91,45 @@ async function status_get(req, res)
             flows,
             actions: {
                 can_change_email: config.mailer.enabled,
+                can_manage_personal_access_tokens: false,
             },
             version: pkg.version,
         });
         return;
     }
 
-    const identities = await db('user_identities').where('user_id', req.session.user_id);
+    const identities = await db('user_identities').where('user_id', user_id);
     const confirm_email = await get_confirm_email_status(user.id, identities);
+
+    const optional = {};
+    if (confirm_email) {
+        optional.confirm_email = confirm_email;
+    }
+    if (config.personal_access_tokens.enabled) {
+        // Revoked tokens are hidden from this payload — revocation already lives
+        // in auth_events for audit, and showing inactive tokens here only invites
+        // label-collision confusion ("which 'My Laptop' is which?").
+        const items = await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').orderBy('id', 'desc');
+        optional.personal_access_tokens = frontend_personal_access_tokens(items);
+    }
 
     res.send({
         error,
         authenticated: true,
         flows,
-        ...(confirm_email ? {confirm_email} : {}),
         actions: {
             can_change_email: config.mailer.enabled,
+            can_manage_personal_access_tokens: config.personal_access_tokens.enabled,
         },
         user_uid: user.uid,
         user_slug: user.slug,
-        csrf_token: req.session.csrf_token,
+        csrf_token: bearer ? null : req.session.csrf_token,
         display_name: user.display_name,
         avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
         providers: frontend_user_identities(identities),
-        current_session_uid: req.sessionID,
-        sessions: frontend_sessions(await db('sessions').where('user_id', req.session.user_id)),
+        current_session_uid: bearer ? null : req.sessionID,
+        sessions: frontend_sessions(await db('sessions').where({user_id})),
+        ...optional,
         version: pkg.version,
     });
 }
@@ -150,12 +168,13 @@ async function get_confirm_email_status(user_id, identities)
 // GET /auth/sidecar
 async function sidecar_get(req, res)
 {
-    if (!req.session.user_id) {
+    const user_id = req.auth?.user_id ?? req.session?.user_id ?? null;
+    if (!user_id) {
         res.status(401).send();
         return;
     }
 
-    const user = await db('users').where({id: req.session.user_id}).first();
+    const user = await db('users').where({id: user_id}).first();
     if (!user) {
         res.status(401).send();
         return;

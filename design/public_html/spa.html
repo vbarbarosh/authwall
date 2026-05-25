@@ -396,6 +396,7 @@
     <button class="demo-btn" data-goto="email-verify-success">Verify Success</button>
     <button class="demo-btn" data-goto="profile">Profile</button>
     <button class="demo-btn" data-goto="sessions">Sessions</button>
+    <button class="demo-btn" data-goto="personal-access-tokens">Tokens</button>
     <button class="demo-btn" data-goto="sign-out">Sign Out</button>
   </nav>
   <div class="demo-spacer"></div>
@@ -791,6 +792,14 @@
             <button class="btn btn-ghost btn-sm" onclick="showView('sessions')">View sessions →</button>
           </div>
 
+          <div id="p-pat-link" style="display:none">
+          <hr>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-muted">API access for desktop apps and scripts</span>
+            <button class="btn btn-ghost btn-sm" onclick="showView('personal-access-tokens')">View tokens →</button>
+          </div>
+          </div>
+
           <hr>
           <div class="section-title">Danger zone</div>
           <div class="field">
@@ -837,6 +846,88 @@
           <span>If you see an unfamiliar session, revoke it and change your password immediately.</span>
         </div>
         <button id="sess-revoke-all" class="btn btn-danger mt-16">Revoke all other sessions</button>
+      </div>
+      <div class="card-footer">
+        <span class="text-link" onclick="showView('profile')">← Back to profile</span>
+        &nbsp;·&nbsp;
+        <span class="text-link" onclick="showView('sign-out')">Sign out</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10b. PERSONAL ACCESS TOKENS ── -->
+  <div data-view="personal-access-tokens" data-testid="pat-view">
+    <div class="card wide">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Personal access tokens</h1>
+        <p class="page-sub mt-4">Bearer tokens for desktop apps, scripts, and CLIs. They act on your behalf — keep them secret.</p>
+      </div>
+      <div class="card-body">
+        <div id="pat-disabled" class="alert alert-warn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Personal access tokens are not enabled on this server.</span>
+        </div>
+
+        <div id="pat-section" class="form" style="display:none">
+          <div id="pat-created" class="alert alert-success" style="display:none;flex-direction:column;align-items:stretch;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span><strong>Token created.</strong> Copy it now — it will not be shown again.</span>
+            </div>
+            <div style="position:relative">
+              <code id="pat-token" style="display:block;font-family:var(--mono);font-size:12px;white-space:nowrap;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 40px 8px 8px;color:var(--text)"></code>
+              <button id="pat-copy" type="button" title="Copy token" aria-label="Copy token" class="btn btn-ghost btn-sm" style="position:absolute;top:4px;right:4px;width:28px;height:28px;padding:0;color:var(--text-muted)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <div>
+              <div class="text-sm" style="color:var(--text-2);margin-bottom:4px">Try it from a terminal:</div>
+              <div style="position:relative">
+                <code id="pat-curl" style="display:block;font-family:var(--mono);font-size:12px;overflow-wrap:normal;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 40px 8px 8px;color:var(--text)"></code>
+                <button id="pat-copy-snippet" type="button" title="Copy snippet" aria-label="Copy snippet" class="btn btn-ghost btn-sm" style="position:absolute;top:4px;right:4px;width:28px;height:28px;padding:0;color:var(--text-muted)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span id="pat-copy-feedback" class="text-sm" style="display:none"></span>
+              <span style="flex:1"></span>
+              <button id="pat-dismiss" type="button" class="btn btn-ghost btn-sm">Dismiss</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-title">Active tokens</div>
+            <div id="pat-active"><div class="text-sm text-muted" style="padding:8px 0">Loading…</div></div>
+          </div>
+
+          <div id="pat-inactive-section" style="display:none">
+            <div class="section-title">Expired</div>
+            <div id="pat-inactive"></div>
+          </div>
+
+          <div class="section-title">Create token</div>
+          <div class="field">
+            <label for="pat-label">Label</label>
+            <input type="text" id="pat-label" placeholder="My Laptop" autocomplete="off" maxlength="100">
+            <div class="help-text">Helps you identify this token later. The token itself is shown only once.</div>
+          </div>
+          <div class="field">
+            <label for="pat-expires">Expiration</label>
+            <select id="pat-expires" style="height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font:inherit;font-size:14px;color:var(--text);background:var(--surface);outline:none;width:100%">
+              <option value="30">30 days</option>
+              <option value="90" selected>90 days</option>
+              <option value="365">1 year</option>
+              <option value="">Never</option>
+            </select>
+          </div>
+          <div id="pat-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="pat-error-msg"></span>
+          </div>
+          <button id="pat-create" class="btn btn-outline">Create token</button>
+        </div>
       </div>
       <div class="card-footer">
         <span class="text-link" onclick="showView('profile')">← Back to profile</span>
@@ -997,6 +1088,7 @@ const ROUTES = {
   '/auth/magic-link/confirm':    'magic-confirm',
   '/auth/profile':               'profile',
   '/auth/sessions':              'sessions',
+  '/auth/personal-access-tokens':'personal-access-tokens',
   '/auth/sign-out':              'sign-out',
   '/auth/email-verify':          'email-verify-req',
   '/auth/email-verify/sent':     'email-verify-sent',
@@ -1043,7 +1135,8 @@ function showView(name, pushState = true) {
   window.scrollTo(0, 0);
   renderView(name);
   sync_sign_in_form();
-  if (name === 'profile' || name === 'sessions' || name === 'sign-out') {
+  if (name === 'personal-access-tokens') pat_dismiss_created();
+  if (name === 'profile' || name === 'sessions' || name === 'personal-access-tokens' || name === 'sign-out') {
     api_status().then(s => s.authenticated && render_user_data(s));
   }
 }
@@ -1121,7 +1214,7 @@ function plural(n, singular, plural, zero) {
   return plural.split('#').join(n);
 }
 
-async function api_post(path, fields) {
+async function http_post_urlencoded(path, fields) {
   if (!_csrf) await api_status();
   const body = new URLSearchParams({ ...fields, _csrf });
   const res = await fetch(path, {
@@ -1136,12 +1229,27 @@ async function api_post(path, fields) {
   return { final_url: res.url, error: status.error };
 }
 
-async function api_post_form(path, form_data) {
+async function http_post_multipart(path, form_data) {
   if (!_csrf) await api_status();
   form_data.append('_csrf', _csrf);
   const res = await fetch(path, { method: 'POST', body: form_data, redirect: 'follow' });
   const status = await api_status();
   return { final_url: res.url, error: status.error };
+}
+
+async function http_post_json(path, fields) {
+  if (!_csrf) await api_status();
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...fields, _csrf }),
+    redirect: 'follow',
+  });
+  const content_type = res.headers.get('content-type') || '';
+  const data = content_type.includes('application/json') ? await res.json() : null;
+  const status = await api_status();
+  if (status.flows) apply_flows(status.flows);
+  return { data, error: status.error };
 }
 
 // After a successful POST, figure out where to go based on the redirect URL
@@ -1201,6 +1309,16 @@ function password_strength(pw) {
 function initials(name, fallback) {
   if (!name) return fallback || '?';
   return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function escape_html(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
 }
 
 function parse_ua(ua) {
@@ -1445,6 +1563,84 @@ function render_user_data(s) {
     }
   }
 
+  // Personal access tokens
+  const pat_enabled = !!s.actions?.can_manage_personal_access_tokens;
+  const pat_link = document.getElementById('p-pat-link');
+  if (pat_link) pat_link.style.display = pat_enabled ? '' : 'none';
+
+  const pat_disabled_el = document.getElementById('pat-disabled');
+  const pat_section_el = document.getElementById('pat-section');
+  if (pat_disabled_el) pat_disabled_el.style.display = pat_enabled ? 'none' : 'flex';
+  if (pat_section_el) pat_section_el.style.display = pat_enabled ? '' : 'none';
+
+  const pat_active_el = document.getElementById('pat-active');
+  const pat_inactive_section_el = document.getElementById('pat-inactive-section');
+  const pat_inactive_el = document.getElementById('pat-inactive');
+  if (pat_enabled && pat_active_el) {
+    // Revoked tokens are filtered out server-side; the list only contains
+    // active and expired tokens.
+    const tokens = s.personal_access_tokens || [];
+    const now_ms = Date.now();
+    const is_expired = t => t.expires_at && new Date(t.expires_at).getTime() <= now_ms;
+    const active = tokens.filter(t => !is_expired(t));
+    const expired = tokens.filter(is_expired);
+
+    const render_token = token => {
+      const is_exp = is_expired(token);
+      const status_label = is_exp ? 'Expired' : 'Active';
+      const status_cls = is_exp ? 'unlinked' : 'linked';
+      const prefix_chip = `<code style="font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text-2)">${escape_html(token.token_prefix)}</code>`;
+      const used_text = token.last_used_at
+        ? 'used ' + fmt_date(token.last_used_at) + (token.last_used_ip ? ' from ' + token.last_used_ip : '')
+        : 'never used';
+
+      let expires_text;
+      let expires_warn = false;
+      if (!token.expires_at) {
+        expires_text = 'never expires';
+      } else if (is_exp) {
+        expires_text = 'expired ' + new Date(token.expires_at).toLocaleDateString();
+      } else {
+        const days_until = Math.ceil((new Date(token.expires_at).getTime() - now_ms) / 86400000);
+        if (days_until <= 7) {
+          expires_text = `expires in ${days_until} day${days_until === 1 ? '' : 's'}`;
+          expires_warn = true;
+        } else {
+          expires_text = 'expires ' + new Date(token.expires_at).toLocaleDateString();
+        }
+      }
+      const expires_html = expires_warn
+        ? `<span style="color:var(--warning);font-weight:600">${escape_html(expires_text)}</span>`
+        : escape_html(expires_text);
+
+      const action = is_exp ? '' : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" data-revoke-pat="${escape_html(token.uid)}">Revoke</button>`;
+      return `<div class="session-item">
+        <div class="session-icon">${ICON_DESKTOP}</div>
+        <div class="session-info">
+          <div class="session-ua">${escape_html(token.label)}</div>
+          <div class="session-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;white-space:normal;margin-top:4px">
+            ${prefix_chip}<span>${escape_html(used_text)} · ${expires_html}</span>
+          </div>
+        </div>
+        <span class="connection-status ${status_cls}" style="flex-shrink:0">${status_label}</span>
+        ${action}
+      </div>`;
+    };
+
+    pat_active_el.innerHTML = active.length
+      ? active.map(render_token).join('')
+      : '<div class="text-sm text-muted" style="padding:8px 0">No active tokens yet.</div>';
+    if (pat_inactive_section_el) {
+      pat_inactive_section_el.style.display = expired.length ? '' : 'none';
+    }
+    if (pat_inactive_el) {
+      pat_inactive_el.innerHTML = expired.map(render_token).join('');
+    }
+    pat_active_el.querySelectorAll('[data-revoke-pat]').forEach(btn => {
+      btn.addEventListener('click', () => handle_revoke_pat(btn.dataset.revokePat));
+    });
+  }
+
   // Sessions
   const current_uid = s.current_session_uid;
   const sessions = s.sessions || [];
@@ -1565,7 +1761,7 @@ document.getElementById('su-submit').addEventListener('click', async () => {
   if (mode === 'username' || (mode === 'email-username' && username)) payload.username = username;
 
   set_loading('su-submit', true);
-  const { final_url, error } = await api_post('/auth/sign-up' + window.location.search, payload);
+  const { final_url, error } = await http_post_urlencoded('/auth/sign-up' + window.location.search, payload);
   set_loading('su-submit', false);
   if (error) return show_error('su-error-msg', 'su-error', error);
   navigate_after(final_url);
@@ -1585,7 +1781,7 @@ document.getElementById('pr-submit').addEventListener('click', async () => {
   const email = document.getElementById('pr-email').value.trim();
   if (!email) return show_error('pr-error-msg', 'pr-error', 'Please enter your email address.');
   set_loading('pr-submit', true);
-  const { final_url, error } = await api_post('/auth/password-reset/request', { email });
+  const { final_url, error } = await http_post_urlencoded('/auth/password-reset/request', { email });
   set_loading('pr-submit', false);
   if (error) return show_error('pr-error-msg', 'pr-error', error);
   // Show sent email on confirmation screen
@@ -1604,7 +1800,7 @@ document.getElementById('rc-submit').addEventListener('click', async () => {
   if (!password) return show_error('rc-error-msg', 'rc-error', 'Please enter a new password.');
   if (password !== password_confirm) return show_error('rc-error-msg', 'rc-error', 'Passwords do not match.');
   set_loading('rc-submit', true);
-  const { final_url, error } = await api_post('/auth/password-reset/confirm', { token, password, password_confirm });
+  const { final_url, error } = await http_post_urlencoded('/auth/password-reset/confirm', { token, password, password_confirm });
   set_loading('rc-submit', false);
   if (error) return show_error('rc-error-msg', 'rc-error', error);
   navigate_after(final_url);
@@ -1625,7 +1821,7 @@ document.getElementById('ml-submit').addEventListener('click', async () => {
   const email = document.getElementById('ml-email').value.trim();
   if (!email) return show_error('ml-error-msg', 'ml-error', 'Please enter your email address.');
   set_loading('ml-submit', true);
-  const { final_url, error } = await api_post('/auth/magic-link/request', { email });
+  const { final_url, error } = await http_post_urlencoded('/auth/magic-link/request', { email });
   set_loading('ml-submit', false);
   if (error) return show_error('ml-error-msg', 'ml-error', error);
   _magic_email = email;
@@ -1643,7 +1839,7 @@ document.getElementById('mc-submit').addEventListener('click', async () => {
   if (code.length < 6) return show_error('mc-error-msg', 'mc-error', 'Please enter all 6 digits of the code.');
   if (!_magic_email) return show_error('mc-error-msg', 'mc-error', 'Session expired. Please request a new magic link.');
   set_loading('mc-submit', true);
-  const { final_url, error } = await api_post('/auth/magic-link/confirm' + window.location.search, { email: _magic_email, code });
+  const { final_url, error } = await http_post_urlencoded('/auth/magic-link/confirm' + window.location.search, { email: _magic_email, code });
   set_loading('mc-submit', false);
   if (error) return show_error('mc-error-msg', 'mc-error', error);
   navigate_after(final_url);
@@ -1660,9 +1856,9 @@ document.getElementById('p-save').addEventListener('click', async () => {
     const fd = new FormData();
     fd.append('display_name', display_name);
     fd.append('avatar', file_input.files[0]);
-    result = await api_post_form('/auth/profile', fd);
+    result = await http_post_multipart('/auth/profile', fd);
   } else {
-    result = await api_post('/auth/profile', { display_name });
+    result = await http_post_urlencoded('/auth/profile', { display_name });
   }
   set_loading('p-save', false);
   const { error } = result;
@@ -1692,7 +1888,7 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   if (!current_password || !password) return show_error('p-chpw-error-msg', 'p-chpw-error', 'Please fill in all fields.');
   if (password !== password_confirm) return show_error('p-chpw-error-msg', 'p-chpw-error', 'New passwords do not match.');
   set_loading('p-chpw', true);
-  const { error } = await api_post('/auth/change-password', { current_password, password, password_confirm });
+  const { error } = await http_post_urlencoded('/auth/change-password', { current_password, password, password_confirm });
   set_loading('p-chpw', false);
   if (error) return show_error('p-chpw-error-msg', 'p-chpw-error', error);
   show_ok('p-chpw-ok');
@@ -1707,7 +1903,7 @@ document.getElementById('p-add-email-submit').addEventListener('click', async ()
   const email = document.getElementById('p-add-email-input').value.trim();
   if (!email) return show_error('p-add-email-error-msg', 'p-add-email-error', 'Please enter your email address.');
   set_loading('p-add-email-submit', true);
-  const { final_url, error } = await api_post('/auth/email/add', { email });
+  const { final_url, error } = await http_post_urlencoded('/auth/email/add', { email });
   set_loading('p-add-email-submit', false);
   if (error) return show_error('p-add-email-error-msg', 'p-add-email-error', error);
   navigate_after(final_url);
@@ -1719,7 +1915,7 @@ document.getElementById('p-remove').addEventListener('click', async () => {
   const confirmation = document.getElementById('p-remove-confirm').value;
   if (confirmation !== 'DELETE') return show_error('p-remove-error-msg', 'p-remove-error', 'Type DELETE to remove account');
   set_loading('p-remove', true);
-  const { final_url, error } = await api_post('/auth/account/remove', { confirmation });
+  const { final_url, error } = await http_post_urlencoded('/auth/account/remove', { confirmation });
   set_loading('p-remove', false);
   if (error) return show_error('p-remove-error-msg', 'p-remove-error', error);
   navigate_after(final_url);
@@ -1727,8 +1923,87 @@ document.getElementById('p-remove').addEventListener('click', async () => {
 
 // ── OAuth — Disconnect ───────────────────────────────────────────────────────
 async function handle_disconnect(endpoint) {
-  const { error } = await api_post(endpoint, {});
+  const { error } = await http_post_urlencoded(endpoint, {});
   if (error) return alert(error);
+  const s = await api_status();
+  if (s.authenticated) render_user_data(s);
+}
+
+// ── Personal access tokens ──────────────────────────────────────────────────
+function pat_dismiss_created() {
+  const token_box = document.getElementById('pat-created');
+  const token_value = document.getElementById('pat-token');
+  const curl_value = document.getElementById('pat-curl');
+  const feedback = document.getElementById('pat-copy-feedback');
+  if (token_value) token_value.textContent = '';
+  if (curl_value) curl_value.textContent = '';
+  if (token_box) token_box.style.display = 'none';
+  if (feedback) feedback.style.display = 'none';
+}
+
+function pat_show_copy_feedback(message, is_error) {
+  const feedback = document.getElementById('pat-copy-feedback');
+  if (!feedback) return;
+  feedback.textContent = message;
+  feedback.style.color = is_error ? 'var(--danger)' : 'var(--text-muted)';
+  feedback.style.display = '';
+}
+
+async function pat_copy_text(text, ok_message, fail_message) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    pat_show_copy_feedback(ok_message, false);
+  } catch {
+    pat_show_copy_feedback(fail_message, true);
+  }
+}
+
+document.getElementById('pat-create').addEventListener('click', async () => {
+  hide_error('pat-error');
+  const label = document.getElementById('pat-label').value.trim();
+  const expires_days = document.getElementById('pat-expires').value;
+  if (!label) return show_error('pat-error-msg', 'pat-error', 'Please enter a token label.');
+
+  set_loading('pat-create', true);
+  const { data, error } = await http_post_json('/auth/personal-access-tokens', { label, expires_days });
+  set_loading('pat-create', false);
+  if (error) return show_error('pat-error-msg', 'pat-error', error);
+
+  const token = data?.token || '';
+  const token_box = document.getElementById('pat-created');
+  const token_value = document.getElementById('pat-token');
+  const curl_value = document.getElementById('pat-curl');
+  const feedback = document.getElementById('pat-copy-feedback');
+  if (feedback) feedback.style.display = 'none';
+  if (token_value) token_value.textContent = token;
+  if (curl_value) curl_value.textContent = `curl -H 'Authorization: Bearer ${token}' ${window.location.origin}/auth/status`;
+  if (token_box) {
+    token_box.style.display = '';
+    token_box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  document.getElementById('pat-label').value = '';
+
+  const s = await api_status();
+  if (s.authenticated) render_user_data(s);
+});
+
+document.getElementById('pat-copy').addEventListener('click', async () => {
+  const token_value = document.getElementById('pat-token');
+  await pat_copy_text(token_value && token_value.textContent, 'Token copied', 'Copy failed — select the token manually.');
+});
+
+document.getElementById('pat-copy-snippet').addEventListener('click', async () => {
+  const curl_value = document.getElementById('pat-curl');
+  await pat_copy_text(curl_value && curl_value.textContent, 'Snippet copied', 'Copy failed — select the snippet manually.');
+});
+
+document.getElementById('pat-dismiss').addEventListener('click', pat_dismiss_created);
+
+async function handle_revoke_pat(uid) {
+  hide_error('pat-error');
+  const { error } = await http_post_json('/auth/personal-access-tokens/revoke', { uid });
+  if (error) return show_error('pat-error-msg', 'pat-error', error);
   const s = await api_status();
   if (s.authenticated) render_user_data(s);
 }
@@ -1736,7 +2011,7 @@ async function handle_disconnect(endpoint) {
 // ── Sessions — Revoke one ────────────────────────────────────────────────────
 async function handle_revoke(uid) {
   hide_error('sess-error');
-  const { error } = await api_post('/auth/sessions/revoke', { uid });
+  const { error } = await http_post_urlencoded('/auth/sessions/revoke', { uid });
   if (error) return show_error('sess-error-msg', 'sess-error', error);
   const s = await api_status();
   if (s.authenticated) render_user_data(s);
@@ -1746,7 +2021,7 @@ async function handle_revoke(uid) {
 document.getElementById('sess-revoke-all').addEventListener('click', async () => {
   hide_error('sess-error');
   set_loading('sess-revoke-all', true);
-  const { error } = await api_post('/auth/sessions/revoke-all', {});
+  const { error } = await http_post_urlencoded('/auth/sessions/revoke-all', {});
   set_loading('sess-revoke-all', false);
   if (error) return show_error('sess-error-msg', 'sess-error', error);
   const s = await api_status();
@@ -1766,7 +2041,7 @@ async function request_email_verification({button_id = null, error_id, error_msg
   hide_error('ev-error');
   hide_error('ev-code-error');
   if (button_id) set_loading(button_id, true);
-  const { final_url, error } = await api_post('/auth/email-verify/request', {});
+  const { final_url, error } = await http_post_urlencoded('/auth/email-verify/request', {});
   if (button_id) set_loading(button_id, false);
   if (error) return show_error(error_msg_id, error_id, error);
   navigate_after(final_url);
@@ -1786,7 +2061,7 @@ document.getElementById('ev-code-submit').addEventListener('click', async () => 
   const expected = _status?.flows?.confirm_email?.code_length || 6;
   if (code.length < expected) return show_error('ev-code-error-msg', 'ev-code-error', `Please enter all ${expected} digits of the code.`);
   set_loading('ev-code-submit', true);
-  const { final_url, error } = await api_post('/auth/email-verify/confirm', { code });
+  const { final_url, error } = await http_post_urlencoded('/auth/email-verify/confirm', { code });
   set_loading('ev-code-submit', false);
   if (error) return show_error('ev-code-error-msg', 'ev-code-error', error);
   navigate_after(final_url);
@@ -1827,7 +2102,7 @@ function read_email_code() {
 // ── Sign Out ─────────────────────────────────────────────────────────────────
 document.getElementById('so-submit').addEventListener('click', async () => {
   set_loading('so-submit', true);
-  const { final_url } = await api_post('/auth/sign-out', {});
+  const { final_url } = await http_post_urlencoded('/auth/sign-out', {});
   set_loading('so-submit', false);
   navigate_after(final_url);
 });

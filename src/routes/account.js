@@ -31,6 +31,7 @@ async function account_remove_post(req, res)
         await db('email_change_tokens').where({user_id}).del();
         await db('email_verify_tokens').where({user_id}).del();
         await db('password_reset_tokens').where({user_id}).del();
+        await db('personal_access_tokens').where({user_id}).del();
         await db('sessions').where({user_id}).del();
         await db('user_identities').where({user_id}).del();
         await db('auth_events').where({user_id}).update({user_id: null});
