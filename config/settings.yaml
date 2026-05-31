@@ -67,6 +67,9 @@ sentry:
 personal_access_tokens:
   enabled: ${AUTHWALL_PERSONAL_ACCESS_TOKENS}
 
+websockets:
+  enabled: ${AUTHWALL_WEBSOCKETS}
+
 cookie:
   domain: ${AUTHWALL_COOKIE_DOMAIN}
   path: ${AUTHWALL_COOKIE_PATH}

@@ -25,6 +25,7 @@ fell back to a different option.
 | [`AUTHWALL_SENTRY_ENVIRONMENT`](#authwall_sentry_environment)               | Sentry environment name                                |
 | [`AUTHWALL_SENTRY_TRACES_SAMPLE_RATE`](#authwall_sentry_traces_sample_rate) | Optional Sentry tracing sample rate                    |
 | [`AUTHWALL_PERSONAL_ACCESS_TOKENS`](#authwall_personal_access_tokens)       | Enables bearer tokens for API clients                  |
+| [`AUTHWALL_WEBSOCKETS`](#authwall_websockets)                               | Proxies WebSocket connections to the upstream          |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
 | [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)                 | Public paths that receive auth headers when signed in  |
@@ -264,6 +265,51 @@ Example:
 
 ```sh
 AUTHWALL_PERSONAL_ACCESS_TOKENS=true
+```
+
+<a id="authwall_websockets"></a>
+
+## AUTHWALL_WEBSOCKETS
+
+Enables proxying of WebSocket connections to the upstream app.
+
+- Type: boolean flag
+- Values: `yes`, `no`, `true`, `false`, `on`, `off`
+- Default: `false`
+
+When disabled, Authwall does not handle the HTTP `Upgrade` event, and any
+`Upgrade: websocket` request falls through as a normal HTTP request — which
+the upstream will typically reject.
+
+When enabled, Authwall accepts WebSocket upgrades on any path that isn't
+under `/auth/`, authenticates the upgrade with a personal access token, sets
+the same trusted `X-Auth-User` header it uses for HTTP requests, and forwards
+the upgrade to the upstream.
+
+### Authenticating a WebSocket upgrade
+
+The upgrade is authenticated with the `Authorization` header, so this
+requires [`AUTHWALL_PERSONAL_ACCESS_TOKENS`](#authwall_personal_access_tokens)
+to be enabled. The client sets the header on the handshake:
+
+```js
+new WebSocket('wss://app.example.com/realtime', {
+    headers: {Authorization: 'Bearer awp_…'},
+});
+```
+
+Authwall validates the token, strips the `Authorization` header before
+forwarding the upgrade, and shares the same failed-attempt rate limiter
+used by HTTP bearer authentication.
+
+The browser `WebSocket` API cannot set the `Authorization` header, so this
+path is intended for non-browser clients such as a desktop app. There is no
+browser/cookie-based WebSocket authentication yet.
+
+Example:
+
+```sh
+AUTHWALL_WEBSOCKETS=true
 ```
 
 ## AUTHWALL_PUBLIC_URL

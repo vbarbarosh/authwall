@@ -93,6 +93,29 @@ describe('make_config', function () {
         });
     });
 
+    it('configures websockets as disabled by default', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+        });
+
+        assert.deepStrictEqual(config.websockets, {
+            enabled: false,
+        });
+    });
+
+    it('enables websockets with AUTHWALL_WEBSOCKETS', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_WEBSOCKETS: 'on',
+        });
+
+        assert.deepStrictEqual(config.websockets, {
+            enabled: true,
+        });
+    });
+
     it('configures Sentry when AUTHWALL_SENTRY_DSN is set', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',

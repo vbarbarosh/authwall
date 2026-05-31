@@ -22,6 +22,11 @@ Authwall's core guarantee: the upstream app can trust the `X-Auth-User` header.
 - Email-verification enforcement (`AUTHWALL_CONFIRM_EMAIL_REQUIRED`) applies to
   bearer tokens too: a valid token whose owner has no verified email is rejected
   with `403 Email verification required`.
+- When [`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) is enabled, the
+  same guarantee extends to upgrades: clients authenticate the upgrade with an
+  `Authorization: Bearer` personal access token. Authwall strips inbound
+  `x-auth-*` headers, removes the credential before forwarding, and sets
+  `X-Auth-User` itself.
 
 For this guarantee to hold, the app must be reachable **only** through Authwall.
 If the app is also exposed directly, a client can reach it without Authwall and
@@ -64,6 +69,9 @@ When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled
 | Magic-link request                | 5 requests / hour        |
 | Personal access token creation    | 5 requests / hour        |
 | Failed bearer-token validation    | 20 requests / 15 minutes |
+
+The bearer-token limiter covers both HTTP requests and WebSocket upgrades that
+authenticate with a PAT.
 
 Counts are held in memory, so they are not shared between processes and reset
 on restart. This slows credential stuffing and brute-force attempts; it is not

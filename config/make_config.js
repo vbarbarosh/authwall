@@ -140,6 +140,10 @@ function make_config(input = {})
             enabled: {type: 'bool', default: false, before: parse_bool_flag},
         }),
 
+        websockets: make(settings.websockets, {
+            enabled: {type: 'bool', default: false, before: parse_bool_flag},
+        }),
+
         listen: env.LISTEN ?? '127.0.0.1',
         port: env.PORT ?? 3000,
         secrets: {

@@ -2,10 +2,10 @@ const EmailNotAuthorized = require('./helpers/errors/EmailNotAuthorized');
 const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
+const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
-const const_user_identity = require('./helpers/const/const_user_identity');
 const db = require('../db');
 const email_verification_required = require('./helpers/email_verification_required');
 const express = require('express');
@@ -25,7 +25,6 @@ const oauth_provider_github = require('./oauth_providers/oauth_provider_github')
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
 const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
 const oauth_provider_twitter = require('./oauth_providers/oauth_provider_twitter');
-const {personal_access_token_hash} = require('./helpers/personal_access_tokens');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
@@ -117,8 +116,10 @@ async function create_app()
     });
     app.use(sentry_request_context);
 
-    if (config.personal_access_tokens.enabled) {
-        const bearer_miss_limiter = make_failure_counter(20, 15*60*1000);
+    const bearer_miss_limiter = config.personal_access_tokens.enabled
+        ? make_failure_counter(20, 15*60*1000)
+        : null;
+    if (bearer_miss_limiter) {
         app.use(make_personal_access_token_auth(bearer_miss_limiter));
     }
 
@@ -212,8 +213,9 @@ async function create_app()
 
     app.use(clean_headers);
     app.use(sign_in_required);
-    app.use(http_proxy_middleware.createProxyMiddleware({
+    const proxy = http_proxy_middleware.createProxyMiddleware({
         target: config.upstream.url,
+        ws: config.websockets.enabled,
         xfwd: (config.upstream.mode === 'proxy'),
         changeOrigin: (config.upstream.mode === 'direct'),
         pathFilter: function (pathname) {
@@ -244,12 +246,38 @@ async function create_app()
                     proxy_req.removeHeader(config.upstream.unset_headers[i]);
                 }
             },
+            proxyReqWs: function (proxy_req, req) {
+                if (req.ws_user_uid) {
+                    proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
+                }
+                for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
+                    const header = config.upstream.set_headers[i];
+                    proxy_req.setHeader(header.name, header.value);
+                }
+                for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
+                    proxy_req.removeHeader(config.upstream.unset_headers[i]);
+                }
+            },
             error: function (error, req, res) {
                 als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
-                res.status(502).send('Upstream service unavailable');
+                // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
+                if (typeof res.status === 'function') {
+                    res.status(502).send('Upstream service unavailable');
+                }
+                else {
+                    res.destroy();
+                }
             },
         },
-    }));
+    });
+    app.use(proxy);
+
+    if (config.websockets.enabled) {
+        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter);
+        app.setup_server = function (server) {
+            server.on('upgrade', handle_ws_upgrade);
+        };
+    }
 
     setup_sentry_error_handler(app);
     app.use(error_handler);
@@ -368,71 +396,37 @@ function make_personal_access_token_auth(bearer_miss_limiter)
                 return;
             }
 
-            const now = new Date();
-            const token_hash = personal_access_token_hash(match[1].trim());
-            const personal_access_token = await db('personal_access_tokens')
-                .where({token_hash})
-                .whereNull('revoked_at')
-                .where(function () {
-                    this.whereNull('expires_at').orWhere('expires_at', '>', now);
-                })
-                .first();
+            const result = await authenticate_personal_access_token({
+                token: match[1].trim(),
+                ip: req.ip,
+                ua: req.headers['user-agent'],
+            });
 
-            if (!personal_access_token) {
+            if (result.kind === 'invalid') {
                 bearer_miss_limiter.record_failure(req.ip);
                 res.status(401).type('text').send('Invalid personal access token');
                 return;
             }
 
-            const user = await db('users').where({id: personal_access_token.user_id}).first();
-            if (!user) {
-                bearer_miss_limiter.record_failure(req.ip);
-                res.status(401).type('text').send('Invalid personal access token');
+            if (result.kind === 'unverified_email') {
+                // 403 (not 401) because the credential is valid — the user is just not authorized to use it yet.
+                // Not counted as a miss either: the credential matched, the owner is just unverified.
+                res.status(403).type('text').send('Email verification required');
                 return;
-            }
-
-            if (config.confirm_email.required) {
-                const verified_email = await db('user_identities')
-                    .where({user_id: user.id, type: const_user_identity.email})
-                    .whereNotNull('verified_at')
-                    .first();
-                if (!verified_email) {
-                    // 403 (not 401) because the credential is valid — the user is just not authorized to use it yet.
-                    // Not counted as a miss either: the credential matched, the owner is just unverified.
-                    res.status(403).type('text').send('Email verification required');
-                    return;
-                }
             }
 
             req.auth = {
-                user_id: user.id,
-                user_uid: user.uid,
-                personal_access_token_uid: personal_access_token.uid,
+                user_id: result.user_id,
+                user_uid: result.user_uid,
+                personal_access_token_uid: result.personal_access_token_uid,
             };
             delete req.headers.authorization;
-
-            await touch_personal_access_token(req, personal_access_token, now);
             next();
         }
         catch (error) {
             next(error);
         }
     };
-}
-
-async function touch_personal_access_token(req, personal_access_token, now)
-{
-    const last_used_at = personal_access_token.last_used_at && new Date(personal_access_token.last_used_at);
-    if (last_used_at && now.getTime() - last_used_at.getTime() < 5*60000) {
-        return;
-    }
-
-    await db('personal_access_tokens').where({id: personal_access_token.id}).update({
-        last_used_at: now,
-        last_used_ip: req.ip ?? null,
-        last_used_ua: req.headers['user-agent'] ?? null,
-        updated_at: now,
-    });
 }
 
 function authenticated_user_id(req)
@@ -463,6 +457,84 @@ function path_matches(paths, path)
         }
         return path === configured_path;
     });
+}
+
+function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
+{
+    return async function handle_ws_upgrade(req, socket, head) {
+        const ip = req.socket.remoteAddress;
+
+        function reject(code, text) {
+            socket.write(`HTTP/1.1 ${code} ${text}\r\nConnection: close\r\n\r\n`);
+            socket.destroy();
+        }
+
+        try {
+            const {pathname} = new URL(req.url, 'http://localhost');
+
+            if (pathname === '/auth' || pathname.startsWith('/auth/')) {
+                reject(404, 'Not Found');
+                return;
+            }
+
+            const user_uid = await authenticate_ws_upgrade(req, ip, bearer_miss_limiter);
+            if (!user_uid) {
+                als.logger.write(`[ws_upgrade_reject] url=${JSON.stringify(req.url)} ip=${ip}`);
+                reject(401, 'Unauthorized');
+                return;
+            }
+
+            for (const name of Object.keys(req.headers)) {
+                if (name.startsWith('x-auth-')) {
+                    delete req.headers[name];
+                }
+            }
+            delete req.headers.authorization;
+
+            req.ws_user_uid = user_uid;
+            als.logger.write(`[ws_upgrade] user_uid=${user_uid} url=${JSON.stringify(req.url)}`);
+            proxy.upgrade(req, socket, head);
+        }
+        catch (error) {
+            als.logger.write(`[ws_upgrade_error] ⚠️ ${error.message} ip=${ip}`);
+            reject(500, 'Internal Server Error');
+        }
+    };
+}
+
+// WebSocket upgrades authenticate with an Authorization: Bearer personal access
+// token. The browser WebSocket API can't set headers, so this path is for
+// non-browser clients (e.g. the desktop app).
+async function authenticate_ws_upgrade(req, ip, bearer_miss_limiter)
+{
+    if (!config.personal_access_tokens.enabled) {
+        return null;
+    }
+
+    const match = /^Bearer\s+(.+)$/i.exec(req.headers.authorization ?? '');
+    if (!match) {
+        return null;
+    }
+
+    if (bearer_miss_limiter.is_blocked(ip)) {
+        return null;
+    }
+
+    const result = await authenticate_personal_access_token({
+        token: match[1].trim(),
+        ip,
+        ua: req.headers['user-agent'],
+    });
+
+    if (result.kind === 'invalid') {
+        bearer_miss_limiter.record_failure(ip);
+        return null;
+    }
+    if (result.kind === 'unverified_email') {
+        return null;
+    }
+
+    return result.user_uid;
 }
 
 function clean_headers(req, res, next)

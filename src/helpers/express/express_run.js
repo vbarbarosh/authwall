@@ -7,6 +7,10 @@ function express_run(app, port = 3000, host = 'localhost')
         als.logger.write(`[express_run] Listening to ${address}:${port}`);
     });
 
+    if (typeof app.setup_server === 'function') {
+        app.setup_server(server);
+    }
+
     process.on('SIGTERM', sigterm);
     process.on('SIGINT', sigint);
 

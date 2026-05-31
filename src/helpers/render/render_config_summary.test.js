@@ -45,6 +45,9 @@ describe('render_config_summary', function () {
             personal_access_tokens: {
                 enabled: true,
             },
+            websockets: {
+                enabled: true,
+            },
             flows: {
                 password: {
                     enabled: true,
@@ -134,6 +137,7 @@ describe('render_config_summary', function () {
         assert.match(text, /🗄️ Database: MySQL mysql:\/\/authwall:\*\*\*@mysql\/authwall/);
         assert.match(text, /🧯 Sentry: enabled environment=production traces=0.25/);
         assert.match(text, /🔑 Personal access tokens: enabled/);
+        assert.match(text, /🔌 WebSockets: enabled/);
         assert.match(text, /🔐 Sign-in:/);
         assert.match(text, / - password: username, min 8/);
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);
