@@ -215,7 +215,14 @@ async function create_app()
     app.use(sign_in_required);
     const proxy = http_proxy_middleware.createProxyMiddleware({
         target: config.upstream.url,
-        ws: config.websockets.enabled,
+        // ⚠️ Do NOT set `ws: true` here. Authwall owns the server 'upgrade' event
+        // itself (see app.setup_server below) so it can authenticate the personal
+        // access token before forwarding the upgrade. With `ws: true`,
+        // http-proxy-middleware lazily self-subscribes to 'upgrade' on the first
+        // proxied HTTP request; from then on our proxy.upgrade() becomes a no-op
+        // and its own unauthenticated listener races ahead, forwarding upgrades
+        // without X-Auth-User — so every WS after the first HTTP request breaks.
+        ws: false,
         xfwd: (config.upstream.mode === 'proxy'),
         changeOrigin: (config.upstream.mode === 'direct'),
         pathFilter: function (pathname) {

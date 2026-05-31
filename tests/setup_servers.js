@@ -1,3 +1,4 @@
+const WebSocket = require('ws');
 const als = require('../src/helpers/als');
 const assert = require('assert');
 const axios = require('axios');
@@ -32,7 +33,14 @@ async function spin(ctx, _this, fn)
         await promisify(cb => server.listen(0, '127.0.0.1', cb));
         config.public_url = `http://127.0.0.1:${server.address().port}`;
 
+        // Wire the WebSocket upgrade handler the same way bin/serve does.
+        // Only defined when config.websockets.enabled was true at create_app().
+        if (typeof app.setup_server === 'function') {
+            app.setup_server(server);
+        }
+
         _this.client = create_client(config.public_url);
+        _this.ws_roundtrip = (path, opts) => ws_roundtrip(config.public_url, path, opts);
         _this.add_user = add_user;
         _this.sign_in = sign_in;
         _this.assert_password = assert_password;
@@ -53,6 +61,7 @@ async function spin(ctx, _this, fn)
         }
         finally {
             await promisify(cb => server.close(cb));
+            await new Promise(resolve => echo_server.wss.close(resolve));
             await promisify(cb => echo_server.close(cb));
         }
     });
@@ -60,7 +69,7 @@ async function spin(ctx, _this, fn)
 
 async function create_echo_server()
 {
-    return http.createServer(function (req, res) {
+    const server = http.createServer(function (req, res) {
         const chunks = [];
         req.on('data', chunk => chunks.push(chunk));
         req.on('end', () => {
@@ -68,6 +77,63 @@ async function create_echo_server()
             res.writeHead(200, {'content-type': 'application/json'});
             res.end(JSON.stringify({echo_server: 'authwall_testing_echo_server', method: req.method, url: req.url, headers: req.headers, body}));
         });
+    });
+
+    // WebSocket echo: first announce the headers the upstream received (so tests
+    // can assert what Authwall forwarded on the upgrade), then echo each message.
+    server.wss = new WebSocket.Server({server});
+    server.wss.on('connection', function (socket, req) {
+        socket.send(JSON.stringify({type: 'upstream_open', headers: req.headers}));
+        socket.on('message', function (data) {
+            socket.send(JSON.stringify({type: 'echo', data: data.toString()}));
+        });
+    });
+
+    return server;
+}
+
+// Open a WebSocket through Authwall, capture the headers the upstream received,
+// send one message, and resolve once it echoes back. On a rejected upgrade it
+// resolves with {opened: false, status} instead of throwing.
+function ws_roundtrip(public_url, path, {token = null, headers = {}, message = 'ping', timeout_ms = 4000} = {})
+{
+    return new Promise(function (resolve) {
+        const request_headers = {...headers};
+        if (token) {
+            request_headers.Authorization = `Bearer ${token}`;
+        }
+        const socket = new WebSocket(public_url.replace(/^http/, 'ws') + path, {headers: request_headers});
+        const result = {opened: false, status: null, upstream_headers: null, echo: null, error: null};
+        const timer = setTimeout(finish, timeout_ms, 'timeout');
+
+        socket.on('upgrade', res => result.status = res.statusCode);
+        socket.on('open', () => result.opened = true);
+        socket.on('unexpected-response', (req, res) => { result.status = res.statusCode; finish(`non-101 ${res.statusCode}`); });
+        socket.on('message', function (data) {
+            const msg = JSON.parse(data.toString());
+            if (msg.type === 'upstream_open') {
+                result.upstream_headers = msg.headers;
+                socket.send(message);
+            }
+            else if (msg.type === 'echo') {
+                result.echo = msg.data;
+                finish();
+            }
+        });
+        socket.on('error', err => finish(err.message));
+
+        function finish(error = null) {
+            if (finish.done) {
+                return;
+            }
+            finish.done = true;
+            clearTimeout(timer);
+            if (error && !result.error) {
+                result.error = error;
+            }
+            try { socket.close(); } catch {}
+            resolve(result);
+        }
     });
 }
 
