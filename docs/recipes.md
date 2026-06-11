@@ -146,6 +146,157 @@ const ws = new WebSocket('wss://myapp.test/realtime', {
 - failed upgrade attempts share the
   [bearer-token rate limiter](security.md#rate-limiting) with HTTP requests
 
+## With Docker Compose
+
+`docker run` is fine for one container, but once Authwall has a database and an
+app of its own to manage, a `docker-compose.yaml` keeps the whole stack in one
+declarative file. Save any block below as `docker-compose.yaml` and run:
+
+```sh
+docker compose up
+```
+
+Each uses `jmalloc/echo-server` as a stand-in upstream so the `X-Auth-User`
+header is visible in the echoed response — swap it for your own app. For the
+reverse-proxy and sidecar topologies, see the runnable
+[deployment examples](examples/).
+
+### Protect an app
+
+The Compose form of [keeping your data](#protect-an-app-and-keep-its-data):
+Authwall, your app, and a volume so users, sessions, and the secret survive
+`docker compose down`.
+
+```yaml
+services:
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_UPSTREAM_URL: http://app:8080
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - app
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- Authwall reaches the upstream as `app:8080` over the Compose network; the app
+  is never published, so it is reachable **only** through Authwall
+- `./data/authwall` holds the SQLite database and `secret.key` — keep it across
+  restarts (see [Secret management](overview.md#secret-management))
+
+### Back it with PostgreSQL
+
+SQLite is fine for a single instance; point [`AUTHWALL_DB`](config.md#authwall_db)
+at a real database when you want managed backups or more than one Authwall
+replica. Authwall waits for the database, then applies its migrations on first
+boot — no manual migration step.
+
+```yaml
+services:
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_UPSTREAM_URL: http://app:8080
+      AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - postgres
+      - app
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authwall
+      POSTGRES_USER: authwall
+      POSTGRES_PASSWORD: authwall
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- users and sessions now live in Postgres; `./data/authwall` still holds
+  `secret.key`, so keep it too — losing the secret signs everyone out
+- for MySQL instead, swap the image and the URL scheme:
+  `AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall`
+  (the [getting-started walkthrough](getting-started.md) is a full MySQL stack)
+
+### The full setup
+
+Everything from the progression above in one file: a seeded admin, personal
+access tokens, and WebSockets, on Postgres.
+
+```yaml
+services:
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_UPSTREAM_URL: http://app:8080
+      AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
+      AUTHWALL_SEED: 'admin:change-me:admin@myapp.test'
+      AUTHWALL_PERSONAL_ACCESS_TOKENS: "true"
+      AUTHWALL_WEBSOCKETS: "true"
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - postgres
+      - app
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authwall
+      POSTGRES_USER: authwall
+      POSTGRES_PASSWORD: authwall
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- [`AUTHWALL_SEED`](config.md#authwall_seed) creates the `admin` user on first
+  boot; sign in with `admin` / `change-me` and change the password from the
+  profile
+- [personal access tokens](config.md#authwall_personal_access_tokens) let
+  signed-in users mint bearer tokens, and
+  [`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) proxies upgrades that
+  authenticate with one (tokens are required for the WebSocket path)
+- it runs over plain HTTP here; in production set `AUTHWALL_PUBLIC_URL` to your
+  `https://` origin and the session cookie becomes `Secure` automatically
+  (see [Deployment](deployment.md))
+
+To stop the stack and wipe users, sessions, and the secret:
+
+```sh
+docker compose down && rm -rf data
+```
+
 ## Going further
 
 - [Getting started](getting-started.md) — the same progression as a Docker
