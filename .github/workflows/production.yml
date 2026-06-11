@@ -12,6 +12,11 @@ jobs:
     # there is no flaky `playwright install` download at run time. Keep this tag
     # in sync with the @playwright/test version in package.json.
     container: mcr.microsoft.com/playwright:v1.59.1-noble
+    env:
+      # GitHub runs container jobs as root, but the image's $HOME (/github/home)
+      # is owned by pwuser, and Firefox refuses to launch in that case.
+      # HOME=/root is the Playwright-recommended fix for container jobs.
+      HOME: /root
     services:
       echo:
         image: jmalloc/echo-server
@@ -42,6 +47,8 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.59.1-noble
+    env:
+      HOME: /root
     strategy:
       matrix:
         mysql-version: [8, 5.7]
@@ -110,6 +117,8 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.59.1-noble
+    env:
+      HOME: /root
     services:
       echo:
         image: jmalloc/echo-server
