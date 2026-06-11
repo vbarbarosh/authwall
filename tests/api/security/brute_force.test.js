@@ -1,9 +1,17 @@
 const assert = require('assert');
+const config = require('../../../config');
 
 describe('Brute-force protection', function () {
 
-    // Magic link code attempts are enforced in the DB (MAX_ATTEMPTS=3),
-    // independent of the IP-based rate limiter.
+    // Magic link code attempts are capped in the DB via
+    // config.flows.magic_link.max_attempts, independent of the IP-based rate
+    // limiter. Pin it to 3 here so the per-attempt assertions below stay exact
+    // regardless of the configured default. The suite-level beforeEach restores
+    // config before the next test.
+    beforeEach(function () {
+        config.flows.magic_link.max_attempts = 3;
+    });
+
     it('blocks magic link confirm after 3 wrong code attempts', async function () {
         await this.http_post_json('/auth/magic-link/request', {
             email: 'mocha@authwall.test',

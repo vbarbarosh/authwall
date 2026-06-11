@@ -364,12 +364,12 @@ describe('personal_access_tokens', function () {
 
         describe('bearer-auth rate limiting', function () {
 
+            // The bearer failure counter reads config.rate_limiting.enabled when
+            // create_app() builds it (per spin), so toggling process.env at
+            // runtime no longer reaches it. Enable it through config instead; the
+            // suite-level beforeEach restores config before the next test.
             beforeEach(function () {
-                process.env.AUTHWALL_RATE_LIMITING = '1';
-            });
-
-            afterEach(function () {
-                process.env.AUTHWALL_RATE_LIMITING = '0';
+                config.rate_limiting.enabled = true;
             });
 
             it('returns 429 with Retry-After after 20 invalid bearer attempts from the same IP', async function () {
