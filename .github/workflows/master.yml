@@ -8,6 +8,10 @@ jobs:
   test-sqlite:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    # Run inside the official Playwright image: the browsers are prebaked, so
+    # there is no flaky `playwright install` download at run time. Keep this tag
+    # in sync with the @playwright/test version in package.json.
+    container: mcr.microsoft.com/playwright:v1.59.1-noble
     services:
       echo:
         image: jmalloc/echo-server
@@ -20,9 +24,10 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
     - name: Run all tests
+      env:
+        # Inside a container job, service containers are reached by label, not localhost.
+        AUTHWALL_UPSTREAM_URL: http://echo:8080
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
@@ -34,6 +39,7 @@ jobs:
   test-mysql:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.59.1-noble
     strategy:
       matrix:
         mysql-version: [8, 5.7]
@@ -63,7 +69,7 @@ jobs:
       run: npm ci
     - name: Verify MySQL version
       env:
-        AUTHWALL_DB: mysql://root:root@127.0.0.1:3306/authwall
+        AUTHWALL_DB: mysql://root:root@mysql:3306/authwall
         EXPECTED_MYSQL_VERSION: ${{ matrix.mysql-version }}
       run: |
         node - <<'NODE'
@@ -84,11 +90,10 @@ jobs:
           process.exit(1);
         });
         NODE
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
     - name: Run all tests
       env:
-        AUTHWALL_DB: mysql://root:root@127.0.0.1:3306/authwall
+        AUTHWALL_DB: mysql://root:root@mysql:3306/authwall
+        AUTHWALL_UPSTREAM_URL: http://echo:8080
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
@@ -100,6 +105,7 @@ jobs:
   test-postgres:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.59.1-noble
     services:
       echo:
         image: jmalloc/echo-server
@@ -125,11 +131,10 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
     - name: Run all tests
       env:
-        AUTHWALL_DB: postgres://authwall:authwall@127.0.0.1:5432/authwall
+        AUTHWALL_DB: postgres://authwall:authwall@postgres:5432/authwall
+        AUTHWALL_UPSTREAM_URL: http://echo:8080
       run: npm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
