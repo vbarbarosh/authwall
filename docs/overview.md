@@ -5,11 +5,7 @@ handling sign-in (email/password, magic links, and OAuth) and forwarding
 authenticated requests with an `X-Auth-User` header.
 
 ```
-client
-    ↓
-authwall
-    ↓
-your app
+client → authwall → your app
 ```
 
 ```mermaid
@@ -24,13 +20,11 @@ sequenceDiagram
     authwall -->> client: response
 ```
 
-## Quick Start
+## Quick start
 
-```
-Public → Sign up → Signed in → Proxied resource
-```
-
-Authwall runs with zero configuration. By default, it uses SQLite and enables open registration.
+Authwall runs with zero configuration: by default it uses SQLite and open
+registration. Each recipe below is a complete `docker run` command — pick the
+one that matches how you want users to sign in.
 
 ---
 
@@ -99,15 +93,10 @@ docker run --rm -p 3000:3000 \
 
 ---
 
-### Google OAuth with exact user emails
+### Google OAuth with an email allowlist
 
-Create a Google OAuth client and add this authorized redirect URI:
-
-```
-https://myapp.test/auth/google/callback
-```
-
-Then run:
+Same Google OAuth client as above, plus `AUTHWALL_ALLOWED_EMAILS` to limit
+sign-in to named addresses:
 
 ```bash
 docker run --rm -p 3000:3000 \
@@ -135,12 +124,16 @@ docker run --rm -p 3000:3000 \
 
 ## Philosophy
 
-* **Zero-config start**
-* **Env-driven configuration**
-* **Optional advanced config via settings.yaml**
-* **Sensible defaults for local development**
+* **Zero-config start** — `docker run` works with no required variables.
+* **Env-driven configuration** — everything is set through `AUTHWALL_*`
+  environment variables; see the [configuration reference](config.md).
+* **Fail loudly** — anything you request explicitly (a mailer, a flow, a
+  provider) must be fully configured, or Authwall refuses to start instead of
+  silently falling back.
+* **Sensible defaults for local development** — SQLite, open registration, no
+  mailer required; rarely-needed knobs live in `config/settings.yaml`.
 
-## Secret Management
+## Secret management
 
 `AUTHWALL_SECRET` is optional.
 
@@ -161,23 +154,23 @@ If you rotate either `AUTHWALL_SECRET` or `data/secret.key`, existing sessions a
 
 ## Related projects
 
-- [Auth0 – Auth0 provides a secure, reliable, and scalable identity foundation, so you can focus on building what's next](https://auth0.com/)
-- [WorkOS – Enterprise SSO (and a whole lot more)](https://workos.com/)
-- [Supabase Auth – Open Source Auth (with tons of integrations)](https://supabase.com/auth)
-- [Netlify GoTrue – An JWT based API for managing users and issuing JWT tokens](https://github.com/netlify/gotrue)
-- [Firebase Auth – Simple, multi-platform sign-in](https://firebase.google.com/products/auth)
-- [Amazon Cognito – Implement secure, scalable authentication and access control for users, AI agents, and microservices in minutes](https://aws.amazon.com/cognito/)
-- [Authentik – Take control of your identity needs with a secure, flexible solution](https://goauthentik.io/)
-- [Keycloak – Open Source Identity and Access Management](https://www.keycloak.org/)
-- [Authelia – Authelia is an open-source authentication and authorization server and portal fulfilling the identity and access management (IAM) role of information security in providing multi-factor authentication and single sign-on (SSO) for your applications via a web portal](https://www.authelia.com/)
-- [Zitadel – Identity infrastructure, simplified for you](https://zitadel.com/)
-- [Ory – Composable, scalable, transparent IAM for agents, customers, and B2B](https://www.ory.com/)
-- [Tinyauth – Tinyauth is a tiny OpenID Connect (OIDC) authentication and authorization server for your self-hosted applications](https://tinyauth.app/)
-- [Logto – Modern auth infrastructure for developers](https://logto.io/)
-- [Clerk – More than authentication, Complete User Management](https://clerk.com/)
-- [OAuth2 Proxy – A reverse proxy and static file server that provides authentication using Providers (Google, GitHub, and others) to validate accounts by email, domain or group](https://oauth2-proxy.github.io/oauth2-proxy/)
-- [Kanidm – A simple, secure, and fast identity management platform](https://kanidm.com/)
-- [lldap – Light LDAP implementation](https://github.com/lldap/lldap)
-- [Rauthy – OpenID Connect Single Sign-On Identity & Access Management](https://sebadob.github.io/rauthy/)
-- [Casdoor – Authentication & Authorization for Every App](https://www.casdoor.com/)
-- [PocketBase – Open Source backend in 1 file](https://pocketbase.io/)
+- [Auth0 – hosted identity platform](https://auth0.com/)
+- [WorkOS – enterprise SSO and user management](https://workos.com/)
+- [Supabase Auth – open-source auth with many integrations](https://supabase.com/auth)
+- [Netlify GoTrue – JWT-based API for managing users and issuing tokens](https://github.com/netlify/gotrue)
+- [Firebase Auth – simple, multi-platform sign-in](https://firebase.google.com/products/auth)
+- [Amazon Cognito – AWS authentication and access control](https://aws.amazon.com/cognito/)
+- [Authentik – open-source identity provider](https://goauthentik.io/)
+- [Keycloak – open-source identity and access management](https://www.keycloak.org/)
+- [Authelia – open-source authentication portal with MFA and SSO](https://www.authelia.com/)
+- [Zitadel – open-source identity infrastructure](https://zitadel.com/)
+- [Ory – composable open-source IAM](https://www.ory.com/)
+- [Tinyauth – tiny OIDC server for self-hosted applications](https://tinyauth.app/)
+- [Logto – modern auth infrastructure for developers](https://logto.io/)
+- [Clerk – authentication and complete user management](https://clerk.com/)
+- [OAuth2 Proxy – reverse proxy that authenticates via OAuth providers](https://oauth2-proxy.github.io/oauth2-proxy/)
+- [Kanidm – simple, secure identity management platform](https://kanidm.com/)
+- [lldap – light LDAP implementation](https://github.com/lldap/lldap)
+- [Rauthy – OIDC single sign-on and IAM](https://sebadob.github.io/rauthy/)
+- [Casdoor – authentication and authorization platform](https://www.casdoor.com/)
+- [PocketBase – open-source backend in one file](https://pocketbase.io/)

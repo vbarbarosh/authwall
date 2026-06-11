@@ -28,9 +28,9 @@ fell back to a different option.
 | [`AUTHWALL_WEBSOCKETS`](#authwall_websockets)                               | Proxies WebSocket connections to the upstream          |
 | [`AUTHWALL_PUBLIC_URL`](#authwall_public_url)                               | Public base URL used for redirects and generated links |
 | [`AUTHWALL_PUBLIC_PATHS`](#authwall_public_paths)                           | Public upstream paths that bypass sign-in              |
-| [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)                 | Public paths that receive auth headers when signed in  |
-| [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                               | Upstream application URL                               |
-| [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                             | Upstream proxy behavior mode                           |
+| [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)             | Public paths that receive auth headers when signed in  |
+| [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                           | Upstream application URL                               |
+| [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                         | Upstream proxy behavior mode                           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
@@ -125,7 +125,7 @@ Where Authwall writes its log output.
 
 - Type: enum
 - Values: `daily`, `stdout`
-- Default: `daily`
+- Default: `daily` when running from source; the published Docker image bakes in `AUTHWALL_LOGGER=stdout`
 
 Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes.
 Use `stdout` to write to standard output, which is the right choice for containerized deployments where a process supervisor or log collector picks up stdout.
@@ -384,22 +384,9 @@ outside Docker it is often a loopback URL.
 How requests reach the upstream:
 
 - **Authenticated requests** — Authwall adds `X-Auth-User: <user_uid>` to the proxied request.
-- **Public paths** (configured in `config/settings.yaml` under `public_paths`) are always proxied, with or without a session, and never receive the `X-Auth-User` header.
-- **Optional auth paths** (configured in `config/settings.yaml` under `optional_auth_paths`) are proxied without requiring sign-in. Anonymous requests receive no `X-Auth-User`; signed-in requests receive `X-Auth-User` and follow the same email-verification checks as private paths.
+- **[Public paths](#authwall_public_paths)** are always proxied, with or without a session, and never receive the `X-Auth-User` header.
+- **[Optional auth paths](#authwall_optional_auth_paths)** are proxied without requiring sign-in. Anonymous requests receive no `X-Auth-User`; signed-in requests receive `X-Auth-User` and follow the same email-verification checks as private paths.
 - **Other paths without a session** — the user is redirected to the sign-in page; no upstream request is made.
-
-Public paths support exact entries and prefix entries. Prefix entries end with `/*`, so `/lib/*` matches `/lib/app.js` and `/lib/vendor/react.js`; `/designs/*` matches `/designs/default.css`.
-
-```yaml
-public_paths:
-  - /favicon.ico
-  - /robots.txt
-  - /lib/*
-  - /designs/*
-optional_auth_paths:
-  - /
-  - /landing/*
-```
 
 Example:
 

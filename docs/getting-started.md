@@ -49,14 +49,14 @@ repository. By the end you will have three containers running — Authwall, a
 MySQL database, and a demo upstream app — and you will have signed in and seen
 a request reach the upstream with the `X-Auth-User` header attached.
 
-## Prerequisites
+Prerequisites:
 
 - Docker with the Compose plugin (`docker compose version` should work).
-- Ports `3000` free on the host.
+- Port `3000` free on the host.
 
-## 1. The Compose file
+### 1. The Compose file
 
-The repository ships a ready-to-run `docker-compose.yaml` with three services:
+The shipped `docker-compose.yaml` defines three services:
 
 | Service       | Image                 | Role                                                  |
 |---------------|-----------------------|-------------------------------------------------------|
@@ -84,7 +84,7 @@ environment:
 
 See the [configuration reference](config.md) for every available variable.
 
-## 2. Create the `.env` file
+### 2. Create the `.env` file
 
 The `authwall` service declares `env_file: .env`, so Compose expects that file
 to exist. For this first run it can be empty:
@@ -104,7 +104,7 @@ AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx
 AUTHWALL_GOOGLE_REDIRECT_URL=http://localhost:3000/auth/google/callback
 ```
 
-## 3. Start the stack
+### 3. Start the stack
 
 ```sh
 docker compose up -d
@@ -121,7 +121,7 @@ docker compose logs -f authwall
 You are ready once the log shows the database is ready and the HTTP server is
 listening.
 
-## 4. Sign in
+### 4. Sign in
 
 Open <http://localhost:3000> in a browser.
 
@@ -135,7 +135,7 @@ simplest mode:
 Choose **Sign up**, create a username and password, and you will land on the
 proxied upstream app.
 
-## 5. Confirm the proxy works
+### 5. Confirm the proxy works
 
 Because the demo upstream is `echo-server`, the page you see after signing in
 is the echo of your own request. Look for the `X-Auth-User` header in that
@@ -145,7 +145,7 @@ app can identify the signed-in user without implementing sign-in itself.
 Requests from a signed-out browser never reach the upstream; they are redirected
 to the Authwall sign-in page instead.
 
-## 6. Where data lives
+### 6. Where data lives
 
 The Compose file mounts host volumes so nothing is lost on restart:
 
@@ -159,7 +159,7 @@ volumes:
 and CSRF keys from. Keep this directory across restarts, or existing sessions
 will be invalidated. See [Secret management](overview.md#secret-management).
 
-## Stopping and resetting
+### Stopping and resetting
 
 ```sh
 docker compose down                 # stop the stack, keep all data

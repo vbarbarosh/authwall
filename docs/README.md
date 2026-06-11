@@ -1,7 +1,7 @@
 # Authwall documentation
 
 Authwall is an authentication proxy — it sits between clients and an internal
-app, handles sign-in, and forwards authenticated requests with an optional
+app, handles sign-in, and forwards authenticated requests with an
 `X-Auth-User` header.
 
 ## Contents
