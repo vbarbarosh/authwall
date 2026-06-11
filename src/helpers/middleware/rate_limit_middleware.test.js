@@ -69,19 +69,13 @@ describe('make_rate_limit_middleware', function () {
         }, 10));
     });
 
-    it('is bypassed when AUTHWALL_RATE_LIMITING=0', function () {
-        process.env.AUTHWALL_RATE_LIMITING = '0';
-        try {
-            const middleware = make_rate_limit_middleware(1, 60000);
-            const req = make_req();
-            for (let i = 0; i < 5; i++) {
-                const next = collect_next();
-                middleware(req, {}, next);
-                assert.strictEqual(next.errors[0], null);
-            }
-        }
-        finally {
-            delete process.env.AUTHWALL_RATE_LIMITING;
+    it('is bypassed when disabled', function () {
+        const middleware = make_rate_limit_middleware(1, 60000, false);
+        const req = make_req();
+        for (let i = 0; i < 5; i++) {
+            const next = collect_next();
+            middleware(req, {}, next);
+            assert.strictEqual(next.errors[0], null);
         }
     });
 

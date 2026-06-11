@@ -155,8 +155,8 @@ volumes:
   - ./data/mysql:/var/lib/mysql # MySQL data files
 ```
 
-`./data/authwall` holds `secret.key`, the root secret Authwall derives session
-and CSRF keys from. Keep this directory across restarts, or existing sessions
+`./data/authwall` holds `secret.key`, the root secret Authwall derives its
+session secret from. Keep this directory across restarts, or existing sessions
 will be invalidated. See [Secret management](overview.md#secret-management).
 
 ### Stopping and resetting

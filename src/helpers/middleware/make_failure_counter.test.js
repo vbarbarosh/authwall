@@ -49,17 +49,11 @@ describe('make_failure_counter', function () {
         assert.strictEqual(limiter.retry_after_seconds('1.1.1.1'), 0);
     });
 
-    it('is bypassed when AUTHWALL_RATE_LIMITING=0', function () {
-        process.env.AUTHWALL_RATE_LIMITING = '0';
-        try {
-            const limiter = make_failure_counter(1, 60000);
-            for (let i = 0; i < 5; i++) limiter.record_failure('1.1.1.1');
-            assert.strictEqual(limiter.is_blocked('1.1.1.1'), false);
-            assert.strictEqual(limiter.retry_after_seconds('1.1.1.1'), 0);
-        }
-        finally {
-            delete process.env.AUTHWALL_RATE_LIMITING;
-        }
+    it('is bypassed when disabled', function () {
+        const limiter = make_failure_counter(1, 60000, false);
+        for (let i = 0; i < 5; i++) limiter.record_failure('1.1.1.1');
+        assert.strictEqual(limiter.is_blocked('1.1.1.1'), false);
+        assert.strictEqual(limiter.retry_after_seconds('1.1.1.1'), 0);
     });
 
 });

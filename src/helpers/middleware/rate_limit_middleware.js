@@ -1,8 +1,9 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const config = require('../../../config');
 
-function make_rate_limit_middleware(max, window_ms)
+function make_rate_limit_middleware(max, window_ms, enabled = config.rate_limiting.enabled)
 {
-    if (process.env.AUTHWALL_RATE_LIMITING === '0') {
+    if (!enabled) {
         return function rate_limit_middleware(req, res, next) { next(); };
     }
 

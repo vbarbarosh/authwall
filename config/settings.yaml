@@ -51,6 +51,10 @@ access:
 
 bcrypt_rounds: ${AUTHWALL_BCRYPT_ROUNDS}
 
+rate_limiting:
+  # Set AUTHWALL_RATE_LIMITING=0 to disable; any other value (or unset) enables it.
+  enabled: ${AUTHWALL_RATE_LIMITING}
+
 confirm_email:
   required: ${AUTHWALL_CONFIRM_EMAIL_REQUIRED}
   mode: ${AUTHWALL_CONFIRM_EMAIL} # auto | off | disabled | link | code | link_and_code
@@ -92,6 +96,7 @@ flows:
   magic_link:
     enabled: true
     mode: ${AUTHWALL_MAGIC_LINK} # auto | off | disabled | link | code | link_and_code
+    max_attempts: 5
 
   # Sign in with Google
   google:

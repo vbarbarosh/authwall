@@ -41,12 +41,23 @@ opaque session id.
   **`SameSite`** (`lax` by default — see [`AUTHWALL_COOKIE_SAMESITE`](config.md#session-cookie)).
 - It is marked **`Secure`** automatically when [`AUTHWALL_PUBLIC_URL`](config.md#authwall_public_url)
   is `https://` — keep it that way in production.
-- Session and CSRF keys are derived from one root secret
-  ([`AUTHWALL_SECRET`](config.md#authwall_secret)) via HKDF. Rotating it
-  invalidates every session.
+- The session secret is derived from one root secret
+  ([`AUTHWALL_SECRET`](config.md#authwall_secret)) via HKDF. The CSRF token is a
+  random per-session value, not derived from the root secret. Rotating the root
+  secret invalidates every session, and the CSRF tokens stored in them.
 - Sessions are stored in the database, so they survive restarts and are shared
   across instances that share a database. Signing out, or revoking a session
   from the profile, deletes it server-side immediately.
+
+**Why server-side sessions, not stateless cookies?** This is a deliberate choice
+for an auth proxy. Server-side sessions buy *instant revocation*: revoking a
+session from the profile, signing out everywhere on a password reset, and account
+removal all kill live sessions immediately by deleting their rows. Stateless
+signed-cookie sessions can't revoke a session before it expires without
+reintroducing a server-side denylist — which puts the state right back and gives
+you the worst of both. For a tool whose entire job is gatekeeping, immediate
+revocation is load-bearing, so sessions stay stateful. That also makes the random
+per-session CSRF token below the correct design — no app-wide CSRF key needed.
 
 ## CSRF protection
 

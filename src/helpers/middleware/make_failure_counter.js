@@ -1,6 +1,8 @@
-function make_failure_counter(max, window_ms)
+const config = require('../../../config');
+
+function make_failure_counter(max, window_ms, enabled = config.rate_limiting.enabled)
 {
-    if (process.env.AUTHWALL_RATE_LIMITING === '0') {
+    if (!enabled) {
         return {
             is_blocked: () => false,
             retry_after_seconds: () => 0,

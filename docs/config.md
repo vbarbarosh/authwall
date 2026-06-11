@@ -98,7 +98,7 @@ PORT=8000
 
 ## AUTHWALL_SECRET
 
-Root secret used to derive Authwall's session and CSRF secrets.
+Root secret used to derive Authwall's session secret.
 
 - Type: string
 - Default: generated automatically and stored in `data/secret.key`
@@ -834,6 +834,8 @@ Any value outside the list above disables the flow and logs a warning.
 
 > [!WARNING]
 > If the value is one of `link`, `code`, or `link_and_code` but no mailer is configured, Authwall refuses to start.
+
+The magic-code retry limit is not exposed as an environment variable and is tuned in `config/settings.yaml` under `flows.magic_link`: `max_attempts` (default `5`) — the number of code guesses allowed per issued code before it is rejected.
 
 Example:
 

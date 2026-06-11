@@ -23,7 +23,7 @@ Authwall is published as `vbarbarosh/authwall` on Docker Hub. The image:
 - uses `dumb-init` as PID 1 for correct signal handling;
 - sets `NODE_ENV=production`, `LISTEN=0.0.0.0`, `PORT=3000`, and
   `AUTHWALL_LOGGER=stdout` by default;
-- is tagged per release (`:1`, `:1.8`, `:1.8.3`) as well as `:latest`.
+- is tagged per release (`:1`, `:1.12`, `:1.12.0`) as well as `:latest`.
 
 Pin a version tag in production so deployments are reproducible.
 
@@ -57,7 +57,7 @@ public HTTPS origin — see [OAuth providers](oauth-providers.md).
 
 ## The session secret
 
-Authwall derives its session and CSRF keys from one root secret, so that value
+Authwall derives its session secret from one root secret, so that value
 must stay **stable across restarts**. Resolution order:
 
 1. `AUTHWALL_SECRET` if it is set (must be at least 32 characters);
@@ -148,7 +148,7 @@ leave it on unless an upstream proxy already throttles requests.
 
 ## Production checklist
 
-- [ ] Pin a versioned image tag (e.g. `vbarbarosh/authwall:1.8.3`).
+- [ ] Pin a versioned image tag (e.g. `vbarbarosh/authwall:1.12.0`).
 - [ ] Terminate TLS in front of Authwall.
 - [ ] Set `AUTHWALL_PUBLIC_URL` to the HTTPS URL.
 - [ ] Persist the data directory, or set `AUTHWALL_SECRET` explicitly.

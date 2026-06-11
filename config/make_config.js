@@ -136,6 +136,11 @@ function make_config(input = {})
             traces_sample_rate: {type: 'float', min: 0, max: 1, nullable: true},
         }),
 
+        rate_limiting: make(settings.rate_limiting, {
+            // AUTHWALL_RATE_LIMITING is a legacy 0/non-0 flag: only '0' disables.
+            enabled: {type: 'bool', default: true, before: v => v === '0' ? 0 : 1},
+        }),
+
         personal_access_tokens: make(settings.personal_access_tokens, {
             enabled: {type: 'bool', default: false, before: parse_bool_flag},
         }),
@@ -147,7 +152,9 @@ function make_config(input = {})
         listen: env.LISTEN ?? '127.0.0.1',
         port: env.PORT ?? 3000,
         secrets: {
-            csrf_token: secret_hkdf(secret, 'csrf_token'),
+            // The session secret is HKDF-derived from the root secret. There is
+            // no derived CSRF secret: CSRF tokens are random per-session values
+            // (see req.session.csrf_token), so they need no app-wide key.
             express_session: secret_hkdf(secret, 'express_session'),
         },
 
@@ -172,6 +179,7 @@ function make_config(input = {})
             magic_link: {
                 enabled: 'bool',
                 mode: {type: 'str', default: 'auto'},
+                max_attempts: {type: 'int', min: 1, default: 5},
             },
             google: {
                 enabled: 'bool',

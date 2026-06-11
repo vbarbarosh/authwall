@@ -146,7 +146,7 @@ Startup order is:
 
 Why this default exists:
 
-- Authwall derives session and CSRF secrets from one root secret, so that root value must stay stable across restarts.
+- Authwall derives its session secret from one root secret, so that root value must stay stable across restarts.
 - Requiring an env var for every local or single-host deployment makes first boot harder and encourages weak placeholder values.
 - Persisting the generated secret in the data directory keeps restarts deterministic as long as the data volume is preserved.
 - An explicit `AUTHWALL_SECRET` still takes precedence, which is the better fit when secrets are managed by the runtime or an external secret store.

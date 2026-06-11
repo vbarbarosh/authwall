@@ -19,7 +19,6 @@ const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
-const MAX_ATTEMPTS = 3;
 
 const magic_link_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
@@ -143,7 +142,7 @@ async function magic_link_confirm_post(req, res)
     if (!magic_link) {
         throw new UserFriendlyError('Invalid or expired code');
     }
-    if (magic_link.attempts >= MAX_ATTEMPTS) {
+    if (magic_link.attempts >= config.flows.magic_link.max_attempts) {
         throw new UserFriendlyError('Invalid or expired code');
     }
 

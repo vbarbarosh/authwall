@@ -2,6 +2,17 @@ const config = require('../../config');
 const db = require('../../db');
 const express_session = require('express-session');
 
+// Sessions are stored server-side (in the DB) rather than in stateless
+// signed cookies. This is a deliberate choice for an auth proxy: it buys
+// instant revocation. Revoking a session from the profile, "sign out
+// everywhere" on a password reset, and account removal all kill live sessions
+// immediately by deleting their rows. Stateless signed-cookie sessions can't
+// revoke before expiry without reintroducing a server-side denylist, which
+// puts the state right back and gives you the worst of both. For a tool whose
+// whole job is gatekeeping, immediate revocation is load-bearing — so don't
+// "simplify" this to stateless cookies. Keeping sessions stateful also makes
+// the random per-session CSRF token (req.session.csrf_token) the correct
+// synchronizer-token design — no app-wide CSRF key needed.
 class SessionStore extends express_session.Store
 {
     async get(uid, callback) {
