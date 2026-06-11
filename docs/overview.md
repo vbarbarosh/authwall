@@ -24,7 +24,8 @@ sequenceDiagram
 
 Authwall runs with zero configuration: by default it uses SQLite and open
 registration. Each recipe below is a complete `docker run` command — pick the
-one that matches how you want users to sign in.
+one that matches how you want users to sign in. More setups — seeded users,
+personal access tokens, WebSockets — are in [Recipes](recipes.md).
 
 ---
 

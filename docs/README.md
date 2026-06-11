@@ -11,6 +11,8 @@ app, handles sign-in, and forwards authenticated requests with an
 - [Architecture](architecture.md) — a high-level map of Authwall's big blocks.
 - [Getting started](getting-started.md) — a one-command quick start, then the
   full Docker Compose setup in front of a real app.
+- [Recipes](recipes.md) — runnable setups from a one-line start to personal
+  access tokens and WebSockets.
 - [Deployment](deployment.md) — HTTPS, the session secret, production
   databases, logging, and health checks.
 - [Deployment examples](examples/) — runnable Docker Compose setups for the

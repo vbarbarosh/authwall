@@ -17,6 +17,8 @@ nav:
     file: architecture.md
   - title: Getting started
     file: getting-started.md
+  - title: Recipes
+    file: recipes.md
   - title: Deployment
     file: deployment.md
   - title: Deployment examples
