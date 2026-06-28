@@ -403,5 +403,6 @@ async function assert_password({username, email, password})
 }
 
 module.exports = {
+    create_echo_server,
     spin,
 };
