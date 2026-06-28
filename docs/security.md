@@ -23,10 +23,11 @@ Authwall's core guarantee: the upstream app can trust the `X-Auth-User` header.
   bearer tokens too: a valid token whose owner has no verified email is rejected
   with `403 Email verification required`.
 - When [`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) is enabled, the
-  same guarantee extends to upgrades: clients authenticate the upgrade with an
-  `Authorization: Bearer` personal access token. Authwall strips inbound
-  `x-auth-*` headers, removes the credential before forwarding, and sets
-  `X-Auth-User` itself.
+  same guarantee extends to upgrades: browser clients authenticate with the
+  signed session cookie plus a same-origin `Origin` check, and non-browser
+  clients can authenticate with an `Authorization: Bearer` personal access
+  token. Authwall strips inbound `x-auth-*` headers, removes bearer credentials
+  before forwarding, and sets `X-Auth-User` itself.
 
 For this guarantee to hold, the app must be reachable **only** through Authwall.
 If the app is also exposed directly, a client can reach it without Authwall and

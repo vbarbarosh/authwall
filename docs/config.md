@@ -282,15 +282,23 @@ When disabled, Authwall does not handle the HTTP `Upgrade` event, and any
 the upstream will typically reject.
 
 When enabled, Authwall accepts WebSocket upgrades on any path that isn't
-under `/auth/`, authenticates the upgrade with a personal access token, sets
-the same trusted `X-Auth-User` header it uses for HTTP requests, and forwards
-the upgrade to the upstream.
+under `/auth/`, authenticates the upgrade, sets the same trusted `X-Auth-User`
+header it uses for HTTP requests, and forwards the upgrade to the upstream.
 
 ### Authenticating a WebSocket upgrade
 
-The upgrade is authenticated with the `Authorization` header, so this
-requires [`AUTHWALL_PERSONAL_ACCESS_TOKENS`](#authwall_personal_access_tokens)
-to be enabled. The client sets the header on the handshake:
+Browser clients authenticate with the signed `connect.sid` session cookie that
+Authwall sets after sign-in. Because browsers automatically attach cookies to
+WebSocket handshakes, Authwall also requires the `Origin` header to match
+the origin of `AUTHWALL_PUBLIC_URL`.
+
+```js
+new WebSocket('wss://app.example.com/realtime');
+```
+
+Non-browser clients can authenticate with the `Authorization` header when
+[`AUTHWALL_PERSONAL_ACCESS_TOKENS`](#authwall_personal_access_tokens) is
+enabled. The client sets the header on the handshake:
 
 ```js
 new WebSocket('wss://app.example.com/realtime', {
@@ -301,10 +309,6 @@ new WebSocket('wss://app.example.com/realtime', {
 Authwall validates the token, strips the `Authorization` header before
 forwarding the upgrade, and shares the same failed-attempt rate limiter
 used by HTTP bearer authentication.
-
-The browser `WebSocket` API cannot set the `Authorization` header, so this
-path is intended for non-browser clients such as a desktop app. There is no
-browser/cookie-based WebSocket authentication yet.
 
 Example:
 

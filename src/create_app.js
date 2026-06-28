@@ -6,6 +6,7 @@ const authenticate_personal_access_token = require('./helpers/authenticate_perso
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
+const cookie_signature = require('cookie-signature');
 const db = require('../db');
 const email_verification_required = require('./helpers/email_verification_required');
 const express = require('express');
@@ -484,9 +485,9 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
                 return;
             }
 
-            const user_uid = await authenticate_ws_upgrade(req, ip, bearer_miss_limiter);
-            if (!user_uid) {
-                als.logger.write(`[ws_upgrade_reject] url=${JSON.stringify(req.url)} ip=${ip}`);
+            const auth = await authenticate_ws_upgrade(req, ip, bearer_miss_limiter);
+            if (!auth.user_uid) {
+                als.logger.write(`[ws_upgrade_reject] reason=${auth.reason} ${auth.details} url=${JSON.stringify(req.url)} ip=${ip}`);
                 reject(401, 'Unauthorized');
                 return;
             }
@@ -498,8 +499,8 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
             }
             delete req.headers.authorization;
 
-            req.ws_user_uid = user_uid;
-            als.logger.write(`[ws_upgrade] user_uid=${user_uid} url=${JSON.stringify(req.url)}`);
+            req.ws_user_uid = auth.user_uid;
+            als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(req.url)}`);
             proxy.upgrade(req, socket, head);
         }
         catch (error) {
@@ -509,22 +510,24 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
     };
 }
 
-// WebSocket upgrades authenticate with an Authorization: Bearer personal access
-// token. The browser WebSocket API can't set headers, so this path is for
-// non-browser clients (e.g. the desktop app).
+// WebSocket upgrades authenticate either with Authorization: Bearer personal
+// access tokens or with a signed same-origin browser session cookie.
 async function authenticate_ws_upgrade(req, ip, bearer_miss_limiter)
 {
-    if (!config.personal_access_tokens.enabled) {
-        return null;
+    const match = /^Bearer\s+(.+)$/i.exec(req.headers.authorization ?? '');
+    if (req.headers.authorization && !match) {
+        return ws_auth_reject('malformed_authorization_header', req);
+    }
+    if (!match) {
+        return authenticate_ws_session(req);
     }
 
-    const match = /^Bearer\s+(.+)$/i.exec(req.headers.authorization ?? '');
-    if (!match) {
-        return null;
+    if (!config.personal_access_tokens.enabled) {
+        return ws_auth_reject('personal_access_tokens_disabled', req);
     }
 
     if (bearer_miss_limiter.is_blocked(ip)) {
-        return null;
+        return ws_auth_reject('bearer_rate_limited', req);
     }
 
     const result = await authenticate_personal_access_token({
@@ -535,13 +538,197 @@ async function authenticate_ws_upgrade(req, ip, bearer_miss_limiter)
 
     if (result.kind === 'invalid') {
         bearer_miss_limiter.record_failure(ip);
-        return null;
+        return ws_auth_reject('invalid_bearer_token', req);
     }
     if (result.kind === 'unverified_email') {
-        return null;
+        return ws_auth_reject('bearer_email_unverified', req);
     }
 
-    return result.user_uid;
+    return {
+        user_uid: result.user_uid,
+        reason: null,
+        details: ws_auth_details(req, result.user_uid, 'bearer'),
+    };
+}
+
+async function authenticate_ws_session(req)
+{
+    const cookie = ws_session_cookie(req.headers.cookie);
+    if (!cookie.uid) {
+        return ws_auth_reject(cookie.reason, req);
+    }
+
+    const origin_rejection = ws_origin_rejection(req);
+    if (origin_rejection) {
+        return ws_auth_reject(origin_rejection.reason, req, origin_rejection.details);
+    }
+
+    const now = new Date();
+    const session = await db('sessions').where({uid: cookie.uid}).where('expires_at', '>', now).first();
+    if (!session?.user_id || !session.user_uid) {
+        return ws_auth_reject('session_not_found', req);
+    }
+
+    let custom;
+    try {
+        custom = JSON.parse(session.custom);
+    }
+    catch (error) {
+        return ws_auth_reject('invalid_session_data', req);
+    }
+
+    if (config.confirm_email.required && !custom.email_verified_at) {
+        return ws_auth_reject('session_email_unverified', req);
+    }
+
+    await db('sessions').where({id: session.id}).update({
+        expires_at: new Date(now.getTime() + config.cookie.max_age_days*86400000),
+        last_seen_at: now,
+    });
+
+    return {
+        user_uid: session.user_uid,
+        reason: null,
+        details: ws_auth_details(req, session.user_uid, 'session'),
+    };
+}
+
+function ws_auth_reject(reason, req, details = '')
+{
+    return {
+        user_uid: null,
+        reason,
+        details: [ws_auth_details(req, null, null), details].filter(Boolean).join(' '),
+    };
+}
+
+function ws_auth_details(req, auth_user_uid, auth_kind)
+{
+    let requested_user = null;
+    try {
+        requested_user = new URL(req.url, 'http://localhost').searchParams.get('user');
+    }
+    catch (error) {
+    }
+
+    const details = [
+        `cookie=${ws_cookie_summary(req.headers.cookie)}`,
+        `requested_user=${requested_user || 'missing'}`,
+        `auth_user=${auth_user_uid || 'missing'}`,
+        `auth=${auth_kind || 'missing'}`,
+    ];
+    if (!req.headers.origin) {
+        details.push('origin=missing');
+    }
+
+    return details.join(' ');
+}
+
+function ws_cookie_summary(cookie_header)
+{
+    if (!cookie_header) {
+        return 'missing';
+    }
+
+    const value = cookie_value(cookie_header, 'connect.sid');
+    if (!value) {
+        return 'connect_sid_missing';
+    }
+
+    let decoded;
+    try {
+        decoded = decodeURIComponent(value);
+    }
+    catch (error) {
+        return 'connect_sid_bad_encoding';
+    }
+
+    if (!decoded.startsWith('s:')) {
+        return 'connect_sid_unsigned';
+    }
+
+    if (!decoded.slice(2).includes('.')) {
+        return 'connect_sid_malformed';
+    }
+
+    return 'connect_sid_present';
+}
+
+function ws_session_cookie(cookie_header)
+{
+    if (!cookie_header) {
+        return {uid: null, reason: 'missing_session_cookie'};
+    }
+
+    const value = cookie_value(cookie_header, 'connect.sid');
+    if (!value) {
+        return {uid: null, reason: 'connect_sid_missing'};
+    }
+
+    let decoded;
+    try {
+        decoded = decodeURIComponent(value);
+    }
+    catch (error) {
+        return {uid: null, reason: 'connect_sid_bad_encoding'};
+    }
+
+    if (!decoded.startsWith('s:')) {
+        return {uid: null, reason: 'connect_sid_unsigned'};
+    }
+
+    if (!decoded.slice(2).includes('.')) {
+        return {uid: null, reason: 'connect_sid_malformed'};
+    }
+
+    const uid = cookie_signature.unsign(decoded.slice(2), config.secrets.express_session);
+    if (!uid) {
+        return {uid: null, reason: 'connect_sid_bad_signature'};
+    }
+
+    return {uid, reason: null};
+}
+
+function ws_origin_rejection(req)
+{
+    const origin = req.headers.origin;
+    if (!origin) {
+        return {reason: 'missing_origin_header', details: ''};
+    }
+
+    let parsed_origin;
+    try {
+        parsed_origin = new URL(origin).origin;
+    }
+    catch (error) {
+        return {reason: 'invalid_origin_header', details: `origin_value=${JSON.stringify(origin)}`};
+    }
+
+    const expected_origin = new URL(config.public_url).origin;
+    if (parsed_origin !== expected_origin) {
+        return {
+            reason: 'origin_mismatch',
+            details: `origin_expected=${JSON.stringify(expected_origin)} origin_actual=${JSON.stringify(parsed_origin)}`,
+        };
+    }
+
+    return null;
+}
+
+function cookie_value(cookie_header, name)
+{
+    for (const part of String(cookie_header).split(';')) {
+        const index = part.indexOf('=');
+        if (index === -1) {
+            continue;
+        }
+        const key = part.slice(0, index).trim();
+        if (key === name) {
+            return part.slice(index + 1).trim();
+        }
+    }
+
+    return null;
 }
 
 function clean_headers(req, res, next)

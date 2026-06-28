@@ -112,24 +112,29 @@ curl -H 'Authorization: Bearer awp_…' https://myapp.test/auth/status
 
 ## WebSockets behind Authwall
 
-The deliberate setup: a real-time app whose non-browser clients (desktop
-apps, workers) hold WebSocket connections through Authwall.
-[`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) proxies upgrades, and
-since upgrades authenticate with a bearer token, personal access tokens must
-be enabled too.
+The deliberate setup: a real-time app whose browser or non-browser clients
+hold WebSocket connections through Authwall.
+[`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) proxies upgrades.
 
 ```sh
 docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
-    -e AUTHWALL_PERSONAL_ACCESS_TOKENS=true \
     -e AUTHWALL_WEBSOCKETS=true \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
 
-A client authenticates the upgrade with the `Authorization` header on the
-handshake:
+Browser clients authenticate with the signed session cookie from sign-in. The
+browser attaches the cookie automatically, and Authwall checks that the
+WebSocket `Origin` matches the configured public URL:
+
+```js
+const ws = new WebSocket('wss://myapp.test/realtime');
+```
+
+Non-browser clients can authenticate the upgrade with the `Authorization`
+header on the handshake when personal access tokens are enabled:
 
 ```js
 const ws = new WebSocket('wss://myapp.test/realtime', {
@@ -138,13 +143,12 @@ const ws = new WebSocket('wss://myapp.test/realtime', {
 ```
 
 - upgrades are accepted on any path not under `/auth/`; Authwall validates
-  the token, strips the credential, and forwards the upgrade with the same
-  trusted `X-Auth-User` header it sets on HTTP requests
-- the browser `WebSocket` API cannot set the `Authorization` header, so this
-  path is for non-browser clients; there is no cookie-based WebSocket
-  authentication yet
+  the session cookie or bearer token, strips client-supplied auth headers, and
+  forwards the upgrade with the same trusted `X-Auth-User` header it sets on
+  HTTP requests
 - failed upgrade attempts share the
   [bearer-token rate limiter](security.md#rate-limiting) with HTTP requests
+  when the upgrade uses a bearer token
 
 ## With Docker Compose
 
@@ -286,7 +290,7 @@ services:
 - [personal access tokens](config.md#authwall_personal_access_tokens) let
   signed-in users mint bearer tokens, and
   [`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) proxies upgrades that
-  authenticate with one (tokens are required for the WebSocket path)
+  authenticate with a browser session cookie or bearer token
 - it runs over plain HTTP here; in production set `AUTHWALL_PUBLIC_URL` to your
   `https://` origin and the session cookie becomes `Secure` automatically
   (see [Deployment](deployment.md))
