@@ -39,7 +39,7 @@ function express_run(app, port = 3000, host = 'localhost', ready = _ready)
 function _ready(inst)
 {
     const {address, port} = inst.address();
-    als.logger.write(`[express_run] Listening to ${address}:${port}`)
+    als.logger.write(`[express_run] Listening to ${address}:${port}`);
 }
 
 module.exports = express_run;
