@@ -1,10 +1,9 @@
 const als = require('../als');
 
-function express_run(app, port = 3000, host = 'localhost')
+function express_run(app, port = 3000, host = 'localhost', ready = _ready)
 {
     const server = app.listen(port, host, function () {
-        const {address, port} = this.address();
-        als.logger.write(`[express_run] Listening to ${address}:${port}`);
+        ready(this);
     });
 
     if (typeof app.setup_server === 'function') {
@@ -35,6 +34,12 @@ function express_run(app, port = 3000, host = 'localhost')
         server.close();
         setTimeout(() => process.exit(1), 10000).unref();
     }
+}
+
+function _ready(inst)
+{
+    const {address, port} = inst.address();
+    als.logger.write(`[express_run] Listening to ${address}:${port}`)
 }
 
 module.exports = express_run;

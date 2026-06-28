@@ -56,7 +56,10 @@ async function main()
         await bootstrap_database();
         await bootstrap_users();
         const app = await create_app();
-        await express_run(app, config.port, config.listen);
+        await express_run(app, config.port, config.listen, function (inst) {
+            const {address, port} = inst.address();
+            als.logger.write(`[authwall_ready] Listening to ${address}:${port}`);
+        });
     });
 }
 
