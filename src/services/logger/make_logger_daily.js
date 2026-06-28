@@ -9,12 +9,18 @@ function make_logger_daily(params = {})
     let stream = null;
 
     const out = make_logger({...params, append});
+    const saved_dispose = out[Symbol.dispose];
     const saved_asyncDispose = out[Symbol.asyncDispose];
     out[Symbol.asyncDispose] = async function () {
         if (stream) {
             await promisify(cb => stream.end(cb));
         }
-        await saved_asyncDispose();
+        if (saved_asyncDispose) {
+            await saved_asyncDispose.call(this);
+        }
+        else {
+            saved_dispose?.call(this);
+        }
     };
     return out;
 
