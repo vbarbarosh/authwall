@@ -86,7 +86,7 @@ module.exports = defineConfig({
         env: {
             AUTHWALL_LOGGER: 'daily',
             AUTHWALL_PUBLIC_URL: 'http://localhost:3000',
-            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:38080',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:0',
             AUTHWALL_WEBSOCKETS: 'on',
             AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'false',
             AUTHWALL_SENTRY_DSN: '',
