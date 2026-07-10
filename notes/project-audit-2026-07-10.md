@@ -22,6 +22,8 @@ The most important confirmed problems are:
 7. OAuth account connection can be initiated by an unauthenticated, CSRF-less GET request.
 
 Several security guarantees in `docs/security.md` are therefore stronger than the implementation.
+Separately, OAuth login does not preserve the protected URL that originally sent the browser to
+sign-in, so a successful Google (or other configured OAuth-provider) login lands at `/` instead.
 
 ## Verification baseline
 
@@ -676,6 +678,42 @@ Observe `browserType.launch: Executable doesn't exist` for Chromium, Firefox, an
 container target provisions the exact browsers pinned by the lockfile. Distinguish infrastructure
 launch failures from application test failures in CI reporting.
 
+### I5. OAuth login loses the original protected URL
+
+**Evidence:** A signed-out request to a protected URL is redirected to
+`/auth/sign-in?return=<original-url>` by `src/create_app.js:366-369`. The password form explicitly
+copies that query parameter into its action at `design/public_html/spa.html:1142-1153`, but all six
+OAuth sign-in links use bare provider routes such as `/auth/google` at
+`design/public_html/spa.html:453-475`. The shared OAuth initiation code stores only `oauth_state` and
+the PKCE verifier in the session (`src/helpers/make/make_oauth_flow.js:39-51`), not the return URL.
+After the provider callback, `complete_sign_in` calls the common redirect helper with the callback
+request (`src/actions/complete_sign_in.js:23-24`); that request has Google's `code` and `state`, but no
+`return`, so `src/helpers/redirect.js:4-6` falls back to `/`. New-account OAuth sign-up has the same
+problem through `complete_sign_up`. Because every OAuth provider uses `make_oauth_flow`, this is not
+Google-specific.
+
+**Impact:** A user who opens a deep link while signed out and chooses Google authentication is signed
+in successfully but is not returned to the requested page. Query strings in the original URL are
+also lost. This is especially disruptive for bookmarks, shared links, and applications protected on
+subdomains, and it makes OAuth behavior inconsistent with password sign-in.
+
+**Reproduction:**
+
+1. Sign out and open a protected path such as `/projects/123?tab=activity`.
+2. Observe the redirect to `/auth/sign-in?return=%2Fprojects%2F123%3Ftab%3Dactivity`.
+3. Select **Continue with Google** and complete authentication.
+4. Observe that the callback redirects to `/`, not `/projects/123?tab=activity`.
+
+The current callback tests assert authentication state but do not assert the final redirect location
+or exercise an OAuth flow that starts with a `return` value.
+
+**Recommendation:** Validate the return URL when OAuth begins, bind it server-side to that specific
+OAuth state/intent, and consume it exactly once after a successful callback. Update every OAuth
+sign-in/sign-up link to propagate the sign-in page's `return` value to the provider initiation route.
+Capture the validated value before session regeneration, use the existing redirect allow-list for the
+final redirect, clear it on success/failure, and add API plus browser regression tests for relative
+paths, query strings, allowed absolute URLs, rejected external URLs, and all enabled providers.
+
 ## Improvement plan
 
 ### Phase 1: restore the authorization boundary
@@ -706,6 +744,8 @@ launch failures from application test failures in CI reporting.
 4. Make trusted-proxy policy explicit/configurable and use one client-IP derivation everywhere.
 5. Canonicalize authorized proxy paths and default return URLs to exact origins.
 6. Strip the Authwall session cookie before forwarding upstream.
+7. Preserve validated return URLs across OAuth initiation/callback and add deep-link regressions for
+   every provider.
 
 ### Phase 4: validation, maintenance, and consistency
 
