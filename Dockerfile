@@ -17,10 +17,18 @@ ENV LISTEN=0.0.0.0 \
 # Leverage Docker's cache system.
 # package.json will be changed less often than other files, so copy it first
 # and install all dependencies.
-COPY --chown=node:node package*.json .
+COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY --chown=node:node . .
+# Copy only files required at runtime. Keep this list explicit: using
+# `COPY . .` can accidentally persist credentials or repository history in an
+# image layer when a local file is not covered by .dockerignore.
+COPY --chown=node:node config ./config
+COPY --chown=node:node db ./db
+COPY --chown=node:node design/emails ./design/emails
+COPY --chown=node:node design/public_html ./design/public_html
+COPY --chown=node:node src ./src
+COPY --chown=node:node knexfile.js ./
 
 ARG AUTHWALL_CREATED
 ARG AUTHWALL_REVISION

@@ -1,29 +1,26 @@
-# dot files
-/.env
-/.env.example
-/.claude
-/.github
-/.dockerignore
-/.gitignore
+# Deny by default. Only inputs needed to build and run the production image
+# are sent to the Docker daemon. In particular, this keeps .git, .env files,
+# local data, credentials, editor state, and test artifacts out of the build
+# context even when new top-level files are added later.
+**
 
-# Playwright
-/blob-report/
-/playwright-report/
-/playwright/.auth/
-/playwright/.cache/
-/test-results/
-/playwright.config.js
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!knexfile.js
 
-# other files never use on production
-/Dockerfile
-/LICENSE
-/README.md
-/data
-/docker-compose.yaml
-/docs
-/logo.png
-/mocha.api.js
-/mocha.unit.js
-/node_modules
-/research
-/tests
+!config/
+!config/**
+!db/
+!db/**
+!design/
+!design/emails/
+!design/emails/**
+!design/public_html/
+!design/public_html/**
+!src/
+!src/**
+
+# Unit tests are colocated with runtime code but are not needed in production.
+**/*.test.js
