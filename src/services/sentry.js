@@ -1,6 +1,7 @@
 const Sentry = require('@sentry/node');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const pkg = require('../../package.json');
+const urlxxx = require('../helpers/urlxxx');
 
 let initialized = false;
 
@@ -61,7 +62,7 @@ function sentry_before_send(event, hint)
 function sanitize_sentry_event(event)
 {
     if (event.request) {
-        event.request.url = sanitize_url(event.request.url);
+        event.request.url = urlxxx(event.request.url);
         delete event.request.query_string;
         delete event.request.data;
 
@@ -76,26 +77,6 @@ function sanitize_sentry_event(event)
     return event;
 }
 
-function sanitize_url(url)
-{
-    if (!url) {
-        return url;
-    }
-
-    try {
-        const out = new URL(url);
-        for (const key of out.searchParams.keys()) {
-            if (is_sensitive_query_param(key)) {
-                out.searchParams.set(key, '[Filtered]');
-            }
-        }
-        return out.toString();
-    }
-    catch (error) {
-        return url;
-    }
-}
-
 function is_sensitive_header(key)
 {
     return [
@@ -104,15 +85,6 @@ function is_sensitive_header(key)
         'set-cookie',
         'x-csrf-token',
     ].includes(key.toLowerCase());
-}
-
-function is_sensitive_query_param(key)
-{
-    const normalized = key.toLowerCase();
-    if (normalized.includes('token') || normalized.includes('secret') || normalized.includes('password')) {
-        return true;
-    }
-    return ['code', 'state'].includes(normalized);
 }
 
 module.exports = {

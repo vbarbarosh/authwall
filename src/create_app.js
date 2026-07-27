@@ -32,6 +32,7 @@ const random_uid_session = require('./helpers/random/random_uid_session');
 const save_session = require('./helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('@vbarbarosh/node-helpers/src/urlparts');
+const urlxxx = require('./helpers/urlxxx');
 const {sentry_request_context, setup_sentry_error_handler} = require('./services/sentry');
 
 const LOGGED_HEADERS = new Set([
@@ -63,7 +64,7 @@ async function create_app()
         logger.write(`[req_uid] ${req.uid}`);
 
         const headers = Object.fromEntries(Object.keys(req.headers).filter(v => LOGGED_HEADERS.has(v)).map(k => [k, req.headers[k]]));
-        logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
+        logger.write(`[req_begin] ${req.method} ${JSON.stringify(urlxxx(req.url))} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
 
         res.on('close', function () {
             pending--;
@@ -267,7 +268,7 @@ async function create_app()
                 }
             },
             error: function (error, req, res) {
-                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
+                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
                 // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
                 if (typeof res.status === 'function') {
                     res.status(502).send('Upstream service unavailable');
@@ -301,13 +302,13 @@ async function error_handler(error, req, res, next)
             body: error.response?.data,
             headers: error.response?.headers,
             stack: error.stack,
-            url: req.url,
-            originalUrl: req.originalUrl,
+            url: urlxxx(req.url),
+            originalUrl: urlxxx(req.originalUrl),
         };
         als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(details)}`);
     }
     catch (error2) {
-        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
+        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
     }
 
     if (error instanceof EmailNotAuthorized) {

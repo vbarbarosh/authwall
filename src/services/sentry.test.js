@@ -36,6 +36,19 @@ describe('sentry', function () {
         });
     });
 
+    // Express reports req.url as a relative path, which `new URL(url)` cannot
+    // parse — the old sanitizer caught the throw and returned it unredacted,
+    // so live tokens reached Sentry on the most common path.
+    it('redacts a relative request url', function () {
+        const event = sanitize_sentry_event({
+            request: {
+                url: '/auth/magic-link/confirm?token=cf0bbd31074e5df6',
+            },
+        });
+
+        assert.strictEqual(event.request.url, '/auth/magic-link/confirm?token=%5BFiltered%5D');
+    });
+
     it('drops UserFriendlyError events', function () {
         const error = new UserFriendlyError('Missing token');
 
