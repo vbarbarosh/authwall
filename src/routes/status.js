@@ -1,6 +1,7 @@
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
+const email_verification_required = require('../helpers/email_verification_required');
 const frontend_personal_access_tokens = require('../helpers/models/frontend_personal_access_tokens');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
@@ -177,6 +178,18 @@ async function sidecar_get(req, res)
     const user = await db('users').where({id: user_id}).first();
     if (!user) {
         res.status(401).send();
+        return;
+    }
+
+    // Same gate the HTTP proxy applies in sign_in_required — without it, a
+    // sidecar deployment (nginx auth_request / Caddy forward_auth) would admit
+    // users the proxy path holds at email verification.
+    //
+    // 403 (not 401) because the credential is valid — the user is just not
+    // authorized to use it yet. Bearer requests are skipped: they already had
+    // verification enforced in personal_access_token_auth.
+    if (!req.auth?.personal_access_token_uid && email_verification_required(req)) {
+        res.status(403).send();
         return;
     }
 

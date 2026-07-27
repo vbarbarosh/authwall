@@ -25,6 +25,7 @@ Testable now
 - [x] user uses an expired magic link after already signing in another way; the link should fail cleanly and should not change session state → `expired_magic_link.test.js`
 - [x] user opens another account's email verification link while signed in; the token owner should be verified without changing the current session email fields → `email_verify_cross_session.test.js`
 - [x] Google OAuth is restricted to exact email addresses; a listed verified email signs in and an unlisted verified email is rejected → `google_oauth_exact_emails.test.js`
+- [x] Authwall runs as an nginx/Caddy sidecar; a user with an unconfirmed email must be rejected by `/auth/sidecar` exactly as the proxy path rejects them, and admitted once confirmed → `sidecar_unverified_email.test.js`
 
 Needs product decision
 
