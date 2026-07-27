@@ -31,4 +31,36 @@ describe('make_logger_daily', function () {
         });
     });
 
+    // Without an 'error' handler on the write stream, this takes down the
+    // whole proxy: an unhandled 'error' event becomes an uncaught exception.
+    it('degrades to stdout when the log file cannot be opened', async function () {
+        config.logs_dir = fs_path_join(saved_logs_dir, 'no-such-dir');
+
+        const stderr = [];
+        const stdout = [];
+        const saved_stderr_write = process.stderr.write;
+        const saved_stdout_write = process.stdout.write;
+        process.stderr.write = s => stderr.push(s);
+        process.stdout.write = s => stdout.push(s);
+
+        try {
+            const logger = make_logger_daily();
+            logger.write('before');
+
+            const deadline = Date.now() + 1000;
+            while (!stderr.length && Date.now() < deadline) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+
+            logger.write('after');
+        }
+        finally {
+            process.stderr.write = saved_stderr_write;
+            process.stdout.write = saved_stdout_write;
+        }
+
+        assert.match(stderr.join(''), /\[logger_daily_error]/);
+        assert.match(stdout.join(''), /\] after\n$/);
+    });
+
 });
