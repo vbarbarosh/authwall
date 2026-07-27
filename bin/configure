@@ -11,4 +11,4 @@ scriptname=`basename $script`
 cd $scriptdir/..
 
 npm install
-npx playwright install chromium
+npx playwright install
