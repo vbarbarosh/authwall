@@ -110,13 +110,18 @@ describe('GitHub user without email — password setup impossible | stories', fu
         assert.ok(status.providers.find(v => v.type === 'oauth_github'));
         assert.ok(status.providers.find(v => v.type === 'email' && v.verified_at !== null));
 
-        // Now password setup should succeed
+        // Now password setup should succeed. There is no existing password, so
+        // current_password is not required — and the new one must actually work
+        // for sign-in afterwards.
         await this.http_post_json('/auth/change-password', {
             _csrf: status.csrf_token,
-            current_password: '',
-            password: 'newpass',
-            password_confirm: 'newpass',
+            password: 'newpassword',
+            password_confirm: 'newpassword',
         });
+
+        const status1 = await this.http_get_json('/auth/status');
+        assert.strictEqual(status1.error, null);
+        await this.assert_password({email: 'user@example.com', password: 'newpassword'});
 
         const status2 = await this.http_get_json('/auth/status');
         // Error here is about wrong current_password, not about missing identity

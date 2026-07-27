@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
+const db = require('../../../db');
 const const_email = require('../../../src/helpers/const/const_email');
 
 describe('POST /auth/profile', function () {
@@ -62,6 +63,19 @@ describe('POST /auth/profile', function () {
         await this.http_post_json('/auth/profile', {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456'});
         await this.wait_for_emails(1);
         assert.strictEqual(this.sent_emails[0].name, const_email.password_changed_from_profile);
+    });
+
+    it('sets an initial password when the account has none', async function () {
+        config.flows.password.min_password_length = 4;
+        const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
+        // An account created through an OAuth provider: signed in, but with no
+        // password to verify a current_password against.
+        await db('users').where({id: user_id}).update({password_hash: null});
+
+        await this.http_post_json('/auth/profile', {password: 'pass456', password_confirm: 'pass456'});
+
+        assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
+        await this.assert_password({username: 'mocha', password: 'pass456'});
     });
 
     it('fails password change with missing fields', async function () {

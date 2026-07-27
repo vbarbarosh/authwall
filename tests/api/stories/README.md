@@ -27,6 +27,7 @@ Testable now
 - [x] Google OAuth is restricted to exact email addresses; a listed verified email signs in and an unlisted verified email is rejected → `google_oauth_exact_emails.test.js`
 - [x] Authwall runs as an nginx/Caddy sidecar; a user with an unconfirmed email must be rejected by `/auth/sidecar` exactly as the proxy path rejects them, and admitted once confirmed → `sidecar_unverified_email.test.js`
 - [x] user signs in with GitHub, comes back later and signs in again; the second sign-in must resolve to the same account even though GitHub returns the account id as a number → `github_repeat_sign_in.test.js`
+- [x] user with no password (OAuth or magic link) sets a first one without supplying a current password, then signs in with it → `set_first_password.test.js`
 
 Needs product decision
 

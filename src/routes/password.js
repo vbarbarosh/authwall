@@ -318,7 +318,18 @@ async function change_password_post(req, res)
         throw new UserFriendlyError('Cannot set or change password without a verified email or username');
     }
 
-    if (!current_password || !password || !password_confirm) {
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (!user) {
+        throw new UserFriendlyError('User not found');
+    }
+
+    // A user who signed up through an OAuth provider has no password yet.
+    // Setting the first one has nothing to verify against, so current_password
+    // is not required — and must not be compared either, since
+    // bcrypt.compare(x, null) throws rather than returning false.
+    const has_password = user.password_hash !== null;
+
+    if ((has_password && !current_password) || !password || !password_confirm) {
         throw new UserFriendlyError('Missing fields');
     }
 
@@ -330,13 +341,7 @@ async function change_password_post(req, res)
         throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
-    const user = await db('users').where({id: req.session.user_id}).first();
-    if (!user) {
-        throw new UserFriendlyError('User not found');
-    }
-
-    const ok = await bcrypt.compare(current_password, user.password_hash);
-    if (!ok) {
+    if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
         throw new UserFriendlyError('Current password is incorrect');
     }
 

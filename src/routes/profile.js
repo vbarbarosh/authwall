@@ -48,7 +48,9 @@ async function profile_post(req, res)
     const is_password_change = current_password || password || password_confirm;
 
     if (is_password_change) {
-        if (!current_password || !password || !password_confirm) {
+        // current_password is checked further down, once the user row tells us
+        // whether there is an existing password to verify against.
+        if (!password || !password_confirm) {
             throw new UserFriendlyError('Missing fields');
         }
         if (password !== password_confirm) {
@@ -87,8 +89,17 @@ async function profile_post(req, res)
         if (!ident) {
             throw new UserFriendlyError('Cannot set or change password without a verified email or username');
         }
-        const ok = await bcrypt.compare(current_password, user.password_hash);
-        if (!ok) {
+
+        // A user who signed up through an OAuth provider has no password yet.
+        // Setting the first one has nothing to verify against, so
+        // current_password is not required — and must not be compared either,
+        // since bcrypt.compare(x, null) throws rather than returning false.
+        const has_password = user.password_hash !== null;
+
+        if (has_password && !current_password) {
+            throw new UserFriendlyError('Missing fields');
+        }
+        if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
             throw new UserFriendlyError('Current password is incorrect');
         }
         update.password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
