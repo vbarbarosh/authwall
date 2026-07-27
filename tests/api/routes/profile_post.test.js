@@ -2,6 +2,17 @@ const assert = require('assert');
 const config = require('../../../config');
 const db = require('../../../db');
 const const_email = require('../../../src/helpers/const/const_email');
+const fs = require('fs');
+const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+
+const temp_uploads_dir = fs_path_resolve(__dirname, '../../../data/temp-uploads');
+
+// The multipart body is parsed before anything can reject the request, so a
+// rejected upload has already been written to disk by then.
+function temp_upload_count()
+{
+    return fs.existsSync(temp_uploads_dir) ? fs.readdirSync(temp_uploads_dir).length : 0;
+}
 
 describe('POST /auth/profile', function () {
 
@@ -46,6 +57,32 @@ describe('POST /auth/profile', function () {
         });
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.avatar_url, `${config.public_url}/auth/uploads/${status.user_slug}/avatar.webp`);
+    });
+
+    it('rejects an undecodable image without leaving a temp file', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const before = temp_upload_count();
+
+        await this.client.post_multipart('/auth/profile', {
+            _csrf: (await this.http_get_json('/auth/status')).csrf_token,
+            avatar: new File([Buffer.from('not-a-real-png')], 'a.png', {type: 'image/png'}),
+        });
+
+        assert.strictEqual((await this.http_get_json('/auth/status')).error, 'Invalid image');
+        assert.strictEqual(temp_upload_count(), before);
+    });
+
+    it('leaves no temp file when the upload is rejected by CSRF', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        const before = temp_upload_count();
+
+        await this.client.post_multipart('/auth/profile', {
+            _csrf: 'wrong-token',
+            avatar: new File([Buffer.from('not-a-real-png')], 'a.png', {type: 'image/png'}),
+        });
+
+        assert.strictEqual((await this.http_get_json('/auth/status')).error, 'Invalid CSRF Token');
+        assert.strictEqual(temp_upload_count(), before);
     });
 
     it('changes password', async function () {

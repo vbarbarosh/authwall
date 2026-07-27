@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const als = require('../helpers/als');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_password_change = require('../actions/complete_password_change');
@@ -37,9 +38,30 @@ const routes = [
         // ⚠️ upload_avatar must run before csrf_middleware:
         // multer parses the multipart body and populates req.body,
         // which csrf_middleware reads
-        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), csrf_middleware, profile_post]},
+        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), remove_temp_upload, csrf_middleware, profile_post]},
     ]},
 ];
+
+// Because multer has to run first (see above), the temp file already exists by
+// the time anything downstream can reject the request. A failed CSRF check or
+// an image sharp cannot decode would otherwise leave up to 5 MB behind on every
+// attempt, and nothing in the codebase ever sweeps that directory. Registering
+// the cleanup on the response covers every outcome, including the paths where
+// profile_post never runs at all.
+function remove_temp_upload(req, res, next)
+{
+    if (req.file) {
+        const path = req.file.path;
+        res.on('close', function () {
+            fs_rm(path).catch(function (error) {
+                if (error.code !== 'ENOENT') {
+                    als.logger.write(`[avatar_temp_cleanup_error] ⚠️ ${path}: ${error.message}`);
+                }
+            });
+        });
+    }
+    next();
+}
 
 // POST /auth/profile
 async function profile_post(req, res)
@@ -75,8 +97,16 @@ async function profile_post(req, res)
     if (req.file) {
         const avatar_path = fs_path_resolve(__dirname, `../../data/uploads/${user.slug}/avatar.webp`);
         await fs_mkdirp(fs_path_dirname(avatar_path));
-        await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
-        await fs_rm(req.file.path);
+        try {
+            await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
+        }
+        catch (error) {
+            // The multer fileFilter only sees the content type the client
+            // declared, so a non-image first actually fails here. Keep the real
+            // cause in the log and give the user something they can act on.
+            als.logger.write(`[avatar_process_error] ⚠️ ${error.message}`);
+            throw new UserFriendlyError('Invalid image');
+        }
         update.avatar_url = `${config.public_url}/auth/uploads/${user.slug}/avatar.webp`;
     }
 
