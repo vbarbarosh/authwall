@@ -3,7 +3,7 @@ const config = require('../../../config');
 const nock = require('nock');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-function mock_github({id = 'github-sub-123', email = 'shared@example.com'} = {})
+function mock_github({id = 41898282, email = 'shared@example.com'} = {})
 {
     nock('https://github.com')
         .post('/login/oauth/access_token')

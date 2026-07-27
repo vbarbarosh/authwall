@@ -5,7 +5,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 // Shared helpers
 
-function mock_github({id = 'github-sub-123', email = null} = {})
+function mock_github({id = 41898282, email = null} = {})
 {
     nock('https://github.com')
         .post('/login/oauth/access_token')

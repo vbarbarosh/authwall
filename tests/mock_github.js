@@ -12,7 +12,7 @@ function mock_github()
     };
 
     const user_info = {
-        id: 'github-user-123',
+        id: 583231,
         name: 'Test User',
         avatar_url: 'https://example.com/avatar.jpg',
     };

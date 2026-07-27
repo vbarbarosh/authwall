@@ -20,7 +20,7 @@ function mock_google({sub = 'google-sub-123', email = null} = {})
         });
 }
 
-function mock_github({id = 'github-sub-123', emails = []} = {})
+function mock_github({id = 41898282, emails = []} = {})
 {
     nock('https://github.com')
         .post('/login/oauth/access_token')

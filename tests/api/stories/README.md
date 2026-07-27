@@ -26,6 +26,7 @@ Testable now
 - [x] user opens another account's email verification link while signed in; the token owner should be verified without changing the current session email fields → `email_verify_cross_session.test.js`
 - [x] Google OAuth is restricted to exact email addresses; a listed verified email signs in and an unlisted verified email is rejected → `google_oauth_exact_emails.test.js`
 - [x] Authwall runs as an nginx/Caddy sidecar; a user with an unconfirmed email must be rejected by `/auth/sidecar` exactly as the proxy path rejects them, and admitted once confirmed → `sidecar_unverified_email.test.js`
+- [x] user signs in with GitHub, comes back later and signs in again; the second sign-in must resolve to the same account even though GitHub returns the account id as a number → `github_repeat_sign_in.test.js`
 
 Needs product decision
 

@@ -23,7 +23,7 @@ describe('auth_events • identity_removed', function () {
 
         const now = new Date();
         await db('user_identities').insert([
-            {uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: 'github-user-123', value_normalized: 'github-user-123', created_at: now, updated_at: now, verified_at: now},
+            {uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now},
         ]);
 
         await this.http_post_json('/auth/github/disconnect');
@@ -34,7 +34,7 @@ describe('auth_events • identity_removed', function () {
             event_type: const_auth_event.identity_removed,
             event_status: 'success',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
     });
 
@@ -85,7 +85,7 @@ describe('auth_events • identity_removed', function () {
         const now = new Date();
         await db('user_identities').where({user_id}).del();
         await db('user_identities').insert([
-            {uid: random_uid_user_identity(), user_id: user_id, type: const_user_identity.oauth_github, value: 'github-user-123', value_normalized: 'github-user-123', created_at: now, updated_at: now, verified_at: now}
+            {uid: random_uid_user_identity(), user_id: user_id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now}
         ]);
 
         await this.http_post_json('/auth/github/disconnect');

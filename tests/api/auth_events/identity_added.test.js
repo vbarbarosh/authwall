@@ -35,7 +35,7 @@ describe('auth_events • identity_added', function () {
             event_type: const_auth_event.identity_added,
             event_status: 'success',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
     });
 
@@ -81,7 +81,7 @@ describe('auth_events • identity_added', function () {
 
         const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
         const now = new Date();
-        await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: 'github-user-123', value_normalized: 'github-user-123', created_at: now, updated_at: now, verified_at: now});
+        await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now});
 
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess = await this.client.get_session();
@@ -93,7 +93,7 @@ describe('auth_events • identity_added', function () {
             event_type: const_auth_event.identity_added,
             event_status: 'noop',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
         assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'already_connected'});
     });
@@ -125,11 +125,11 @@ describe('auth_events • identity_added', function () {
         await db('auth_events').del();
         mock_github();
 
-        // User A has github-user-123
+        // User A has 583231
         await db.transaction(async function () {
             const now = new Date();
             const user = await users_create();
-            await db('user_identities').insert({uid: random_uid_user_identity(), user_id: user.id, type: const_user_identity.oauth_github, value: 'github-user-123', value_normalized: 'github-user-123', created_at: now, updated_at: now, verified_at: now});
+            await db('user_identities').insert({uid: random_uid_user_identity(), user_id: user.id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now});
         });
 
         // User B is signed in and tries to connect the same GitHub
@@ -144,7 +144,7 @@ describe('auth_events • identity_added', function () {
             event_type: const_auth_event.identity_added,
             event_status: 'failure',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
         assert.partialDeepStrictEqual(JSON.parse(events[0].custom), {reason: 'linked_to_another_user'});
     });
