@@ -16,6 +16,7 @@ Testable now
 - [x] user signed up using GitHub without email, then later connected Google with verified email; now password setup should become possible → `github_no_email.test.js`
 - [x] user signed up using Google with verified email, then connected GitHub with the same email; both providers should attach to the same user → `oauth_same_email.test.js`
 - [x] user has email+password and Google linked; after changing email, sign-in with the old email should fail and Google sign-in should still work → `email_change.test.js`
+- [x] user changes their email using a form that differs from its normalized identity; the profile should show the entered address while sign-in continues to use normalized matching → `email_change_preserves_entered_value.md`, `email_change_preserves_entered_value.test.js`
 - [x] user changed password from profile, then tried to use an older password-reset link; the old reset link should be invalid → `password_reset_after_change.test.js`
 - user visited a protected page, chose magic link instead of password sign-in, completed the flow, and should return to the original page
 - user visited a protected page, chose sign-up instead of sign-in, completed sign-up, and should return to the original page

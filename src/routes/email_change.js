@@ -79,6 +79,7 @@ async function email_change_request_post(req, res)
     const now = new Date();
     await db('email_change_tokens').insert({
         user_id,
+        email,
         email_normalized,
         token_hash: crypto_hash_sha256(token).toString('base64url'),
         created_at: now,
@@ -130,7 +131,7 @@ async function email_change_confirm_get(req, res)
             uid: random_uid_user_identity(),
             user_id: email_change.user_id,
             type: const_user_identity.email,
-            value: email_change.email_normalized,
+            value: email_change.email,
             value_normalized: email_change.email_normalized,
             created_at: now,
             updated_at: now,
@@ -138,7 +139,7 @@ async function email_change_confirm_get(req, res)
         });
 
         const user_id = email_change.user_id;
-        const new_email = email_change.email_normalized;
+        const new_email = email_change.email;
         await complete_email_change_confirm(req, res, user_id, old_email, new_email);
     });
 }
