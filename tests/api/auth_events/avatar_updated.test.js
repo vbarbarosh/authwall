@@ -12,7 +12,7 @@ describe('auth_events • avatar_updated', function () {
         await this.client.post_multipart('/auth/profile', {
             _csrf: status.csrf_token,
             avatar: {
-                path: `${__dirname}/../../../logo.png`,
+                path: `${__dirname}/../../../img/logo.png`,
                 filename: 'avatar.png',
                 contentType: 'image/png',
             },

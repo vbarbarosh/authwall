@@ -11,7 +11,10 @@
 <a target="_blank" href="https://codecov.io/gh/vbarbarosh/authwall"><img src="https://codecov.io/gh/vbarbarosh/authwall/graph/badge.svg" alt="Code coverage" /></a>
 </p>
 
-<p align="center"><img src="logo.png" alt="Logo" width="400"></p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="img/cover-dark.png">
+  <img alt="Authwall" src="img/cover.png">
+</picture>
 
 **Authwall** is an authentication proxy — it sits between clients and an internal app,
 handles sign-in, and forwards authenticated requests with an `X-Auth-User` header.

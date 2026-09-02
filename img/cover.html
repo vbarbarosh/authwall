@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f3f7fc;
+    --fg: #0b2a6b;
+    --fg2: #1d4ed8;
+    --muted: #5b6b85;
+    --grid: rgba(29,78,216,0.07);
+    --chip-bg: #ffffff;
+    --chip-border: #d5e0f2;
+    --chip-fg: #0b2a6b;
+    --hl-bg: #1d4ed8;
+    --hl-fg: #ffffff;
+    --arrow: #8aa3cc;
+    --glow: rgba(37,99,235,0.18);
+  }
+  html[data-theme="dark"] {
+    --bg: #0b1220;
+    --bg2: #0f1a30;
+    --fg: #f1f5fb;
+    --fg2: #60a5fa;
+    --muted: #97a6c2;
+    --grid: rgba(96,165,250,0.08);
+    --chip-bg: #131f38;
+    --chip-border: #2a3b5e;
+    --chip-fg: #e6edf9;
+    --hl-bg: #3b82f6;
+    --hl-fg: #ffffff;
+    --arrow: #4f6a9a;
+    --glow: rgba(59,130,246,0.28);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    font-family: "Inter", "Inter Display", system-ui, sans-serif;
+    background:
+      radial-gradient(900px 520px at 78% 50%, var(--glow), transparent 65%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    color: var(--fg);
+    position: relative;
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(800px 500px at 50% 50%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(800px 500px at 50% 50%, #000 40%, transparent 100%);
+  }
+  .wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center;
+    padding: 0 96px;
+    gap: 64px;
+  }
+  .mark { flex: 0 0 auto; width: 300px; height: 340px; filter: drop-shadow(0 18px 30px rgba(10,40,120,0.22)); }
+  .text { flex: 1 1 auto; }
+  h1 {
+    font-family: "Inter Display", "Inter", sans-serif;
+    font-size: 116px; font-weight: 800; letter-spacing: -0.045em; line-height: 1;
+    color: var(--fg);
+  }
+  h1 span { color: var(--fg2); }
+  p.tag {
+    margin-top: 22px;
+    font-size: 30px; font-weight: 500; letter-spacing: -0.01em;
+    color: var(--muted); line-height: 1.3;
+  }
+  .flow {
+    margin-top: 40px;
+    display: flex; align-items: center; gap: 18px;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    font-size: 24px; font-weight: 600;
+  }
+  .chip {
+    padding: 12px 22px; border-radius: 12px;
+    background: var(--chip-bg); color: var(--chip-fg);
+    border: 1.5px solid var(--chip-border);
+  }
+  .chip.hl { background: var(--hl-bg); color: var(--hl-fg); border-color: var(--hl-bg); }
+  .arrow { color: var(--arrow); font-size: 28px; }
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="wrap">
+  <svg class="mark" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="shL" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2f7ff0"/>
+        <stop offset="1" stop-color="#0b3a9e"/>
+      </linearGradient>
+      <linearGradient id="shR" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1e6de0"/>
+        <stop offset="1" stop-color="#0a2f86"/>
+      </linearGradient>
+      <linearGradient id="lock" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset="1" stop-color="#e4edfb"/>
+      </linearGradient>
+    </defs>
+    <!-- shield -->
+    <path d="M150 12 L282 58 C282 190 240 275 150 328 C60 275 18 190 18 58 Z" fill="url(#shL)"/>
+    <path d="M150 12 L282 58 C282 190 240 275 150 328 Z" fill="url(#shR)"/>
+    <path d="M150 36 L258 74 C258 182 224 254 150 300 C76 254 42 182 42 74 Z" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    <!-- shackle -->
+    <path d="M110 150 V126 a40 40 0 0 1 80 0 V150" fill="none" stroke="url(#lock)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M110 150 V126 a40 40 0 0 1 80 0 V150" fill="none" stroke="#0a2f86" stroke-opacity="0.5" stroke-width="4" transform="translate(0,7)"/>
+    <!-- body -->
+    <rect x="86" y="145" width="128" height="100" rx="18" fill="url(#lock)"/>
+    <path d="M86 205 L214 205 L214 227 a18 18 0 0 1 -18 18 L104 245 a18 18 0 0 1 -18 -18 Z" fill="#0a2f86" fill-opacity="0.06"/>
+    <!-- keyhole -->
+    <circle cx="150" cy="185" r="14" fill="#0b2a6b"/>
+    <path d="M143 190 h14 l6 30 h-26 z" fill="#0b2a6b"/>
+  </svg>
+  <div class="text">
+    <h1>Auth<span>wall</span></h1>
+    <p class="tag">Authentication proxy for your internal apps.<br>Sign‑in, sessions and OAuth in one container.</p>
+    <div class="flow">
+      <span class="chip">client</span>
+      <span class="arrow">→</span>
+      <span class="chip hl">authwall</span>
+      <span class="arrow">→</span>
+      <span class="chip">your app</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
