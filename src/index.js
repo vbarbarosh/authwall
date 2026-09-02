@@ -1,21 +1,5 @@
 #!/usr/bin/env node
 
-// util._extend used in http-proxy (transitive dep of http-proxy-middleware) — cannot be fixed upstream
-//
-// node_modules/http-proxy$ g _extend
-// lib/http-proxy/index.js
-// 2:    extend    = require('util')._extend,
-//
-// lib/http-proxy/common.js
-// 3:    extend   = require('util')._extend,
-process.removeAllListeners('warning');
-process.on('warning', function (event) {
-    if (event.code === 'DEP0060') {
-        return;
-    }
-    process.stderr.write(event.stack + '\n');
-});
-
 // ⚠️ Sentry must initialize before `require('express')`
 const config = require('../config');
 require('./services/sentry').init_sentry(config);

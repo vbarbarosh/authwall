@@ -1,19 +1,3 @@
-// util._extend used in http-proxy (transitive dep of http-proxy-middleware) — cannot be fixed upstream
-//
-// node_modules/http-proxy$ g _extend
-// lib/http-proxy/index.js
-// 2:    extend    = require('util')._extend,
-//
-// lib/http-proxy/common.js
-// 3:    extend   = require('util')._extend,
-process.removeAllListeners('warning');
-process.on('warning', function (event) {
-    if (event.code === 'DEP0060') {
-        return;
-    }
-    process.stderr.write(event.stack + '\n');
-});
-
 require('dotenv/config');
 // A per-run database: the suite must never touch data/db.sqlite3 (the
 // developer's working copy) or whatever .env points at unless asked to
@@ -27,7 +11,6 @@ process.env.AUTHWALL_FLOWS = 'username,email,magic_link_and_code';
 process.env.AUTHWALL_CONFIRM_EMAIL_REQUIRED = 'false';
 process.env.AUTHWALL_BCRYPT_ROUNDS = '4';
 
-const Runnable = require('mocha/lib/runnable');
 const als = require('./src/helpers/als');
 const bootstrap_database = require('./src/helpers/bootstrap_database');
 const config = require('./config');
@@ -36,6 +19,7 @@ const make_logger_fake = require('./src/services/logger/make_logger_fake');
 const make_logger_stdout = require('./src/services/logger/make_logger_stdout');
 const make_mailer_fake = require('./src/services/mailer/make_mailer_fake');
 const setup_servers = require('./tests/setup_servers');
+const {Runnable} = require('mocha/lib/runnable');
 
 const db = knex(config.knexvars);
 const original_run = Runnable.prototype.run;

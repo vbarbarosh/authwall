@@ -282,6 +282,13 @@ async function create_app()
                 for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
                     proxy_req.removeHeader(config.upstream.unset_headers[i]);
                 }
+                // httpxy (http-proxy-middleware >= 4) pipes the client body only
+                // after the upstream socket connects, and Node holds the request
+                // line + headers back until the first write. Send them now so the
+                // upstream sees the request as soon as the socket is up. This also
+                // avoids a deadlock with socket-level interceptors (nock/msw wait
+                // for the headers before they let the socket "connect").
+                proxy_req.flushHeaders();
             },
             proxyReqWs: function (proxy_req, req) {
                 if (req.ws_user_uid) {
