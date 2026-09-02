@@ -3,6 +3,7 @@ const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
+const canonical_path = require('./helpers/canonical_path');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
@@ -448,14 +449,19 @@ function authenticated_user_uid(req)
     return req.auth?.user_uid ?? req.session?.user_uid ?? null;
 }
 
+// Both checks decide on the canonical form of the path, never on the raw
+// request target: "/lib/../admin" must not pass a "/lib/*" rule (the upstream
+// would serve /admin). A path that has no canonical form is never public.
 function is_public_path(path)
 {
-    return path_matches(config.public_paths, path);
+    const canonical = canonical_path(path);
+    return canonical !== null && path_matches(config.public_paths, canonical);
 }
 
 function is_optional_auth_path(path)
 {
-    return path_matches(config.optional_auth_paths, path);
+    const canonical = canonical_path(path);
+    return canonical !== null && path_matches(config.optional_auth_paths, canonical);
 }
 
 function path_matches(paths, path)
