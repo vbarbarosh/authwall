@@ -24,6 +24,14 @@
 			handle_response @unauthorized {
 				redir /auth/sign-in?return={http.request.uri.path}
 			}
+
+			# Valid session but email not yet confirmed
+			# (AUTHWALL_CONFIRM_EMAIL_REQUIRED) → the verify page. Sending
+			# these to sign-in would just loop back here.
+			@needs_verification status 403
+			handle_response @needs_verification {
+				redir /auth/email-verify?return={http.request.uri.path}
+			}
 		}
 		reverse_proxy {args[0]}
 	}

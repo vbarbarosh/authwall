@@ -3,7 +3,6 @@ const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
-const canonical_path = require('./helpers/canonical_path');
 const compile_trust_proxy = require('./helpers/compile_trust_proxy');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
@@ -20,6 +19,8 @@ const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const insert_auth_event = require('./helpers/insert_auth_event');
+const is_optional_auth_path = require('./helpers/is_optional_auth_path');
+const is_public_path = require('./helpers/is_public_path');
 const make_failure_counter = require('./helpers/middleware/make_failure_counter');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
 const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
@@ -61,6 +62,16 @@ async function create_app()
     const trust_proxy = compile_trust_proxy(config.trust_proxy);
     app.set('trust proxy', trust_proxy);
     app.disable('x-powered-by');
+
+    // Response headers for Authwall's own pages and endpoints (everything
+    // under /auth). Not applied to proxied upstream responses, which set
+    // their own. frame-ancestors/X-Frame-Options stop the sign-in and profile
+    // pages from being framed (clickjacking); the rest confine the SPA to its
+    // own origin. The SPA loads no external scripts, styles or fonts, so
+    // 'self' does not break it; script/style keep 'unsafe-inline' because the
+    // page still uses inline handlers — tightening that to a nonce is future
+    // work, tracked separately.
+    app.use('/auth', security_headers);
 
     let pending = 0;
     app.use(function (req, res, next) {
@@ -470,31 +481,6 @@ function authenticated_user_uid(req)
     return req.auth?.user_uid ?? req.session?.user_uid ?? null;
 }
 
-// Both checks decide on the canonical form of the path, never on the raw
-// request target: "/lib/../admin" must not pass a "/lib/*" rule (the upstream
-// would serve /admin). A path that has no canonical form is never public.
-function is_public_path(path)
-{
-    const canonical = canonical_path(path);
-    return canonical !== null && path_matches(config.public_paths, canonical);
-}
-
-function is_optional_auth_path(path)
-{
-    const canonical = canonical_path(path);
-    return canonical !== null && path_matches(config.optional_auth_paths, canonical);
-}
-
-function path_matches(paths, path)
-{
-    return paths.some(function (configured_path) {
-        if (configured_path.endsWith('/*')) {
-            return path.startsWith(configured_path.slice(0, -1));
-        }
-        return path === configured_path;
-    });
-}
-
 function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
 {
     return async function handle_ws_upgrade(req, socket, head) {
@@ -759,6 +745,26 @@ function cookie_value(cookie_header, name)
     }
 
     return null;
+}
+
+function security_headers(req, res, next)
+{
+    res.setHeader('Content-Security-Policy', [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+    ].join('; '));
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'same-origin');
+    next();
 }
 
 function clean_headers(req, res, next)

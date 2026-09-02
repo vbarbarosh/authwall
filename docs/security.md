@@ -138,6 +138,20 @@ wherever a URL can appear: the request URL, the `Referer` header, transaction
 events, and the HTTP breadcrumbs the SDK records for incoming and outgoing
 calls. The request log applies the same redaction to `Referer`.
 
+## Response headers
+
+Authwall sets these on its own pages and endpoints (everything under `/auth`);
+proxied upstream responses are untouched and keep whatever the app sends.
+
+- `Content-Security-Policy` — confines the sign-in SPA to its own origin
+  (`default-src 'self'`), allows avatar images over HTTPS and `data:` previews,
+  and blocks framing with `frame-ancestors 'none'`. `script-src`/`style-src`
+  keep `'unsafe-inline'` because the SPA still uses inline handlers; tightening
+  that to a nonce is tracked separately.
+- `X-Frame-Options: DENY` — clickjacking protection for browsers predating
+  `frame-ancestors`.
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`.
+
 ## Running behind a proxy
 
 Authwall reads the client IP from the `X-Forwarded-For` header according to

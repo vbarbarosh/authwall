@@ -1,4 +1,5 @@
 const assert = require('assert');
+const axios = require('axios');
 const config = require('../../../config');
 
 // /auth/sidecar is the auth check for nginx `auth_request` / Caddy
@@ -48,6 +49,61 @@ describe('sidecar authorization', function () {
             return;
         }
         assert.ok(false, 'sidecar admitted an anonymous request');
+    });
+
+
+    describe('path scope from the original URI', function () {
+
+        beforeEach(function () {
+            config.public_paths = ['/favicon.ico', '/lib/*'];
+            config.optional_auth_paths = ['/landing/*'];
+        });
+
+        function sidecar(client, original_uri) {
+            const headers = {'X-Original-URI': original_uri};
+            if (client.cookies.size) {
+                headers.Cookie = Array.from(client.cookies.values()).join('; ');
+            }
+            return axios.get('/auth/sidecar', {baseURL: config.public_url, headers, maxRedirects: 0, validateStatus: () => true});
+        }
+
+        it('admits a public path anonymously, without X-Auth-User', async function () {
+            const r = await sidecar(this.client, 'http://app.test/lib/app.js');
+            assert.strictEqual(r.status, 200);
+            assert.strictEqual(r.headers['x-auth-user'], undefined);
+        });
+
+        it('admits an optional-auth path anonymously, without X-Auth-User', async function () {
+            const r = await sidecar(this.client, '/landing/home');
+            assert.strictEqual(r.status, 200);
+            assert.strictEqual(r.headers['x-auth-user'], undefined);
+        });
+
+        it('sets X-Auth-User on an optional-auth path for a signed-in user', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass123'});
+            const sess = await this.client.get_session();
+            const r = await sidecar(this.client, '/landing/home');
+            assert.strictEqual(r.status, 200);
+            assert.strictEqual(r.headers['x-auth-user'], sess.user_uid);
+        });
+
+        it('omits X-Auth-User on a public path even for a signed-in user', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass123'});
+            const r = await sidecar(this.client, '/lib/app.js');
+            assert.strictEqual(r.status, 200);
+            assert.strictEqual(r.headers['x-auth-user'], undefined);
+        });
+
+        it('rejects a traversal that resolves out of a public prefix', async function () {
+            const r = await sidecar(this.client, '/lib/../admin');
+            assert.strictEqual(r.status, 401);
+        });
+
+        it('still protects a private path when the original URI is present', async function () {
+            const r = await sidecar(this.client, '/private/page');
+            assert.strictEqual(r.status, 401);
+        });
+
     });
 
 });
