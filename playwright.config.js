@@ -85,6 +85,8 @@ module.exports = defineConfig({
         stderr: 'pipe',
         env: {
             AUTHWALL_LOGGER: 'daily',
+            // Own database file: an e2e run must not seed users into data/db.sqlite3.
+            AUTHWALL_DB: process.env.AUTHWALL_DB ?? `sqlite://${require('path').join(require('os').tmpdir(), 'authwall-e2e.sqlite3')}`,
             AUTHWALL_PUBLIC_URL: 'http://localhost:3000',
             AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:0',
             AUTHWALL_WEBSOCKETS: 'on',

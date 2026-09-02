@@ -516,6 +516,16 @@ function get_knexvars(env)
         return knexfile.sqlite;
     }
 
+    // sqlite:///absolute/path.sqlite3 or sqlite://relative/path.sqlite3 — a
+    // dedicated file, so tests and side deployments stop sharing data/db.sqlite3.
+    if (db.startsWith('sqlite://')) {
+        const filename = db.slice('sqlite://'.length);
+        if (!filename) {
+            throw new Error('AUTHWALL_DB=sqlite:// requires a file path, e.g. sqlite:///var/lib/authwall/db.sqlite3');
+        }
+        return {...knexfile.sqlite, connection: {filename: fs_path_resolve(filename)}};
+    }
+
     if (db.startsWith('mysql://')) {
         return knexfile.mysql;
     }
@@ -524,7 +534,7 @@ function get_knexvars(env)
         return knexfile.postgres;
     }
 
-    throw new Error('AUTHWALL_DB must use mysql://, postgres://, or postgresql://');
+    throw new Error('AUTHWALL_DB must use sqlite://, mysql://, postgres://, or postgresql://');
 }
 
 function parse_access_emails(value, env_name)

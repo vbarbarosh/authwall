@@ -495,10 +495,12 @@ Database connection URI.
 
 - Type: connection URI
 - Default: SQLite database at `data/db.sqlite3`
-- Values: unset, `mysql://...`, `postgres://...`, `postgresql://...`
+- Values: unset, `sqlite://...`, `mysql://...`, `postgres://...`, `postgresql://...`
 
 Leave this unset for the default local SQLite database.
-Set it when Authwall should use MySQL or PostgreSQL instead.
+Set `sqlite://` with a file path to keep SQLite but use a different file (a
+side deployment, or a database the test suite can own). Set `mysql://` or
+`postgres://` when Authwall should use MySQL or PostgreSQL instead.
 
 > [!WARNING]
 > If the URI uses any other scheme, Authwall refuses to start.
@@ -506,6 +508,7 @@ Set it when Authwall should use MySQL or PostgreSQL instead.
 Examples:
 
 ```sh
+AUTHWALL_DB=sqlite:///var/lib/authwall/db.sqlite3
 AUTHWALL_DB=mysql://authwall:authwall@mysql/authwall
 AUTHWALL_DB=postgres://authwall:authwall@postgres/authwall
 ```
