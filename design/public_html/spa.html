@@ -1483,9 +1483,9 @@ function render_user_data(s) {
   const display = s.display_name || '';
   if (av) {
     if (s.avatar_url) {
-      av.innerHTML = `<img src="${s.avatar_url}" alt="">`;
+      av.innerHTML = `<img src="${escape_html(s.avatar_url)}" alt="">`;
     } else {
-      av.innerHTML = `<span>${initials(display, '?')}</span>`;
+      av.innerHTML = `<span>${escape_html(initials(display, '?'))}</span>`;
     }
   }
   if (document.getElementById('p-display-name'))
@@ -1585,7 +1585,7 @@ function render_user_data(s) {
         <div class="connection-logo ${meta.cls || ''}" style="background:${meta.bg}">${meta.icon}</div>
         <div class="connection-detail">
           <div class="connection-label">${meta.label}</div>
-          <div class="connection-value">${p.value || ''}</div>
+          <div class="connection-value">${escape_html(p.value || '')}</div>
         </div>
         <span class="connection-status ${status_cls}">${status_label}</span>
         ${action}
@@ -1685,14 +1685,14 @@ function render_user_data(s) {
   const render_session = (sess, is_current) => {
     const { name, icon } = parse_ua(sess.ua || '');
     const device_icon = icon === 'mobile' ? ICON_MOBILE : ICON_DESKTOP;
-    const meta = [sess.ip, fmt_date(sess.last_seen_at)].filter(Boolean).join(' · ');
+    const meta = [sess.ip, fmt_date(sess.last_seen_at)].filter(Boolean).map(escape_html).join(' · ');
     const right = is_current
       ? `<span class="session-badge current" data-testid="sessions-current-badge">This device</span>`
-      : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" data-revoke="${sess.uid}">Revoke</button>`;
+      : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" data-revoke="${escape_html(sess.uid)}">Revoke</button>`;
     return `<div class="session-item">
       <div class="session-icon">${device_icon}</div>
       <div class="session-info">
-        <div class="session-ua">${name}</div>
+        <div class="session-ua">${escape_html(name)}</div>
         <div class="session-meta">${meta}</div>
       </div>
       ${right}
