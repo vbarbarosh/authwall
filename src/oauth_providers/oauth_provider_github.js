@@ -2,7 +2,7 @@ const assert_shape = require('../helpers/assert/assert_shape');
 const config = require('../../config');
 const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
+const http_get_json = require('../http/http_get_json');
 const http_post_json = require('../http/http_post_json');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
