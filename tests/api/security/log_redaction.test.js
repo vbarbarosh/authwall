@@ -1,4 +1,5 @@
 const assert = require('assert');
+const axios = require('axios');
 const config = require('../../../config');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -21,6 +22,16 @@ describe('request log redaction', function () {
         const logs = this.written_logs.join('\n');
         assert.strictEqual(logs.includes(token), false);
         assert.ok(logs.includes('/auth/magic-link/confirm?token=%5BFiltered%5D'));
+    });
+
+    it('does not log a token carried by the Referer header', async function () {
+        const referer = `${config.public_url}/auth/password-reset/confirm?token=cf0bbd31074e5df6`;
+
+        await axios.get('/auth/status', {baseURL: config.public_url, headers: {Referer: referer}});
+
+        const logs = this.written_logs.join('\n');
+        assert.strictEqual(logs.includes('cf0bbd31074e5df6'), false);
+        assert.ok(logs.includes('/auth/password-reset/confirm?token=%5BFiltered%5D'));
     });
 
     it('still logs parameters that carry no credential', async function () {

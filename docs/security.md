@@ -132,7 +132,10 @@ When [Sentry](config.md#sentry) is enabled, Authwall scrubs events before they
 are sent: `sendDefaultPii` is off, expected user-facing errors are dropped
 entirely, `Cookie` / `Authorization` / `Set-Cookie` / `X-CSRF-Token` headers and
 the request body are removed, and query parameters that look like secrets
-(`token`, `secret`, `password`, `code`, `state`) are replaced with `[Filtered]`.
+(`token`, `secret`, `password`, `code`, `state`) are replaced with `[Filtered]`
+wherever a URL can appear: the request URL, the `Referer` header, transaction
+events, and the HTTP breadcrumbs the SDK records for incoming and outgoing
+calls. The request log applies the same redaction to `Referer`.
 
 ## Running behind a proxy
 

@@ -65,6 +65,11 @@ async function create_app()
         logger.write(`[req_uid] ${req.uid}`);
 
         const headers = Object.fromEntries(Object.keys(req.headers).filter(v => LOGGED_HEADERS.has(v)).map(k => [k, req.headers[k]]));
+        if (headers.referer) {
+            // The reset and magic-link pages carry their token in the address
+            // bar, so every request they make repeats it in Referer.
+            headers.referer = urlxxx(headers.referer);
+        }
         logger.write(`[req_begin] ${req.method} ${JSON.stringify(urlxxx(req.url))} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
 
         res.on('close', function () {
