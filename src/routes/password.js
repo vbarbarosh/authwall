@@ -227,8 +227,11 @@ async function password_reset_request_post(req, res)
         throw new UserFriendlyError('Invalid email');
     }
 
+    // Only a verified address can receive a reset link: anyone can register
+    // anyone's e-mail unverified, and a reset delivered there would let the
+    // real owner "recover" an account a stranger controls.
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
-    if (ident) {
+    if (ident && ident.verified_at) {
         const token = random_hex();
 
         const now = new Date();
@@ -256,7 +259,7 @@ async function password_reset_request_post(req, res)
         },
         event_type: const_auth_event.password_reset_requested,
         event_status: const_auth_event_status.noop,
-        custom: {reason: 'email_not_found'},
+        custom: {reason: ident ? 'email_not_verified' : 'email_not_found'},
     });
 
     redirect(req, res, config.pages.password_reset_notice);
