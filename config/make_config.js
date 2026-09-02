@@ -12,6 +12,11 @@ const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_
 const parse_set_headers = require('../src/helpers/parse/parse_set_headers');
 const parse_unset_headers = require('../src/helpers/parse/parse_unset_headers');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
+const strict_bool = require('../src/helpers/strict/strict_bool');
+const strict_enum = require('../src/helpers/strict/strict_enum');
+const strict_float = require('../src/helpers/strict/strict_float');
+const strict_int = require('../src/helpers/strict/strict_int');
+const strict_port = require('../src/helpers/strict/strict_port');
 const yaml = require('yaml');
 
 const data_dir = fs_path_resolve(__dirname, '../data');
@@ -48,7 +53,7 @@ function make_config(input = {})
 
         upstream: make(settings.upstream, {
             url: {type: 'str', default: 'http://127.0.0.1:8080'},
-            mode: {type: 'enum', options: ['direct', 'proxy']},
+            mode: {type: 'enum', options: ['direct', 'proxy'], before: strict_enum('AUTHWALL_UPSTREAM_MODE', ['direct', 'proxy'])},
             set_headers: {type: 'any', default: []},
             unset_headers: {type: 'any', default: []},
         }),
@@ -118,7 +123,7 @@ function make_config(input = {})
         },
 
         confirm_email: make(settings.confirm_email, {
-            required: {type: 'bool', default: null, nullable: true, before: parse_bool_flag},
+            required: {type: 'bool', default: null, nullable: true, before: strict_bool('AUTHWALL_CONFIRM_EMAIL_REQUIRED')},
             mode: {type: 'str', default: 'auto'},
             expires_minutes: {type: 'int', min: 1, default: 15},
             code_length: {type: 'int', min: 4, max: 32, default: 6},
@@ -126,14 +131,14 @@ function make_config(input = {})
             resend_cooldown_seconds: {type: 'int', min: 0, default: 60},
         }),
 
-        logger: make(env.AUTHWALL_LOGGER, {type: 'enum', options: ['daily', 'stdout']}),
+        logger: make(env.AUTHWALL_LOGGER, {type: 'enum', options: ['daily', 'stdout'], before: strict_enum('AUTHWALL_LOGGER', ['daily', 'stdout'])}),
         logs_dir,
         uploads_dir,
 
         sentry: make(settings.sentry, {
             dsn: {type: 'str', nullable: true},
             environment: {type: 'str', nullable: true},
-            traces_sample_rate: {type: 'float', min: 0, max: 1, nullable: true},
+            traces_sample_rate: {type: 'float', min: 0, max: 1, nullable: true, before: strict_float('AUTHWALL_SENTRY_TRACES_SAMPLE_RATE', {min: 0, max: 1})},
         }),
 
         rate_limiting: make(settings.rate_limiting, {
@@ -142,15 +147,15 @@ function make_config(input = {})
         }),
 
         personal_access_tokens: make(settings.personal_access_tokens, {
-            enabled: {type: 'bool', default: false, before: parse_bool_flag},
+            enabled: {type: 'bool', default: false, before: strict_bool('AUTHWALL_PERSONAL_ACCESS_TOKENS')},
         }),
 
         websockets: make(settings.websockets, {
-            enabled: {type: 'bool', default: false, before: parse_bool_flag},
+            enabled: {type: 'bool', default: false, before: strict_bool('AUTHWALL_WEBSOCKETS')},
         }),
 
         listen: env.LISTEN ?? '127.0.0.1',
-        port: env.PORT ?? 3000,
+        port: strict_port('PORT', env.PORT) ?? 3000,
         secrets: {
             // The session secret is HKDF-derived from the root secret. There is
             // no derived CSRF secret: CSRF tokens are random per-session values
@@ -159,13 +164,13 @@ function make_config(input = {})
         },
 
         knexvars: get_knexvars(env),
-        bcrypt_rounds: make(settings.bcrypt_rounds, {type: 'int', min: 4, max: 31, default: 12}),
+        bcrypt_rounds: make(settings.bcrypt_rounds, {type: 'int', min: 4, max: 31, default: 12, before: strict_int('AUTHWALL_BCRYPT_ROUNDS', {min: 4, max: 31})}),
 
         cookie: make(settings.cookie, {
             domain: {type: 'str', after: v => v.trim() || undefined},
             path: {type: 'str', after: v => v.startsWith('/') ? v : '/'},
-            same_site: {type: 'enum', options: ['lax', 'strict', 'none']},
-            secure: {type: 'bool', default: public_url.startsWith('https://'), before: v => ({yes: 1, no: 0, true: 1, false: 0}[v] ?? v)},
+            same_site: {type: 'enum', options: ['lax', 'strict', 'none'], before: strict_enum('AUTHWALL_COOKIE_SAMESITE', ['lax', 'strict', 'none'])},
+            secure: {type: 'bool', default: public_url.startsWith('https://'), before: strict_bool('AUTHWALL_COOKIE_SECURE')},
             max_age_days: {type: 'int', min: 1, max: 365, default: 30},
         }),
 
@@ -174,7 +179,7 @@ function make_config(input = {})
                 enabled: 'bool',
                 allow_username: {type: 'bool', default: true},
                 allow_email: {type: 'bool', default: true},
-                min_password_length: {type: 'int', min: 4, max: 32, default: 8},
+                min_password_length: {type: 'int', min: 4, max: 32, default: 8, before: strict_int('AUTHWALL_PASSWORD_MIN', {min: 4, max: 32})},
             },
             magic_link: {
                 enabled: 'bool',
@@ -221,7 +226,7 @@ function make_config(input = {})
 
         mailer: make(settings.mailer, {
             enabled: {type: 'bool', default: true},
-            provider: {type: 'enum', options: ['auto', 'fake', 'resend', 'mailjet', 'ses']},
+            provider: {type: 'enum', options: ['auto', 'fake', 'resend', 'mailjet', 'ses'], before: strict_enum('AUTHWALL_MAILER', ['auto', 'fake', 'resend', 'mailjet', 'ses'])},
             resend: {
                 key: {type: 'str', nullable: true},
                 from: {type: 'str', nullable: true},
@@ -396,11 +401,6 @@ function validate_secret(secret, source)
     if (secret.length < 32) {
         throw new Error(`${source} must be at least 32 characters`);
     }
-}
-
-function parse_bool_flag(value)
-{
-    return {yes: 1, no: 0, true: 1, false: 0, on: 1, off: 0}[value] ?? value;
 }
 
 function parse_paths(value)

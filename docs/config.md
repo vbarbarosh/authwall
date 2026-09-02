@@ -8,7 +8,9 @@ refuses to start unless that request is fully satisfied.
 
 This is intentional: it prevents the situation where you believe
 a setting took effect the way you wanted, but Authwall silently
-fell back to a different option.
+fell back to a different option. An out-of-range number, an
+unrecognized enum, or an unparseable boolean is a startup error,
+not a silent default; an empty value means "use the default".
 
 ## Overview
 
@@ -85,7 +87,7 @@ fell back to a different option.
 Where the Authwall HTTP server binds.
 
 - `LISTEN` — bind address. Default: `127.0.0.1` when running from source; the published Docker image bakes in `LISTEN=0.0.0.0` so the container is reachable on every interface. Override to a specific address to bind to one interface.
-- `PORT` — TCP port. Default: `3000`.
+- `PORT` — TCP port. Type: integer in `[1, 65535]`. Default: `3000`. A non-numeric or out-of-range value refuses to start.
 
 These configure the local listener only; the externally visible URL is set separately via [AUTHWALL_PUBLIC_URL](#authwall_public_url).
 
@@ -124,7 +126,7 @@ AUTHWALL_SECRET=$(bin/random-secret)
 Where Authwall writes its log output.
 
 - Type: enum
-- Values: `daily`, `stdout`
+- Values: `daily`, `stdout` (an unrecognized value refuses to start)
 - Default: `daily` when running from source; the published Docker image bakes in `AUTHWALL_LOGGER=stdout`
 
 Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes.
@@ -405,7 +407,7 @@ upstream, `AUTHWALL_UPSTREAM_URL`. Choose the mode by how many domains sit behin
 Authwall.
 
 - Type: enum
-- Values: `direct`, `proxy`
+- Values: `direct`, `proxy` (case-insensitive; an unrecognized value refuses to start)
 - Default: `direct`
 
 Authwall always forwards to exactly one upstream and cannot route by domain on
@@ -555,8 +557,8 @@ Configures the session cookie Authwall sets after sign-in.
 
 - `AUTHWALL_COOKIE_DOMAIN` — `Domain` attribute. Default: unset; the cookie is scoped to the exact host of the response.
 - `AUTHWALL_COOKIE_PATH` — `Path` attribute. Default: `/`. Values that do not start with `/` are normalized to `/`.
-- `AUTHWALL_COOKIE_SAMESITE` — `SameSite` attribute. Values: `lax`, `strict`, `none`. Default: `lax`.
-- `AUTHWALL_COOKIE_SECURE` — `Secure` attribute. Values: `yes`, `no`, `true`, `false`. Default: `true` when `AUTHWALL_PUBLIC_URL` starts with `https://`, otherwise `false`.
+- `AUTHWALL_COOKIE_SAMESITE` — `SameSite` attribute. Values: `lax`, `strict`, `none` (case-insensitive). Default: `lax`. An unrecognized value refuses to start.
+- `AUTHWALL_COOKIE_SECURE` — `Secure` attribute. Values: `yes`, `no`, `true`, `false`, `on`, `off` (case-insensitive). Default: `true` when `AUTHWALL_PUBLIC_URL` starts with `https://`, otherwise `false`. Empty means unset (use the default); any other value refuses to start.
 
 Modern browsers reject `SameSite=None` cookies that are not also `Secure`.
 
@@ -692,7 +694,7 @@ AUTHWALL_CONFIRM_EMAIL=code
 Selects which mailer Authwall uses to send sign-in, confirmation, password-reset, magic-link, and notification emails.
 
 - Type: enum
-- Values: `auto`, `fake`, `resend`, `mailjet`, `ses`
+- Values: `auto`, `fake`, `resend`, `mailjet`, `ses` (an unrecognized value refuses to start)
 - Default: `auto`
 
 How each value behaves:
