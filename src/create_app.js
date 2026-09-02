@@ -53,6 +53,7 @@ async function create_app()
     const app = express();
 
     app.set('trust proxy', true);
+    app.disable('x-powered-by');
 
     let pending = 0;
     app.use(function (req, res, next) {
@@ -83,7 +84,14 @@ async function create_app()
         als.run({logger}, () => next());
     });
 
+    // Everything below the session middleware that touches req.session
+    // writes a row per cookieless request. Health probes and static assets
+    // never need a session, so they are answered before it is loaded.
+    express_routes(app, require('./routes/health'));
     app.use('/auth/uploads', express.static(config.uploads_dir));
+    // Support for mountable design
+    app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
+
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
 
@@ -141,7 +149,6 @@ async function create_app()
     });
 
     express_routes(app, require('./routes/status'));
-    express_routes(app, require('./routes/health'));
 
     // 🐛️ Devs only
     // express_routes(app, require('./routes/dev'));
@@ -182,9 +189,6 @@ async function create_app()
         express_routes(app, require('./routes/email_change'));
         express_routes(app, require('./routes/email_verify'));
     }
-
-    // Support for mountable design
-    app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
 
     const protected_spa_pages = new Set([
         config.pages.profile,
