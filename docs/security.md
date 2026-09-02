@@ -79,6 +79,7 @@ When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled
 | Sign-up                           | 5 requests / hour        |
 | Password reset                    | 5 requests / hour        |
 | Magic-link request                | 5 requests / hour        |
+| E-mail add / e-mail change request | 5 requests / hour       |
 | Personal access token creation    | 5 requests / hour        |
 | Failed bearer-token validation    | 20 requests / 15 minutes |
 

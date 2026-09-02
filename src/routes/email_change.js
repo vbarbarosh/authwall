@@ -12,16 +12,21 @@ const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
+const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 
 const SECOND = 1000;
+const MINUTE = 60*SECOND;
+
+// Every call sends a confirmation to an address the caller typed in.
+const email_change_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
 const routes = [
     {req: `GET ${config.pages.email_change_confirm}`, fn: email_change_confirm_get},
     {prepend: [auth_middleware, csrf_middleware], routes: [
-        {req: `POST ${config.pages.email_change_request}`, fn: email_change_request_post},
+        {req: `POST ${config.pages.email_change_request}`, prepend: [email_change_limiter], fn: email_change_request_post},
     ]},
 ];
 
