@@ -369,6 +369,9 @@ async function add_user(params = {})
     if (email_normalized) {
         rows.push({...base, uid: random_uid_user_identity(), type: const_user_identity.email, value: email, value_normalized: email_normalized, verified_at: (verified ? now : null)});
     }
+    if (!rows.length) {
+        throw new Error(`add_user: neither username ${JSON.stringify(username)} nor email ${JSON.stringify(email)} is a valid identity`);
+    }
     await db('user_identities').insert(rows);
 
     return {user_id: user.id, email, username, password, verified};

@@ -36,13 +36,12 @@ describe('POST /auth/magic-link/request', function () {
         assert.strictEqual(status2.error, 'Missing email');
     });
 
-    it('accepts loosely formatted email input', async function () {
+    it('rejects input that is not an e-mail address', async function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'invalid-email'});
 
         const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, null);
-        assert.strictEqual(this.sent_emails.length, 1);
-        assert.strictEqual(this.sent_emails[0].to, 'invalid-email');
+        assert.strictEqual(status2.error, 'Invalid email');
+        assert.strictEqual(this.sent_emails.length, 0);
     });
 
 });

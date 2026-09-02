@@ -29,3 +29,20 @@ describe('normalize_email', function () {
     });
 
 });
+
+describe('normalize_email shape', function () {
+
+    it('rejects values that are not a single address', function () {
+        const crlf = String.fromCharCode(13, 10);
+        for (const v of ['foo', '@x.test', 'a@', 'a@b@c', 'a b@x.test', 'a,b@x.test', 'a@x.test, c@y.test', 'a@x.test,', '<img src=x>@x.test', '"a"@x.test', 'a@[1.2.3.4]', 'a@x.test' + crlf + 'Bcc: c@y.test', 'a'.repeat(65) + '@x.test']) {
+            assert.strictEqual(normalize_email(v), null, JSON.stringify(v));
+        }
+    });
+
+    it('accepts ordinary addresses', function () {
+        for (const v of ['a@b', 'first.last+tag@sub.example.co.uk', 'x_y-z@localhost', 'üser@exämple.de']) {
+            assert.strictEqual(normalize_email(v), v);
+        }
+    });
+
+});

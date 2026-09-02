@@ -86,7 +86,11 @@ async function profile_post(req, res)
     const update = {};
 
     if ('display_name' in req.body) {
-        update.display_name = String(req.body.display_name).trim() || null;
+        const display_name = String(req.body.display_name).replace(/[\u0000-\u001f\u007f]/g, '').trim();
+        if (display_name.length > 100) {
+            throw new UserFriendlyError('Display name must be at most 100 characters');
+        }
+        update.display_name = display_name || null;
     }
 
     const user = await db('users').where({id: req.session.user_id}).first();
