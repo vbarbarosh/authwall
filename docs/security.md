@@ -140,9 +140,10 @@ calls. The request log applies the same redaction to `Referer`.
 
 ## Running behind a proxy
 
-Authwall sets Express's `trust proxy`, so `req.ip` is taken from the
-`X-Forwarded-For` header. That single trust assumption is load-bearing for
-several user-visible signals:
+Authwall reads the client IP from the `X-Forwarded-For` header according to
+[`AUTHWALL_TRUST_PROXY`](config.md#authwall_trust_proxy) (default: trust one
+proxy). The same setting governs HTTP requests and WebSocket upgrades. That
+trust assumption is load-bearing for several user-visible signals:
 
 - Per-IP **rate-limit keys** (sign-in, sign-up, PAT creation, bearer-token
   validation, etc.).
@@ -151,12 +152,12 @@ several user-visible signals:
 
 Deploy Authwall **behind a reverse proxy or load balancer that overwrites
 `X-Forwarded-For`** with the real client connection (nginx's `real_ip_header`,
-Caddy's `trusted_proxies`, an LB that strips inbound and appends its own, etc.)
-— and do not expose Authwall directly to the internet. A directly reachable
-instance lets any client send `X-Forwarded-For: 1.2.3.4` and have that value
-become the recorded IP everywhere above. The "last used from 8.8.8.8" line on a
-token row is only meaningful if the operator has actually constrained who can
-write that header.
+Caddy's `trusted_proxies`, an LB that strips inbound and appends its own, etc.),
+and set `AUTHWALL_TRUST_PROXY` to the number of proxies in front. A directly
+reachable instance should set `AUTHWALL_TRUST_PROXY=false` so no client can send
+`X-Forwarded-For: 1.2.3.4` and have that value become the recorded IP. The
+default trusts exactly one hop, so an extra proxy left unaccounted for makes the
+"last used from 8.8.8.8" line only as trustworthy as who can reach that hop.
 
 ## Hardening checklist
 

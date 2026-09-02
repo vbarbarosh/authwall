@@ -10,6 +10,7 @@ const parse_domains = require('../src/helpers/parse_domains');
 const parse_flows_setting = require('../src/helpers/parse/parse_flows_setting');
 const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_setting');
 const parse_set_headers = require('../src/helpers/parse/parse_set_headers');
+const parse_trust_proxy = require('../src/helpers/parse/parse_trust_proxy');
 const parse_unset_headers = require('../src/helpers/parse/parse_unset_headers');
 const resolve_yaml_vars = require('../src/helpers/resolve_yaml_vars');
 const strict_bool = require('../src/helpers/strict/strict_bool');
@@ -156,6 +157,7 @@ function make_config(input = {})
 
         listen: env.LISTEN ?? '127.0.0.1',
         port: strict_port('PORT', env.PORT) ?? 3000,
+        trust_proxy: parse_trust_proxy(env.AUTHWALL_TRUST_PROXY),
         secrets: {
             // The session secret is HKDF-derived from the root secret. There is
             // no derived CSRF secret: CSRF tokens are random per-session values

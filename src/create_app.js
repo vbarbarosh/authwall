@@ -4,6 +4,7 @@ const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFrien
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
 const canonical_path = require('./helpers/canonical_path');
+const compile_trust_proxy = require('./helpers/compile_trust_proxy');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
@@ -27,6 +28,7 @@ const oauth_provider_github = require('./oauth_providers/oauth_provider_github')
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
 const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
 const oauth_provider_twitter = require('./oauth_providers/oauth_provider_twitter');
+const proxyaddr = require('proxy-addr');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
@@ -52,7 +54,12 @@ async function create_app()
 {
     const app = express();
 
-    app.set('trust proxy', true);
+    // One compiled trust function for both the HTTP path (Express req.ip) and
+    // the WebSocket-upgrade path, so a spoofed X-Forwarded-For is resolved the
+    // same way on each — and the WS bearer limiter no longer keys every client
+    // on the shared proxy address. Configurable via AUTHWALL_TRUST_PROXY.
+    const trust_proxy = compile_trust_proxy(config.trust_proxy);
+    app.set('trust proxy', trust_proxy);
     app.disable('x-powered-by');
 
     let pending = 0;
@@ -292,7 +299,7 @@ async function create_app()
     app.use(proxy);
 
     if (config.websockets.enabled) {
-        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter);
+        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy);
         app.setup_server = function (server) {
             server.on('upgrade', handle_ws_upgrade);
         };
@@ -483,10 +490,12 @@ function path_matches(paths, path)
     });
 }
 
-function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
+function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
 {
     return async function handle_ws_upgrade(req, socket, head) {
-        const ip = req.socket.remoteAddress;
+        // Same resolution Express applies to req.ip, so the bearer limiter
+        // keys on the real client, not the proxy in front of every upgrade.
+        const ip = proxyaddr(req, trust_proxy);
 
         function reject(code, text) {
             socket.write(`HTTP/1.1 ${code} ${text}\r\nConnection: close\r\n\r\n`);

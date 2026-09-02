@@ -33,6 +33,7 @@ not a silent default; an empty value means "use the default".
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)             | Public paths that receive auth headers when signed in  |
 | [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                           | Upstream application URL                               |
 | [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                         | Upstream proxy behavior mode                           |
+| [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy)                             | How many front proxies set `X-Forwarded-For`           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
@@ -489,6 +490,34 @@ Example:
 
 ```sh
 AUTHWALL_UNSET_HEADERS='X-Auth-User;X-Forwarded-User'
+```
+
+## AUTHWALL_TRUST_PROXY
+
+How Authwall decides the client IP from the `X-Forwarded-For` header. The IP
+drives the per-IP rate-limit keys, the last-used IP on sessions and tokens,
+and the source IP in the audit log, so trusting a header a client can forge is
+what makes those spoofable.
+
+- Type: hop count, boolean, or a comma list of trusted IPs/subnets/presets
+- Default: `1`
+
+- A number is how many proxies sit in front of Authwall (`1` for a single
+  reverse proxy or load balancer, `2` for a CDN in front of that, and so on).
+- `false` (or `0`) trusts no proxy: use it when Authwall is directly reachable,
+  so `req.ip` is always the real connection.
+- A list such as `10.0.0.0/8, loopback` trusts only those sources.
+
+The same value governs both HTTP requests and WebSocket upgrades. Deploy behind
+a proxy that **overwrites** `X-Forwarded-For` and set this to the number of
+proxies you actually run.
+
+Example:
+
+```sh
+AUTHWALL_TRUST_PROXY=1
+AUTHWALL_TRUST_PROXY=false
+AUTHWALL_TRUST_PROXY=10.0.0.0/8,loopback
 ```
 
 ## AUTHWALL_DB

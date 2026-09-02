@@ -52,6 +52,17 @@ describe('websocket proxy', function () {
         }));
     });
 
+    // The upgrade path must resolve the client address the way Express
+    // resolves req.ip. With the default single trusted hop, a direct
+    // connection's X-Forwarded-For is honored, so the bearer limiter keys on
+    // the real client rather than on the shared proxy address.
+    it('resolves the upgrade client IP from X-Forwarded-For', async function () {
+        const r = await this.ws_roundtrip('/realtime', {headers: {'X-Forwarded-For': '203.0.113.7'}});
+        assert.strictEqual(r.opened, false);
+        assert.strictEqual(r.status, 401);
+        assert(this.written_logs.some(v => v.includes('[ws_upgrade_reject]') && v.includes('ip=203.0.113.7')));
+    });
+
     it('proxies a browser session cookie-authenticated upgrade and forwards X-Auth-User', async function () {
         await this.sign_in({username: 'mocha', password: 'pass1234'});
         const sess = await this.client.get_session();
