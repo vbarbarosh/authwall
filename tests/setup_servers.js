@@ -369,6 +369,9 @@ async function add_user(params = {})
     if (email_normalized) {
         rows.push({...base, uid: random_uid_user_identity(), type: const_user_identity.email, value: email, value_normalized: email_normalized, verified_at: (verified ? now : null)});
     }
+    if (!rows.length) {
+        throw new Error(`add_user: neither username ${JSON.stringify(username)} nor email ${JSON.stringify(email)} is a valid identity`);
+    }
     await db('user_identities').insert(rows);
 
     return {user_id: user.id, email, username, password, verified};
@@ -376,7 +379,7 @@ async function add_user(params = {})
 
 async function sign_in(params)
 {
-    const {user_id, username, email, password} = await add_user(params);
+    const {user_id, username, email, password, verified} = await add_user(params);
 
     this.sent_emails.splice(0);
     await this.http_post_json('/auth/sign-in', {
@@ -384,7 +387,11 @@ async function sign_in(params)
         password,
     });
 
-    if (email) {
+    const status = await this.http_get_json('/auth/status');
+    assert.strictEqual(status.authenticated, true, `sign_in() failed: ${status.error}`);
+
+    // The new-sign-in notice goes to verified addresses only.
+    if (email && verified) {
         await this.wait_for_emails(1);
         this.sent_emails.splice(0);
     }
@@ -403,5 +410,6 @@ async function assert_password({username, email, password})
 }
 
 module.exports = {
+    create_echo_server,
     spin,
 };

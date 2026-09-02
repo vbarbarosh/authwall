@@ -42,6 +42,21 @@ async function email_remove_post(req, res)
         throw new UserFriendlyError('Cannot remove email: it is your only sign-in method');
     }
 
+    // With verification required, an account without a verified address is
+    // held at the verify step on its next sign-in, and nothing there lets it
+    // add one back — so the only verified address cannot be removed. An
+    // unverified one can: removing and re-adding is how a typo is fixed.
+    if (config.confirm_email.required && ident.verified_at) {
+        await insert_auth_event({
+            req,
+            ident,
+            event_type: const_auth_event.identity_removed,
+            event_status: const_auth_event_status.failure,
+            custom: {reason: 'last_verified_email'},
+        });
+        throw new UserFriendlyError('Cannot remove email: a verified email is required to sign in');
+    }
+
     await db('user_identities').where({id: ident.id}).delete();
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, config.pages.profile);

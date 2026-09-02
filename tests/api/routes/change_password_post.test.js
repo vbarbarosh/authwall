@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
+const db = require('../../../db');
 
 describe('POST /auth/change-password', function () {
 
@@ -25,6 +26,22 @@ describe('POST /auth/change-password', function () {
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: null,
         });
+        await this.assert_password({username: 'mocha', password: 'pass456'});
+    });
+
+    it('sets an initial password when the account has none', async function () {
+        config.flows.password.min_password_length = 4;
+        const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
+        // An account created through an OAuth provider: signed in, but with no
+        // password to verify a current_password against.
+        await db('users').where({id: user_id}).update({password_hash: null});
+
+        await this.http_post_json('/auth/change-password', {
+            password: 'pass456',
+            password_confirm: 'pass456',
+        });
+
+        assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
         await this.assert_password({username: 'mocha', password: 'pass456'});
     });
 

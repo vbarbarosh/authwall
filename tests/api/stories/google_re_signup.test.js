@@ -47,7 +47,7 @@ describe('Google re-signup after disconnect | stories', function () {
             access_token: 'fake-token', expires_in: 28800, refresh_token: 'ghr_xxx',
             refresh_token_expires_in: 15811200, token_type: 'bearer', scope: 'user:email',
         });
-        nock('https://api.github.com').get('/user').reply(200, {id: 'github-sub-999', name: 'Test', avatar_url: null});
+        nock('https://api.github.com').get('/user').reply(200, {id: 9919, name: 'Test', avatar_url: null});
         nock('https://api.github.com').get('/user/emails').reply(200, []);
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess_gh = await this.client.get_session();

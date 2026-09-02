@@ -78,13 +78,18 @@ module.exports = defineConfig({
 
     // Run your local dev server before starting the tests
     webServer: {
-        command: 'npm run start',
+        command: 'node tests/playwright/start_server.js',
         url: 'http://127.0.0.1:3000',
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',
         env: {
             AUTHWALL_LOGGER: 'daily',
+            // Own database file: an e2e run must not seed users into data/db.sqlite3.
+            AUTHWALL_DB: process.env.AUTHWALL_DB ?? `sqlite://${require('path').join(require('os').tmpdir(), 'authwall-e2e.sqlite3')}`,
+            AUTHWALL_PUBLIC_URL: 'http://localhost:3000',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:0',
+            AUTHWALL_WEBSOCKETS: 'on',
             AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'false',
             AUTHWALL_SENTRY_DSN: '',
             AUTHWALL_SECRET: require('crypto').randomBytes(32).toString('hex'),

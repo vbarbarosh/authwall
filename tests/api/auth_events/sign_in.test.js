@@ -126,7 +126,7 @@ describe('auth_events • sign_in', function () {
             const now = new Date();
             const user = await users_create();
             await db('user_identities').insert([
-                {uid: random_uid_user_identity(), user_id: user.id, type: const_user_identity.oauth_github, value: 'github-user-123', value_normalized: 'github-user-123', created_at: now, updated_at: now, verified_at: now},
+                {uid: random_uid_user_identity(), user_id: user.id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now},
                 {uid: random_uid_user_identity(), user_id: user.id, type: const_user_identity.email, value: 'jack@domain1.com', value_normalized: normalize_email('jack@domain1.com'), created_at: now, updated_at: now, verified_at: now},
             ]);
         });
@@ -141,7 +141,7 @@ describe('auth_events • sign_in', function () {
         assert.partialDeepStrictEqual(sign_in_event, {
             event_status: 'success',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
     });
 

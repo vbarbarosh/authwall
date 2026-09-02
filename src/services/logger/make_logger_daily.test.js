@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
+const fs = require('fs/promises');
 const fs_path_join = require('@vbarbarosh/node-helpers/src/fs_path_join');
 const fs_read_utf8 = require('@vbarbarosh/node-helpers/src/fs_read_utf8');
 const fs_tempdir = require('@vbarbarosh/node-helpers/src/fs_tempdir');
@@ -29,6 +30,52 @@ describe('make_logger_daily', function () {
             const text = await fs_read_utf8(file);
             assert.match(text, /\] hello\n$/);
         });
+    });
+
+    it('creates log files readable by the owner only', async function () {
+        await fs_tempdir(async function (d) {
+            config.logs_dir = d;
+            {
+                await using logger = make_logger_daily();
+                logger.write('hello');
+            }
+
+            const file = fs_path_join(d, `app-${new Date().toISOString().slice(0, 10)}.log`);
+            const mode = (await fs.stat(file)).mode & 0o777;
+            assert.strictEqual(mode.toString(8), '600');
+        });
+    });
+
+    // Without an 'error' handler on the write stream, this takes down the
+    // whole proxy: an unhandled 'error' event becomes an uncaught exception.
+    it('degrades to stdout when the log file cannot be opened', async function () {
+        config.logs_dir = fs_path_join(saved_logs_dir, 'no-such-dir');
+
+        const stderr = [];
+        const stdout = [];
+        const saved_stderr_write = process.stderr.write;
+        const saved_stdout_write = process.stdout.write;
+        process.stderr.write = s => stderr.push(s);
+        process.stdout.write = s => stdout.push(s);
+
+        try {
+            const logger = make_logger_daily();
+            logger.write('before');
+
+            const deadline = Date.now() + 1000;
+            while (!stderr.length && Date.now() < deadline) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+
+            logger.write('after');
+        }
+        finally {
+            process.stderr.write = saved_stderr_write;
+            process.stdout.write = saved_stdout_write;
+        }
+
+        assert.match(stderr.join(''), /\[logger_daily_error]/);
+        assert.match(stdout.join(''), /\] after\n$/);
     });
 
 });

@@ -1,6 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const mock_microsoft = require('../../mock_microsoft');
+const nock = require('nock');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function start_oauth_flow(client)
@@ -79,6 +80,29 @@ describe('GET /auth/microsoft/callback', function () {
             authenticated: true,
         });
         assert.ok(status.providers.find(v => v.type === 'oauth_microsoft' && v.value_normalized === 'microsoft-user-123'));
+    });
+
+    // A tenant that returns no name claims at all. The given/family fallback
+    // used to be built by string interpolation, so a missing claim was stored
+    // as the literal display name "undefined undefined".
+    it('leaves display_name null when the provider sends no name claims', async function () {
+
+        nock.cleanAll();
+        nock('https://login.microsoftonline.com')
+            .post('/common/oauth2/v2.0/token')
+            .reply(200, {access_token: 'fake-token', token_type: 'Bearer'});
+        nock('https://login.microsoftonline.com')
+            .get('/common/v2.0/.well-known/openid-configuration')
+            .reply(200, {userinfo_endpoint: 'https://graph.microsoft.com/oidc/userinfo'});
+        nock('https://graph.microsoft.com')
+            .get('/oidc/userinfo')
+            .reply(200, {sub: 'microsoft-user-456', email: 'noname@example.com'});
+
+        await this.http_get_json(urlmod('/auth/microsoft/callback', {code: 'fake_code', state: await start_oauth_flow(this.client)}));
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.authenticated, true);
+        assert.strictEqual(status.display_name, null);
     });
 
     it('fails with missing oauth code', async function () {

@@ -112,7 +112,7 @@ describe('auth_events • sign_up', function () {
         assert.partialDeepStrictEqual(events[0], {
             event_status: 'success',
             identity_type: const_user_identity.oauth_github,
-            identity_value_normalized: 'github-user-123',
+            identity_value_normalized: '583231',
         });
     });
 

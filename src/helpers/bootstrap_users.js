@@ -22,7 +22,8 @@ async function bootstrap_users()
         const username_normalized = normalize_username(username);
         const emails_normalized = emails.map(normalize_email).filter(v => v);
         if (!username_normalized && !emails_normalized.length) {
-            als.logger.write(`⚠️ Skipping invalid user seed: [${JSON.stringify(user_seed).slice(1, -1)}]`);
+            const redacted = {...user_seed, password: password ? '[Filtered]' : undefined, password_hash: password_hash ? '[Filtered]' : undefined};
+            als.logger.write(`⚠️ Skipping invalid user seed: [${JSON.stringify(redacted).slice(1, -1)}]`);
             continue;
         }
 

@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const als = require('../helpers/als');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_password_change = require('../actions/complete_password_change');
@@ -37,9 +38,30 @@ const routes = [
         // ⚠️ upload_avatar must run before csrf_middleware:
         // multer parses the multipart body and populates req.body,
         // which csrf_middleware reads
-        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), csrf_middleware, profile_post]},
+        {req: 'POST /auth/profile', fn: [upload_avatar.single('avatar'), remove_temp_upload, csrf_middleware, profile_post]},
     ]},
 ];
+
+// Because multer has to run first (see above), the temp file already exists by
+// the time anything downstream can reject the request. A failed CSRF check or
+// an image sharp cannot decode would otherwise leave up to 5 MB behind on every
+// attempt, and nothing in the codebase ever sweeps that directory. Registering
+// the cleanup on the response covers every outcome, including the paths where
+// profile_post never runs at all.
+function remove_temp_upload(req, res, next)
+{
+    if (req.file) {
+        const path = req.file.path;
+        res.on('close', function () {
+            fs_rm(path).catch(function (error) {
+                if (error.code !== 'ENOENT') {
+                    als.logger.write(`[avatar_temp_cleanup_error] ⚠️ ${path}: ${error.message}`);
+                }
+            });
+        });
+    }
+    next();
+}
 
 // POST /auth/profile
 async function profile_post(req, res)
@@ -48,7 +70,9 @@ async function profile_post(req, res)
     const is_password_change = current_password || password || password_confirm;
 
     if (is_password_change) {
-        if (!current_password || !password || !password_confirm) {
+        // current_password is checked further down, once the user row tells us
+        // whether there is an existing password to verify against.
+        if (!password || !password_confirm) {
             throw new UserFriendlyError('Missing fields');
         }
         if (password !== password_confirm) {
@@ -62,7 +86,11 @@ async function profile_post(req, res)
     const update = {};
 
     if ('display_name' in req.body) {
-        update.display_name = String(req.body.display_name).trim() || null;
+        const display_name = String(req.body.display_name).replace(/[\u0000-\u001f\u007f]/g, '').trim();
+        if (display_name.length > 100) {
+            throw new UserFriendlyError('Display name must be at most 100 characters');
+        }
+        update.display_name = display_name || null;
     }
 
     const user = await db('users').where({id: req.session.user_id}).first();
@@ -73,8 +101,16 @@ async function profile_post(req, res)
     if (req.file) {
         const avatar_path = fs_path_resolve(__dirname, `../../data/uploads/${user.slug}/avatar.webp`);
         await fs_mkdirp(fs_path_dirname(avatar_path));
-        await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
-        await fs_rm(req.file.path);
+        try {
+            await sharp(req.file.path).resize(256, 256, {fit: 'cover'}).webp({quality: 90}).toFile(avatar_path);
+        }
+        catch (error) {
+            // The multer fileFilter only sees the content type the client
+            // declared, so a non-image first actually fails here. Keep the real
+            // cause in the log and give the user something they can act on.
+            als.logger.write(`[avatar_process_error] ⚠️ ${error.message}`);
+            throw new UserFriendlyError('Invalid image');
+        }
         update.avatar_url = `${config.public_url}/auth/uploads/${user.slug}/avatar.webp`;
     }
 
@@ -87,8 +123,17 @@ async function profile_post(req, res)
         if (!ident) {
             throw new UserFriendlyError('Cannot set or change password without a verified email or username');
         }
-        const ok = await bcrypt.compare(current_password, user.password_hash);
-        if (!ok) {
+
+        // A user who signed up through an OAuth provider has no password yet.
+        // Setting the first one has nothing to verify against, so
+        // current_password is not required — and must not be compared either,
+        // since bcrypt.compare(x, null) throws rather than returning false.
+        const has_password = user.password_hash !== null;
+
+        if (has_password && !current_password) {
+            throw new UserFriendlyError('Missing fields');
+        }
+        if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
             throw new UserFriendlyError('Current password is incorrect');
         }
         update.password_hash = await bcrypt.hash(password, config.bcrypt_rounds);

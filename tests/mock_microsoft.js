@@ -13,11 +13,14 @@ function mock_microsoft()
         userinfo_endpoint: 'https://graph.microsoft.com/oidc/userinfo',
     };
 
+    // Shape of a real https://graph.microsoft.com/oidc/userinfo response:
+    // standard OIDC claims, underscored.
     const user_info = {
         sub: 'microsoft-user-123',
         '@odata.context': 'https://substrate.office.com/profileB2/v2.0/me/$metadata#userinfo',
-        givenname: 'Test',
-        familyname: 'User',
+        name: 'Test User',
+        given_name: 'Test',
+        family_name: 'User',
         email: 'test@example.com',
         picture: 'https://graph.microsoft.com/v1.0/me/photo/$value'
     };

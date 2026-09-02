@@ -1,9 +1,13 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const email_verification_required = require('../email_verification_required');
 
+// What a user held at email verification may still do: verify, fix a
+// mistyped address (remove it, add the right one), or leave.
 const EMAIL_VERIFICATION_ALLOWED_PATHS = new Set([
     '/auth/email-verify/request',
     '/auth/email-verify/confirm',
+    '/auth/email/add',
+    '/auth/email/remove',
     '/auth/sign-out',
 ]);
 
@@ -20,7 +24,7 @@ async function auth_middleware(req, res, next)
         return;
     }
 
-    if (email_verification_required(req) && !EMAIL_VERIFICATION_ALLOWED_PATHS.has(req.path)) {
+    if (!EMAIL_VERIFICATION_ALLOWED_PATHS.has(req.path) && await email_verification_required(req)) {
         next(new UserFriendlyError('Email verification required'));
         return;
     }

@@ -37,4 +37,21 @@ describe('POST /auth/email/add', function () {
         assert.strictEqual(status.providers.filter(v => v.type === const_user_identity.email).length, 1);
     });
 
+
+    it('refuses to mail the same address again within the resend cooldown', async function () {
+        const email = 'target@authwall.test';
+
+        await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.http_post_json('/auth/email/add', {email});
+        await this.wait_for_emails(1);
+        await this.http_post_json('/auth/email/remove');
+
+        await this.http_post_json('/auth/email/add', {email});
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.error, 'Verification email already sent. Please wait.');
+        assert.strictEqual(this.sent_emails.length, 1);
+        assert.strictEqual(status.providers.some(v => v.type === const_user_identity.email), false);
+    });
+
 });

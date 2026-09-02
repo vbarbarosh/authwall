@@ -13,6 +13,13 @@ const express_session = require('express-session');
 // "simplify" this to stateless cookies. Keeping sessions stateful also makes
 // the random per-session CSRF token (req.session.csrf_token) the correct
 // synchronizer-token design — no app-wide CSRF key needed.
+// An anonymous session exists only to carry the sign-in form's CSRF token.
+// It gets a short row lifetime regardless of the cookie's 30-day maxAge, so
+// a crawler or a probe that discards cookies does not leave a month of rows
+// behind. The row is still extended on every request, so a visitor who is
+// actually on the page keeps their token.
+const ANONYMOUS_MAX_AGE_MS = 24*60*60*1000;
+
 class SessionStore extends express_session.Store
 {
     async get(uid, callback) {
@@ -45,9 +52,7 @@ class SessionStore extends express_session.Store
     async set(uid, data, callback) {
         try {
             const now = new Date();
-            const expires_at = data.cookie?.expires
-                ? new Date(data.cookie.expires)
-                : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
+            const expires_at = row_expires_at(data, now);
 
             const {user_id, user_uid, ip, ua, cookie, ...custom} = data;
             await db('sessions')
@@ -75,9 +80,7 @@ class SessionStore extends express_session.Store
     async touch(uid, data, callback) {
         try {
             const now = new Date();
-            const expires_at = data.cookie?.expires
-                ? new Date(data.cookie.expires)
-                : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
+            const expires_at = row_expires_at(data, now);
             await db('sessions').where({uid}).update({expires_at, last_seen_at: now});
             callback(null);
         }
@@ -85,6 +88,17 @@ class SessionStore extends express_session.Store
             callback(error);
         }
     }
+}
+
+function row_expires_at(data, now)
+{
+    const cookie_expires_at = data.cookie?.expires
+        ? new Date(data.cookie.expires)
+        : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
+    if (data.user_id) {
+        return cookie_expires_at;
+    }
+    return new Date(Math.min(cookie_expires_at.getTime(), now.getTime() + ANONYMOUS_MAX_AGE_MS));
 }
 
 module.exports = SessionStore;

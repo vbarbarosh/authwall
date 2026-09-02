@@ -7,7 +7,8 @@ function http_post_json(url, body, options)
         ...options?.headers,
     };
 
-    return axios.post(url, body, {...options, headers}).then(v => v.data);
+    // axios has no timeout by default; a peer that never answers must not hold the request open forever
+    return axios.post(url, body, {timeout: 15*1000, ...options, headers}).then(v => v.data);
 }
 
 module.exports = http_post_json;

@@ -40,7 +40,7 @@ describe('sign up via github | scenarios', function () {
             display_name: 'Test User',
             avatar_url: 'https://example.com/avatar.jpg',
         });
-        assert.ok(status.providers.find(v => v.type === 'oauth_github' && v.value === 'github-user-123').verified_at !== null);
+        assert.ok(status.providers.find(v => v.type === 'oauth_github' && v.value === '583231').verified_at !== null);
         assert.ok(status.providers.find(v => v.type === 'email' && v.value === 'jack@domain1.com').verified_at !== null);
     });
 

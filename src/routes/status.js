@@ -1,6 +1,9 @@
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
+const email_verification_required = require('../helpers/email_verification_required');
+const is_optional_auth_path = require('../helpers/is_optional_auth_path');
+const is_public_path = require('../helpers/is_public_path');
 const frontend_personal_access_tokens = require('../helpers/models/frontend_personal_access_tokens');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
@@ -166,10 +169,31 @@ async function get_confirm_email_status(user_id, identities)
 }
 
 // GET /auth/sidecar
+//
+// The reverse proxy passes the original request path in X-Original-URI
+// (nginx auth_request) or X-Forwarded-Uri (Caddy forward_auth). When it is
+// present, the sidecar applies the same public/optional-auth scoping the HTTP
+// proxy applies, so a public asset is not held at sign-in in sidecar mode.
+// When it is absent the path is treated as protected, matching the previous
+// behavior.
 async function sidecar_get(req, res)
 {
+    const original_path = sidecar_original_path(req);
+
+    // Public paths: admitted without an identity header, even for a signed-in
+    // user, exactly as the proxy omits X-Auth-User for them.
+    if (original_path !== null && is_public_path(original_path)) {
+        res.status(200).send();
+        return;
+    }
+
     const user_id = req.auth?.user_id ?? req.session?.user_id ?? null;
     if (!user_id) {
+        // Optional-auth paths are reachable anonymously (no identity header).
+        if (original_path !== null && is_optional_auth_path(original_path)) {
+            res.status(200).send();
+            return;
+        }
         res.status(401).send();
         return;
     }
@@ -180,8 +204,36 @@ async function sidecar_get(req, res)
         return;
     }
 
+    // Same gate the HTTP proxy applies in sign_in_required — without it, a
+    // sidecar deployment would admit users the proxy path holds at email
+    // verification.
+    //
+    // 403 (not 401) because the credential is valid — the user is just not
+    // authorized to use it yet. Bearer requests are skipped: they already had
+    // verification enforced in personal_access_token_auth.
+    if (!req.auth?.personal_access_token_uid && await email_verification_required(req)) {
+        res.status(403).send();
+        return;
+    }
+
     res.setHeader('X-Auth-User',  user.uid);
     res.status(200).send();
+}
+
+function sidecar_original_path(req)
+{
+    const raw = req.headers['x-original-uri'] ?? req.headers['x-forwarded-uri'] ?? null;
+    if (!raw) {
+        return null;
+    }
+    const s = String(raw);
+    try {
+        const path = s.includes('://') ? new URL(s).pathname : s.split('?')[0];
+        return path || null;
+    }
+    catch (error) {
+        return null;
+    }
 }
 
 module.exports = routes;

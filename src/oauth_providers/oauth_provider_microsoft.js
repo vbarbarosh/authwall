@@ -1,8 +1,8 @@
 const config = require('../../config');
 const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
-const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
+const http_get_json = require('../http/http_get_json');
+const http_post_urlencoded = require('../http/http_post_urlencoded');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_microsoft = {
@@ -56,10 +56,26 @@ async function fetch_user_info(token)
 
     return {
         sub: user_info.sub,
-        name: `${user_info.givenname} ${user_info.familyname}`.trim() || null,
+        name: display_name(user_info),
         avatar: null,
         verified_emails: [user_info.email].filter(Boolean),
     };
+}
+
+// Microsoft's userinfo endpoint returns the OIDC `name` claim, same as every
+// other provider here, so prefer it and fall back to the given/family pair.
+//
+// The fallback must not be built by template interpolation: with both claims
+// absent, `${undefined} ${undefined}` produces the string "undefined undefined",
+// which is truthy — so a `|| null` guard never fires and the literal text is
+// stored as the user's display name.
+function display_name(user_info)
+{
+    if (user_info.name) {
+        return user_info.name;
+    }
+
+    return [user_info.given_name, user_info.family_name].filter(Boolean).join(' ') || null;
 }
 
 module.exports = oauth_provider_microsoft;

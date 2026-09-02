@@ -2,7 +2,7 @@ const nock = require('nock');
 
 const EXPECTED_BASIC = Buffer.from('mocha_twitter_client_id:mocha_twitter_client_secret').toString('base64');
 
-function mock_twitter({email = 'test@example.com'} = {})
+function mock_twitter({email = 'test@example.com', user_info: user_info_override = null} = {})
 {
     const tokens = {
         access_token: 'fake-token',
@@ -22,6 +22,10 @@ function mock_twitter({email = 'test@example.com'} = {})
 
     if (email) {
         user_info.data.confirmed_email = email;
+    }
+    if (user_info_override) {
+        Object.keys(user_info).forEach(k => delete user_info[k]);
+        Object.assign(user_info, user_info_override);
     }
 
     nock.cleanAll();

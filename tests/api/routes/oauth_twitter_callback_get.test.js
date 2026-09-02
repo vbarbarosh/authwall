@@ -1,5 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
+const const_user_identity = require('../../../src/helpers/const/const_user_identity');
+const db = require('../../../db');
 const mock_twitter = require('../../mock_twitter');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -90,6 +92,21 @@ describe('GET /auth/twitter/callback', function () {
             error: 'Invalid OAuth state',
             authenticated: false,
         });
+    });
+
+
+    // X answers a revoked or under-scoped token with HTTP 200 and an
+    // `errors` array, no `data`. That must fail as "no account identifier",
+    // never resolve to an identity whose subject is the string "undefined"
+    // — two such sign-ins would land in the same account.
+    it('fails when X returns no account identifier', async function () {
+        mock_twitter({user_info: {errors: [{title: 'Forbidden', detail: 'Your client app is not configured'}]}});
+        await this.http_get_json(urlmod('/auth/twitter/callback', {code: 'fake_code', state: await start_oauth_flow(this.client)}));
+
+        const status = await this.http_get_json('/auth/status');
+        assert.strictEqual(status.error, 'The provider did not return an account identifier');
+        assert.strictEqual(status.authenticated, false);
+        assert.strictEqual(await db('user_identities').where({type: const_user_identity.oauth_twitter}).first(), undefined);
     });
 
 });

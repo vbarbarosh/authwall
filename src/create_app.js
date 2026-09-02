@@ -3,6 +3,7 @@ const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
+const compile_trust_proxy = require('./helpers/compile_trust_proxy');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
@@ -18,6 +19,8 @@ const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const insert_auth_event = require('./helpers/insert_auth_event');
+const is_optional_auth_path = require('./helpers/is_optional_auth_path');
+const is_public_path = require('./helpers/is_public_path');
 const make_failure_counter = require('./helpers/middleware/make_failure_counter');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
 const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
@@ -26,12 +29,14 @@ const oauth_provider_github = require('./oauth_providers/oauth_provider_github')
 const oauth_provider_google = require('./oauth_providers/oauth_provider_google');
 const oauth_provider_microsoft = require('./oauth_providers/oauth_provider_microsoft');
 const oauth_provider_twitter = require('./oauth_providers/oauth_provider_twitter');
+const proxyaddr = require('proxy-addr');
 const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const save_session = require('./helpers/save_session');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('@vbarbarosh/node-helpers/src/urlparts');
+const urlxxx = require('./helpers/urlxxx');
 const {sentry_request_context, setup_sentry_error_handler} = require('./services/sentry');
 
 const LOGGED_HEADERS = new Set([
@@ -50,7 +55,23 @@ async function create_app()
 {
     const app = express();
 
-    app.set('trust proxy', true);
+    // One compiled trust function for both the HTTP path (Express req.ip) and
+    // the WebSocket-upgrade path, so a spoofed X-Forwarded-For is resolved the
+    // same way on each — and the WS bearer limiter no longer keys every client
+    // on the shared proxy address. Configurable via AUTHWALL_TRUST_PROXY.
+    const trust_proxy = compile_trust_proxy(config.trust_proxy);
+    app.set('trust proxy', trust_proxy);
+    app.disable('x-powered-by');
+
+    // Response headers for Authwall's own pages and endpoints (everything
+    // under /auth). Not applied to proxied upstream responses, which set
+    // their own. frame-ancestors/X-Frame-Options stop the sign-in and profile
+    // pages from being framed (clickjacking); the rest confine the SPA to its
+    // own origin. The SPA loads no external scripts, styles or fonts, so
+    // 'self' does not break it; script/style keep 'unsafe-inline' because the
+    // page still uses inline handlers — tightening that to a nonce is future
+    // work, tracked separately.
+    app.use('/auth', security_headers);
 
     let pending = 0;
     app.use(function (req, res, next) {
@@ -63,7 +84,12 @@ async function create_app()
         logger.write(`[req_uid] ${req.uid}`);
 
         const headers = Object.fromEntries(Object.keys(req.headers).filter(v => LOGGED_HEADERS.has(v)).map(k => [k, req.headers[k]]));
-        logger.write(`[req_begin] ${req.method} ${JSON.stringify(req.url)} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
+        if (headers.referer) {
+            // The reset and magic-link pages carry their token in the address
+            // bar, so every request they make repeats it in Referer.
+            headers.referer = urlxxx(headers.referer);
+        }
+        logger.write(`[req_begin] ${req.method} ${JSON.stringify(urlxxx(req.url))} ${JSON.stringify(express_fingerprint(req))} ${JSON.stringify(headers)}`);
 
         res.on('close', function () {
             pending--;
@@ -76,7 +102,14 @@ async function create_app()
         als.run({logger}, () => next());
     });
 
+    // Everything below the session middleware that touches req.session
+    // writes a row per cookieless request. Health probes and static assets
+    // never need a session, so they are answered before it is loaded.
+    express_routes(app, require('./routes/health'));
     app.use('/auth/uploads', express.static(config.uploads_dir));
+    // Support for mountable design
+    app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
+
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
 
@@ -134,7 +167,6 @@ async function create_app()
     });
 
     express_routes(app, require('./routes/status'));
-    express_routes(app, require('./routes/health'));
 
     // 🐛️ Devs only
     // express_routes(app, require('./routes/dev'));
@@ -175,9 +207,6 @@ async function create_app()
         express_routes(app, require('./routes/email_change'));
         express_routes(app, require('./routes/email_verify'));
     }
-
-    // Support for mountable design
-    app.use('/auth/', express.static(fs_path_resolve(__dirname, '../design/public_html'), {extensions: ['html']}));
 
     const protected_spa_pages = new Set([
         config.pages.profile,
@@ -267,7 +296,7 @@ async function create_app()
                 }
             },
             error: function (error, req, res) {
-                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${req.url} originalUrl=${req.originalUrl}`);
+                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
                 // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
                 if (typeof res.status === 'function') {
                     res.status(502).send('Upstream service unavailable');
@@ -281,7 +310,7 @@ async function create_app()
     app.use(proxy);
 
     if (config.websockets.enabled) {
-        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter);
+        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy);
         app.setup_server = function (server) {
             server.on('upgrade', handle_ws_upgrade);
         };
@@ -301,13 +330,13 @@ async function error_handler(error, req, res, next)
             body: error.response?.data,
             headers: error.response?.headers,
             stack: error.stack,
-            url: req.url,
-            originalUrl: req.originalUrl,
+            url: urlxxx(req.url),
+            originalUrl: urlxxx(req.originalUrl),
         };
         als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(details)}`);
     }
     catch (error2) {
-        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${req.url} originalUrl=${req.originalUrl}`);
+        als.logger.write(`[error_handler] ⚠️ ${JSON.stringify(error.stack).slice(1, -1)} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
     }
 
     if (error instanceof EmailNotAuthorized) {
@@ -354,32 +383,37 @@ async function insert_email_not_authorized_event(req, error)
     });
 }
 
-function sign_in_required(req, res, next)
+async function sign_in_required(req, res, next)
 {
-    const user_id = authenticated_user_id(req);
+    try {
+        const user_id = authenticated_user_id(req);
 
-    if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
+        if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
+            next();
+            return;
+        }
+
+        if (!user_id) {
+            als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
+            return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+        }
+
+        // Bearer-authenticated requests have email verification enforced earlier,
+        // in personal_access_token_auth (with a 403). Redirecting an API client to
+        // a browser verify-email page wouldn't make sense.
+        if (!req.auth?.personal_access_token_uid && await email_verification_required(req)) {
+            als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
+            req.session.error = 'Email verification required';
+            await save_session(req);
+            return res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl}));
+        }
+
+        als.logger.write(`[auth_next] ${req.method} ${req.path}`);
         next();
-        return;
     }
-
-    if (!user_id) {
-        als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
-        return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+    catch (error) {
+        next(error);
     }
-
-    // Bearer-authenticated requests have email verification enforced earlier,
-    // in personal_access_token_auth (with a 403). Redirecting an API client to
-    // a browser verify-email page wouldn't make sense.
-    if (!req.auth?.personal_access_token_uid && email_verification_required(req)) {
-        als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
-        req.session.error = 'Email verification required';
-        save_session(req).then(() => res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl})), next);
-        return;
-    }
-
-    als.logger.write(`[auth_next] ${req.method} ${req.path}`);
-    next();
 }
 
 function make_personal_access_token_auth(bearer_miss_limiter)
@@ -447,30 +481,12 @@ function authenticated_user_uid(req)
     return req.auth?.user_uid ?? req.session?.user_uid ?? null;
 }
 
-function is_public_path(path)
-{
-    return path_matches(config.public_paths, path);
-}
-
-function is_optional_auth_path(path)
-{
-    return path_matches(config.optional_auth_paths, path);
-}
-
-function path_matches(paths, path)
-{
-    return paths.some(function (configured_path) {
-        if (configured_path.endsWith('/*')) {
-            return path.startsWith(configured_path.slice(0, -1));
-        }
-        return path === configured_path;
-    });
-}
-
-function make_ws_upgrade_handler(proxy, bearer_miss_limiter)
+function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
 {
     return async function handle_ws_upgrade(req, socket, head) {
-        const ip = req.socket.remoteAddress;
+        // Same resolution Express applies to req.ip, so the bearer limiter
+        // keys on the real client, not the proxy in front of every upgrade.
+        const ip = proxyaddr(req, trust_proxy);
 
         function reject(code, text) {
             socket.write(`HTTP/1.1 ${code} ${text}\r\nConnection: close\r\n\r\n`);
@@ -729,6 +745,26 @@ function cookie_value(cookie_header, name)
     }
 
     return null;
+}
+
+function security_headers(req, res, next)
+{
+    res.setHeader('Content-Security-Policy', [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+    ].join('; '));
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'same-origin');
+    next();
 }
 
 function clean_headers(req, res, next)

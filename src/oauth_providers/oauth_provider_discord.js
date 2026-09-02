@@ -1,8 +1,8 @@
 const config = require('../../config');
 const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
-const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
+const http_get_json = require('../http/http_get_json');
+const http_post_urlencoded = require('../http/http_post_urlencoded');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_discord = {
@@ -54,7 +54,7 @@ async function fetch_user_info(tokens)
     });
 
     return {
-        sub: String(user_info.id),
+        sub: user_info.id,
         name: user_info.global_name || user_info.username || null,
         avatar: avatar_url(user_info),
         verified_emails: user_info.verified && user_info.email ? [user_info.email] : [],

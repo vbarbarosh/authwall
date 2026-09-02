@@ -227,8 +227,11 @@ async function password_reset_request_post(req, res)
         throw new UserFriendlyError('Invalid email');
     }
 
+    // Only a verified address can receive a reset link: anyone can register
+    // anyone's e-mail unverified, and a reset delivered there would let the
+    // real owner "recover" an account a stranger controls.
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
-    if (ident) {
+    if (ident && ident.verified_at) {
         const token = random_hex();
 
         const now = new Date();
@@ -256,7 +259,7 @@ async function password_reset_request_post(req, res)
         },
         event_type: const_auth_event.password_reset_requested,
         event_status: const_auth_event_status.noop,
-        custom: {reason: 'email_not_found'},
+        custom: {reason: ident ? 'email_not_verified' : 'email_not_found'},
     });
 
     redirect(req, res, config.pages.password_reset_notice);
@@ -318,7 +321,18 @@ async function change_password_post(req, res)
         throw new UserFriendlyError('Cannot set or change password without a verified email or username');
     }
 
-    if (!current_password || !password || !password_confirm) {
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (!user) {
+        throw new UserFriendlyError('User not found');
+    }
+
+    // A user who signed up through an OAuth provider has no password yet.
+    // Setting the first one has nothing to verify against, so current_password
+    // is not required — and must not be compared either, since
+    // bcrypt.compare(x, null) throws rather than returning false.
+    const has_password = user.password_hash !== null;
+
+    if ((has_password && !current_password) || !password || !password_confirm) {
         throw new UserFriendlyError('Missing fields');
     }
 
@@ -330,13 +344,7 @@ async function change_password_post(req, res)
         throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
-    const user = await db('users').where({id: req.session.user_id}).first();
-    if (!user) {
-        throw new UserFriendlyError('User not found');
-    }
-
-    const ok = await bcrypt.compare(current_password, user.password_hash);
-    if (!ok) {
+    if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
         throw new UserFriendlyError('Current password is incorrect');
     }
 

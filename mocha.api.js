@@ -15,6 +15,11 @@ process.on('warning', function (event) {
 });
 
 require('dotenv/config');
+// A per-run database: the suite must never touch data/db.sqlite3 (the
+// developer's working copy) or whatever .env points at unless asked to
+// explicitly by exporting AUTHWALL_DB.
+const test_db_file = require('path').join(require('os').tmpdir(), `authwall-test-${process.pid}.sqlite3`);
+process.env.AUTHWALL_DB ??= `sqlite://${test_db_file}`;
 process.env.AUTHWALL_SECRET ??= require('crypto').randomBytes(32).toString('base64url');
 process.env.AUTHWALL_RATE_LIMITING ??= '0';
 process.env.AUTHWALL_MAILER = 'fake';
@@ -78,6 +83,9 @@ module.exports = {
         },
         afterAll: async function () {
             await db.destroy();
+            if (process.env.AUTHWALL_DB === `sqlite://${test_db_file}`) {
+                await require('fs/promises').rm(test_db_file, {force: true});
+            }
         },
         beforeEach: function () {
             for (const key of Object.keys(config)) {

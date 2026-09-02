@@ -43,6 +43,14 @@ describe('Email verification link opened in another session | stories', function
             })
             .first();
         assert.ok(bob_email.verified_at);
+
+        // Bob's session was signed in before he verified, so its snapshot is
+        // stale. His next request must read the live state and let him
+        // through, rather than holding him at verification forever.
+        this.client.cookies = cookies_b;
+        const bob_proxied = await this.client.get_json_no_redirects('/some/protected/path');
+        assert.strictEqual(bob_proxied.status, 200);
+        assert.partialDeepStrictEqual(bob_proxied.data, {echo_server: 'authwall_testing_echo_server'});
     });
 
 });

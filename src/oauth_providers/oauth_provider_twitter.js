@@ -1,8 +1,8 @@
 const config = require('../../config');
 const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
-const http_post_urlencoded = require('@vbarbarosh/node-helpers/src/http_post_urlencoded');
+const http_get_json = require('../http/http_get_json');
+const http_post_urlencoded = require('../http/http_post_urlencoded');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_twitter = {
@@ -58,7 +58,7 @@ async function fetch_user_info(tokens)
     const tmp = user_info.data || {};
 
     return {
-        sub: String(tmp.id),
+        sub: tmp.id,
         name: tmp.name || tmp.username || null,
         avatar: tmp.profile_image_url || null,
         verified_emails: [tmp.confirmed_email].filter(Boolean),

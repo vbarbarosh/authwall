@@ -75,7 +75,7 @@ describe('POST /auth/sign-in', function () {
     });
 
     it('fails with invalid email', async function () {
-        await this.add_user({username: 'mocha@authwall.test', password: 'pass123'});
+        await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/sign-in', {username: 'xxx@authwall.test', password: 'pass123'});
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, 'Invalid username or password');

@@ -21,6 +21,11 @@ async function complete_password_reset_confirm(req, res, user_id, token_hash)
     await db('sessions').where({user_id}).delete();
     await destroy_session(req);
 
+    // A reset means the credentials are presumed compromised; tokens minted
+    // under the old password must not outlive it.
+    const now = new Date();
+    await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
+
     await insert_auth_event({
         req,
         user,
@@ -33,6 +38,7 @@ async function complete_password_reset_confirm(req, res, user_id, token_hash)
     await send_email_nothrow({
         name: const_email.password_changed_via_reset_link,
         user,
+        verified_only: true,
         placeholders: {
             display_name: user.display_name,
             date: format_date_pretty_24(),

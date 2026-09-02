@@ -8,7 +8,9 @@ refuses to start unless that request is fully satisfied.
 
 This is intentional: it prevents the situation where you believe
 a setting took effect the way you wanted, but Authwall silently
-fell back to a different option.
+fell back to a different option. An out-of-range number, an
+unrecognized enum, or an unparseable boolean is a startup error,
+not a silent default; an empty value means "use the default".
 
 ## Overview
 
@@ -31,6 +33,7 @@ fell back to a different option.
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)             | Public paths that receive auth headers when signed in  |
 | [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                           | Upstream application URL                               |
 | [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                         | Upstream proxy behavior mode                           |
+| [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy)                             | How many front proxies set `X-Forwarded-For`           |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
@@ -85,7 +88,7 @@ fell back to a different option.
 Where the Authwall HTTP server binds.
 
 - `LISTEN` — bind address. Default: `127.0.0.1` when running from source; the published Docker image bakes in `LISTEN=0.0.0.0` so the container is reachable on every interface. Override to a specific address to bind to one interface.
-- `PORT` — TCP port. Default: `3000`.
+- `PORT` — TCP port. Type: integer in `[1, 65535]`. Default: `3000`. A non-numeric or out-of-range value refuses to start.
 
 These configure the local listener only; the externally visible URL is set separately via [AUTHWALL_PUBLIC_URL](#authwall_public_url).
 
@@ -124,7 +127,7 @@ AUTHWALL_SECRET=$(bin/random-secret)
 Where Authwall writes its log output.
 
 - Type: enum
-- Values: `daily`, `stdout`
+- Values: `daily`, `stdout` (an unrecognized value refuses to start)
 - Default: `daily` when running from source; the published Docker image bakes in `AUTHWALL_LOGGER=stdout`
 
 Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes.
@@ -405,7 +408,7 @@ upstream, `AUTHWALL_UPSTREAM_URL`. Choose the mode by how many domains sit behin
 Authwall.
 
 - Type: enum
-- Values: `direct`, `proxy`
+- Values: `direct`, `proxy` (case-insensitive; an unrecognized value refuses to start)
 - Default: `direct`
 
 Authwall always forwards to exactly one upstream and cannot route by domain on
@@ -489,16 +492,46 @@ Example:
 AUTHWALL_UNSET_HEADERS='X-Auth-User;X-Forwarded-User'
 ```
 
+## AUTHWALL_TRUST_PROXY
+
+How Authwall decides the client IP from the `X-Forwarded-For` header. The IP
+drives the per-IP rate-limit keys, the last-used IP on sessions and tokens,
+and the source IP in the audit log, so trusting a header a client can forge is
+what makes those spoofable.
+
+- Type: hop count, boolean, or a comma list of trusted IPs/subnets/presets
+- Default: `1`
+
+- A number is how many proxies sit in front of Authwall (`1` for a single
+  reverse proxy or load balancer, `2` for a CDN in front of that, and so on).
+- `false` (or `0`) trusts no proxy: use it when Authwall is directly reachable,
+  so `req.ip` is always the real connection.
+- A list such as `10.0.0.0/8, loopback` trusts only those sources.
+
+The same value governs both HTTP requests and WebSocket upgrades. Deploy behind
+a proxy that **overwrites** `X-Forwarded-For` and set this to the number of
+proxies you actually run.
+
+Example:
+
+```sh
+AUTHWALL_TRUST_PROXY=1
+AUTHWALL_TRUST_PROXY=false
+AUTHWALL_TRUST_PROXY=10.0.0.0/8,loopback
+```
+
 ## AUTHWALL_DB
 
 Database connection URI.
 
 - Type: connection URI
 - Default: SQLite database at `data/db.sqlite3`
-- Values: unset, `mysql://...`, `postgres://...`, `postgresql://...`
+- Values: unset, `sqlite://...`, `mysql://...`, `postgres://...`, `postgresql://...`
 
 Leave this unset for the default local SQLite database.
-Set it when Authwall should use MySQL or PostgreSQL instead.
+Set `sqlite://` with a file path to keep SQLite but use a different file (a
+side deployment, or a database the test suite can own). Set `mysql://` or
+`postgres://` when Authwall should use MySQL or PostgreSQL instead.
 
 > [!WARNING]
 > If the URI uses any other scheme, Authwall refuses to start.
@@ -506,6 +539,7 @@ Set it when Authwall should use MySQL or PostgreSQL instead.
 Examples:
 
 ```sh
+AUTHWALL_DB=sqlite:///var/lib/authwall/db.sqlite3
 AUTHWALL_DB=mysql://authwall:authwall@mysql/authwall
 AUTHWALL_DB=postgres://authwall:authwall@postgres/authwall
 ```
@@ -552,8 +586,8 @@ Configures the session cookie Authwall sets after sign-in.
 
 - `AUTHWALL_COOKIE_DOMAIN` — `Domain` attribute. Default: unset; the cookie is scoped to the exact host of the response.
 - `AUTHWALL_COOKIE_PATH` — `Path` attribute. Default: `/`. Values that do not start with `/` are normalized to `/`.
-- `AUTHWALL_COOKIE_SAMESITE` — `SameSite` attribute. Values: `lax`, `strict`, `none`. Default: `lax`.
-- `AUTHWALL_COOKIE_SECURE` — `Secure` attribute. Values: `yes`, `no`, `true`, `false`. Default: `true` when `AUTHWALL_PUBLIC_URL` starts with `https://`, otherwise `false`.
+- `AUTHWALL_COOKIE_SAMESITE` — `SameSite` attribute. Values: `lax`, `strict`, `none` (case-insensitive). Default: `lax`. An unrecognized value refuses to start.
+- `AUTHWALL_COOKIE_SECURE` — `Secure` attribute. Values: `yes`, `no`, `true`, `false`, `on`, `off` (case-insensitive). Default: `true` when `AUTHWALL_PUBLIC_URL` starts with `https://`, otherwise `false`. Empty means unset (use the default); any other value refuses to start.
 
 Modern browsers reject `SameSite=None` cookies that are not also `Secure`.
 
@@ -689,7 +723,7 @@ AUTHWALL_CONFIRM_EMAIL=code
 Selects which mailer Authwall uses to send sign-in, confirmation, password-reset, magic-link, and notification emails.
 
 - Type: enum
-- Values: `auto`, `fake`, `resend`, `mailjet`, `ses`
+- Values: `auto`, `fake`, `resend`, `mailjet`, `ses` (an unrecognized value refuses to start)
 - Default: `auto`
 
 How each value behaves:

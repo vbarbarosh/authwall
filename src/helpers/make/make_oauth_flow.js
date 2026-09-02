@@ -72,10 +72,11 @@ async function callback_get(oauth_provider, req, res)
 
     const tokens = await oauth_provider.exchange_code_for_tokens(code, oauth_code_verifier);
     const user_info = await oauth_provider.fetch_user_info(tokens);
+    const sub = oauth_sub(user_info.sub);
 
     const ident = await db('user_identities').where({
         type: oauth_provider.user_identity_type,
-        value_normalized: user_info.sub,
+        value_normalized: sub,
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
@@ -96,8 +97,8 @@ async function callback_get(oauth_provider, req, res)
                     req,
                     ident: {
                         type: oauth_provider.user_identity_type,
-                        value: String(user_info.sub),
-                        value_normalized: String(user_info.sub),
+                        value: sub,
+                        value_normalized: sub,
                     },
                     event_type: const_auth_event.identity_added,
                     event_status: const_auth_event_status.failure,
@@ -123,8 +124,8 @@ async function callback_get(oauth_provider, req, res)
             uid: random_uid_user_identity(),
             user_id: req.session.user_id,
             type: oauth_provider.user_identity_type,
-            value: String(user_info.sub),
-            value_normalized: String(user_info.sub),
+            value: sub,
+            value_normalized: sub,
             created_at: now,
             updated_at: now,
             verified_at: now,
@@ -134,8 +135,8 @@ async function callback_get(oauth_provider, req, res)
             req,
             ident: {
                 type: oauth_provider.user_identity_type,
-                value: String(user_info.sub),
-                value_normalized: String(user_info.sub),
+                value: sub,
+                value_normalized: sub,
             },
             event_type: const_auth_event.identity_added,
         });
@@ -163,6 +164,7 @@ async function callback_get(oauth_provider, req, res)
             await send_email_nothrow({
                 name: oauth_provider.email_connected,
                 user,
+                verified_only: true,
                 placeholders: {
                     display_name: user.display_name,
                     email: user_info.verified_emails[0] ?? '',
@@ -196,8 +198,8 @@ async function callback_get(oauth_provider, req, res)
                 uid: random_uid_user_identity(),
                 user_id,
                 type: oauth_provider.user_identity_type,
-                value: String(user_info.sub),
-                value_normalized: String(user_info.sub),
+                value: sub,
+                value_normalized: sub,
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
@@ -226,10 +228,31 @@ async function callback_get(oauth_provider, req, res)
     else {
         await complete_sign_up(req, res, user, null, {
             type: oauth_provider.user_identity_type,
-            value: String(user_info.sub),
-            value_normalized: String(user_info.sub),
+            value: sub,
+            value_normalized: sub,
         });
     }
+}
+
+// Providers disagree on the JSON type of the subject identifier: GitHub
+// returns a number, the rest return strings. It is stored as text, so it has
+// to be normalized once, here, before it is used for either the lookup or the
+// insert. Letting the raw value reach the lookup is not a cosmetic problem —
+// SQLite does not apply text affinity to a bound integer, so the query matches
+// nothing, and a returning user falls through to the sign-up branch and dies
+// on the unique constraint.
+function oauth_sub(value)
+{
+    if (typeof value !== 'string' && typeof value !== 'number') {
+        throw new UserFriendlyError('The provider did not return an account identifier');
+    }
+
+    const out = String(value).trim();
+    if (!out) {
+        throw new UserFriendlyError('The provider did not return an account identifier');
+    }
+
+    return out;
 }
 
 // POST /auth/google/disconnect
@@ -272,6 +295,7 @@ async function disconnect_post(oauth_provider, req, res)
         await send_email_nothrow({
             name: oauth_provider.email_disconnected,
             user,
+            verified_only: true,
             placeholders: {
                 display_name: user.display_name,
                 date: format_date_pretty_24(new Date()),

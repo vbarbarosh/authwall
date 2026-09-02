@@ -30,6 +30,7 @@ async function complete_sign_in(req, res, user, ident, auth_event_custom)
     await send_email_nothrow({
         name: const_email.new_sign_in,
         user,
+        verified_only: true,
         placeholders: {
             display_name: user.display_name,
             date: format_date_pretty_24(new Date()),

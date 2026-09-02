@@ -43,8 +43,18 @@ describe('POST /auth/email-verify/request', function () {
         });
     });
 
-    it('fails when no unverified email exists', async function () {
+    it('heals a stale session and does not error when the email is already verified', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
+        await this.http_post_json('/auth/email-verify/request');
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
+            error: null,
+            authenticated: true,
+        });
+        assert.strictEqual(this.sent_emails.length, 0);
+    });
+
+    it('fails when the user has no email at all', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass123'});
         await this.http_post_json('/auth/email-verify/request');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'No unverified email found',

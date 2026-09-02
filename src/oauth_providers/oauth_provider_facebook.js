@@ -1,7 +1,8 @@
 const config = require('../../config');
 const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
-const http_get_json = require('@vbarbarosh/node-helpers/src/http_get_json');
+const http_get_json = require('../http/http_get_json');
+const http_post_urlencoded = require('../http/http_post_urlencoded');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_facebook = {
@@ -31,15 +32,18 @@ function build_authorization_url(state, code_challenge, code_challenge_method)
     });
 }
 
+// The Graph API accepts the exchange as either a GET query or a POST body.
+// The body form keeps the app secret out of every place a URL is recorded:
+// proxy logs, the SDK's HTTP breadcrumbs, and provider-side request logs.
 async function exchange_code_for_tokens(code, code_verifier)
 {
-    const tokens = await http_get_json(urlmod('https://graph.facebook.com/v22.0/oauth/access_token', {
+    const tokens = await http_post_urlencoded('https://graph.facebook.com/v22.0/oauth/access_token', {
         client_id: config.flows.facebook.client_id,
         client_secret: config.flows.facebook.client_secret,
         redirect_uri: config.flows.facebook.redirect_url,
         code,
         code_verifier,
-    }));
+    });
 
     return tokens;
 }

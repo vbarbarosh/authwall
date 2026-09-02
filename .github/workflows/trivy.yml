@@ -27,9 +27,16 @@ jobs:
           hide-progress: true
           format: sarif
           output: trivy-results.sarif
+          # Reporter, not gate: findings surface in the Security tab. The
+          # build is gated on production dependencies by the npm-audit step
+          # in master.yml (--omit=dev). Failing here would (a) skip the
+          # upload below and (b) block on dev-only advisories the project
+          # accepts, so this stays 0.
           exit-code: 0
 
       - name: Upload Trivy scan results
+        # always(): still upload the report even if the scan step errored.
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif

@@ -79,6 +79,7 @@ When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled
 | Sign-up                           | 5 requests / hour        |
 | Password reset                    | 5 requests / hour        |
 | Magic-link request                | 5 requests / hour        |
+| E-mail add / e-mail change request | 5 requests / hour       |
 | Personal access token creation    | 5 requests / hour        |
 | Failed bearer-token validation    | 20 requests / 15 minutes |
 
@@ -132,13 +133,31 @@ When [Sentry](config.md#sentry) is enabled, Authwall scrubs events before they
 are sent: `sendDefaultPii` is off, expected user-facing errors are dropped
 entirely, `Cookie` / `Authorization` / `Set-Cookie` / `X-CSRF-Token` headers and
 the request body are removed, and query parameters that look like secrets
-(`token`, `secret`, `password`, `code`, `state`) are replaced with `[Filtered]`.
+(`token`, `secret`, `password`, `code`, `state`) are replaced with `[Filtered]`
+wherever a URL can appear: the request URL, the `Referer` header, transaction
+events, and the HTTP breadcrumbs the SDK records for incoming and outgoing
+calls. The request log applies the same redaction to `Referer`.
+
+## Response headers
+
+Authwall sets these on its own pages and endpoints (everything under `/auth`);
+proxied upstream responses are untouched and keep whatever the app sends.
+
+- `Content-Security-Policy` — confines the sign-in SPA to its own origin
+  (`default-src 'self'`), allows avatar images over HTTPS and `data:` previews,
+  and blocks framing with `frame-ancestors 'none'`. `script-src`/`style-src`
+  keep `'unsafe-inline'` because the SPA still uses inline handlers; tightening
+  that to a nonce is tracked separately.
+- `X-Frame-Options: DENY` — clickjacking protection for browsers predating
+  `frame-ancestors`.
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: same-origin`.
 
 ## Running behind a proxy
 
-Authwall sets Express's `trust proxy`, so `req.ip` is taken from the
-`X-Forwarded-For` header. That single trust assumption is load-bearing for
-several user-visible signals:
+Authwall reads the client IP from the `X-Forwarded-For` header according to
+[`AUTHWALL_TRUST_PROXY`](config.md#authwall_trust_proxy) (default: trust one
+proxy). The same setting governs HTTP requests and WebSocket upgrades. That
+trust assumption is load-bearing for several user-visible signals:
 
 - Per-IP **rate-limit keys** (sign-in, sign-up, PAT creation, bearer-token
   validation, etc.).
@@ -147,12 +166,12 @@ several user-visible signals:
 
 Deploy Authwall **behind a reverse proxy or load balancer that overwrites
 `X-Forwarded-For`** with the real client connection (nginx's `real_ip_header`,
-Caddy's `trusted_proxies`, an LB that strips inbound and appends its own, etc.)
-— and do not expose Authwall directly to the internet. A directly reachable
-instance lets any client send `X-Forwarded-For: 1.2.3.4` and have that value
-become the recorded IP everywhere above. The "last used from 8.8.8.8" line on a
-token row is only meaningful if the operator has actually constrained who can
-write that header.
+Caddy's `trusted_proxies`, an LB that strips inbound and appends its own, etc.),
+and set `AUTHWALL_TRUST_PROXY` to the number of proxies in front. A directly
+reachable instance should set `AUTHWALL_TRUST_PROXY=false` so no client can send
+`X-Forwarded-For: 1.2.3.4` and have that value become the recorded IP. The
+default trusts exactly one hop, so an extra proxy left unaccounted for makes the
+"last used from 8.8.8.8" line only as trustworthy as who can reach that hop.
 
 ## Hardening checklist
 

@@ -91,7 +91,7 @@ async function magic_link_confirm_get(req, res)
     const email_normalized = magic_link.email_normalized;
     await authorize_email(email_normalized);
 
-    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
         await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_link'});
@@ -155,7 +155,7 @@ async function magic_link_confirm_post(req, res)
 
     await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
 
-    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
         await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_code'});
@@ -179,6 +179,24 @@ async function magic_link_confirm_post(req, res)
         };
         await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_code'});
     }
+}
+
+// A magic link proves control of the mailbox, not ownership of whichever
+// account happens to have registered that address. Anyone can sign up with
+// anyone's e-mail and leave it unverified, so signing the link's recipient
+// into such an account would hand them to the squatter (and, with a password
+// on that account, hand the recipient's future activity to the squatter).
+// Only a verified identity signs in; a pending one is refused with directions.
+async function find_email_identity_for_sign_in(email_normalized)
+{
+    const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
+    if (!ident) {
+        return null;
+    }
+    if (!ident.verified_at) {
+        throw new UserFriendlyError('This email address is registered but not yet verified. Sign in with your password and verify it first.');
+    }
+    return ident;
 }
 
 module.exports = routes;

@@ -4,16 +4,18 @@ const get_user_email_and_name = require('./models/get_user_email_and_name');
 const parse_email_file = require('./parse_email_file');
 const config = require('../../config');
 
-// ⚠️ Do not send emails to non-verified email addresses.
+// Messages addressed by user (rather than an explicit `to`) go to the user's
+// verified address when one exists. Pass verified_only for security
+// notifications: they must never reach an address nobody has proven.
 async function send_email(params)
 {
     if (!config.mailer.enabled) {
         throw new Error('Email delivery is disabled');
     }
 
-    const {name, to, user_id, user, placeholders} = params;
+    const {name, to, user_id, user, placeholders, verified_only = false} = params;
 
-    const email_and_name = to ?? await get_user_email_and_name(user_id ?? user.id);
+    const email_and_name = to ?? await get_user_email_and_name(user_id ?? user.id, {verified_only});
     if (!email_and_name) {
         throw new Error(`User user_id=${user_id ?? user.id} has no associated email`);
     }

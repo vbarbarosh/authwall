@@ -38,11 +38,11 @@ describe('POST /auth/magic-link/confirm', function () {
         assert.strictEqual(status2.error, 'Missing fields');
     });
 
-    it('treats loosely formatted email input as a normal identifier', async function () {
+    it('rejects input that is not an e-mail address', async function () {
         await this.http_post_json('/auth/magic-link/confirm', {email: 'invalid-email', code: '123456'});
 
         const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, 'Invalid or expired code');
+        assert.strictEqual(status2.error, 'Invalid email');
     });
 
     it('fails with wrong code', async function () {
