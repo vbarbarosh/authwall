@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
+const fs = require('fs/promises');
 const fs_path_join = require('@vbarbarosh/node-helpers/src/fs_path_join');
 const fs_read_utf8 = require('@vbarbarosh/node-helpers/src/fs_read_utf8');
 const fs_tempdir = require('@vbarbarosh/node-helpers/src/fs_tempdir');
@@ -28,6 +29,20 @@ describe('make_logger_daily', function () {
             const file = fs_path_join(d, `app-${new Date().toISOString().slice(0, 10)}.log`);
             const text = await fs_read_utf8(file);
             assert.match(text, /\] hello\n$/);
+        });
+    });
+
+    it('creates log files readable by the owner only', async function () {
+        await fs_tempdir(async function (d) {
+            config.logs_dir = d;
+            {
+                await using logger = make_logger_daily();
+                logger.write('hello');
+            }
+
+            const file = fs_path_join(d, `app-${new Date().toISOString().slice(0, 10)}.log`);
+            const mode = (await fs.stat(file)).mode & 0o777;
+            assert.strictEqual(mode.toString(8), '600');
         });
     });
 

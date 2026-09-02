@@ -45,7 +45,9 @@ function make_logger_daily(params = {})
     // and every app behind it — over a failed log write. Degrade to stdout
     // instead; the next day-file rotation retries with a fresh stream.
     function open_stream(path) {
-        const out = fs.createWriteStream(path, {flags: 'a'});
+        // Owner-only: these files carry client IPs, e-mail addresses and,
+        // should redaction ever miss one, one-time credentials.
+        const out = fs.createWriteStream(path, {flags: 'a', mode: 0o600});
         out.on('error', function (error) {
             // Guard against a stale stream's late error clearing a newer one.
             if (stream === out) {
