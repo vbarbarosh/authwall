@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../img/cover-dark.png">
+  <img alt="Authwall" src="../img/cover.png">
+</picture>
+
 # Authwall documentation
 
 Authwall is an authentication proxy — it sits between clients and an internal

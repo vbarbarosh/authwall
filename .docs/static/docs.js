@@ -16,6 +16,12 @@
     function apply_theme(theme)
     {
         root.dataset.theme = theme;
+        // <picture> dark variants follow the OS scheme by default; make them
+        // follow the docs theme toggle instead.
+        for (const source of document.querySelectorAll('picture > source[media*="prefers-color-scheme: dark"], picture > source[data-dark]')) {
+            source.dataset.dark = '1';
+            source.setAttribute('media', theme === 'dark' ? 'all' : 'not all');
+        }
         if (button) {
             button.textContent = theme === 'dark' ? 'Light' : 'Dark';
             button.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');

@@ -547,6 +547,21 @@ mark.search-hit {
     padding: 0 0 24px;
 }
 
+.content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.content picture {
+    display: block;
+    margin: 0 0 32px;
+}
+
+.content picture img {
+    display: block;
+    border-radius: 12px;
+}
+
 .doc-content,
 .doc-page {
     max-width: var(--measure);

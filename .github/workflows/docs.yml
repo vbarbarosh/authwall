@@ -8,6 +8,7 @@ on:
       - .github/workflows/docs.yml
       - bin/build-docs
       - docs/**
+      - img/**
       - package-lock.json
       - package.json
   workflow_dispatch:

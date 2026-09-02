@@ -13,6 +13,10 @@ const repo_root = path.resolve(__dirname, '..');
 const config_file = path.join(repo_root, '.docs', 'config.yaml');
 const github_url = normalize_github_url(pkg.homepage || pkg.repository?.url || '');
 
+// Local images referenced from the docs (absolute path -> output-relative path),
+// collected while rendering and copied into the output dir at the end.
+const asset_files = new Map();
+
 main().catch(function (err) {
     console.error(err.stack || err.message || err);
     process.exit(1);
@@ -44,6 +48,8 @@ async function main()
     if (config.build?.single !== false) {
         build_single({config, source_dir, output_dir, nav, pages, highlighter});
     }
+
+    copy_assets(output_dir);
 
     console.log(`Built docs into ${path.relative(repo_root, output_dir) || '.'}`);
 }
@@ -239,13 +245,14 @@ function build_single({config, source_dir, output_dir, nav, pages, highlighter})
 function render_markdown({source_dir, page, mode, pages, highlighter})
 {
     const toc = [];
-    const md = create_markdown({page, mode, pages, toc, highlighter});
+    const md = create_markdown({source_dir, page, mode, pages, toc, highlighter});
     const source = [
         fs.readFileSync(path.join(source_dir, page.file), 'utf8'),
         render_config_files_markdown(source_dir, page),
     ].filter(Boolean).join('\n\n');
     let html = md.render(source, {page, mode});
     html = rewrite_mermaid_links(html, page, mode, pages);
+    html = rewrite_html_assets(html, source_dir, page, mode);
 
     if (mode === 'single') {
         html = prefix_html_ids(html, page.slug);
@@ -351,7 +358,7 @@ function language_for_config_file(file)
     return '';
 }
 
-function create_markdown({page, mode, pages, toc, highlighter})
+function create_markdown({source_dir, page, mode, pages, toc, highlighter})
 {
     const md = new MarkdownIt({
         html: true,
@@ -386,7 +393,72 @@ function create_markdown({page, mode, pages, toc, highlighter})
         return default_link_open(tokens, idx, options, env, self);
     };
 
+    const default_image = md.renderer.rules.image || render_token;
+    md.renderer.rules.image = function (tokens, idx, options, env, self) {
+        rewrite_token_attr(tokens[idx], 'src', function (src) {
+            return rewrite_asset_src(src, source_dir, page, mode);
+        });
+        return default_image(tokens, idx, options, env, self);
+    };
+
     return md;
+}
+
+// Images live outside the rendered pages (e.g. ../img/cover.png at the repo
+// root). A local src that resolves to a real file is copied into the output
+// dir — under its docs-relative path when it sits inside the source dir, under
+// its repo-relative path otherwise — and the src is rewritten to point there
+// from the page's output location.
+function rewrite_asset_src(src, source_dir, page, mode)
+{
+    if (!src || is_external_href(src) || src.startsWith('#') || src.startsWith('data:')) {
+        return src;
+    }
+
+    const {target, hash} = split_href(src);
+    const abs = path.resolve(source_dir, path.posix.dirname(page.file), target);
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
+        return src;
+    }
+
+    let output_rel;
+    if (abs.startsWith(source_dir + path.sep)) {
+        output_rel = path.relative(source_dir, abs);
+    } else if (abs.startsWith(repo_root + path.sep)) {
+        output_rel = path.relative(repo_root, abs);
+    } else {
+        return src;
+    }
+
+    output_rel = output_rel.split(path.sep).join('/');
+    asset_files.set(abs, output_rel);
+
+    const page_output = mode === 'single' ? 'single/index.html' : page.output;
+    return relative_output_href(page_output, output_rel) + (hash ? `#${hash}` : '');
+}
+
+// Same as the image renderer above, but for raw HTML in the markdown
+// (<img src>, <source srcset>) which markdown-it passes through untouched.
+function rewrite_html_assets(html, source_dir, page, mode)
+{
+    return html.replace(/(<(?:img|source)\b[^>]*?\s(src|srcset)=)(["'])([^"']*)\3/gi, function (match, lead, attr, quote, value) {
+        const rewritten = attr.toLowerCase() === 'srcset'
+            ? value.split(',').map(function (candidate) {
+                const [url, ...descriptors] = candidate.trim().split(/\s+/);
+                return [rewrite_asset_src(url, source_dir, page, mode), ...descriptors].join(' ');
+            }).join(', ')
+            : rewrite_asset_src(value, source_dir, page, mode);
+        return `${lead}${quote}${rewritten}${quote}`;
+    });
+}
+
+function copy_assets(output_dir)
+{
+    for (const [abs, output_rel] of asset_files) {
+        const dest = path.join(output_dir, output_rel);
+        fs.mkdirSync(path.dirname(dest), {recursive: true});
+        fs.copyFileSync(abs, dest);
+    }
 }
 
 function use_syntax_highlight(md, highlighter)
