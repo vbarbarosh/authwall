@@ -1,3 +1,18 @@
+# Stage 1: install production dependencies.
+#
+# better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
+# `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks the
+# package's gypfile:false), so a compiler is needed here. It stays out of the
+# runtime image below.
+FROM node:24-alpine AS deps
+
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Stage 2: runtime image.
 FROM node:24-alpine
 
 # https://github.com/Yelp/dumb-init
@@ -14,11 +29,8 @@ ENV LISTEN=0.0.0.0 \
     NODE_ENV=production \
     NODE_OPTIONS=--use-openssl-ca
 
-# Leverage Docker's cache system.
-# package.json will be changed less often than other files, so copy it first
-# and install all dependencies.
 COPY --chown=node:node package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
 
 # Copy only files required at runtime. Keep this list explicit: using
 # `COPY . .` can accidentally persist credentials or repository history in an
