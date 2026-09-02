@@ -164,6 +164,7 @@ async function callback_get(oauth_provider, req, res)
             await send_email_nothrow({
                 name: oauth_provider.email_connected,
                 user,
+                verified_only: true,
                 placeholders: {
                     display_name: user.display_name,
                     email: user_info.verified_emails[0] ?? '',
@@ -294,6 +295,7 @@ async function disconnect_post(oauth_provider, req, res)
         await send_email_nothrow({
             name: oauth_provider.email_disconnected,
             user,
+            verified_only: true,
             placeholders: {
                 display_name: user.display_name,
                 date: format_date_pretty_24(new Date()),

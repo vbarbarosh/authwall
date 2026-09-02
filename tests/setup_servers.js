@@ -376,7 +376,7 @@ async function add_user(params = {})
 
 async function sign_in(params)
 {
-    const {user_id, username, email, password} = await add_user(params);
+    const {user_id, username, email, password, verified} = await add_user(params);
 
     this.sent_emails.splice(0);
     await this.http_post_json('/auth/sign-in', {
@@ -384,7 +384,11 @@ async function sign_in(params)
         password,
     });
 
-    if (email) {
+    const status = await this.http_get_json('/auth/status');
+    assert.strictEqual(status.authenticated, true, `sign_in() failed: ${status.error}`);
+
+    // The new-sign-in notice goes to verified addresses only.
+    if (email && verified) {
         await this.wait_for_emails(1);
         this.sent_emails.splice(0);
     }

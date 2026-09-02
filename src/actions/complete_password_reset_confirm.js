@@ -33,6 +33,7 @@ async function complete_password_reset_confirm(req, res, user_id, token_hash)
     await send_email_nothrow({
         name: const_email.password_changed_via_reset_link,
         user,
+        verified_only: true,
         placeholders: {
             display_name: user.display_name,
             date: format_date_pretty_24(),

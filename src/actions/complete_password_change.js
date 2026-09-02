@@ -34,6 +34,7 @@ async function complete_password_change(req, res, user_id, auth_event_custom)
     await send_email_nothrow({
         name: const_email.password_changed_from_profile,
         user,
+        verified_only: true,
         placeholders: {
             display_name: user.display_name,
             date: format_date_pretty_24(),
