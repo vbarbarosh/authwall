@@ -24,7 +24,7 @@ async function auth_middleware(req, res, next)
         return;
     }
 
-    if (email_verification_required(req) && !EMAIL_VERIFICATION_ALLOWED_PATHS.has(req.path)) {
+    if (!EMAIL_VERIFICATION_ALLOWED_PATHS.has(req.path) && await email_verification_required(req)) {
         next(new UserFriendlyError('Email verification required'));
         return;
     }

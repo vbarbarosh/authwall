@@ -4,6 +4,7 @@ const db = require('../../db');
 const normalize_ip = require('./normalize/normalize_ip');
 const promisify = require('./promisify');
 const random_base62 = require('./random/random_base62');
+const session_email_verification = require('./models/session_email_verification');
 
 async function replace_session(req, user)
 {
@@ -19,20 +20,6 @@ async function replace_session(req, user)
         req.session.email_verified_at = email_verified_at;
     }
     await promisify(v => req.session.save(v));
-}
-
-async function session_email_verification(user_id)
-{
-    const ident = await db('user_identities')
-        .where({user_id, type: const_user_identity.email})
-        .orderByRaw('verified_at IS NULL ASC')
-        .orderBy('id')
-        .first();
-
-    return {
-        email: ident?.value ?? null,
-        email_verified_at: ident?.verified_at ? new Date(ident.verified_at).toJSON() : null,
-    };
 }
 
 module.exports = replace_session;

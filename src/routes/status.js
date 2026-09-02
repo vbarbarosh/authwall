@@ -188,7 +188,7 @@ async function sidecar_get(req, res)
     // 403 (not 401) because the credential is valid — the user is just not
     // authorized to use it yet. Bearer requests are skipped: they already had
     // verification enforced in personal_access_token_auth.
-    if (!req.auth?.personal_access_token_uid && email_verification_required(req)) {
+    if (!req.auth?.personal_access_token_uid && await email_verification_required(req)) {
         res.status(403).send();
         return;
     }

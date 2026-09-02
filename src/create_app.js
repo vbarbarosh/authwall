@@ -372,32 +372,37 @@ async function insert_email_not_authorized_event(req, error)
     });
 }
 
-function sign_in_required(req, res, next)
+async function sign_in_required(req, res, next)
 {
-    const user_id = authenticated_user_id(req);
+    try {
+        const user_id = authenticated_user_id(req);
 
-    if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
+        if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
+            next();
+            return;
+        }
+
+        if (!user_id) {
+            als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
+            return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+        }
+
+        // Bearer-authenticated requests have email verification enforced earlier,
+        // in personal_access_token_auth (with a 403). Redirecting an API client to
+        // a browser verify-email page wouldn't make sense.
+        if (!req.auth?.personal_access_token_uid && await email_verification_required(req)) {
+            als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
+            req.session.error = 'Email verification required';
+            await save_session(req);
+            return res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl}));
+        }
+
+        als.logger.write(`[auth_next] ${req.method} ${req.path}`);
         next();
-        return;
     }
-
-    if (!user_id) {
-        als.logger.write(`[auth_go_to_login] ${req.method} ${req.path}`);
-        return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+    catch (error) {
+        next(error);
     }
-
-    // Bearer-authenticated requests have email verification enforced earlier,
-    // in personal_access_token_auth (with a 403). Redirecting an API client to
-    // a browser verify-email page wouldn't make sense.
-    if (!req.auth?.personal_access_token_uid && email_verification_required(req)) {
-        als.logger.write(`[auth_go_to_email_verify] ${req.method} ${req.path}`);
-        req.session.error = 'Email verification required';
-        save_session(req).then(() => res.redirect(urlmod(config.pages.email_verify_request, {return: req.originalUrl})), next);
-        return;
-    }
-
-    als.logger.write(`[auth_next] ${req.method} ${req.path}`);
-    next();
 }
 
 function make_personal_access_token_auth(bearer_miss_limiter)

@@ -12,6 +12,8 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
+const redirect = require('../helpers/redirect');
+const save_session = require('../helpers/save_session');
 
 const SECOND = 1000;
 
@@ -30,6 +32,17 @@ async function email_verify_request_post(req, res)
 
     const ident = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNull('verified_at').first();
     if (!ident) {
+        // No unverified email. If the user already has a verified one, their
+        // session snapshot is just stale (they verified in another session) —
+        // heal it and send them on, rather than showing an error.
+        const verified = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('verified_at').first();
+        if (verified) {
+            req.session.email = verified.value;
+            req.session.email_verified_at = new Date(verified.verified_at).toJSON();
+            delete req.session.error;
+            await save_session(req);
+            return redirect(req, res, config.pages.profile);
+        }
         await insert_auth_event({
             req,
             event_type: const_auth_event.email_verification_requested,
