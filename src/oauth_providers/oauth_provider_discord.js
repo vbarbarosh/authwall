@@ -54,7 +54,7 @@ async function fetch_user_info(tokens)
     });
 
     return {
-        sub: String(user_info.id),
+        sub: user_info.id,
         name: user_info.global_name || user_info.username || null,
         avatar: avatar_url(user_info),
         verified_emails: user_info.verified && user_info.email ? [user_info.email] : [],

@@ -60,7 +60,7 @@ async function fetch_user_info(tokens)
         email: String,
         primary: Boolean,
         verified: Boolean,
-        visibility: assert_shape.enum(null, 'public'),
+        visibility: assert_shape.enum(null, 'public', 'private'),
     }));
 
     return {

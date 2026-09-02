@@ -22,7 +22,7 @@ function mock_github()
             email: 'jack@domain1.com',
             primary: true,
             verified: true,
-            visibility: 'public'
+            visibility: 'private'
         },
         {
             email: 'jack.m@domain2.com',

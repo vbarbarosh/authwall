@@ -58,7 +58,7 @@ async function fetch_user_info(tokens)
     const tmp = user_info.data || {};
 
     return {
-        sub: String(tmp.id),
+        sub: tmp.id,
         name: tmp.name || tmp.username || null,
         avatar: tmp.profile_image_url || null,
         verified_emails: [tmp.confirmed_email].filter(Boolean),
