@@ -625,6 +625,21 @@ The four lists are checked in a fixed priority order, where each higher-priority
 When neither allow list is set, only the deny lists are enforced and everything else is allowed.
 When either allow list is set, the default flips to deny — addresses not matched by any rule are rejected.
 
+When any email or domain allow/deny rule is configured, new registrations cannot
+include a username; use an enabled email or OAuth sign-up flow instead. Existing
+accounts may still sign in by username, but only with at least one verified email,
+and every verified email must pass these rules. This check applies even when
+`AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`. A pending email does not establish
+eligibility for username sign-in. With no email access rules, username sign-up
+and sign-in work as usual.
+
+A username sign-in refused by these rules answers *"Invalid username or
+password"*, exactly as a wrong password does, so the form cannot be used to
+confirm a guessed password for an account it will never admit. The reason is
+recorded instead: look for a `sign_in` / `failure` auth event whose `custom`
+carries `no_verified_email` or `email_not_authorized` along with the address
+that failed.
+
 Implementation:
 
 ```js

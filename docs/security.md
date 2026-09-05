@@ -106,6 +106,18 @@ configure the [access rules](config.md#access-rules): `AUTHWALL_ALLOWED_EMAILS`,
 set, the default flips to deny. The rules are enforced on every sign-in flow,
 including OAuth (checked against the provider's verified emails).
 
+When email access rules are active, username registration is disabled. An
+existing username account must have at least one verified email, and every
+verified email must pass the access rules before username sign-in succeeds,
+even if general email-confirmation enforcement is disabled. Enable an email or
+OAuth flow for new registrations on restricted instances.
+
+Such a sign-in is refused with the same *"Invalid username or password"* the
+form gives a wrong password: naming the email policy only after a password
+validates would tell an attacker the password is correct, which is worth
+something wherever the account holder reused it. Operators read the real reason
+from the `sign_in` / `failure` auth event.
+
 Optionally, [`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](config.md#email-confirmation)
 holds users at an email-confirmation step until they prove control of their
 address before any request reaches the app.

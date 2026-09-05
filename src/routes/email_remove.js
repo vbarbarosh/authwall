@@ -6,6 +6,7 @@ const const_auth_event_status = require('../helpers/const/const_auth_event_statu
 const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
+const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 
@@ -44,9 +45,17 @@ async function email_remove_post(req, res)
 
     // With verification required, an account without a verified address is
     // held at the verify step on its next sign-in, and nothing there lets it
-    // add one back — so the only verified address cannot be removed. An
-    // unverified one can: removing and re-adding is how a typo is fixed.
-    if (config.confirm_email.required && ident.verified_at) {
+    // add one back — so the only verified address cannot be removed. Email
+    // access rules strand a username the same way: they authorize a username
+    // sign-in by the verified addresses on the account, so a username left
+    // without one is refused, and refused as though the password were wrong.
+    // That question is only ever put to a username — an OAuth sign-in is
+    // authorized against the addresses its provider reports — so an account
+    // with no username keeps nothing by keeping this one. An unverified
+    // address authorizes nothing under either rule and stays removable:
+    // removing and re-adding is how a typo is fixed.
+    const has_username = identities.some(v => v.type === const_user_identity.username);
+    if ((config.confirm_email.required || (has_email_access_rules() && has_username)) && ident.verified_at) {
         await insert_auth_event({
             req,
             ident,

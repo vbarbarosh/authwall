@@ -1,3 +1,4 @@
+const EmailNotAuthorized = require('../helpers/errors/EmailNotAuthorized');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
@@ -16,6 +17,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
@@ -111,6 +113,35 @@ async function sign_in_post(req, res)
         throw new UserFriendlyError('Invalid username or password');
     }
 
+    if (!is_email && has_email_access_rules()) {
+        // A username cannot establish eligibility under an email policy.
+        // Match OAuth's policy: require at least one verified address and
+        // authorize every verified address, so switching identifiers cannot
+        // evade a deny rule. Do this only after the password is validated,
+        // and answer exactly as a wrong password does — a refusal that named
+        // the email policy would confirm the password to whoever guessed it.
+        // The reason a real user was turned away lives in the auth event.
+        const emails = await db('user_identities')
+            .where({user_id: user.id, type: const_user_identity.email})
+            .whereNotNull('verified_at');
+        if (!emails.length) {
+            await insert_auth_event_sign_in_failure(req, ident, {reason: 'no_verified_email'}, user);
+            throw new UserFriendlyError('Invalid username or password');
+        }
+        for (const email of emails) {
+            try {
+                await authorize_email(email.value_normalized);
+            }
+            catch (error) {
+                if (!(error instanceof EmailNotAuthorized)) {
+                    throw error;
+                }
+                await insert_auth_event_sign_in_failure(req, ident, {reason: 'email_not_authorized', email: email.value_normalized, error: error.message}, user);
+                throw new UserFriendlyError('Invalid username or password');
+            }
+        }
+    }
+
     await complete_sign_in(req, res, user, ident);
 }
 
@@ -128,6 +159,11 @@ async function sign_up_post(req, res)
     }
     if (username && !config.flows.password.allow_username) {
         throw new UserFriendlyError('Username sign-up is disabled');
+    }
+    if (username && has_email_access_rules()) {
+        // Even an accompanying email is unverified at registration. Keep
+        // restricted registrations on the configured email/OAuth flows.
+        throw new EmailNotAuthorized('Username sign-up is disabled when email access rules are configured');
     }
 
     if (password !== password_confirm) {
@@ -355,10 +391,11 @@ async function change_password_post(req, res)
     await complete_password_change(req, res, user.id, {method: 'profile'});
 }
 
-async function insert_auth_event_sign_in_failure(req, ident, custom)
+async function insert_auth_event_sign_in_failure(req, ident, custom, user = null)
 {
     await insert_auth_event({
         req,
+        user,
         ident,
         event_type: const_auth_event.sign_in,
         event_status: const_auth_event_status.failure,

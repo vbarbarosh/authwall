@@ -1431,9 +1431,11 @@ function apply_flows(flows) {
   setup_email_code_input(confirm_email.code_length || 6);
 
   // Sign-in username/email label adapts to allowed identifier types
+  let has_password_sign_up = false;
   if (has_password) {
     const allow_username = flows.password.allow_username !== false;
     const allow_email    = flows.password.allow_email    !== false;
+    const allow_username_sign_up = allow_username && flows.password.allow_username_sign_up !== false;
     const label = document.getElementById('si-user-label');
     const input = document.getElementById('si-user');
     if (label) label.textContent = (allow_username && allow_email) ? 'Username or email'
@@ -1441,24 +1443,39 @@ function apply_flows(flows) {
                                  :                                    'Email';
     if (input) input.placeholder = (allow_username && !allow_email) ? 'jsmith' : 'you@example.com';
 
-    document.querySelectorAll('button[data-signup-mode="email"], button[data-signup-mode="email-username"]').forEach(el => {
+    document.querySelectorAll('button[data-signup-mode="email"]').forEach(el => {
       el.classList.toggle('flow-hidden', !allow_email);
     });
-    document.querySelectorAll('button[data-signup-mode="username"]').forEach(el => {
-      el.classList.toggle('flow-hidden', !allow_username);
+    document.querySelectorAll('button[data-signup-mode="email-username"]').forEach(el => {
+      el.classList.toggle('flow-hidden', !allow_email || !allow_username_sign_up);
     });
+    document.querySelectorAll('button[data-signup-mode="username"]').forEach(el => {
+      el.classList.toggle('flow-hidden', !allow_username_sign_up);
+    });
+
+    has_password_sign_up = allow_email || allow_username_sign_up;
+    show('[data-view="sign-up"] [data-flow="password"]', has_password_sign_up);
+    show('[data-flow-divider="signup-oauth"]', has_oauth && has_password_sign_up);
 
     const mode = su_get_mode();
     if (!allow_email && mode !== 'username') {
       su_apply_mode('username');
-    } else if (!allow_username && mode !== 'email') {
+    } else if (!allow_username_sign_up && mode !== 'email') {
       su_apply_mode('email');
     } else {
       su_apply_mode(mode);
     }
   }
 
-  if (!has_password) {
+  // The sign-up view holds OAuth buttons and the password form and nothing
+  // else. Without a password flow the two views would say the same thing, and
+  // with one whose sign-up half is off (e.g. email access rules bar username
+  // registration) and no OAuth there is nothing left to register with: route
+  // /auth/sign-up back to sign-in and withdraw the invitation to it rather
+  // than offer a link to an empty card.
+  const sign_up_reachable = has_password && (has_password_sign_up || has_oauth);
+  show('[data-view="sign-in"] .card-footer[data-flow="password"]', sign_up_reachable);
+  if (!sign_up_reachable) {
     ROUTES['/auth/sign-up'] = 'sign-in';
     const active = document.querySelector('[data-view].active');
     if (active && active.dataset.view === 'sign-up') showView('sign-in', false);

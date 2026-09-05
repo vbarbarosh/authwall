@@ -62,6 +62,65 @@ test.describe('auth spa anonymous', function () {
         await expect(page.getByTestId('signup-username-field')).toBeVisible();
     });
 
+    test('email access rules hide username registration but retain username sign-in', async function ({page}) {
+        await page.route('/auth/status', route => route.fulfill({
+            json: {
+                error: null, authenticated: false, csrf_token: 'csrf',
+                flows: {password: {
+                    allow_username: true, allow_email: true,
+                    allow_username_sign_up: false, min_password_length: 8,
+                }},
+            },
+        }));
+        await page.goto('/auth/sign-up');
+        await expect(page.getByTestId('signup-email-field')).toBeVisible();
+        await expect(page.getByTestId('signup-username-field')).toBeHidden();
+        await expect(page.locator('button[data-signup-mode="username"]')).toBeHidden();
+        await expect(page.locator('button[data-signup-mode="email-username"]')).toBeHidden();
+        await page.goto('/auth/sign-in');
+        await expect(page.locator('#si-user-label')).toHaveText('Username or email');
+    });
+
+    test('sign-up is withdrawn when no flow can create an account', async function ({page}) {
+        // Username-only password sign-in under email access rules: username
+        // registration is barred, email registration is off, no OAuth. The
+        // sign-up card would render empty, so it must not be offered at all.
+        await page.route('/auth/status', route => route.fulfill({
+            json: {
+                error: null, authenticated: false, csrf_token: 'csrf',
+                flows: {password: {
+                    allow_username: true, allow_email: false,
+                    allow_username_sign_up: false, min_password_length: 8,
+                }},
+            },
+        }));
+        await page.goto('/auth/sign-up');
+        await expect(page.getByTestId('signup-view')).toBeHidden();
+        await expect(page.getByTestId('signin-form')).toBeVisible();
+        await expect(page.getByRole('link', {name: 'Create one'})).toBeHidden();
+        await expect(page.locator('#si-user-label')).toHaveText('Username');
+    });
+
+    test('sign-up survives when only oauth can create an account', async function ({page}) {
+        await page.route('/auth/status', route => route.fulfill({
+            json: {
+                error: null, authenticated: false, csrf_token: 'csrf',
+                flows: {
+                    google: {},
+                    password: {
+                        allow_username: true, allow_email: false,
+                        allow_username_sign_up: false, min_password_length: 8,
+                    },
+                },
+            },
+        }));
+        await page.goto('/auth/sign-up');
+        await expect(page.getByTestId('signup-view')).toBeVisible();
+        await expect(page.getByTestId('signup-google')).toBeVisible();
+        await expect(page.getByTestId('signup-email-field')).toBeHidden();
+        await expect(page.getByTestId('signup-username-field')).toBeHidden();
+    });
+
     test('unauthenticated user hitting profile is sent to sign-in', async function ({page}) {
         await page.goto('/auth/profile');
 

@@ -1,18 +1,15 @@
 # User adds a disallowed email
 
-A signed-in user adds an email from the profile page that the configured access
-rules reject — it fails the `authorize_email` check (wrong domain, explicitly
-denied, or outside the allow-list).
+Authwall allows only email addresses in `authwall.test`. Mocha signs in by
+username with the verified address `mocha@authwall.test`, then tries to add
+`outsider@example.com` from the profile page.
 
 ## Expected
 
-The request fails with a friendly error (e.g. *"Email domain is not allowed"*)
-shown on the profile page. Nothing changes: no email identity is attached and no
-verification email is sent.
+Authwall rejects the request with **“Email domain is not allowed”**. Mocha
+stays signed in, all existing identities remain unchanged, and the account
+still has exactly one email address. No verification email is sent.
 
 ## Why
 
-Access rules apply to every path an email takes into an account, not just
-sign-up and OAuth. Adding an email from the profile must enforce the same
-allow/deny configuration, and a rejected attempt should read as a clear message
-rather than a generic error.
+Being signed in does not bypass email access rules when adding an address.

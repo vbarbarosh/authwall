@@ -15,7 +15,8 @@ describe('User adds a disallowed email from the profile page | stories', functio
     });
 
     it('rejects the email with a friendly error and adds nothing', async function () {
-        await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+        const providers_before = (await this.http_get_json('/auth/status')).providers;
 
         await this.http_post_json('/auth/email/add', {email: 'outsider@example.com'});
 
@@ -24,7 +25,8 @@ describe('User adds a disallowed email from the profile page | stories', functio
         const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.error, 'Email domain is not allowed');
-        assert.strictEqual(status.providers.filter(v => v.type === const_user_identity.email).length, 0);
+        assert.deepStrictEqual(status.providers, providers_before);
+        assert.strictEqual(status.providers.filter(v => v.type === const_user_identity.email).length, 1);
         assert.strictEqual(this.sent_emails.length, 0);
     });
 

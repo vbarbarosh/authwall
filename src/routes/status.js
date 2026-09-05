@@ -2,11 +2,12 @@ const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
 const email_verification_required = require('../helpers/email_verification_required');
-const is_optional_auth_path = require('../helpers/is_optional_auth_path');
-const is_public_path = require('../helpers/is_public_path');
 const frontend_personal_access_tokens = require('../helpers/models/frontend_personal_access_tokens');
 const frontend_sessions = require('../helpers/models/frontend_sessions');
 const frontend_user_identities = require('../helpers/models/frontend_user_identities');
+const has_email_access_rules = require('../helpers/has_email_access_rules');
+const is_optional_auth_path = require('../helpers/is_optional_auth_path');
+const is_public_path = require('../helpers/is_public_path');
 const pkg = require('../../package.json');
 
 const routes = [
@@ -55,6 +56,9 @@ async function status_get(req, res)
             allow_email,
             min_password_length,
         };
+        if (has_email_access_rules()) {
+            flows.password.allow_username_sign_up = false;
+        }
     }
     if (config.flows.magic_link.enabled) {
         flows.magic_link = {
