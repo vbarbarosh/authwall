@@ -36,6 +36,26 @@ async function wait_for_emails(sent_emails, count, timeout_ms = 500)
     }
 }
 
+// Children before parents: every other table references users.
+const tables_in_delete_order = [
+    'auth_events',
+    'sessions',
+    'personal_access_tokens',
+    'password_reset_tokens',
+    'email_verify_tokens',
+    'email_change_tokens',
+    'magic_links',
+    'user_identities',
+    'users',
+];
+
+async function truncate_all()
+{
+    for (const table of tables_in_delete_order) {
+        await db(table).del();
+    }
+}
+
 Runnable.prototype.run = function (fn) {
     if (this.type === 'test' && !this.fn.__wrapped__) {
         const original_fn = this.fn;
@@ -43,10 +63,22 @@ Runnable.prototype.run = function (fn) {
             this.written_logs = [];
             this.sent_emails = [];
             this.wait_for_emails = count => wait_for_emails(this.sent_emails, count);
-            const trx = await db.transaction();
-            await using _ = {[Symbol.asyncDispose]: () => trx.rollback()};
             await using logger = make_logger_fake(this.written_logs);
             await using mailer = make_mailer_fake(this.sent_emails);
+            if (this._runnable.title.includes('[concurrent]')) {
+                // A test that fires simultaneous requests needs each request's
+                // transaction on its own pooled connection, as in production.
+                // Inside the per-test transaction below they would all share
+                // one connection, the app's transactions would become savepoints
+                // on it, and one request's ROLLBACK TO SAVEPOINT would erase
+                // what another request had already written in between. Such a
+                // test runs against the pool and is cleaned up by truncation.
+                await using _ = {[Symbol.asyncDispose]: () => als.run({db}, truncate_all)};
+                await setup_servers.spin({db, logger, mailer}, this, () => original_fn.apply(this, args));
+                return;
+            }
+            const trx = await db.transaction();
+            await using _ = {[Symbol.asyncDispose]: () => trx.rollback()};
             await setup_servers.spin({db: trx, logger, mailer}, this, () => original_fn.apply(this, args));
         };
         this.fn.__wrapped__ = true;

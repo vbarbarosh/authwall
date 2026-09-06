@@ -6,6 +6,10 @@ const const_email = require('../../../src/helpers/const/const_email');
 const db = require('../../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
+// [concurrent] hands each request its own pooled connection, as in
+// production; see mocha.api.js. Inside the usual per-test transaction the
+// racing requests would share one connection and the loser's savepoint
+// rollback would erase the winner's writes.
 describe('One-time tokens are consumed exactly once | stories', function () {
 
     beforeEach(function () {
@@ -30,7 +34,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         }));
     }
 
-    it('lets exactly one of two simultaneous reset confirms through', async function () {
+    it('lets exactly one of two simultaneous reset confirms through [concurrent]', async function () {
         await this.add_user({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/password-reset/request', {email: 'mocha@authwall.test'});
         const {token} = this.sent_emails.find(v => v.name === const_email.password_reset).placeholders;
@@ -46,7 +50,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         assert.strictEqual(matches.filter(Boolean).length, 1);
     });
 
-    it('creates one account when the same magic link is opened twice at once', async function () {
+    it('creates one account when the same magic link is opened twice at once [concurrent]', async function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'fresh@authwall.test'});
         const {token} = this.sent_emails.find(v => v.name === const_email.magic_link).placeholders;
 
@@ -57,7 +61,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         assert.strictEqual((await db('auth_events').where({event_type: const_auth_event.sign_up})).length, 1);
     });
 
-    it('counts simultaneous wrong codes against the cap, not against a stale read', async function () {
+    it('counts simultaneous wrong codes against the cap, not against a stale read [concurrent]', async function () {
         config.flows.magic_link.max_attempts = 3;
         await this.add_user({email: 'mocha@authwall.test'});
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
@@ -73,7 +77,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         });
     });
 
-    it('verifies once when the same verification link is opened twice at once', async function () {
+    it('verifies once when the same verification link is opened twice at once [concurrent]', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
         await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
