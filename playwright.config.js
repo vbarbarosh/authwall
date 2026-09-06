@@ -77,7 +77,7 @@ module.exports = defineConfig({
     ],
 
     // Run your local dev server before starting the tests
-    webServer: {
+    webServer: [{
         command: 'node tests/playwright/start_server.js',
         url: 'http://127.0.0.1:3000',
         reuseExistingServer: !process.env.CI,
@@ -107,5 +107,12 @@ module.exports = defineConfig({
             AUTHWALL_DISCORD_CLIENT_SECRET: 'playwright_discord_client_secret',
             AUTHWALL_DISCORD_REDIRECT_URL: 'http://localhost:3000/auth/discord/callback',
         },
-    },
+    }, {
+        // Built docs for the docs-*.spec.js files: one build, served statically.
+        command: 'node tests/playwright/start_docs_server.js',
+        url: 'http://127.0.0.1:3100/index.html',
+        reuseExistingServer: !process.env.CI,
+        stdout: 'pipe',
+        stderr: 'pipe',
+    }],
 });

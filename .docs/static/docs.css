@@ -91,8 +91,18 @@
 }
 
 html {
-    scroll-padding-top: calc(var(--header-h) + 20px);
     -webkit-text-size-adjust: 100%;
+}
+
+/* Anchor targets land below the sticky header. This is scroll-margin on the
+   targets, not scroll-padding on the scrollport: the search input lives inside
+   the sticky header, and a scrollport padding made every focus and every
+   keystroke in it scroll the page up to "reveal" the caret below the padding,
+   which a sticky element can never satisfy. */
+.content [id],
+.doc-section,
+.doc-page {
+    scroll-margin-top: calc(var(--header-h) + 20px);
 }
 
 body {
@@ -953,7 +963,7 @@ hr {
 @media (max-width: 760px) {
     :root {
         /* Header wraps to two rows here (actions + full-width search); keep a
-           length so the scroll-padding/scroll-margin calc()s stay valid. */
+           length so the scroll-margin calc() stays valid. */
         --header-h: 104px;
     }
 
