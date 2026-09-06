@@ -3,7 +3,12 @@ const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const http_get_json = require('../http/http_get_json');
 const http_post_urlencoded = require('../http/http_post_urlencoded');
+const oauth_id_token_claims = require('../helpers/oauth_id_token_claims');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
+
+// v2.0 ID tokens name the tenant in the issuer; personal accounts come from
+// the tenant 9188040d-6c67-4c5b-b112-36a304b66dad.
+const ISSUER = /^https:\/\/login\.microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0$/;
 
 const oauth_provider_microsoft = {
     user_identity_type: const_user_identity.oauth_microsoft,
@@ -58,8 +63,35 @@ async function fetch_user_info(token)
         sub: user_info.sub,
         name: display_name(user_info),
         avatar: null,
-        verified_emails: [user_info.email].filter(Boolean),
+        verified_emails: verified_emails(token, user_info),
     };
+}
+
+// Microsoft's `email` claim is set by whoever administers the account's tenant,
+// and Microsoft documents it as mutable and unusable for authorization: on the
+// `common` authority any tenant can put any address on an account. The one
+// statement Microsoft stands behind is the `xms_edov` ID-token claim — the
+// address's domain belongs to the tenant the account lives in and that tenant
+// has verified it. So an address counts as verified only when the ID token
+// from the token endpoint says so. Without the claim (the app registration has
+// not requested it, or the tenant cannot vouch) the account is created with no
+// email, exactly as a GitHub account with no verified address is, and the user
+// adds one from the profile through Authwall's own verification.
+function verified_emails(token, user_info)
+{
+    if (!token.id_token) {
+        return [];
+    }
+
+    const claims = oauth_id_token_claims(token.id_token, {client_id: config.flows.microsoft.client_id, issuer: ISSUER});
+    if (claims.tid !== ISSUER.exec(claims.iss)[1]) {
+        throw new Error('Microsoft ID token names a tenant other than its issuer');
+    }
+    if (claims.sub !== user_info.sub) {
+        throw new Error('Microsoft ID token subject does not match the userinfo subject');
+    }
+
+    return claims.xms_edov === true && claims.email ? [claims.email] : [];
 }
 
 // Microsoft's userinfo endpoint returns the OIDC `name` claim, same as every

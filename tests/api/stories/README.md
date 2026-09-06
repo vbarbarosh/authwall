@@ -39,6 +39,7 @@ Testable now
 - [x] security notifications go only to verified addresses; an unverified one receives no sign-in notice → `notifications_verified_only.test.js`
 - [x] password reset for an address nobody verified sends nothing and answers like an unknown address; a completed reset revokes personal access tokens → `password_reset_unverified_email.test.js`
 - [x] an attacker holds a second reset link, or the link that went to an address since changed or removed; a completed reset, an email change, and an email removal each kill every reset link still out for the account → `password_reset_settles_recovery.md`, `password_reset_settles_recovery.test.js`
+- [x] a Microsoft sign-in's address is stored verified only when the ID token's `xms_edov` claim says the tenant verified its domain; otherwise the account has no email, and under access rules the sign-in is refused → `microsoft_email_verified_by_domain_owner.md`, `microsoft_email_verified_by_domain_owner.test.js`
 - [x] two requests carry the same reset, magic, or verification link at the same instant, or five wrong codes arrive at once; exactly one consumes the link and the guess cap holds → `one_time_tokens_consumed_once.md`, `one_time_tokens_consumed_once.test.js`
 - [x] Authwall is started with `AUTHWALL_FLOWS=username` and an email access rule; nothing could ever satisfy the rule, so it refuses to start rather than announce an allow-list over a door nobody can enter → `username_only_flow_with_access_rules.md`, `username_only_flow_with_access_rules.test.js`
 

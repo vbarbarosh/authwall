@@ -110,9 +110,24 @@ AUTHWALL_GITHUB_REDIRECT_URL=https://myapp.test/auth/github/callback
 - **Client secret:** create one under *Certificates & secrets* and copy the
   secret *value* (not the secret ID).
 - **Scopes requested:** `openid email profile`.
+- **Optional claim:** under *Token configuration* add the optional claim
+  `xms_edov` to the **ID** token (add `email` there too if the portal asks for
+  it). Without it every Microsoft account is created with no email address.
 
 Authwall uses the `common` authority, so both personal Microsoft accounts and
 work/school (Entra) accounts can sign in.
+
+An email is treated as verified only when the ID token Microsoft returns with
+the tokens carries `xms_edov: true` — Microsoft's statement that the address's
+domain belongs to the account's tenant and that tenant has verified it. The
+userinfo `email` on its own is not trusted: Microsoft documents it as mutable
+and not for authorization, and on the `common` authority any tenant can put any
+address on an account. When the claim is absent or false the account is created
+without an email address; the user can add one from the profile and verify it
+there. With [access rules](config.md#access-rules) configured such a sign-in is
+refused with *"A verified email is required"*. The ID token is taken straight
+from the token endpoint over TLS and checked for audience, issuer, tenant,
+subject and expiry.
 
 ```sh
 AUTHWALL_MICROSOFT_CLIENT_ID=00000000-0000-0000-0000-000000000000
