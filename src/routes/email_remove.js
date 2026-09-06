@@ -65,7 +65,12 @@ async function email_remove_post(req, res)
         throw new UserFriendlyError('Cannot remove email: a verified email is required to sign in');
     }
 
-    await db('user_identities').where({id: ident.id}).delete();
+    await db.transaction(async function () {
+        await db('user_identities').where({id: ident.id}).delete();
+        // A reset link still out was delivered to this address; it leaves
+        // with the address.
+        await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
+    });
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, config.pages.profile);
 }

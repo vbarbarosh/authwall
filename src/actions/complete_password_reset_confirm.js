@@ -15,16 +15,10 @@ async function complete_password_reset_confirm(req, res, user_id, token_hash)
     const ip = req.session.ip ?? 'n/a';
     const ua = req.session.ua ?? 'n/a';
 
-    // revoke all sessions
+    // The reset transaction already deleted every session row and revoked
+    // every personal access token; this drops the caller's own session cookie.
     const replaced_session_uid = req.session.uid;
-
-    await db('sessions').where({user_id}).delete();
     await destroy_session(req);
-
-    // A reset means the credentials are presumed compromised; tokens minted
-    // under the old password must not outlive it.
-    const now = new Date();
-    await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
 
     await insert_auth_event({
         req,

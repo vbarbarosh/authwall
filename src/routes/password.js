@@ -314,11 +314,20 @@ async function password_reset_confirm_post(req, res)
         throw new UserFriendlyError('Reset token expired');
     }
 
+    // One transaction settles the recovery: the new password, the link that
+    // set it, every other link still out for this account, and every
+    // credential minted under the old password. Nothing observes the new
+    // password beside a surviving old credential, and a second reset link an
+    // attacker already holds cannot undo the recovery.
     const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     await db.transaction(async function () {
         const now = new Date();
-        await db('users').where({id: reset.user_id}).update({password_hash, updated_at: now});
+        const user_id = reset.user_id;
+        await db('users').where({id: user_id}).update({password_hash, updated_at: now});
         await db('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
+        await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
+        await db('sessions').where({user_id}).del();
+        await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
     });
 
     await complete_password_reset_confirm(req, res, reset.user_id, reset.token_hash);

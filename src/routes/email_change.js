@@ -132,6 +132,11 @@ async function email_change_confirm_get(req, res)
 
         await db('user_identities').where({id: ident.id}).del();
 
+        // A reset link was delivered to the old address, and that address is
+        // no longer the account's: whoever reads its mailbox now must not be
+        // able to finish a recovery it started.
+        await db('password_reset_tokens').where({user_id: email_change.user_id}).whereNull('used_at').del();
+
         await db('user_identities').insert({
             uid: random_uid_user_identity(),
             user_id: email_change.user_id,

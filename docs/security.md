@@ -97,6 +97,15 @@ The cost factor is [`AUTHWALL_BCRYPT_ROUNDS`](config.md#passwords) (default
 `12`). One-time magic-link codes are bcrypt-hashed the same way. New passwords
 must meet [`AUTHWALL_PASSWORD_MIN`](config.md#passwords) (default `8`).
 
+Password-reset links are stored as SHA-256 hashes, expire after ten minutes,
+and are scoped to the account, not to the address they were sent to. A
+completed reset settles the recovery in one transaction: the new password is
+written, every reset link still out for the account is killed, every session is
+deleted, and every personal access token is revoked. Changing the account's
+email, removing it, or changing the password from the profile kills outstanding
+reset links too, so a link delivered to an address the account no longer has
+cannot finish a recovery.
+
 ## Access control
 
 Registration is **open by default** — anyone who can reach the sign-in page can
