@@ -24,6 +24,7 @@ describe('shape • status', function () {
                 password: {
                     allow_username: true,
                     allow_email: true,
+                    allow_username_sign_up: true,
                     min_password_length: 8,
                 },
                 magic_link: {
@@ -59,6 +60,7 @@ describe('shape • status', function () {
                 password: {
                     allow_username: true,
                     allow_email: true,
+                    allow_username_sign_up: true,
                     min_password_length: 8,
                 },
                 magic_link: {

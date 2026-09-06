@@ -43,19 +43,18 @@ async function email_remove_post(req, res)
         throw new UserFriendlyError('Cannot remove email: it is your only sign-in method');
     }
 
-    // With verification required, an account without a verified address is
-    // held at the verify step on its next sign-in, and nothing there lets it
-    // add one back — so the only verified address cannot be removed. Email
-    // access rules strand a username the same way: they authorize a username
-    // sign-in by the verified addresses on the account, so a username left
-    // without one is refused, and refused as though the password were wrong.
-    // That question is only ever put to a username — an OAuth sign-in is
-    // authorized against the addresses its provider reports — so an account
-    // with no username keeps nothing by keeping this one. An unverified
-    // address authorizes nothing under either rule and stays removable:
-    // removing and re-adding is how a typo is fixed.
+    // The only verified address cannot be removed when the account would be
+    // stranded without it. With verification required, the next sign-in is
+    // held at the verify step, and nothing there lets it add one back. Under
+    // email access rules a username signs in on the strength of the account's
+    // verified addresses (see username_sign_in_refusal), so it would be turned
+    // away as though the password were wrong; an OAuth sign-in is authorized
+    // against the provider's addresses instead, so an account with no username
+    // is safe. An unverified address authorizes nothing under either rule and
+    // stays removable: removing and re-adding is how a typo is fixed.
     const has_username = identities.some(v => v.type === const_user_identity.username);
-    if ((config.confirm_email.required || (has_email_access_rules() && has_username)) && ident.verified_at) {
+    const strands_the_account = ident.verified_at && (config.confirm_email.required || (has_email_access_rules() && has_username));
+    if (strands_the_account) {
         await insert_auth_event({
             req,
             ident,

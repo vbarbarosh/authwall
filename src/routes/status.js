@@ -54,11 +54,9 @@ async function status_get(req, res)
         flows.password = {
             allow_username,
             allow_email,
+            allow_username_sign_up: allow_username && !has_email_access_rules(),
             min_password_length,
         };
-        if (has_email_access_rules()) {
-            flows.password.allow_username_sign_up = false;
-        }
     }
     if (config.flows.magic_link.enabled) {
         flows.magic_link = {

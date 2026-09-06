@@ -1,4 +1,3 @@
-const EmailNotAuthorized = require('../helpers/errors/EmailNotAuthorized');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
@@ -27,6 +26,7 @@ const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const username_sign_in_refusal = require('../helpers/username_sign_in_refusal');
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
@@ -73,11 +73,11 @@ async function sign_in_post(req, res)
         const email_normalized = normalize_email(username);
         ident_unsafe.value_normalized = email_normalized;
         if (!config.flows.password.allow_email) {
-            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'flows_password_allow_email_disabled'});
+            await insert_auth_event_sign_in_failure({req, ident: ident_unsafe, custom: {reason: 'flows_password_allow_email_disabled'}});
             throw new UserFriendlyError('Invalid username or password');
         }
         if (!email_normalized) {
-            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'invalid_email'});
+            await insert_auth_event_sign_in_failure({req, ident: ident_unsafe, custom: {reason: 'invalid_email'}});
             throw new UserFriendlyError('Invalid username or password');
         }
         await authorize_email(email_normalized);
@@ -87,11 +87,11 @@ async function sign_in_post(req, res)
         const username_normalized = normalize_username(username);
         ident_unsafe.value_normalized = username_normalized;
         if (!config.flows.password.allow_username) {
-            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'flows_password_allow_username_disabled'});
+            await insert_auth_event_sign_in_failure({req, ident: ident_unsafe, custom: {reason: 'flows_password_allow_username_disabled'}});
             throw new UserFriendlyError('Invalid username or password');
         }
         if (!username_normalized) {
-            await insert_auth_event_sign_in_failure(req, ident_unsafe, {reason: 'invalid_username'});
+            await insert_auth_event_sign_in_failure({req, ident: ident_unsafe, custom: {reason: 'invalid_username'}});
             throw new UserFriendlyError('Invalid username or password');
         }
         ident = await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first();
@@ -109,36 +109,16 @@ async function sign_in_post(req, res)
     const ok = await bcrypt.compare(password, password_hash);
 
     if (!user || !ok) {
-        await insert_auth_event_sign_in_failure(req, ident ?? ident_unsafe, {reason: !user ? 'user_not_found' : 'invalid_password'});
+        await insert_auth_event_sign_in_failure({req, ident: ident ?? ident_unsafe, custom: {reason: !user ? 'user_not_found' : 'invalid_password'}});
         throw new UserFriendlyError('Invalid username or password');
     }
 
-    if (!is_email && has_email_access_rules()) {
-        // A username cannot establish eligibility under an email policy.
-        // Match OAuth's policy: require at least one verified address and
-        // authorize every verified address, so switching identifiers cannot
-        // evade a deny rule. Do this only after the password is validated,
-        // and answer exactly as a wrong password does — a refusal that named
-        // the email policy would confirm the password to whoever guessed it.
-        // The reason a real user was turned away lives in the auth event.
-        const emails = await db('user_identities')
-            .where({user_id: user.id, type: const_user_identity.email})
-            .whereNotNull('verified_at');
-        if (!emails.length) {
-            await insert_auth_event_sign_in_failure(req, ident, {reason: 'no_verified_email'}, user);
+    if (!is_email) {
+        // Answered as a wrong password is: see username_sign_in_refusal.
+        const refusal = await username_sign_in_refusal(user);
+        if (refusal) {
+            await insert_auth_event_sign_in_failure({req, ident, user, custom: refusal});
             throw new UserFriendlyError('Invalid username or password');
-        }
-        for (const email of emails) {
-            try {
-                await authorize_email(email.value_normalized);
-            }
-            catch (error) {
-                if (!(error instanceof EmailNotAuthorized)) {
-                    throw error;
-                }
-                await insert_auth_event_sign_in_failure(req, ident, {reason: 'email_not_authorized', email: email.value_normalized, error: error.message}, user);
-                throw new UserFriendlyError('Invalid username or password');
-            }
         }
     }
 
@@ -163,7 +143,7 @@ async function sign_up_post(req, res)
     if (username && has_email_access_rules()) {
         // Even an accompanying email is unverified at registration. Keep
         // restricted registrations on the configured email/OAuth flows.
-        throw new EmailNotAuthorized('Username sign-up is disabled when email access rules are configured');
+        throw new UserFriendlyError('Username sign-up is disabled when email access rules are configured');
     }
 
     if (password !== password_confirm) {
@@ -391,7 +371,7 @@ async function change_password_post(req, res)
     await complete_password_change(req, res, user.id, {method: 'profile'});
 }
 
-async function insert_auth_event_sign_in_failure(req, ident, custom, user = null)
+async function insert_auth_event_sign_in_failure({req, ident, custom, user = null})
 {
     await insert_auth_event({
         req,

@@ -81,7 +81,7 @@ describe('Username authentication with email access rules', function () {
             assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
                 authenticated: false, error: 'Invalid username or password',
             });
-            assert.strictEqual((await db('auth_events').where({event_type: 'sign_in', event_status: 'success'})).length, 0);
+            assert.strictEqual((await db('auth_events').where({event_type: const_auth_event.sign_in, event_status: const_auth_event_status.success})).length, 0);
             // Which rule turned the account away is recorded, never answered.
             assert.partialDeepStrictEqual(await db('auth_events').where({event_type: const_auth_event.sign_in}), [{
                 event_status: const_auth_event_status.failure,
@@ -108,7 +108,7 @@ describe('Username authentication with email access rules', function () {
         const {user_id} = await this.add_user({username: 'member', email: 'allowed@authwall.test', password: 'password123'});
         const now = new Date();
         await db('user_identities').insert({
-            uid: random_uid_user_identity(), user_id, type: 'email',
+            uid: random_uid_user_identity(), user_id, type: const_user_identity.email,
             value: 'other@outside.test', value_normalized: 'other@outside.test',
             created_at: now, updated_at: now, verified_at: now,
         });

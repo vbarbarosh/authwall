@@ -1,5 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
-const authorize_email = require('./authorize_email');
+const email_access_rules_refusal = require('./email_access_rules_refusal');
 const has_email_access_rules = require('./has_email_access_rules');
 const normalize_email = require('./normalize/normalize_email');
 
@@ -13,8 +13,9 @@ async function authorize_oauth_verified_emails(emails, {require_one_when_access_
         throw new UserFriendlyError('A verified email is required');
     }
 
-    for (const {email_normalized} of verified_emails) {
-        await authorize_email(email_normalized);
+    const refusal = await email_access_rules_refusal(verified_emails.map(v => v.email_normalized));
+    if (refusal) {
+        throw refusal.error;
     }
 
     return verified_emails;
