@@ -78,3 +78,55 @@ long after the rollout was supposed to be finished.
 - Making token revocation reversible — a `revoked_at` that an operator can
   clear within some window — which removes most of the argument for refusing
   to start at all.
+
+## Refusing to start on a configuration nothing can satisfy
+
+**Status: implemented** on 2026-09-06, in `validate_email_access_rules()` in
+`config/make_config.js`. Story: `tests/api/stories/username_only_flow_with_access_rules.md`.
+
+### The situation
+
+Email access rules admit an account by its verified addresses. A username alone
+can neither register nor sign in under them. So `AUTHWALL_FLOWS=username` with
+any `AUTHWALL_ALLOWED_*` or `AUTHWALL_DENIED_*` rule set is a gate nobody can
+pass, and the startup summary would announce "only listed domains can sign in"
+over it. An operator reads that line as gated and usable; the instance is gated
+and empty.
+
+### The options
+
+| Option | Outcome |
+| --- | --- |
+| Start and say nothing | The instance is discovered empty by its first user, or never, and the summary line lies |
+| Start and warn | The warning scrolls past in a container log; the summary line still lies one line below it |
+| Refuse to start, naming the variables | The operator finds out at the terminal, before anyone is turned away |
+
+### Why refusing was chosen
+
+The contradiction is entirely in the environment and entirely knowable at
+startup: nothing in the database, no request, and no provider answer can change
+it. Refusing costs an operator one restart with a corrected variable; the other
+two options cost the people the gate was meant to admit.
+
+It is also the answer the codebase already gives to the same class of problem.
+`AUTHWALL_CONFIRM_EMAIL_REQUIRED` without an email flow, `cookie.same_site=none`
+without `cookie.secure`, an OAuth provider with half its credentials, an
+unrecognized `AUTHWALL_*` variable: each refuses to start. A second policy for
+this one would need a reason, and there is none.
+
+### The line this does not cross
+
+This refuses on what the configuration says, never on what the database holds.
+The entry above records why the latter was rejected: a refusal that depends on
+stored sessions or tokens turns a routine restart into an outage. This check
+depends on nothing that can change between two restarts of the same
+configuration.
+
+### What would change the answer
+
+- A username allow-list of its own. If usernames could be admitted on their own
+  terms, the flow would satisfy the rules and the contradiction would vanish.
+- A deployment that runs `username` only to serve accounts created under an
+  earlier configuration, with registration deliberately closed. That is a
+  legitimate wish; today it must be expressed by keeping the email flow on and
+  is not a case this check can tell apart.

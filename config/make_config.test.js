@@ -165,6 +165,7 @@ describe('make_config', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',
             AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_MAILER: 'fake',
             AUTHWALL_ALLOWED_EMAILS: 'jonny.small@gmail.com',
         });
 

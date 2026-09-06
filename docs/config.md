@@ -633,6 +633,11 @@ and every verified email must pass these rules. This check applies even when
 eligibility for username sign-in. With no email access rules, username sign-up
 and sign-in work as usual.
 
+Because a username alone can never satisfy these rules, they need a flow that
+brings an email in: `email`, a magic-link mode, or an OAuth provider. With
+`AUTHWALL_FLOWS=username` and any rule set, Authwall refuses to start and names
+the variables involved.
+
 A username sign-in refused by these rules answers *"Invalid username or
 password"*, exactly as a wrong password does, so the form cannot be used to
 confirm a guessed password for an account it will never admit. The reason is

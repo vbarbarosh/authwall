@@ -352,6 +352,7 @@ function make_config(input = {})
 
     resolve_email_verification_required(config);
     validate_email_verification_required(config);
+    validate_email_access_rules(config);
 
     if (config.cookie.same_site === 'none' && !config.cookie.secure) {
         throw new Error('cookie.same_site=none requires cookie.secure=true');
@@ -478,6 +479,29 @@ function validate_email_verification_required(config)
     }
 }
 
+// Email access rules admit an account by its verified addresses, so a username
+// alone can neither register nor sign in under them. With no flow that brings
+// an email in — email+password, magic link, or an OAuth provider — the rules
+// describe a door nobody can enter, and the startup summary would announce
+// "only listed domains can sign in" over it. Refuse to start instead, as a
+// contradictory AUTHWALL_CONFIRM_EMAIL_REQUIRED already does.
+function validate_email_access_rules(config)
+{
+    const configured = [
+        ['AUTHWALL_ALLOWED_EMAILS', config.access.allowed_emails],
+        ['AUTHWALL_ALLOWED_DOMAINS', config.access.allowed_domains],
+        ['AUTHWALL_DENIED_EMAILS', config.access.denied_emails],
+        ['AUTHWALL_DENIED_DOMAINS', config.access.denied_domains],
+    ].filter(([_, values]) => values.length).map(([name]) => name);
+    if (!configured.length) {
+        return;
+    }
+
+    if (!email_flow_enabled(config) && !config.flows.magic_link.enabled && !oauth_flow_enabled(config)) {
+        throw new Error(`Email access rules (${configured.join(', ')}) require an email, magic link, or OAuth flow to be enabled: a username alone cannot satisfy them`);
+    }
+}
+
 function resolve_email_verification_required(config)
 {
     if (config.confirm_email.required === null) {
@@ -488,6 +512,11 @@ function resolve_email_verification_required(config)
 function email_flow_enabled(config)
 {
     return config.flows.password.enabled && config.flows.password.allow_email;
+}
+
+function oauth_flow_enabled(config)
+{
+    return ['google', 'github', 'microsoft', 'facebook', 'twitter', 'discord'].some(name => config.flows[name].enabled);
 }
 
 function resolve_mailer_provider(mailer)

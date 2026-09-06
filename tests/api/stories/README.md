@@ -38,6 +38,7 @@ Testable now
 - [x] `min_password_length` governs new passwords only; an existing shorter password keeps working for sign-in and for the current-password check → `min_password_length.test.js`
 - [x] security notifications go only to verified addresses; an unverified one receives no sign-in notice → `notifications_verified_only.test.js`
 - [x] password reset for an address nobody verified sends nothing and answers like an unknown address; a completed reset revokes personal access tokens → `password_reset_unverified_email.test.js`
+- [x] Authwall is started with `AUTHWALL_FLOWS=username` and an email access rule; nothing could ever satisfy the rule, so it refuses to start rather than announce an allow-list over a door nobody can enter → `username_only_flow_with_access_rules.md`, `username_only_flow_with_access_rules.test.js`
 
 Needs product decision
 
