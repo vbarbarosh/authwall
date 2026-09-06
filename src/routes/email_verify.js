@@ -7,6 +7,7 @@ const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
+const consume_one_time_token = require('../helpers/consume_one_time_token');
 const create_email_verify_token = require('../helpers/create_email_verify_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -14,6 +15,7 @@ const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
+const spend_attempt = require('../helpers/spend_attempt');
 
 const SECOND = 1000;
 
@@ -92,7 +94,9 @@ async function email_verify_confirm_get(req, res)
     }
 
     await db.transaction(async function () {
-        await db('email_verify_tokens').where({id: record.id}).update({used_at: now, updated_at: now});
+        if (!await consume_one_time_token('email_verify_tokens', record.id, now)) {
+            throw new UserFriendlyError('Invalid or expired verification link');
+        }
         await db('user_identities')
             .where({
                 user_id: record.user_id,
@@ -140,11 +144,12 @@ async function email_verify_confirm_post(req, res)
         .where('expires_at', '>', now)
         .orderBy('id', 'desc')
         .first();
-    if (!record || !record.code_hash || record.attempts >= config.confirm_email.max_attempts) {
+    if (!record || !record.code_hash) {
         throw new UserFriendlyError('Invalid or expired verification code');
     }
-
-    await db('email_verify_tokens').where({id: record.id}).update({attempts: record.attempts + 1, updated_at: now});
+    if (!await spend_attempt('email_verify_tokens', record.id, config.confirm_email.max_attempts, now)) {
+        throw new UserFriendlyError('Invalid or expired verification code');
+    }
 
     const ok = await bcrypt.compare(code, record.code_hash);
     if (!ok) {
@@ -152,7 +157,9 @@ async function email_verify_confirm_post(req, res)
     }
 
     await db.transaction(async function () {
-        await db('email_verify_tokens').where({id: record.id}).update({used_at: now, updated_at: now});
+        if (!await consume_one_time_token('email_verify_tokens', record.id, now)) {
+            throw new UserFriendlyError('Invalid or expired verification code');
+        }
         await db('user_identities')
             .where({
                 user_id,

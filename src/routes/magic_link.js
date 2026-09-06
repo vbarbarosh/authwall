@@ -6,6 +6,7 @@ const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
 const const_user_identity = require('../helpers/const/const_user_identity');
+const consume_one_time_token = require('../helpers/consume_one_time_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
@@ -15,6 +16,7 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const spend_attempt = require('../helpers/spend_attempt');
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
@@ -85,7 +87,9 @@ async function magic_link_confirm_get(req, res)
         throw new UserFriendlyError('Invalid or expired magic link');
     }
 
-    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
+    if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
+        throw new UserFriendlyError('Invalid or expired magic link');
+    }
 
     const email = magic_link.email;
     const email_normalized = magic_link.email_normalized;
@@ -142,18 +146,18 @@ async function magic_link_confirm_post(req, res)
     if (!magic_link) {
         throw new UserFriendlyError('Invalid or expired code');
     }
-    if (magic_link.attempts >= config.flows.magic_link.max_attempts) {
+    if (!await spend_attempt('magic_links', magic_link.id, config.flows.magic_link.max_attempts, now)) {
         throw new UserFriendlyError('Invalid or expired code');
     }
-
-    await db('magic_links').where({id: magic_link.id}).update({attempts: magic_link.attempts + 1, updated_at: now});
 
     const ok = await bcrypt.compare(code, magic_link.code_hash);
     if (!ok) {
         throw new UserFriendlyError('Invalid or expired code');
     }
 
-    await db('magic_links').where({id: magic_link.id}).update({used_at: now, updated_at: now});
+    if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
+        throw new UserFriendlyError('Invalid or expired code');
+    }
 
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {

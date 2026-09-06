@@ -11,6 +11,7 @@ const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
+const consume_one_time_token = require('../helpers/consume_one_time_token');
 const create_email_verify_token = require('../helpers/create_email_verify_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
@@ -314,17 +315,21 @@ async function password_reset_confirm_post(req, res)
         throw new UserFriendlyError('Reset token expired');
     }
 
-    // One transaction settles the recovery: the new password, the link that
-    // set it, every other link still out for this account, and every
-    // credential minted under the old password. Nothing observes the new
-    // password beside a surviving old credential, and a second reset link an
-    // attacker already holds cannot undo the recovery.
+    // One transaction settles the recovery: the link is claimed, then the new
+    // password is written, every other link still out for this account is
+    // killed, and every credential minted under the old password goes with
+    // it. Nothing observes the new password beside a surviving old
+    // credential, a second reset link an attacker already holds cannot undo
+    // the recovery, and of two requests racing on one link only the one that
+    // claims it gets to set a password.
     const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     await db.transaction(async function () {
         const now = new Date();
         const user_id = reset.user_id;
+        if (!await consume_one_time_token('password_reset_tokens', reset.id, now)) {
+            throw new UserFriendlyError('Reset token already used');
+        }
         await db('users').where({id: user_id}).update({password_hash, updated_at: now});
-        await db('password_reset_tokens').where({id: reset.id}).update({used_at: now, updated_at: now});
         await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
         await db('sessions').where({user_id}).del();
         await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});

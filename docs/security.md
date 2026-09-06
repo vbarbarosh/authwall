@@ -104,7 +104,10 @@ written, every reset link still out for the account is killed, every session is
 deleted, and every personal access token is revoked. Changing the account's
 email, removing it, or changing the password from the profile kills outstanding
 reset links too, so a link delivered to an address the account no longer has
-cannot finish a recovery.
+cannot finish a recovery. Reset links, magic links, and verification links are
+consumed by a conditional update, so two requests carrying the same link at
+the same instant produce exactly one effect, and guess counters for one-time
+codes are incremented in the database against their cap.
 
 ## Access control
 
