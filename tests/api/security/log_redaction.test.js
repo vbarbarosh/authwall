@@ -42,3 +42,51 @@ describe('request log redaction', function () {
     });
 
 });
+
+// The WebSocket upgrade logs (accept and reject) carry the request URL too, and
+// an upgrade query can hold upstream credentials. It must go through the same
+// redactor as HTTP request logging, and an attacker-supplied `user` value must
+// not be able to break the single-line log format.
+describe('websocket upgrade log redaction', function () {
+
+    beforeEach(function () {
+        config.personal_access_tokens.enabled = true;
+        config.websockets.enabled = true;
+    });
+
+    it('redacts a token in the query on a rejected upgrade', async function () {
+        const r = await this.ws_roundtrip('/realtime?token=WS_LOG_SECRET&user=x', {
+            headers: {Authorization: 'Bearer awp_invalidxxxxxxxxxxxxxxxxxxxxxxxxxxxx'},
+        });
+        assert.strictEqual(r.opened, false);
+
+        const logs = this.written_logs.join('\n');
+        assert.strictEqual(logs.includes('WS_LOG_SECRET'), false);
+        assert.ok(logs.includes('[ws_upgrade_reject]'));
+        assert.ok(logs.includes('token=%5BFiltered%5D'));
+    });
+
+    it('redacts a credential in the query on an accepted upgrade', async function () {
+        await this.sign_in({username: 'mocha', password: 'pass1234'});
+        const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
+
+        const r = await this.ws_roundtrip('/realtime?code=WS_ACCEPT_SECRET', {token: created.token});
+        assert.strictEqual(r.opened, true, r.error);
+
+        const logs = this.written_logs.join('\n');
+        assert.strictEqual(logs.includes('WS_ACCEPT_SECRET'), false);
+        assert.ok(logs.includes('[ws_upgrade]'));
+        assert.ok(logs.includes('code=%5BFiltered%5D'));
+    });
+
+    it('encodes an attacker-supplied requested_user so it cannot break the log line', async function () {
+        const r = await this.ws_roundtrip('/realtime?user=evil%20injected', {
+            headers: {Authorization: 'Bearer awp_invalidxxxxxxxxxxxxxxxxxxxxxxxxxxxx'},
+        });
+        assert.strictEqual(r.opened, false);
+
+        const logs = this.written_logs.join('\n');
+        assert.ok(logs.includes('requested_user="evil injected"'));
+        assert.strictEqual(logs.includes('requested_user=evil injected'), false);
+    });
+});

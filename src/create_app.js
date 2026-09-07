@@ -510,7 +510,7 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
 
             const auth = await authenticate_ws_upgrade(req, ip, bearer_miss_limiter);
             if (!auth.user_uid) {
-                als.logger.write(`[ws_upgrade_reject] reason=${auth.reason} ${auth.details} url=${JSON.stringify(req.url)} ip=${ip}`);
+                als.logger.write(`[ws_upgrade_reject] reason=${auth.reason} ${auth.details} url=${JSON.stringify(urlxxx(req.url))} ip=${ip}`);
                 reject(401, 'Unauthorized');
                 return;
             }
@@ -523,7 +523,7 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             delete req.headers.authorization;
 
             req.ws_user_uid = auth.user_uid;
-            als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(req.url)}`);
+            als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(urlxxx(req.url))}`);
             proxy.upgrade(req, socket, head);
         }
         catch (error) {
@@ -636,7 +636,7 @@ function ws_auth_details(req, auth_user_uid, auth_kind)
 
     const details = [
         `cookie=${ws_cookie_summary(req.headers.cookie)}`,
-        `requested_user=${requested_user || 'missing'}`,
+        `requested_user=${requested_user ? JSON.stringify(requested_user) : 'missing'}`,
         `auth_user=${auth_user_uid || 'missing'}`,
         `auth=${auth_kind || 'missing'}`,
     ];

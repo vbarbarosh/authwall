@@ -78,7 +78,7 @@ describe('websocket proxy', function () {
         assert(this.written_logs.some(v => {
             return v.includes('[ws_upgrade]')
                 && v.includes('auth=session')
-                && v.includes(`requested_user=${sess.user_uid}`)
+                && v.includes(`requested_user="${sess.user_uid}"`)
                 && v.includes(`auth_user=${sess.user_uid}`);
         }));
     });
@@ -162,7 +162,7 @@ describe('websocket proxy', function () {
         assert(this.written_logs.some(v => {
             return v.includes('[ws_upgrade_reject] reason=connect_sid_unsigned')
                 && v.includes('cookie=connect_sid_unsigned')
-                && v.includes('requested_user=someone');
+                && v.includes('requested_user="someone"');
         }));
     });
 
