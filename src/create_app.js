@@ -516,7 +516,7 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             }
 
             for (const name of Object.keys(req.headers)) {
-                if (name.startsWith('x-auth-')) {
+                if (is_inbound_identity_header(name)) {
                     delete req.headers[name];
                 }
             }
@@ -784,11 +784,23 @@ function clean_headers(req, res, next)
     const keys = Object.keys(req.headers);
     for (let i = 0, ii = keys.length; i < ii; ++i) {
         const s = keys[i];
-        if (s.startsWith('x-auth-')) {
+        if (is_inbound_identity_header(s)) {
             delete req.headers[s];
         }
     }
     next();
+}
+
+// An inbound header is an identity header when its name, with underscores read
+// as dashes, begins with x-auth-. Node lowercases header names but keeps
+// underscores, and several upstreams (PHP CGI/FPM, Apache mod_php) fold "_" and
+// "-" onto the same variable — so an unstripped "X_Auth_User" would reach the
+// app as an X-Auth-User Authwall never set. Both the HTTP proxy and the
+// WebSocket upgrade strip on this, so the app only ever sees the value
+// Authwall itself sets.
+function is_inbound_identity_header(name)
+{
+    return name.replace(/_/g, '-').startsWith('x-auth-');
 }
 
 module.exports = create_app;
