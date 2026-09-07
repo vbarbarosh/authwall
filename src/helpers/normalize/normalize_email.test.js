@@ -23,6 +23,22 @@ describe('normalize_email', function () {
         assert.strictEqual(normalize_email('john.doe@googlemail.com'), 'johndoe@googlemail.com');
     });
 
+    it('strips a +tag from gmail.com and googlemail.com local part', function () {
+        assert.strictEqual(normalize_email('john+newsletter@gmail.com'), 'john@gmail.com');
+        assert.strictEqual(normalize_email('john.doe+anything@gmail.com'), 'johndoe@gmail.com');
+        assert.strictEqual(normalize_email('john+a+b@gmail.com'), 'john@gmail.com');
+        assert.strictEqual(normalize_email('john+tag@googlemail.com'), 'john@googlemail.com');
+    });
+
+    it('rejects a gmail address that is only a +tag', function () {
+        assert.strictEqual(normalize_email('+tag@gmail.com'), null);
+    });
+
+    it('keeps a +tag for non-google domains', function () {
+        assert.strictEqual(normalize_email('john+tag@example.com'), 'john+tag@example.com');
+        assert.strictEqual(normalize_email('john+tag@outlook.com'), 'john+tag@outlook.com');
+    });
+
     it('does not strip dots for other domains', function () {
         assert.strictEqual(normalize_email('john.doe@example.com'), 'john.doe@example.com');
         assert.strictEqual(normalize_email('john.doe@outlook.com'), 'john.doe@outlook.com');

@@ -16,7 +16,15 @@ function normalize_email(email)
     const local = s.slice(0, at);
     const domain = s.slice(at + 1);
     if (DOTLESS_DOMAINS.has(domain)) {
-        return local.replace(/\./g, '') + '@' + domain;
+        // Google delivers to one mailbox regardless of dots or a "+tag" suffix,
+        // so both must be dropped for the address to canonicalize to that
+        // mailbox — otherwise "bad+x@gmail.com" slips a denylist that names
+        // "bad@gmail.com", and an allowlist rejects the owner's own "+tag".
+        const base = local.split('+')[0].replace(/\./g, '');
+        if (!base) {
+            return null;
+        }
+        return base + '@' + domain;
     }
     return s;
 }
