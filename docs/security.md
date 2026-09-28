@@ -104,11 +104,13 @@ written, every reset, email-change and verification link still out for the
 account is killed, every session is deleted, and every personal access token is
 revoked. Changing the password from the profile does the same, except that the
 session it was made from stays signed in. Changing the account's email or
-removing it kills outstanding reset links too, so a link delivered to an
-address the account no longer has cannot finish a recovery. Reset links, magic links, and verification links are
-consumed by a conditional update, so two requests carrying the same link at
-the same instant produce exactly one effect, and guess counters for one-time
-codes are incremented in the database against their cap.
+removing it kills outstanding reset, email-change and verification links too,
+so a link delivered to an address the account no longer has cannot finish a
+recovery, and a second change link cannot undo the first. Reset links, magic
+links, and verification links are consumed by a conditional update, so two
+requests carrying the same link at the same instant produce exactly one effect,
+and guess counters for one-time codes are incremented in the database against
+their cap.
 
 ## Access control
 

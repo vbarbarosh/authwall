@@ -16,6 +16,7 @@ const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_mid
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
@@ -134,8 +135,9 @@ async function email_change_confirm_get(req, res)
 
         // A reset link was delivered to the old address, and that address is
         // no longer the account's: whoever reads its mailbox now must not be
-        // able to finish a recovery it started.
-        await db('password_reset_tokens').where({user_id: email_change.user_id}).whereNull('used_at').del();
+        // able to finish a recovery it started, nor a sibling change link
+        // undo this one.
+        await revoke_pending_tokens(email_change.user_id);
 
         await db('user_identities').insert({
             uid: random_uid_user_identity(),

@@ -9,6 +9,7 @@ const db = require('../../db');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
+const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 
 const routes = [
     {req: 'POST /auth/email/remove', fn: [auth_middleware, csrf_middleware, email_remove_post]},
@@ -68,8 +69,8 @@ async function email_remove_post(req, res)
     await db.transaction(async function () {
         await db('user_identities').where({id: ident.id}).delete();
         // A reset link still out was delivered to this address; it leaves
-        // with the address.
-        await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
+        // with the address, and so do change and verification links.
+        await revoke_pending_tokens(user_id);
     });
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, config.pages.profile);
