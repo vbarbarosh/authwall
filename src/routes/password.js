@@ -17,6 +17,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const delete_pending_tokens = require('../helpers/delete_pending_tokens');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
@@ -330,7 +331,7 @@ async function password_reset_confirm_post(req, res)
             throw new UserFriendlyError('Reset token already used');
         }
         await db('users').where({id: user_id}).update({password_hash, updated_at: now});
-        await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
+        await delete_pending_tokens(user_id);
         await db('sessions').where({user_id}).del();
         await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
     });

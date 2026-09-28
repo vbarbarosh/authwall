@@ -50,6 +50,23 @@ describe('A completed reset settles the recovery | stories', function () {
         await this.assert_password({username: 'mocha', password: 'pass123'});
     });
 
+    // H-01: a borrowed session asks to move the account to its own address;
+    // the owner's reset must leave that link dead.
+    it('kills an email change requested before the reset', async function () {
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+        await this.http_post_json(config.pages.email_change_request, {email: 'attacker@evil.test'});
+        const change = this.sent_emails.find(v => v.placeholders?.token && v.to === 'attacker@evil.test');
+        assert.ok(change, 'an email-change link should be sent');
+
+        const token = await request_reset_token(this, 'mocha@authwall.test');
+        assert.strictEqual(await confirm_reset(this, token, 'pass456'), null);
+        assert.strictEqual((await db('email_change_tokens').whereNull('used_at')).length, 0);
+
+        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
+        const emails = await db('user_identities').where({type: 'email'}).pluck('value_normalized');
+        assert.deepStrictEqual(emails, ['mocha@authwall.test']);
+    });
+
     it('kills the link issued to an address the account has since removed', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         const token = await request_reset_token(this, 'mocha@authwall.test');
