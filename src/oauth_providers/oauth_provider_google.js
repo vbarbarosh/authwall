@@ -10,6 +10,7 @@ const oauth_provider_google = {
     email_connected: const_email.google_connected,
     email_disconnected: const_email.google_disconnected,
     error_already_linked_to_another_user: 'Google account already linked to another user',
+    error_already_connected: 'A Google account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect Google: it is your only sign-in method',
     route_authorize: '/auth/google',
     route_callback: '/auth/google/callback',

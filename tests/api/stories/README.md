@@ -43,6 +43,7 @@ Testable now
 - [x] two requests carry the same reset, magic, or verification link at the same instant, or five wrong codes arrive at once; exactly one consumes the link and the guess cap holds → `one_time_tokens_consumed_once.md`, `one_time_tokens_consumed_once.test.js`
 - [x] Authwall is started with `AUTHWALL_FLOWS=username` and an email access rule; nothing could ever satisfy the rule, so it refuses to start rather than announce an allow-list over a door nobody can enter → `username_only_flow_with_access_rules.md`, `username_only_flow_with_access_rules.test.js`
 - [x] a client sends its own `X-Auth-User` and the underscore spelling `X_Auth_User`; the upstream receives only the value Authwall sets, over both the HTTP proxy and a WebSocket upgrade → `identity_header_underscore_strip.md`, `identity_header_underscore_strip.test.js`
+- [x] a borrowed session links a second Google account to the owner's; the connect is refused, and the database refuses a second account of one provider for one user → `one_account_per_provider.md`, `one_account_per_provider.test.js`
 
 Needs product decision
 

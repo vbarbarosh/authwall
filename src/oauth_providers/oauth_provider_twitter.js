@@ -10,6 +10,7 @@ const oauth_provider_twitter = {
     email_connected: const_email.twitter_connected,
     email_disconnected: const_email.twitter_disconnected,
     error_already_linked_to_another_user: 'X account already linked to another user',
+    error_already_connected: 'An X account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect X: it is your only sign-in method',
     route_authorize: '/auth/twitter',
     route_callback: '/auth/twitter/callback',

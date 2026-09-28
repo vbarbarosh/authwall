@@ -11,6 +11,7 @@ const oauth_provider_github = {
     email_connected: const_email.github_connected,
     email_disconnected: const_email.github_disconnected,
     error_already_linked_to_another_user: 'GitHub account already linked to another user',
+    error_already_connected: 'A GitHub account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect GitHub: it is your only sign-in method',
     route_authorize: '/auth/github',
     route_callback: '/auth/github/callback',

@@ -10,6 +10,7 @@ const oauth_provider_facebook = {
     email_connected: const_email.facebook_connected,
     email_disconnected: const_email.facebook_disconnected,
     error_already_linked_to_another_user: 'Facebook account already linked to another user',
+    error_already_connected: 'A Facebook account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect Facebook: it is your only sign-in method',
     route_authorize: '/auth/facebook',
     route_callback: '/auth/facebook/callback',

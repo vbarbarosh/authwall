@@ -15,6 +15,7 @@ const oauth_provider_microsoft = {
     email_connected: const_email.microsoft_connected,
     email_disconnected: const_email.microsoft_disconnected,
     error_already_linked_to_another_user: 'Microsoft account already linked to another user',
+    error_already_connected: 'A Microsoft account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect Microsoft: it is your only sign-in method',
     route_authorize: '/auth/microsoft',
     route_callback: '/auth/microsoft/callback',

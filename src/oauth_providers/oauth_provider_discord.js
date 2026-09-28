@@ -10,6 +10,7 @@ const oauth_provider_discord = {
     email_connected: const_email.discord_connected,
     email_disconnected: const_email.discord_disconnected,
     error_already_linked_to_another_user: 'Discord account already linked to another user',
+    error_already_connected: 'A Discord account is already connected; disconnect it first',
     error_last_auth_method: 'Cannot disconnect Discord: it is your only sign-in method',
     route_authorize: '/auth/discord',
     route_callback: '/auth/discord/callback',

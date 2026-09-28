@@ -119,6 +119,24 @@ async function callback_get(oauth_provider, req, res)
             return redirect(req, res, '/auth/profile');
         }
 
+        // One account per provider (a unique index backs it): a second one,
+        // linked from a borrowed session, would outlive the owner's (AW-24).
+        const connected = await db('user_identities').where({user_id: req.session.user_id, type: oauth_provider.user_identity_type}).first();
+        if (connected) {
+            await insert_auth_event({
+                req,
+                ident: {
+                    type: oauth_provider.user_identity_type,
+                    value: sub,
+                    value_normalized: sub,
+                },
+                event_type: const_auth_event.identity_added,
+                event_status: const_auth_event_status.failure,
+                custom: {reason: 'provider_already_connected'},
+            });
+            throw new UserFriendlyError(oauth_provider.error_already_connected);
+        }
+
         const now = new Date();
         await db('user_identities').insert({
             uid: random_uid_user_identity(),
