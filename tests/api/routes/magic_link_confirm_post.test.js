@@ -31,6 +31,20 @@ describe('POST /auth/magic-link/confirm', function () {
         assert.strictEqual(provider.value, 'new-user@authwall.test');
     });
 
+    // Passes trivially on SQLite; on MySQL, whose default collation ignores
+    // accents, the code row of one address is found for the other.
+    it('never signs in an address that only collates equal to the one mailed', async function () {
+        await this.add_user({email: 'alice@acme.test'});
+        await this.http_post_json('/auth/magic-link/request', {email: 'alice@acmé.test'});
+
+        const {code} = this.sent_emails[0].placeholders;
+        await this.http_post_json('/auth/magic-link/confirm', {email: 'alice@acme.test', code});
+
+        const status2 = await this.http_get_json('/auth/status');
+        assert.strictEqual(status2.error, 'Invalid or expired code');
+        assert.strictEqual(status2.authenticated, false);
+    });
+
     it('fails with missing fields', async function () {
         await this.http_post_json('/auth/magic-link/confirm');
 

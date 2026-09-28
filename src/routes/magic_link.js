@@ -129,8 +129,7 @@ async function magic_link_confirm_post(req, res)
         throw new UserFriendlyError('Missing fields');
     }
 
-    const email = req.body.email;
-    const email_normalized = normalize_email(email);
+    const email_normalized = normalize_email(req.body.email);
     if (!email_normalized) {
         throw new UserFriendlyError('Invalid email');
     }
@@ -143,7 +142,9 @@ async function magic_link_confirm_post(req, res)
         .where('expires_at', '>', now)
         .orderBy('id', 'desc')
         .first();
-    if (!magic_link) {
+    // A case- and accent-blind collation (MySQL) can match the row of another
+    // address, "alice@acmé.test" for "alice@acme.test"; only an exact one counts.
+    if (!magic_link || (magic_link.email_normalized !== email_normalized)) {
         throw new UserFriendlyError('Invalid or expired code');
     }
     if (!await spend_attempt('magic_links', magic_link.id, config.flows.magic_link.max_attempts, now)) {
@@ -159,6 +160,8 @@ async function magic_link_confirm_post(req, res)
         throw new UserFriendlyError('Invalid or expired code');
     }
 
+    // The address as typed when the code was mailed, as the GET link uses it.
+    const email = magic_link.email;
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
