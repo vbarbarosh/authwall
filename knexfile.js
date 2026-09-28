@@ -29,6 +29,9 @@ module.exports = {
 
     mysql: {
         client: 'mysql2',
+        // ⚠️ Not applied with knex 3.3: CREATE TABLE carries only the charset, so
+        // a column looked up by value sets its own collation (db/utf8mb4_bin.js).
+        //
         // 🐵 Object.create – Just to mute the following warning:
         //
         // node_modules/mysql2/lib/connection_config.js
