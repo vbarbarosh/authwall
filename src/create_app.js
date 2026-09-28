@@ -35,6 +35,7 @@ const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const save_session = require('./helpers/save_session');
+const target_path = require('./helpers/target_path');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('@vbarbarosh/node-helpers/src/urlparts');
 const urlxxx = require('./helpers/urlxxx');
@@ -284,7 +285,7 @@ async function create_app()
                 //     }
                 // }
                 const user_uid = authenticated_user_uid(req);
-                if (user_uid && !is_public_path(req.path)) {
+                if (user_uid && !is_public_path(target_path(req.originalUrl))) {
                     proxy_req.setHeader('X-Auth-User', user_uid);
                 }
                 for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
@@ -406,8 +407,9 @@ async function sign_in_required(req, res, next)
 {
     try {
         const user_id = authenticated_user_id(req);
+        const path = target_path(req.originalUrl);
 
-        if (is_public_path(req.path) || (!user_id && is_optional_auth_path(req.path))) {
+        if (is_public_path(path) || (!user_id && is_optional_auth_path(path))) {
             next();
             return;
         }

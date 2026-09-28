@@ -9,6 +9,7 @@ const has_email_access_rules = require('../helpers/has_email_access_rules');
 const is_optional_auth_path = require('../helpers/is_optional_auth_path');
 const is_public_path = require('../helpers/is_public_path');
 const pkg = require('../../package.json');
+const target_path = require('../helpers/target_path');
 
 const routes = [
     {req: 'GET /auth/status', fn: status_get},
@@ -228,14 +229,7 @@ function sidecar_original_path(req)
     if (!raw) {
         return null;
     }
-    const s = String(raw);
-    try {
-        const path = s.includes('://') ? new URL(s).pathname : s.split('?')[0];
-        return path || null;
-    }
-    catch (error) {
-        return null;
-    }
+    return target_path(String(raw));
 }
 
 module.exports = routes;

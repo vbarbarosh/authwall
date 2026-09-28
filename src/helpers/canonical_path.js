@@ -3,7 +3,7 @@ const path = require('path');
 const NUL = String.fromCharCode(0);
 
 // The path a request is authorized on must be the path the upstream will act
-// on. Express hands us req.path exactly as the client sent it, and the proxy
+// on. target_path hands us the path as the client sent it, and the proxy
 // forwards it untouched, while nginx, Apache, Tomcat and most static servers
 // resolve dot segments before routing. Matching "/lib/../admin" against a
 // "/lib/*" public rule on the raw string therefore admits "/admin".

@@ -99,6 +99,16 @@ describe('sidecar authorization', function () {
             assert.strictEqual(r.status, 401);
         });
 
+        it('rejects a fragment that hides a traversal out of a public path', async function () {
+            const r = await sidecar(this.client, 'http://app.test/favicon.ico#/../admin.txt');
+            assert.strictEqual(r.status, 401);
+        });
+
+        it('rejects a backslash that the URL parser would turn into a slash', async function () {
+            const r = await sidecar(this.client, 'http://app.test/lib\\admin');
+            assert.strictEqual(r.status, 401);
+        });
+
         it('still protects a private path when the original URI is present', async function () {
             const r = await sidecar(this.client, '/private/page');
             assert.strictEqual(r.status, 401);

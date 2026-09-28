@@ -29,6 +29,14 @@ test.describe('request target with a fragment', function () {
         expect(new URL(page.url()).pathname).toBe('/auth/sign-in');
     });
 
+    test('the sidecar judges a fragment in the original URI as protected', async function ({request}) {
+        const hidden = await request.get('/auth/sidecar', {headers: {'X-Original-URI': 'http://localhost:3000/favicon.ico#/../admin.txt'}});
+        const plain = await request.get('/auth/sidecar', {headers: {'X-Original-URI': 'http://localhost:3000/favicon.ico'}});
+
+        expect(hidden.status()).toBe(401);
+        expect(plain.status()).toBe(200);
+    });
+
     test('a signed-in browser opens a protected path with a fragment', async function ({page}) {
         await sign_in_as_seeded_user(page);
 
