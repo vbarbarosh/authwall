@@ -2,6 +2,7 @@ const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_email = require('../helpers/const/const_email');
 const db = require('../../db');
+const delete_pending_tokens = require('../helpers/delete_pending_tokens');
 const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
@@ -26,8 +27,10 @@ async function complete_password_change(req, res, user_id, auth_event_custom)
     // revoke other sessions
     await db('sessions').where({user_id}).whereNot({uid: req.sessionID}).del();
 
-    // invalidate any pending password reset tokens
-    await db('password_reset_tokens').where({user_id}).whereNull('used_at').del();
+    // invalidate every link still in flight and every token minted under the old password
+    await delete_pending_tokens(user_id);
+    const now = new Date();
+    await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
 
     redirect(req, res, config.pages.profile);
 

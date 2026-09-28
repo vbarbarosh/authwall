@@ -100,11 +100,12 @@ must meet [`AUTHWALL_PASSWORD_MIN`](config.md#passwords) (default `8`).
 Password-reset links are stored as SHA-256 hashes, expire after ten minutes,
 and are scoped to the account, not to the address they were sent to. A
 completed reset settles the recovery in one transaction: the new password is
-written, every reset link still out for the account is killed, every session is
-deleted, and every personal access token is revoked. Changing the account's
-email, removing it, or changing the password from the profile kills outstanding
-reset links too, so a link delivered to an address the account no longer has
-cannot finish a recovery. Reset links, magic links, and verification links are
+written, every reset, email-change and verification link still out for the
+account is killed, every session is deleted, and every personal access token is
+revoked. Changing the password from the profile does the same, except that the
+session it was made from stays signed in. Changing the account's email or
+removing it kills outstanding reset links too, so a link delivered to an
+address the account no longer has cannot finish a recovery. Reset links, magic links, and verification links are
 consumed by a conditional update, so two requests carrying the same link at
 the same instant produce exactly one effect, and guess counters for one-time
 codes are incremented in the database against their cap.
