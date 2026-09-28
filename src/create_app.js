@@ -20,6 +20,7 @@ const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const http_proxy_middleware = require('http-proxy-middleware');
 const insert_auth_event = require('./helpers/insert_auth_event');
 const is_optional_auth_path = require('./helpers/is_optional_auth_path');
+const is_origin_form = require('./helpers/is_origin_form');
 const is_public_path = require('./helpers/is_public_path');
 const make_failure_counter = require('./helpers/middleware/make_failure_counter');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
@@ -100,6 +101,17 @@ async function create_app()
         });
 
         als.run({logger}, () => next());
+    });
+
+    // Every path decision below reads req.path; a target it cannot judge the
+    // way the upstream will is refused first (see is_origin_form).
+    app.use(function (req, res, next) {
+        if (is_origin_form(req.url)) {
+            next();
+            return;
+        }
+        als.logger.write(`[bad_request_target] ${req.method} ${JSON.stringify(urlxxx(req.url))}`);
+        res.status(400).type('text').send('Bad Request');
     });
 
     // Everything below the session middleware that touches req.session
@@ -501,6 +513,11 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
         }
 
         try {
+            if (!is_origin_form(req.url)) {
+                reject(400, 'Bad Request');
+                return;
+            }
+
             const {pathname} = new URL(req.url, 'http://localhost');
 
             if (pathname === '/auth' || pathname.startsWith('/auth/')) {
