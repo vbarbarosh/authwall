@@ -75,6 +75,7 @@ function make_config(input = {})
             [const_email.confirm_email_without_code]: `${emails_dir}/confirm-email-without-code.txt`,
             [const_email.confirm_email_without_link]: `${emails_dir}/confirm-email-without-link.txt`,
             [const_email.email_change_requested]: `${emails_dir}/email-change-request.txt`,
+            [const_email.email_change_approve]: `${emails_dir}/email-change-approve.txt`,
             [const_email.email_changed]: `${emails_dir}/email-changed.txt`,
 
             [const_email.new_sign_in]: `${emails_dir}/new-sign-in.txt`,
@@ -102,6 +103,7 @@ function make_config(input = {})
             email_verify_notice: '/auth/email-verify/sent',
             email_verify_success: '/auth/email-verify/success',
             email_change_request: '/auth/email-change/request',
+            email_change_approve: '/auth/email-change/approve',
             email_change_confirm: '/auth/email-change/confirm',
             email_change_notice: '/auth/email-change/sent',
             email_change_success: '/auth/email-change/success',

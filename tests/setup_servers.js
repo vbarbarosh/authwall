@@ -5,6 +5,7 @@ const assign_primary_email = require('../src/helpers/assign_primary_email');
 const axios = require('axios');
 const bcrypt = require('bcrypt');
 const config = require('../config');
+const const_email = require('../src/helpers/const/const_email');
 const const_user_identity = require('../src/helpers/const/const_user_identity');
 const cookie_signature = require('cookie-signature');
 const create_app = require('../src/create_app');
@@ -15,6 +16,7 @@ const normalize_email = require('../src/helpers/normalize/normalize_email');
 const normalize_username = require('../src/helpers/normalize/normalize_username');
 const promisify = require('../src/helpers/promisify');
 const random_uid_user_identity = require('../src/helpers/random/random_uid_user_identity');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../src/helpers/models/users_create');
 
 async function spin(ctx, _this, fn)
@@ -45,6 +47,7 @@ async function spin(ctx, _this, fn)
         _this.add_user = add_user;
         _this.sign_in = sign_in;
         _this.confirm = confirm;
+        _this.approve_email_change = approve_email_change;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
         _this.http_post_json = async function (url, data = {}) {
@@ -420,6 +423,17 @@ async function confirm({password = null} = {})
 
     const status = await this.http_get_json('/auth/status');
     assert.strictEqual(status.confirmed, true, `confirm() failed: ${status.error}`);
+}
+
+// Opens the approval link that a change of the primary address mails to the
+// current primary, as its owner would; the new address then gets its link.
+async function approve_email_change()
+{
+    const sent = this.sent_emails.findLast(v => v.name === const_email.email_change_approve);
+    assert.ok(sent, 'no approval request was mailed');
+    const before = this.sent_emails.length;
+    await this.http_get_json(urlmod(config.pages.email_change_approve, {token: sent.placeholders.token}));
+    await this.wait_for_emails(before + 1);
 }
 
 async function assert_password({username, email, password})

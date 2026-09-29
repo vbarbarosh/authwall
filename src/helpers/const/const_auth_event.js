@@ -15,6 +15,7 @@ const const_auth_event = {
     email_verification_requested: 'email_verification_requested',
     email_verified: 'email_verified',
     email_change_requested: 'email_change_requested',
+    email_change_approved: 'email_change_approved',
     email_changed: 'email_changed',
     session_revoked: 'session_revoked',
     session_revoked_all: 'session_revoked_all',

@@ -64,6 +64,7 @@ describe('The primary address | stories', function () {
     it('moves the primary to the new value of a changed address', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json(config.pages.email_change_request, {email: 'mocha@new.test'});
+        await this.approve_email_change();
         const {token} = this.sent_emails.find(v => v.to === 'mocha@new.test').placeholders;
         await this.http_get_json(urlmod(config.pages.email_change_confirm, {token}));
 

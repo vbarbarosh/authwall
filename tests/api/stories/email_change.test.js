@@ -32,6 +32,7 @@ describe('Email change invalidates old email sign-in | stories', function () {
 
         // Request email change
         await this.http_post_json(config.pages.email_change_request, {email: 'new@authwall.test'});
+        await this.approve_email_change();
 
         const change_email = this.sent_emails.find(v => v.placeholders?.token && v.to === 'new@authwall.test');
         assert.ok(change_email, 'email change confirmation email should be sent');

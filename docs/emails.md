@@ -57,7 +57,8 @@ Templates are plain text; there is currently no HTML version.
 | `welcome.txt`                         | A new account is created (no email confirmation needed)          |
 | `welcome-and-confirm-email.txt`       | New account that must confirm its email                          |
 | `confirm-email.txt`                   | A standalone request to confirm an email address                 |
-| `email-change-request.txt`            | A user requests changing their email — sent to the new address   |
+| `email-change-request.txt`            | The old address approved a change — the link to the new address  |
+| `email-change-approve.txt`            | A user asks to change their email — approval, to the old address |
 | `email-changed.txt`                   | Notice sent to the *old* address that the email is being changed |
 | `magic-link.txt`                      | A passwordless sign-in link/code is requested                    |
 | `password-reset.txt`                  | A password reset is requested                                    |

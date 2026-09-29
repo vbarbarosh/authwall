@@ -22,7 +22,6 @@ async function complete_email_change_confirm(req, res, user_id, old_email, new_e
             ip: req.session.ip ?? 'n/a',
             ua: req.session.ua ?? 'n/a',
             new_email,
-            reset_link: config.public_url + config.pages.password_reset_request,
         },
     });
 

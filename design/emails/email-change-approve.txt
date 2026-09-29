@@ -1,0 +1,17 @@
+Subject: Approve moving your account to a new address
+
+Hi {{display_name}},
+
+Someone signed in to your account asked to move it from this address to:
+
+  {{new_email}}
+
+If it was you, approve the move with the link below. We will then send a
+confirmation link to the new address. The link expires in {{expires_minutes}} minutes.
+{{approve_link}}
+
+If it was not you, do not open the link: nothing changes. Someone may be using
+your signed-in session; sign out of all devices from your profile and change
+your password.
+
+— Authwall

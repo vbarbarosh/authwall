@@ -13,8 +13,9 @@ describe('GET /auth/email-change/confirm', function () {
 
         await this.http_post_json('/auth/sign-in', {username: email, password});
         await this.http_post_json('/auth/email-change/request', {email: new_email});
+        await this.approve_email_change();
 
-        await this.http_get_json(this.sent_emails[1].placeholders.confirm_link);
+        await this.http_get_json(this.sent_emails.find(v => v.to === new_email).placeholders.confirm_link);
 
         const status = await this.http_get_json('/auth/status');
         const actual = status.providers.filter(v => v.type === 'email').map(v => v.value_normalized);

@@ -125,6 +125,11 @@ passwords together, lock the confirmation for the account. An account with
 neither a primary address nor a password confirms by signing in again with a
 provider account it has already linked.
 
+Changing the account's email changes the primary address, so it needs the
+current primary first: Authwall mails it a link to approve the move, and only
+after that approval does the new address get its confirmation link. An
+account without a primary confirms it is the owner before asking.
+
 ## Access control
 
 Registration is **open by default** — anyone who can reach the sign-in page can

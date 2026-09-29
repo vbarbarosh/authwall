@@ -43,6 +43,7 @@ describe('A completed reset settles the recovery | stories', function () {
         const token = await request_reset_token(this, 'old@authwall.test');
 
         await this.http_post_json(config.pages.email_change_request, {email: 'new@authwall.test'});
+        await this.approve_email_change();
         const change = this.sent_emails.find(v => v.placeholders?.token && v.to === 'new@authwall.test');
         await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
 
@@ -55,6 +56,7 @@ describe('A completed reset settles the recovery | stories', function () {
     it('kills an email change requested before the reset', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json(config.pages.email_change_request, {email: 'attacker@evil.test'});
+        await this.approve_email_change();
         const change = this.sent_emails.find(v => v.placeholders?.token && v.to === 'attacker@evil.test');
         assert.ok(change, 'an email-change link should be sent');
 

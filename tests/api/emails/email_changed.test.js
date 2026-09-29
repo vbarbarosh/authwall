@@ -8,12 +8,13 @@ describe('emails • email_changed', function () {
 
         // request email change
         await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
+        await this.approve_email_change();
 
         // confirm email change using token from email
-        await this.http_get_json(this.sent_emails[0].placeholders.confirm_link);
+        await this.http_get_json(this.sent_emails.find(v => v.name === const_email.email_change_requested).placeholders.confirm_link);
 
         const actual = this.sent_emails.map(v => v.name);
-        const expected = [const_email.email_change_requested, const_email.email_changed];
+        const expected = [const_email.email_change_approve, const_email.email_change_requested, const_email.email_changed];
         assert.deepStrictEqual(actual, expected);
     });
 

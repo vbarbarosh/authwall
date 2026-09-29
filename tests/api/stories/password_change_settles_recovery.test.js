@@ -23,6 +23,7 @@ describe('A password change settles the recovery | stories', function () {
         it(`kills an email change requested before the change (${route.label})`, async function () {
             await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
             await this.http_post_json(config.pages.email_change_request, {email: 'attacker@evil.test'});
+            await this.approve_email_change();
             const change = this.sent_emails.find(v => v.placeholders?.token && (v.to === 'attacker@evil.test'));
             assert.ok(change, 'an email-change link should be sent');
 

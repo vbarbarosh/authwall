@@ -17,6 +17,7 @@ describe('Email change preserves the entered address | stories', function () {
 
         // Request and confirm the email change
         await this.http_post_json(config.pages.email_change_request, {email: new_email});
+        await this.approve_email_change();
 
         const change_email = this.sent_emails.find(v => v.placeholders?.confirm_link);
         assert.ok(change_email, 'email change confirmation email should be sent');

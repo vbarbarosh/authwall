@@ -9,9 +9,9 @@ describe('auth_events • email_changed', function () {
     it('should be recorded when email change is confirmed', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
-        await this.wait_for_emails(1);
+        await this.approve_email_change();
 
-        await this.http_get_json(this.sent_emails[0].placeholders.confirm_link);
+        await this.http_get_json(this.sent_emails.find(v => v.placeholders?.confirm_link).placeholders.confirm_link);
 
         const events = await db('auth_events').where({event_type: const_auth_event.email_changed}).orderBy('id');
         assert.strictEqual(events.length, 1);
