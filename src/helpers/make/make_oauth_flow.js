@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assign_primary_email = require('../assign_primary_email');
 const auth_middleware = require('../middleware/auth_middleware');
 const authorize_oauth_verified_emails = require('../authorize_oauth_verified_emails');
 const complete_sign_in = require('../../actions/complete_sign_in');
@@ -172,6 +173,7 @@ async function callback_get(oauth_provider, req, res)
                 updated_at: now,
                 verified_at: now,
             }).onConflict(['type', 'value_normalized']).ignore();
+            await assign_primary_email(req.session.user_id);
         }
 
         redirect(req, res, '/auth/profile');
@@ -234,6 +236,7 @@ async function callback_get(oauth_provider, req, res)
                     updated_at: now,
                     verified_at: now,
                 }).onConflict(['type', 'value_normalized']).ignore();
+                await assign_primary_email(user_id);
             }
         });
     }

@@ -1,4 +1,5 @@
 const als = require('./als');
+const assign_primary_email = require('./assign_primary_email');
 const config = require('../../config');
 const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
@@ -61,6 +62,7 @@ async function bootstrap_users()
             ...emails.map(v => ({...base, user_id, uid: random_uid_user_identity(), type: const_user_identity.email, value: v, value_normalized: normalize_email(v)})),
         ].filter(v => v.value_normalized);
         await db('user_identities').insert(rows).onConflict(['type', 'value_normalized']).ignore();
+        await assign_primary_email(user_id);
 
         const idents2 = await db('user_identities').where({user_id}).count();
 

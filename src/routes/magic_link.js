@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assign_primary_email = require('../helpers/assign_primary_email');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
 const complete_magic_link_request = require('../actions/complete_magic_link_request');
@@ -112,6 +113,7 @@ async function magic_link_confirm_get(req, res)
             updated_at: now,
             verified_at: now,
         });
+        await assign_primary_email(user.id);
         const fresh_ident = {
             type: const_user_identity.email,
             value: email,
@@ -179,6 +181,7 @@ async function magic_link_confirm_post(req, res)
             updated_at: now,
             verified_at: now,
         });
+        await assign_primary_email(user.id);
         const fresh_ident = {
             type: const_user_identity.email,
             value: email,

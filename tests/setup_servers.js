@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const als = require('../src/helpers/als');
 const assert = require('assert');
+const assign_primary_email = require('../src/helpers/assign_primary_email');
 const axios = require('axios');
 const bcrypt = require('bcrypt');
 const config = require('../config');
@@ -373,6 +374,7 @@ async function add_user(params = {})
         throw new Error(`add_user: neither username ${JSON.stringify(username)} nor email ${JSON.stringify(email)} is a valid identity`);
     }
     await db('user_identities').insert(rows);
+    await assign_primary_email(user.id);
 
     return {user_id: user.id, email, username, password, verified};
 }

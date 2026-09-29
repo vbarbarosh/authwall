@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assign_primary_email = require('../helpers/assign_primary_email');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_email_verify_confirm = require('../actions/complete_email_verify_confirm');
@@ -105,6 +106,7 @@ async function email_verify_confirm_get(req, res)
             })
             .whereNull('verified_at')
             .update({verified_at: now, updated_at: now});
+        await assign_primary_email(record.user_id);
     });
 
     const ident = await db('user_identities').where({
@@ -168,6 +170,7 @@ async function email_verify_confirm_post(req, res)
             })
             .whereNull('verified_at')
             .update({verified_at: now, updated_at: now});
+        await assign_primary_email(user_id);
     });
 
     const fresh_ident = await db('user_identities').where({id: ident.id}).first();

@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assign_primary_email = require('../helpers/assign_primary_email');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const complete_email_change_confirm = require('../actions/complete_email_change_confirm');
@@ -148,7 +149,10 @@ async function email_change_confirm_get(req, res)
             created_at: now,
             updated_at: now,
             verified_at: now,
+            // The address it replaces stays primary under its new value.
+            primary_at: ident.primary_at,
         });
+        await assign_primary_email(email_change.user_id);
 
         const user_id = email_change.user_id;
         const new_email = email_change.email;

@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assign_primary_email = require('../helpers/assign_primary_email');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
@@ -71,6 +72,7 @@ async function email_remove_post(req, res)
         // A reset link still out was delivered to this address; it leaves
         // with the address, and so do change and verification links.
         await revoke_pending_tokens(user_id);
+        await assign_primary_email(user_id);
     });
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, config.pages.profile);

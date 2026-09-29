@@ -95,6 +95,7 @@ describe('shape • status', function () {
                     created_at: String, // '2026-04-17T23:37:00.732Z',
                     updated_at: String, // '2026-04-17T23:37:00.732Z',
                     verified_at: String, // '2026-04-17T23:37:00.732Z'
+                    primary_at: null,
                 },
                 {
                     uid: String, // 'awident_ciqvly2ik3js277xpb3y6gf0',
@@ -104,6 +105,7 @@ describe('shape • status', function () {
                     created_at: String, // '2026-04-17T23:37:00.732Z',
                     updated_at: String, // '2026-04-17T23:37:00.732Z',
                     verified_at: String, // '2026-04-17T23:37:00.732Z'
+                    primary_at: String, // '2026-04-17T23:37:00.732Z'
                 }
             ],
             current_session_uid: String, // 'awsess_nb8t0n2uu8glaxrfnhcj1jed',

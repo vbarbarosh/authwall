@@ -9,6 +9,7 @@ function frontend_user_identities(user_identities)
             created_at: ident.created_at && new Date(ident.created_at).toJSON(),
             updated_at: ident.updated_at && new Date(ident.updated_at).toJSON(),
             verified_at: ident.verified_at && new Date(ident.verified_at).toJSON(),
+            primary_at: ident.primary_at && new Date(ident.primary_at).toJSON(),
         };
     });
 }
