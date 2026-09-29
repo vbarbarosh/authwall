@@ -64,6 +64,7 @@ describe('GET /auth/facebook/callback', function () {
     it('connects facebook account to existing session', async function () {
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.confirm({password: 'pass123'});
 
         mock_facebook();
         await this.client.get_json_no_redirects('/auth/facebook?connect=1');

@@ -112,6 +112,18 @@ requests carrying the same link at the same instant produce exactly one effect,
 and guess counters for one-time codes are incremented in the database against
 their cap.
 
+## Linking a provider account
+
+Every account has a primary address: the first verified address it came in
+with. Connecting a provider account (Google, GitHub, …) from the profile links
+it at once only when the provider returns that primary address and verifies
+the addresses it returns; Facebook does not, so a Facebook connect always
+asks. Otherwise nothing is linked until the owner confirms it is them, with a
+code mailed to the primary address or the account's password: a signed-in
+session alone is not enough. Five wrong answers within 15 minutes, codes and
+passwords together, lock the confirmation for the account. An account with
+neither a primary address nor a password still links as before.
+
 ## Access control
 
 Registration is **open by default** — anyone who can reach the sign-in page can

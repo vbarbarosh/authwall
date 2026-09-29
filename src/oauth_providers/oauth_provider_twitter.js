@@ -7,6 +7,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_twitter = {
     user_identity_type: const_user_identity.oauth_twitter,
+    verifies_email: true,
     email_connected: const_email.twitter_connected,
     email_disconnected: const_email.twitter_disconnected,
     error_already_linked_to_another_user: 'X account already linked to another user',

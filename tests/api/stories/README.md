@@ -46,7 +46,7 @@ Testable now
 - [x] a borrowed session links a second Google account to the owner's; the connect is refused, and the database refuses a second account of one provider for one user → `one_account_per_provider.md`, `one_account_per_provider.test.js`
 - [x] every account has one primary address, the first verified address it came in with; a provider's address never takes it, an email change moves it to the new value → `primary_address.md`, `primary_address.test.js`
 - [x] before a sensitive action the owner confirms it is them, with a code mailed to the primary address or the password; five failures within 15 minutes, codes and passwords together, shut out even the right answer → `confirm_it_is_you.md`, `confirm_it_is_you.test.js`
-- [ ] a borrowed session connects the attacker's own Google account; nothing links until the owner confirms with a code mailed to the primary address or the password, so the attacker's Google never signs in as the owner, before or after a reset (fails until AW-24 step 10 is built) → `oauth_link_survives_reset.md`, `oauth_link_survives_reset.test.js`
+- [x] a borrowed session connects the attacker's own Google account; nothing links until the owner confirms with a code mailed to the primary address or the password, so the attacker's Google never signs in as the owner; the owner's own account links after confirming, and Facebook always asks → `oauth_link_survives_reset.md`, `oauth_link_survives_reset.test.js`
 - [ ] the owner changes the primary address; the change is confirmed from both the old and the new address (planned, no story yet)
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 

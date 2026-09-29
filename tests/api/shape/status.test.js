@@ -119,6 +119,8 @@ describe('shape • status', function () {
                     last_seen_at: String, // '2026-04-17T23:37:01.160Z'
                 }
             ],
+            confirmation: null,
+            confirmed: false,
             personal_access_tokens: [],
             version: pkg.version,
         };

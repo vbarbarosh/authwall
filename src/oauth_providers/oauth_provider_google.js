@@ -7,6 +7,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_google = {
     user_identity_type: const_user_identity.oauth_google,
+    verifies_email: true,
     email_connected: const_email.google_connected,
     email_disconnected: const_email.google_disconnected,
     error_already_linked_to_another_user: 'Google account already linked to another user',

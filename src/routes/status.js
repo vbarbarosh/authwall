@@ -8,6 +8,7 @@ const frontend_user_identities = require('../helpers/models/frontend_user_identi
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const is_optional_auth_path = require('../helpers/is_optional_auth_path');
 const is_public_path = require('../helpers/is_public_path');
+const is_recently_confirmed = require('../helpers/is_recently_confirmed');
 const pkg = require('../../package.json');
 const target_path = require('../helpers/target_path');
 
@@ -135,6 +136,9 @@ async function status_get(req, res)
         providers: frontend_user_identities(identities),
         current_session_uid: bearer ? null : req.sessionID,
         sessions: frontend_sessions(await db('sessions').where({user_id})),
+        // An action waiting for the owner to confirm it is them (routes/confirm.js).
+        confirmation: bearer ? null : (req.session.confirmation ?? null),
+        confirmed: bearer ? false : is_recently_confirmed(req),
         ...optional,
         version: pkg.version,
     });

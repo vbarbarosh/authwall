@@ -7,6 +7,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_discord = {
     user_identity_type: const_user_identity.oauth_discord,
+    verifies_email: true,
     email_connected: const_email.discord_connected,
     email_disconnected: const_email.discord_disconnected,
     error_already_linked_to_another_user: 'Discord account already linked to another user',

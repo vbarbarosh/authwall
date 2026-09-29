@@ -8,6 +8,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_github = {
     user_identity_type: const_user_identity.oauth_github,
+    verifies_email: true,
     email_connected: const_email.github_connected,
     email_disconnected: const_email.github_disconnected,
     error_already_linked_to_another_user: 'GitHub account already linked to another user',

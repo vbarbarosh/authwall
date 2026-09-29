@@ -112,6 +112,7 @@ function make_config(input = {})
             magic_link_confirm: '/auth/magic-link/confirm',
             magic_link_notice: '/auth/magic-link/sent',
             profile: '/auth/profile',
+            confirm: '/auth/confirm',
             sessions: '/auth/sessions',
             personal_access_tokens: '/auth/personal-access-tokens',
             sign_out: '/auth/sign-out',

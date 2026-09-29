@@ -2,11 +2,11 @@ const assert = require('assert');
 const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 const db = require('../../../db');
+const mock_facebook = require('../../mock_facebook');
 const nock = require('nock');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-// AW-24: see oauth_link_survives_reset.md. The attack case fails until the
-// primary-address rule is built (step 10 of notes/audit-2026-09-28.md).
+// AW-24: see oauth_link_survives_reset.md.
 describe('A link planted from a borrowed session survives the owner\'s recovery | stories', function () {
 
     beforeEach(function () {
@@ -14,6 +14,10 @@ describe('A link planted from a borrowed session survives the owner\'s recovery 
         config.flows.google.enabled = true;
         config.flows.google.client_id = 'mocha_google_client_id';
         config.flows.google.redirect_url = 'mocha_google_redirect_url';
+        config.flows.facebook.enabled = true;
+        config.flows.facebook.client_id = 'mocha_facebook_client_id';
+        config.flows.facebook.client_secret = 'mocha_facebook_client_secret';
+        config.flows.facebook.redirect_url = 'mocha_facebook_redirect_url';
     });
 
     async function google_callback(ctx, route, {sub, email}) {
@@ -59,6 +63,36 @@ describe('A link planted from a borrowed session survives the owner\'s recovery 
         await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@authwall.test'});
         assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
         assert.deepStrictEqual(await google_subs(), ['mocha-google']);
+    });
+
+    it('links the owner\'s own Google account under another address once the owner confirms', async function () {
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+
+        await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@gmail.test'});
+        assert.deepStrictEqual(await google_subs(), []);
+        const status = await this.http_get_json('/auth/status');
+        assert.deepStrictEqual(status.confirmation, {next: '/auth/google?connect=1', provider: 'oauth_google', provider_emails: ['mocha@gmail.test']});
+        assert.strictEqual(status.confirmed, false);
+
+        await this.wait_for_emails(1);
+        const {code} = this.sent_emails.find(v => v.name === const_email.confirm_code).placeholders;
+        await this.http_post_json('/auth/confirm', {code});
+        await google_callback(this, status.confirmation.next, {sub: 'mocha-google', email: 'mocha@gmail.test'});
+
+        assert.deepStrictEqual(await google_subs(), ['mocha-google']);
+        assert.strictEqual((await this.http_get_json('/auth/status')).confirmation, null);
+    });
+
+    it('asks for confirmation for Facebook even when it returns the primary address', async function () {
+        await this.sign_in({username: 'mocha', email: 'test@example.com', password: 'pass123'});
+
+        mock_facebook();
+        await this.client.get_json_no_redirects('/auth/facebook?connect=1');
+        const sess = await this.client.get_session();
+        await this.http_get_json(urlmod('/auth/facebook/callback', {state: sess.oauth_state, code: 'fake_code'}));
+
+        assert.deepStrictEqual(await db('user_identities').where({type: 'oauth_facebook'}).pluck('value'), []);
+        assert.strictEqual((await this.http_get_json('/auth/status')).confirmation.provider, 'oauth_facebook');
     });
 
 });

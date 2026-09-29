@@ -12,6 +12,7 @@ const ISSUER = /^https:\/\/login\.microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0$/
 
 const oauth_provider_microsoft = {
     user_identity_type: const_user_identity.oauth_microsoft,
+    verifies_email: true,
     email_connected: const_email.microsoft_connected,
     email_disconnected: const_email.microsoft_disconnected,
     error_already_linked_to_another_user: 'Microsoft account already linked to another user',

@@ -15,12 +15,14 @@ const db = require('../../../db');
 const format_date_pretty_24 = require('../format/format_date_pretty_24');
 const get_user_email_and_name = require('../models/get_user_email_and_name');
 const insert_auth_event = require('../insert_auth_event');
+const is_recently_confirmed = require('../is_recently_confirmed');
 const oauth_intent_from_state = require('../oauth_intent_from_state');
 const oauth_state_from_intent = require('../oauth_state_from_intent');
 const random_base62 = require('../random/random_base62');
 const random_uid_user_identity = require('../random/random_uid_user_identity');
 const redirect = require('../redirect');
 const save_session = require('../save_session');
+const send_confirm_code = require('../send_confirm_code');
 const send_email_nothrow = require('../send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../models/users_create');
@@ -138,6 +140,42 @@ async function callback_get(oauth_provider, req, res)
             throw new UserFriendlyError(oauth_provider.error_already_connected);
         }
 
+        // The primary address vouches for the owner. A provider account under
+        // any other address waits until the owner confirms it is them (AW-24).
+        // An account with neither a primary nor a password has nothing to
+        // confirm with yet, and links as before.
+        if (!is_recently_confirmed(req) && await can_confirm(req.session.user_id) && !await returns_primary_email(req.session.user_id, oauth_provider, verified_emails)) {
+            req.session.confirmation = {
+                next: urlmod(oauth_provider.route_authorize, {connect: 1}),
+                provider: oauth_provider.user_identity_type,
+                provider_emails: verified_emails.map(v => v.email),
+            };
+            await save_session(req);
+            await insert_auth_event({
+                req,
+                ident: {
+                    type: oauth_provider.user_identity_type,
+                    value: sub,
+                    value_normalized: sub,
+                },
+                event_type: const_auth_event.identity_added,
+                event_status: const_auth_event_status.noop,
+                custom: {reason: 'confirmation_required'},
+            });
+            try {
+                await send_confirm_code(req);
+            }
+            catch (error) {
+                // No primary, no mailer, or a code already on its way: the
+                // confirmation page offers the password.
+                if (!(error instanceof UserFriendlyError)) {
+                    throw error;
+                }
+            }
+            return res.redirect(config.pages.confirm);
+        }
+        delete req.session.confirmation;
+
         const now = new Date();
         await db('user_identities').insert({
             uid: random_uid_user_identity(),
@@ -253,6 +291,25 @@ async function callback_get(oauth_provider, req, res)
             value_normalized: sub,
         });
     }
+}
+
+// Whether the account has a primary address or a password to confirm with.
+async function can_confirm(user_id)
+{
+    const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
+    const user = await db('users').where({id: user_id}).first();
+    return Boolean(primary) || (user.password_hash !== null);
+}
+
+// A provider account vouches for the owner only when it returns the account's
+// primary address and the provider verifies the addresses it returns.
+async function returns_primary_email(user_id, oauth_provider, verified_emails)
+{
+    if (!oauth_provider.verifies_email) {
+        return false;
+    }
+    const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
+    return Boolean(primary) && verified_emails.some(v => v.email_normalized === primary.value_normalized);
 }
 
 // Providers disagree on the JSON type of the subject identifier: GitHub

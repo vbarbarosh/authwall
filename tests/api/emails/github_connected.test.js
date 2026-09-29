@@ -20,6 +20,7 @@ describe('emails • github_connected', function () {
         mock_github();
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
+        await this.confirm({password: 'pass123'});
 
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess = await this.client.get_session();

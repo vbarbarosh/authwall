@@ -53,6 +53,7 @@ describe('The primary address | stories', function () {
 
     it('keeps the primary when a provider adds another address', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+        await this.confirm({password: 'pass123'});
         await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@gmail.test'});
 
         const emails = await db('user_identities').where({type: 'email'}).orderBy('id').pluck('value_normalized');

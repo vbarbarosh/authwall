@@ -44,6 +44,7 @@ async function spin(ctx, _this, fn)
         _this.ws_roundtrip = (path, opts) => ws_roundtrip(config.public_url, path, opts);
         _this.add_user = add_user;
         _this.sign_in = sign_in;
+        _this.confirm = confirm;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
         _this.http_post_json = async function (url, data = {}) {
@@ -399,6 +400,26 @@ async function sign_in(params)
     }
 
     return {user_id};
+}
+
+// Confirms it is the owner (routes/confirm.js): with the password when given,
+// otherwise with a code mailed to the primary address.
+async function confirm({password = null} = {})
+{
+    if (password) {
+        await this.http_post_json('/auth/confirm', {password});
+    }
+    else {
+        const before = this.sent_emails.length;
+        await this.http_post_json('/auth/confirm/request');
+        await this.wait_for_emails(before + 1);
+        const {code} = this.sent_emails[before].placeholders;
+        this.sent_emails.splice(before);
+        await this.http_post_json('/auth/confirm', {code});
+    }
+
+    const status = await this.http_get_json('/auth/status');
+    assert.strictEqual(status.confirmed, true, `confirm() failed: ${status.error}`);
 }
 
 async function assert_password({username, email, password})

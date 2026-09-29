@@ -224,6 +224,7 @@ async function create_app()
 
     const protected_spa_pages = new Set([
         config.pages.profile,
+        config.pages.confirm,
         config.pages.sessions,
         config.pages.personal_access_tokens,
         config.pages.sign_out,

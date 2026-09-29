@@ -18,6 +18,7 @@ async function assert_oauth_connected_email(ctx, {provider, mock, expected})
     mock();
 
     await ctx.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
+    await ctx.confirm({password: 'pass123'});
     await ctx.client.get_json_no_redirects(`/auth/${provider}?connect=1`);
     const sess = await ctx.client.get_session();
     await ctx.http_get_json(urlmod(`/auth/${provider}/callback`, {

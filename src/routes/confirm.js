@@ -4,27 +4,20 @@ const bcrypt = require('bcrypt');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
-const const_email = require('../helpers/const/const_email');
-const const_user_identity = require('../helpers/const/const_user_identity');
 const consume_one_time_token = require('../helpers/consume_one_time_token');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
-const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
-const random_code = require('../helpers/random/random_code');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
-const send_email = require('../helpers/send_email');
+const send_confirm_code = require('../helpers/send_confirm_code');
 const spend_attempt = require('../helpers/spend_attempt');
-const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
 
-const CODE_MINUTES = 10;
 const CODE_MAX_ATTEMPTS = 5;
-const RESEND_COOLDOWN = 60*SECOND;
 
 // One budget for wrong codes and wrong passwords, across codes and processes:
 // counted from the failure events in the database, not in memory.
@@ -43,45 +36,8 @@ const routes = [
 // POST /auth/confirm/request
 async function confirm_request_post(req, res)
 {
-    const user_id = req.session.user_id;
-    const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
-    if (!primary) {
-        throw new UserFriendlyError('Your account has no primary address. Confirm with your password.');
-    }
-    if (!config.mailer.enabled) {
-        throw new UserFriendlyError('Email delivery is disabled. Confirm with your password.');
-    }
-
-    const recent = await db('confirm_codes').where({user_id}).orderBy('id', 'desc').first();
-    if (recent && ((Date.now() - new Date(recent.created_at).getTime()) < RESEND_COOLDOWN)) {
-        throw new UserFriendlyError('Code already sent. Please wait.');
-    }
-
-    const code = random_code();
-    const now = new Date();
-    await db('confirm_codes').insert({
-        user_id,
-        email_normalized: primary.value_normalized,
-        code_hash: await bcrypt.hash(code, config.bcrypt_rounds),
-        created_at: now,
-        updated_at: now,
-        expires_at: date_add_minutes(now, CODE_MINUTES),
-    });
-    await insert_auth_event({req, ident: primary, event_type: const_auth_event.identity_confirmation_requested});
-
-    const user = await db('users').where({id: user_id}).first();
-    await send_email({
-        name: const_email.confirm_code,
-        to: {name: user.display_name, email: primary.value},
-        placeholders: {
-            display_name: user.display_name,
-            code,
-            expires_minutes: CODE_MINUTES,
-            reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: primary.value}),
-        },
-    });
-
-    redirect(req, res, config.pages.profile);
+    await send_confirm_code(req);
+    redirect(req, res, config.pages.confirm);
 }
 
 // POST /auth/confirm (code | password)

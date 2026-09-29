@@ -63,6 +63,7 @@ describe('GET /auth/twitter/callback', function () {
 
     it('connects X account to existing session', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.confirm({password: 'pass123'});
 
         mock_twitter();
         await this.client.get_json_no_redirects('/auth/twitter?connect=1');

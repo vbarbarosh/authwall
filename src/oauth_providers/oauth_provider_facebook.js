@@ -7,6 +7,7 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const oauth_provider_facebook = {
     user_identity_type: const_user_identity.oauth_facebook,
+    verifies_email: false,
     email_connected: const_email.facebook_connected,
     email_disconnected: const_email.facebook_disconnected,
     error_already_linked_to_another_user: 'Facebook account already linked to another user',

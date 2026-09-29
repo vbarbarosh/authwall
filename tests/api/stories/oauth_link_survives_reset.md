@@ -54,11 +54,14 @@ primary and is not inferred from anything else.
   (mocha@work.test). Confirm it is you: enter the code we sent to
   mocha@work.test, or your password."*
 - An account with no primary confirms with its password. An account with
-  neither confirms by signing in again with a provider it already has.
+  neither will confirm by signing in again with a provider it already has;
+  until that exists, it links as before.
+- After confirming, the owner goes through the provider once more
+  (`/auth/status` names where, as `confirmation.next`) and the account links;
+  a confirmation holds for 10 minutes.
 
 Changing the primary address is a workflow of its own, confirmed from both the
 old and the new address, and is planned separately. Recovering access to a
 lost primary is a separate story.
 
-This story fails until the solution is built: AW-24, step 10 of
-`notes/audit-2026-09-28.md`.
+AW-24, step 10 of `notes/audit-2026-09-28.md`.
