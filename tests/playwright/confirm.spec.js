@@ -34,6 +34,18 @@ test.describe('confirm it is you', function () {
         expect(status.confirmed).toBe(true);
     });
 
+    test('offers a fresh sign-in with each linked provider account', async function ({page}) {
+        const {user_id} = await sign_up_with_primary(page);
+        await using db = open_e2e_db();
+        const now = new Date();
+        await db('user_identities').insert({uid: `awident_g${user_id}`, user_id, type: 'oauth_google', value: `g${user_id}`, value_normalized: `g${user_id}`, created_at: now, updated_at: now, verified_at: now});
+
+        await page.goto('/auth/confirm');
+        const button = page.getByTestId('confirm-provider-oauth_google');
+        await expect(button).toHaveText('Sign in again with Google');
+        await expect(button).toHaveAttribute('href', '/auth/google?confirm=1');
+    });
+
     test('explains a pending connect and continues to it after confirming', async function ({page}) {
         const {email} = await sign_up_with_primary(page);
         // A real connect needs the provider; the pending confirmation it leaves
@@ -65,7 +77,8 @@ async function sign_up_with_primary(page)
     await using db = open_e2e_db();
     const now = new Date();
     await db('user_identities').where({type: 'email', value_normalized: email}).update({verified_at: now, primary_at: now});
-    return {username, email};
+    const {user_id} = await db('user_identities').where({type: 'email', value_normalized: email}).first();
+    return {username, email, user_id};
 }
 
 // The database the e2e server was started on (see playwright.config.js).

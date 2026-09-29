@@ -769,7 +769,11 @@
             </div>
             <button id="cf-password-submit" class="btn btn-outline mt-8" data-testid="confirm-password-submit">Confirm with password</button>
           </div>
-          <p id="cf-none" class="text-sm text-muted" style="display:none">Your account has no primary address and no password to confirm with.</p>
+          <div id="cf-providers-block" style="display:none">
+            <p class="text-center text-sm text-muted">Or sign in again with an account you have linked:</p>
+            <div id="cf-providers"></div>
+          </div>
+          <p id="cf-none" class="text-sm text-muted" style="display:none">Your account has nothing to confirm with: no primary address, no password, no linked account.</p>
         </div>
       </div>
       <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
@@ -1946,6 +1950,7 @@ document.getElementById('mc-submit').addEventListener('click', async () => {
 
 // ── Confirm it is you ────────────────────────────────────────────────────────
 const CONFIRM_PROVIDER_LABELS = {oauth_google: 'Google', oauth_github: 'GitHub', oauth_microsoft: 'Microsoft', oauth_facebook: 'Facebook', oauth_twitter: 'X', oauth_discord: 'Discord'};
+const CONFIRM_PROVIDER_ROUTES = {oauth_google: '/auth/google', oauth_github: '/auth/github', oauth_microsoft: '/auth/microsoft', oauth_facebook: '/auth/facebook', oauth_twitter: '/auth/twitter', oauth_discord: '/auth/discord'};
 
 function render_confirm(s) {
   const primary = (s.providers || []).find(p => p.type === 'email' && p.primary_at);
@@ -1965,7 +1970,12 @@ function render_confirm(s) {
   document.getElementById('cf-primary').textContent = primary ? primary.value : '';
   document.getElementById('cf-code-block').style.display = primary ? '' : 'none';
   document.getElementById('cf-password-block').style.display = s.has_password ? '' : 'none';
-  document.getElementById('cf-none').style.display = (primary || s.has_password) ? 'none' : '';
+  // A fresh sign-in with a linked account confirms too; labels and routes come
+  // from the fixed maps above, never from the server's values.
+  const linked = (s.providers || []).map(p => p.type).filter(v => CONFIRM_PROVIDER_ROUTES[v]);
+  document.getElementById('cf-providers').innerHTML = linked.map(v => `<a class="btn btn-outline mt-8" href="${CONFIRM_PROVIDER_ROUTES[v]}?confirm=1" data-testid="confirm-provider-${v}">Sign in again with ${CONFIRM_PROVIDER_LABELS[v]}</a>`).join('');
+  document.getElementById('cf-providers-block').style.display = linked.length ? '' : 'none';
+  document.getElementById('cf-none').style.display = (primary || s.has_password || linked.length) ? 'none' : '';
 }
 
 async function confirm_submit(fields, button_id) {

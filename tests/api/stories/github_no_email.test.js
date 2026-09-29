@@ -56,6 +56,16 @@ async function sign_in_via_github(client, opts)
     await client.get_json(urlmod('/auth/github/callback', {state: sess.oauth_state, code: 'fake_code'}));
 }
 
+// A GitHub-only account with no email has neither a primary address nor a
+// password: it confirms it is the owner by signing in with GitHub again.
+async function confirm_via_github(client, opts)
+{
+    mock_github(opts);
+    await client.get_json_no_redirects('/auth/github?confirm=1');
+    const sess = await client.get_session();
+    await client.get_json(urlmod('/auth/github/callback', {state: sess.oauth_state, code: 'fake_code'}));
+}
+
 async function connect_google(client, opts)
 {
     mock_google(opts);
@@ -104,6 +114,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
         await sign_in_via_github(this.client, {email: null});
 
         // Connect Google — brings in a verified email identity
+        await confirm_via_github(this.client, {email: null});
         await connect_google(this.client, {email: 'user@example.com'});
 
         const status = await this.http_get_json('/auth/status');

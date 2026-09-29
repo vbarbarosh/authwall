@@ -122,7 +122,8 @@ asks. Otherwise nothing is linked until the owner confirms it is them, with a
 code mailed to the primary address or the account's password: a signed-in
 session alone is not enough. Five wrong answers within 15 minutes, codes and
 passwords together, lock the confirmation for the account. An account with
-neither a primary address nor a password still links as before.
+neither a primary address nor a password confirms by signing in again with a
+provider account it has already linked.
 
 ## Access control
 

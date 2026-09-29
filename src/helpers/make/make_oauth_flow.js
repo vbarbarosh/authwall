@@ -41,7 +41,13 @@ function make_oauth_flow(oauth_provider)
 // GET /auth/google
 async function authorize_get(oauth_provider, req, res)
 {
-    const intent = req.query.connect ? const_oauth_intent.connect : const_oauth_intent.login;
+    let intent = const_oauth_intent.login;
+    if (req.query.connect) {
+        intent = const_oauth_intent.connect;
+    }
+    if (req.query.confirm) {
+        intent = const_oauth_intent.confirm;
+    }
     const state = oauth_state_from_intent(intent);
     const oauth_code_verifier = random_base62(64);
     const code_challenge = crypto_hash_sha256(oauth_code_verifier).toString('base64url');
@@ -83,6 +89,10 @@ async function callback_get(oauth_provider, req, res)
     }).first();
 
     const oauth_intent = oauth_intent_from_state(state);
+    if (oauth_intent === const_oauth_intent.confirm) {
+        await confirm_with_provider(oauth_provider, req, res, ident);
+        return;
+    }
     const verified_emails = await authorize_oauth_verified_emails(user_info.verified_emails,
         {require_one_when_access_rules: oauth_intent === const_oauth_intent.login}
     );
@@ -142,9 +152,7 @@ async function callback_get(oauth_provider, req, res)
 
         // The primary address vouches for the owner. A provider account under
         // any other address waits until the owner confirms it is them (AW-24).
-        // An account with neither a primary nor a password has nothing to
-        // confirm with yet, and links as before.
-        if (!is_recently_confirmed(req) && await can_confirm(req.session.user_id) && !await returns_primary_email(req.session.user_id, oauth_provider, verified_emails)) {
+        if (!is_recently_confirmed(req) && !await returns_primary_email(req.session.user_id, oauth_provider, verified_emails)) {
             req.session.confirmation = {
                 next: urlmod(oauth_provider.route_authorize, {connect: 1}),
                 provider: oauth_provider.user_identity_type,
@@ -293,12 +301,23 @@ async function callback_get(oauth_provider, req, res)
     }
 }
 
-// Whether the account has a primary address or a password to confirm with.
-async function can_confirm(user_id)
+// A fresh sign-in with a provider account already linked to this user
+// confirms it is the owner, as a code or the password does (routes/confirm.js).
+// It is how an account with neither a primary address nor a password confirms.
+async function confirm_with_provider(oauth_provider, req, res, ident)
 {
-    const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
-    const user = await db('users').where({id: user_id}).first();
-    return Boolean(primary) || (user.password_hash !== null);
+    if (!req.session.user_id) {
+        throw new UserFriendlyError('Authentication required');
+    }
+    const custom = {method: oauth_provider.user_identity_type};
+    if (!ident || (ident.user_id !== req.session.user_id)) {
+        await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure, custom});
+        throw new UserFriendlyError('This account is not linked to yours. Sign in with an account you have linked.');
+    }
+    req.session.confirmed_at = new Date().toJSON();
+    await save_session(req);
+    await insert_auth_event({req, ident, event_type: const_auth_event.identity_confirmed, custom});
+    res.redirect(req.session.confirmation?.next ?? config.pages.profile);
 }
 
 // A provider account vouches for the owner only when it returns the account's

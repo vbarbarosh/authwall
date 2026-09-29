@@ -82,6 +82,13 @@ describe('Last auth method cannot be removed | stories', function () {
         // Sign up via Google (no email) → connect GitHub → disconnect Google → only GitHub remains
         await sign_in_via_google(this.client, {sub: 'google-sub-chain'});
 
+        // No primary address and no password: confirm by signing in with Google again.
+        nock('https://oauth2.googleapis.com').post('/token').reply(200, {access_token: 'fake-token'});
+        nock('https://www.googleapis.com').get('/oauth2/v3/userinfo').reply(200, {sub: 'google-sub-chain', name: 'Test User', picture: null, email: null, email_verified: false});
+        await this.client.get_json_no_redirects('/auth/google?confirm=1');
+        const sess_confirm = await this.client.get_session();
+        await this.http_get_json(urlmod('/auth/google/callback', {state: sess_confirm.oauth_state, code: 'fake_code'}));
+
         mock_github();
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess_gh = await this.client.get_session();

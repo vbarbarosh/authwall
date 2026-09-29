@@ -54,8 +54,7 @@ primary and is not inferred from anything else.
   (mocha@work.test). Confirm it is you: enter the code we sent to
   mocha@work.test, or your password."*
 - An account with no primary confirms with its password. An account with
-  neither will confirm by signing in again with a provider it already has;
-  until that exists, it links as before.
+  neither confirms by signing in again with a provider it already has.
 - After confirming, the owner goes through the provider once more
   (`/auth/status` names where, as `confirmation.next`) and the account links;
   a confirmation holds for 10 minutes.
