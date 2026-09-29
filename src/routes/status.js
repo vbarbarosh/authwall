@@ -132,6 +132,7 @@ async function status_get(req, res)
         user_slug: user.slug,
         csrf_token: bearer ? null : req.session.csrf_token,
         display_name: user.display_name,
+        has_password: user.password_hash !== null,
         avatar_url: user.avatar_url, // ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYOiCQT7RdsZ50X6uSIX3IVaqwvfGiDD2EBQ&s',
         providers: frontend_user_identities(identities),
         current_session_uid: bearer ? null : req.sessionID,

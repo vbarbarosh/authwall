@@ -85,6 +85,7 @@ describe('shape • status', function () {
             user_slug: String, // 'swbwnpmv7h516n8u',
             csrf_token: String, // '3X2rJ8H6ZsSyDc0vxCrpYDKe',
             display_name: null,
+            has_password: true,
             avatar_url: null,
             providers: [
                 {

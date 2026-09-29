@@ -245,6 +245,7 @@
       color: var(--primary); text-decoration: none; font-weight: 600; cursor: pointer;
     }
     .card-footer a:hover, .text-link:hover { text-decoration: underline; }
+    button.text-link { background: none; border: 0; padding: 0; font-family: inherit; font-size: inherit; }
 
     /* ── OTP ── */
     .otp-group { display: flex; gap: 8px; justify-content: center; }
@@ -732,6 +733,49 @@
     </div>
   </div>
 
+  <!-- ── CONFIRM IT IS YOU ── -->
+  <div data-view="confirm" data-testid="confirm-view">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Confirm it is you</h1>
+        <p class="page-sub mt-4" id="cf-reason" data-testid="confirm-reason">Confirm it is you to continue.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div id="cf-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="cf-error-msg"></span>
+          </div>
+          <div id="cf-code-block" style="display:none">
+            <p class="text-center text-sm text-muted">Enter the code we sent to <strong id="cf-primary"></strong>.</p>
+            <div class="otp-group mt-8" id="cf-code" data-testid="confirm-code">
+              <input class="otp-input" type="tel" maxlength="1">
+              <input class="otp-input" type="tel" maxlength="1">
+              <input class="otp-input" type="tel" maxlength="1">
+              <input class="otp-input" type="tel" maxlength="1">
+              <input class="otp-input" type="tel" maxlength="1">
+              <input class="otp-input" type="tel" maxlength="1">
+            </div>
+            <button id="cf-code-submit" class="btn btn-primary mt-16" data-testid="confirm-code-submit">Confirm with code</button>
+            <p class="text-center text-sm text-muted mt-8">
+              Didn't get a code? <button type="button" class="text-link" id="cf-send" data-testid="confirm-send">Send a new code</button>
+            </p>
+          </div>
+          <div id="cf-password-block" style="display:none">
+            <div class="field">
+              <label for="cf-password">Or enter your password</label>
+              <input type="password" id="cf-password" placeholder="••••••••" autocomplete="current-password" data-testid="confirm-password">
+            </div>
+            <button id="cf-password-submit" class="btn btn-outline mt-8" data-testid="confirm-password-submit">Confirm with password</button>
+          </div>
+          <p id="cf-none" class="text-sm text-muted" style="display:none">Your account has no primary address and no password to confirm with.</p>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
+    </div>
+  </div>
+
   <!-- ── 9. PROFILE ── -->
   <div data-view="profile" data-testid="profile-view">
     <div class="card wide">
@@ -1122,6 +1166,7 @@ const ROUTES = {
   '/auth/magic-link/sent':       'magic-sent',
   '/auth/magic-link/confirm':    'magic-confirm',
   '/auth/profile':               'profile',
+  '/auth/confirm':               'confirm',
   '/auth/sessions':              'sessions',
   '/auth/personal-access-tokens':'personal-access-tokens',
   '/auth/sign-out':              'sign-out',
@@ -1171,7 +1216,7 @@ function showView(name, pushState = true) {
   renderView(name);
   sync_sign_in_form();
   if (name === 'personal-access-tokens') pat_dismiss_created();
-  if (name === 'profile' || name === 'sessions' || name === 'personal-access-tokens' || name === 'sign-out') {
+  if (name === 'profile' || name === 'confirm' || name === 'sessions' || name === 'personal-access-tokens' || name === 'sign-out') {
     api_status().then(s => s.authenticated && render_user_data(s));
   }
 }
@@ -1486,6 +1531,7 @@ function apply_flows(flows) {
 // RENDER USER DATA (profile + sessions + sign-out)
 // ═══════════════════════════════════════════════════════════════════════════════
 function render_user_data(s) {
+  render_confirm(s);
   if (viewFromPath(window.location.pathname) === 'profile') {
     if (s.error) {
       show_error('p-profile-error-msg', 'p-profile-error', s.error);
@@ -1605,6 +1651,7 @@ function render_user_data(s) {
           <div class="connection-value">${escape_html(p.value || '')}</div>
         </div>
         <span class="connection-status ${status_cls}">${status_label}</span>
+        ${p.primary_at ? '<span class="connection-status linked" data-testid="primary-badge">Primary</span>' : ''}
         ${action}
       </div>`;
     }).join('');
@@ -1895,6 +1942,62 @@ document.getElementById('mc-submit').addEventListener('click', async () => {
   set_loading('mc-submit', false);
   if (error) return show_error('mc-error-msg', 'mc-error', error);
   navigate_after(final_url);
+});
+
+// ── Confirm it is you ────────────────────────────────────────────────────────
+const CONFIRM_PROVIDER_LABELS = {oauth_google: 'Google', oauth_github: 'GitHub', oauth_microsoft: 'Microsoft', oauth_facebook: 'Facebook', oauth_twitter: 'X', oauth_discord: 'Discord'};
+
+function render_confirm(s) {
+  const primary = (s.providers || []).find(p => p.type === 'email' && p.primary_at);
+  const c = s.confirmation;
+  const reason = document.getElementById('cf-reason');
+  if (!reason) return;
+  if (c) {
+    const label = CONFIRM_PROVIDER_LABELS[c.provider] || 'provider';
+    const emails = c.provider_emails.length ? c.provider_emails.join(', ') : 'no email address';
+    const uses_primary = primary && c.provider_emails.some(v => v.toLowerCase() === primary.value.toLowerCase());
+    reason.textContent = uses_primary
+      ? `${label} does not tell us whether it verified ${primary.value}. Confirm it is you to connect it.`
+      : `The ${label} account you are connecting (${emails}) does not use your primary address${primary ? ` (${primary.value})` : ''}. Confirm it is you to connect it.`;
+  } else {
+    reason.textContent = 'Confirm it is you to continue.';
+  }
+  document.getElementById('cf-primary').textContent = primary ? primary.value : '';
+  document.getElementById('cf-code-block').style.display = primary ? '' : 'none';
+  document.getElementById('cf-password-block').style.display = s.has_password ? '' : 'none';
+  document.getElementById('cf-none').style.display = (primary || s.has_password) ? 'none' : '';
+}
+
+async function confirm_submit(fields, button_id) {
+  hide_error('cf-error');
+  set_loading(button_id, true);
+  const { error } = await http_post_urlencoded('/auth/confirm', fields);
+  set_loading(button_id, false);
+  if (error) return show_error('cf-error-msg', 'cf-error', error);
+  const s = await api_status();
+  // The action that asked for confirmation continues with a full page load:
+  // a connect goes through the provider, which fetch() cannot follow.
+  if (s.confirmation && s.confirmation.next) {
+    window.location.assign(s.confirmation.next);
+    return;
+  }
+  showView('profile');
+}
+
+document.getElementById('cf-code-submit').addEventListener('click', () => {
+  const code = [...document.querySelectorAll('#cf-code .otp-input')].map(i => i.value).join('');
+  if (code.length < 6) return show_error('cf-error-msg', 'cf-error', 'Please enter all 6 digits of the code.');
+  confirm_submit({ code }, 'cf-code-submit');
+});
+
+document.getElementById('cf-password-submit').addEventListener('click', () => {
+  confirm_submit({ password: document.getElementById('cf-password').value }, 'cf-password-submit');
+});
+
+document.getElementById('cf-send').addEventListener('click', async () => {
+  hide_error('cf-error');
+  const { error } = await http_post_urlencoded('/auth/confirm/request', {});
+  if (error) show_error('cf-error-msg', 'cf-error', error);
 });
 
 // ── Profile — Save display name / avatar ─────────────────────────────────────
