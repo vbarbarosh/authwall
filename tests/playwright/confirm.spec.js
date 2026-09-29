@@ -60,6 +60,8 @@ test.describe('confirm it is you', function () {
         await page.getByTestId('confirm-password').fill('pass1234');
         await page.getByTestId('confirm-password-submit').click();
         await page.waitForURL(v => v.search === '?continued=1');
+        // The profile's own status request may still be in the route.
+        await page.unrouteAll({behavior: 'ignoreErrors'});
     });
 
 });
