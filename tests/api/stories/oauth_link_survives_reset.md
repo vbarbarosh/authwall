@@ -15,8 +15,9 @@ Mocha has an account with a password, the verified address
 
 ## Expected
 
-After Mocha's reset, the attacker's Google sign-in no longer reaches Mocha's
-account.
+Step 1 links nothing: Authwall mails a code to `mocha@authwall.test` and waits
+for it. The attacker cannot read that mailbox, so the attacker's Google sign-in
+never reaches Mocha's account, before or after the reset.
 
 ## Why
 
@@ -26,6 +27,25 @@ tokens, but it never touches linked provider accounts, so the attacker's
 Google link outlives the recovery and signs the attacker in as Mocha. The
 "connected" mail sends Mocha to exactly the step that does not help.
 
-How the reset deals with linked accounts (remove the ones linked since the last
-password sign-in, remove all, or keep them and notify) is open: AW-24, step 10
-of `notes/audit-2026-09-28.md`. Until it is decided, this story fails.
+## Undoing links at recovery does not work
+
+Say the reset undid every provider linked after some date. One borrowed
+session connects Google, another connects Microsoft, and Mocha gets two
+"connected" mails with the same wording. Following the first undoes Google and
+keeps Microsoft, or undoes both; neither is what Mocha can tell from the mail.
+Cleaning up after the fact leaves the owner guessing which link is whose.
+
+## Solution: the owner's mailbox approves the link
+
+Stop the link before it exists. When a provider account is connected from the
+profile and it does not carry the account's own verified address, Authwall
+does not link it yet: it mails a code to the account's primary address, and
+the link is made only once that code is typed in. A borrowed session cannot
+read Mocha's mailbox, so step 1 ends with nothing linked, and there is nothing
+for the reset to miss.
+
+A provider account that returns Mocha's own verified address proves the same
+mailbox and links at once, as today.
+
+This story fails until the solution is built: AW-24, step 10 of
+`notes/audit-2026-09-28.md`.
