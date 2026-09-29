@@ -505,6 +505,13 @@ function validate_email_access_rules(config)
     if (!email_flow_enabled(config) && !config.flows.magic_link.enabled && !oauth_flow_enabled(config)) {
         throw new Error(`Email access rules (${configured.join(', ')}) require an email, magic link, or OAuth flow to be enabled: a username alone cannot satisfy them`);
     }
+
+    // An address typed into email sign-up proves nothing until it is
+    // confirmed; with confirmation off it would pass an allow list as typed (AW-01).
+    const allow_rules = configured.filter(v => v.startsWith('AUTHWALL_ALLOWED_'));
+    if (allow_rules.length && email_flow_enabled(config) && !config.confirm_email.required) {
+        throw new Error(`Email allow rules (${allow_rules.join(', ')}) need confirmed addresses: set AUTHWALL_CONFIRM_EMAIL_REQUIRED=true, or disable the email flow`);
+    }
 }
 
 function resolve_email_verification_required(config)

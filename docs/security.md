@@ -144,9 +144,11 @@ while any rule is configured, and a username sign-in is admitted only on the
 strength of the account's verified emails. How that is decided, and how a
 refusal is reported, is under [access rules](config.md#access-rules).
 
-Optionally, [`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](config.md#email-confirmation)
-holds users at an email-confirmation step until they prove control of their
-address before any request reaches the app.
+[`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](config.md#email-confirmation) holds users
+at an email-confirmation step until they prove control of their address before
+any request reaches the app. With an allow list and the email flow it cannot be
+turned off: Authwall refuses to start, since a typed address would otherwise
+pass the list as is.
 
 ## Open-redirect protection
 

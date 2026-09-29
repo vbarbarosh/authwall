@@ -638,6 +638,13 @@ brings an email in: `email`, a magic-link mode, or an OAuth provider. With
 `AUTHWALL_FLOWS=username` and any rule set, Authwall refuses to start and names
 the variables involved.
 
+An allow list admits addresses, and an address typed into email sign-up is
+proof of nothing until it is confirmed. So with `AUTHWALL_ALLOWED_EMAILS` or
+`AUTHWALL_ALLOWED_DOMAINS` set and the email flow enabled, Authwall refuses to
+start when `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`. Leave it unset (it then
+resolves to enabled) or disable the email flow; magic links and OAuth bring in
+only addresses they have verified.
+
 A username sign-in refused by these rules answers *"Invalid username or
 password"*, exactly as a wrong password does, so the form cannot be used to
 confirm a guessed password for an account it will never admit. The reason is
@@ -728,6 +735,9 @@ Any value outside the list above disables confirmation and logs a warning.
 
 > [!WARNING]
 > If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is enabled while the email sign-in flow is disabled, Authwall refuses to start.
+
+> [!WARNING]
+> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is disabled while an allow list (`AUTHWALL_ALLOWED_EMAILS`, `AUTHWALL_ALLOWED_DOMAINS`) is set and the email sign-in flow is enabled, Authwall refuses to start.
 
 A few related knobs are not exposed as environment variables and are tuned in `config/settings.yaml` under `confirm_email`: `expires_minutes` (default `15`), `code_length` (default `6`), `max_attempts` (default `5`), and `resend_cooldown_seconds` (default `60`).
 
