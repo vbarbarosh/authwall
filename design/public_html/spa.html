@@ -1116,6 +1116,48 @@
     </div>
   </div>
 
+  <!-- ── EMAIL CHANGE — REQUEST ── -->
+  <div data-view="email-change-req" data-testid="email-change-view">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title">Change your email</h1>
+        <p class="page-sub mt-4" id="ecr-how" data-testid="email-change-how">Your current address approves the change first; then we send a confirmation link to the new one.</p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div id="ecr-error" class="alert alert-error" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="ecr-error-msg"></span>
+          </div>
+          <div class="field">
+            <label for="ecr-email">New email address</label>
+            <input type="email" id="ecr-email" placeholder="you@example.com" autocomplete="email" data-testid="email-change-email">
+          </div>
+          <button id="ecr-submit" class="btn btn-primary mt-4" data-testid="email-change-submit">Request change</button>
+        </div>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
+    </div>
+  </div>
+
+  <!-- ── EMAIL CHANGE — APPROVAL SENT ── -->
+  <div data-view="email-change-approve-sent" data-testid="email-change-approve-sent-view">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+      </div>
+      <div class="card-body text-center">
+        <div class="notice-icon info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h1 class="page-title">Approve at your current address</h1>
+        <p class="page-sub mt-8">We've sent a link to your current address. Open it there to approve the change; we then send a confirmation link to the new address. The link expires in <strong>30 minutes</strong>.</p>
+      </div>
+      <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
+    </div>
+  </div>
+
   <!-- ── 15. EMAIL CHANGE — SENT ── -->
   <div data-view="email-change-sent">
     <div class="card">
@@ -1127,7 +1169,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
         <h1 class="page-title">Check your email</h1>
-        <p class="page-sub mt-8">We've sent a confirmation link to your email address. The link expires in <strong>30 minutes</strong>.</p>
+        <p class="page-sub mt-8">We've sent a confirmation link to the new address. Open it to finish the change. The link expires in <strong>30 minutes</strong>.</p>
       </div>
       <div class="card-footer"><span class="text-link" onclick="showView('profile')">← Back to profile</span></div>
     </div>
@@ -1177,6 +1219,8 @@ const ROUTES = {
   '/auth/email-verify':          'email-verify-req',
   '/auth/email-verify/sent':     'email-verify-sent',
   '/auth/email-verify/success':  'email-verify-success',
+  '/auth/email-change/request':  'email-change-req',
+  '/auth/email-change/approve/sent': 'email-change-approve-sent',
   '/auth/email-change/sent':     'email-change-sent',
   '/auth/email-change/success':  'email-change-success',
 };
@@ -1220,7 +1264,7 @@ function showView(name, pushState = true) {
   renderView(name);
   sync_sign_in_form();
   if (name === 'personal-access-tokens') pat_dismiss_created();
-  if (name === 'profile' || name === 'confirm' || name === 'sessions' || name === 'personal-access-tokens' || name === 'sign-out') {
+  if (name === 'profile' || name === 'confirm' || name === 'email-change-req' || name === 'sessions' || name === 'personal-access-tokens' || name === 'sign-out') {
     api_status().then(s => s.authenticated && render_user_data(s));
   }
 }
@@ -1536,6 +1580,7 @@ function apply_flows(flows) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function render_user_data(s) {
   render_confirm(s);
+  render_email_change(s);
   if (viewFromPath(window.location.pathname) === 'profile') {
     if (s.error) {
       show_error('p-profile-error-msg', 'p-profile-error', s.error);
@@ -1634,6 +1679,12 @@ function render_user_data(s) {
       if (p.type === 'email' && !p.verified_at) {
         action = `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-verify-req')">Verify →</button>`;
       }
+      // A change replaces the primary address, or the only address of an
+      // account without one (routes/email_change.js).
+      const replaced = providers.find(v => v.type === 'email' && v.primary_at) || providers.find(v => v.type === 'email');
+      if (replaced && (p.uid === replaced.uid) && s.actions?.can_change_email) {
+        action += `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-change-req')" data-testid="email-change-open">Change</button>`;
+      }
       if (p.type === 'email' && providers.length > 1) {
         action += `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('/auth/email/remove')">Remove</button>`;
       } else if ((p.type === 'oauth_google' || p.type === 'oauth_github' || p.type === 'oauth_microsoft' || p.type === 'oauth_facebook' || p.type === 'oauth_twitter' || p.type === 'oauth_discord') && providers.length > 1) {
@@ -1654,8 +1705,7 @@ function render_user_data(s) {
           <div class="connection-label">${meta.label}</div>
           <div class="connection-value">${escape_html(p.value || '')}</div>
         </div>
-        <span class="connection-status ${status_cls}">${status_label}</span>
-        ${p.primary_at ? '<span class="connection-status linked" data-testid="primary-badge">Primary</span>' : ''}
+        ${p.primary_at ? '<span class="connection-status linked" data-testid="primary-badge">Primary</span>' : `<span class="connection-status ${status_cls}">${status_label}</span>`}
         ${action}
       </div>`;
     }).join('');
@@ -1957,7 +2007,9 @@ function render_confirm(s) {
   const c = s.confirmation;
   const reason = document.getElementById('cf-reason');
   if (!reason) return;
-  if (c) {
+  if (c && (c.reason === 'email_change')) {
+    reason.textContent = 'Your account has no verified primary address to approve an email change. Confirm it is you to continue.';
+  } else if (c && c.provider) {
     const label = CONFIRM_PROVIDER_LABELS[c.provider] || 'provider';
     const emails = c.provider_emails.length ? c.provider_emails.join(', ') : 'no email address';
     const uses_primary = primary && c.provider_emails.some(v => v.toLowerCase() === primary.value.toLowerCase());
@@ -2008,6 +2060,32 @@ document.getElementById('cf-send').addEventListener('click', async () => {
   hide_error('cf-error');
   const { error } = await http_post_urlencoded('/auth/confirm/request', {});
   if (error) show_error('cf-error-msg', 'cf-error', error);
+});
+
+// ── Email change ─────────────────────────────────────────────────────────────
+function render_email_change(s) {
+  const how = document.getElementById('ecr-how');
+  if (!how) return;
+  const primary = (s.providers || []).find(p => p.type === 'email' && p.primary_at);
+  how.textContent = primary
+    ? `Your current address, ${primary.value}, approves the change first; then we send a confirmation link to the new one.`
+    : 'We send a confirmation link to the new address. You will be asked to confirm it is you first.';
+}
+
+document.getElementById('ecr-submit').addEventListener('click', async () => {
+  hide_error('ecr-error');
+  const email = document.getElementById('ecr-email').value.trim();
+  if (!email) return show_error('ecr-error-msg', 'ecr-error', 'Please enter the new email address.');
+  set_loading('ecr-submit', true);
+  const { final_url, error } = await http_post_urlencoded('/auth/email-change/request', { email });
+  set_loading('ecr-submit', false);
+  if (error) {
+    const s = await api_status();
+    // An account without a primary confirms it is the owner, then comes back here.
+    if (s.confirmation && (s.confirmation.reason === 'email_change')) return showView('confirm');
+    return show_error('ecr-error-msg', 'ecr-error', error);
+  }
+  navigate_after(final_url);
 });
 
 // ── Profile — Save display name / avatar ─────────────────────────────────────

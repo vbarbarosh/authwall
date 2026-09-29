@@ -1,11 +1,8 @@
-const knex = require('knex');
-const os = require('os');
-const path = require('path');
+const open_e2e_db = require('./open_e2e_db');
+const sign_up_with_primary = require('./sign_up_with_primary');
 const {test, expect} = require('@playwright/test');
 
-// The confirmation view (AW-24) and the "Primary" badge. The account is made
-// through the API, and its address marked verified and primary in the database:
-// the e2e mailer delivers nothing.
+// The confirmation view (AW-24) and the "Primary" badge.
 test.describe('confirm it is you', function () {
 
     test('the profile marks the primary address', async function ({page}) {
@@ -66,31 +63,3 @@ test.describe('confirm it is you', function () {
     });
 
 });
-
-async function sign_up_with_primary(page)
-{
-    const username = `pw${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    const email = `${username}@authwall.test`;
-    const status = await (await page.request.get('/auth/status')).json();
-    await page.request.post('/auth/sign-up', {form: {username, email, password: 'pass1234', password_confirm: 'pass1234', _csrf: status.csrf_token}});
-
-    await using db = open_e2e_db();
-    const now = new Date();
-    await db('user_identities').where({type: 'email', value_normalized: email}).update({verified_at: now, primary_at: now});
-    const {user_id} = await db('user_identities').where({type: 'email', value_normalized: email}).first();
-    return {username, email, user_id};
-}
-
-// The database the e2e server was started on (see playwright.config.js).
-function open_e2e_db()
-{
-    const url = process.env.AUTHWALL_DB ?? `sqlite://${path.join(os.tmpdir(), 'authwall-e2e.sqlite3')}`;
-    const vars = url.startsWith('sqlite://')
-        ? {client: 'better-sqlite3', connection: {filename: url.slice('sqlite://'.length)}, useNullAsDefault: true}
-        : {client: url.startsWith('mysql://') ? 'mysql2' : 'pg', connection: url};
-    const db = knex(vars);
-    db[Symbol.asyncDispose] = function () {
-        return db.destroy();
-    };
-    return db;
-}

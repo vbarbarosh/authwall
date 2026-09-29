@@ -21,6 +21,7 @@ const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
+const save_session = require('../helpers/save_session');
 const send_email = require('../helpers/send_email');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -74,8 +75,12 @@ async function email_change_request_post(req, res)
     // primary has no one to ask, so the owner confirms it is them first.
     const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
     if (!primary && !is_recently_confirmed(req)) {
+        // The confirmation page brings the owner back to the form.
+        req.session.confirmation = {next: config.pages.email_change_request, reason: 'email_change'};
+        await save_session(req);
         throw new UserFriendlyError('Confirm it is you before changing your email');
     }
+    delete req.session.confirmation;
 
     // Rate-limit: prevent spamming
     const recent = await db('email_change_tokens').where({email_normalized}).orderBy('id', 'desc').first();
@@ -135,7 +140,7 @@ async function email_change_request_post(req, res)
             token: approve_token,
         },
     });
-    redirect(req, res, config.pages.email_change_notice);
+    redirect(req, res, config.pages.email_change_approval_notice);
 }
 
 // GET /auth/email-change/approve?token=xxx (the link mailed to the current primary)

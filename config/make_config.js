@@ -106,6 +106,7 @@ function make_config(input = {})
             email_change_approve: '/auth/email-change/approve',
             email_change_confirm: '/auth/email-change/confirm',
             email_change_notice: '/auth/email-change/sent',
+            email_change_approval_notice: '/auth/email-change/approve/sent',
             email_change_success: '/auth/email-change/success',
             password_reset_request: '/auth/password-reset',
             password_reset_confirm: '/auth/password-reset/confirm',
