@@ -47,7 +47,7 @@ Testable now
 - [x] every account has one primary address, the first verified address it came in with; a provider's address never takes it, an email change moves it to the new value → `primary_address.md`, `primary_address.test.js`
 - [x] before a sensitive action the owner confirms it is them, with a code mailed to the primary address, the password, or a fresh sign-in with a linked provider account; five failures within 15 minutes shut out even the right answer → `confirm_it_is_you.md`, `confirm_it_is_you.test.js`
 - [x] a borrowed session connects the attacker's own Google account; nothing links until the owner confirms with a code mailed to the primary address or the password, so the attacker's Google never signs in as the owner; the owner's own account links after confirming, and Facebook always asks → `oauth_link_survives_reset.md`, `oauth_link_survives_reset.test.js`
-- [ ] the owner changes the primary address; the change is confirmed from both the old and the new address (planned, no story yet)
+- [ ] a borrowed session changes the email to the attacker's address and confirms it there; nothing changes without the current primary's approval, and a real move needs both links (fails until built) → `primary_change_needs_both_addresses.md`, `primary_change_needs_both_addresses.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision
