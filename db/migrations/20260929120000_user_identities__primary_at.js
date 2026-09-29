@@ -12,16 +12,38 @@ exports.up = async function (knex) {
     });
     // Existing accounts: the oldest verified address. The derived table lets
     // MySQL read the table it updates.
-    await knex.raw(`update user_identities set primary_at = verified_at where id in (
-        select id from (select min(id) as id from user_identities where type = 'email' and verified_at is not null group by user_id) as oldest
-    )`);
+    await knex.raw(`
+        UPDATE
+            user_identities
+        SET
+            primary_at = verified_at
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT MIN(id) AS id
+                FROM user_identities
+                WHERE type = 'email' AND verified_at IS NOT NULL GROUP BY user_id
+            ) AS oldest
+        )
+    `);
     if (knex.client.config.custom.name === 'mysql') {
-        await knex.raw(`alter table user_identities
-            add column primary_user_id int unsigned generated always as (if(primary_at is null, null, user_id)) virtual after primary_at,
-            add unique index user_identities_primary_user_id_unique (primary_user_id)`);
+        await knex.raw(`
+            ALTER TABLE
+                user_identities
+            ADD COLUMN
+                primary_user_id INT UNSIGNED GENERATED ALWAYS AS (IF(primary_at IS NULL, NULL, user_id)) VIRTUAL AFTER primary_at,
+            ADD UNIQUE INDEX
+                user_identities_primary_user_id_unique (primary_user_id)
+        `);
         return;
     }
-    await knex.raw('create unique index user_identities_primary_user_id_unique on user_identities (user_id) where primary_at is not null');
+    await knex.raw(`
+        CREATE UNIQUE INDEX
+            user_identities_primary_user_id_unique
+        ON
+            user_identities (user_id)
+        WHERE
+            primary_at IS NOT NULL
+    `);
 };
 
 /**
@@ -30,10 +52,20 @@ exports.up = async function (knex) {
  */
 exports.down = async function (knex) {
     if (knex.client.config.custom.name === 'mysql') {
-        await knex.raw('alter table user_identities drop index user_identities_primary_user_id_unique, drop column primary_user_id');
+        await knex.raw(`
+            ALTER TABLE
+                user_identities
+            DROP INDEX
+                user_identities_primary_user_id_unique,
+            DROP COLUMN
+                primary_user_id
+        `);
     }
     else {
-        await knex.raw('drop index user_identities_primary_user_id_unique');
+        await knex.raw(`
+            DROP INDEX
+                user_identities_primary_user_id_unique
+        `);
     }
     await knex.schema.alterTable('user_identities', function (table) {
         table.dropColumn('primary_at');
