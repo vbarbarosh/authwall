@@ -209,6 +209,7 @@ async function create_app()
         express_routes(app, require('./routes/password'));
     }
     express_routes(app, require('./routes/account'));
+    express_routes(app, require('./routes/confirm'));
     express_routes(app, require('./routes/profile'));
     express_routes(app, require('./routes/sessions'));
     express_routes(app, require('./routes/email_remove'));

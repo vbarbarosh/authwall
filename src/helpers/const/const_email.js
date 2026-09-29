@@ -8,6 +8,7 @@ const const_email = {
     magic_link_without_code: 'magic_link_without_code',
     magic_link_without_link: 'magic_link_without_link',
     password_reset: 'password_reset',
+    confirm_code: 'confirm_code',
 
     confirm_email: 'confirm_email',
     confirm_email_without_code: 'confirm_email_without_code',

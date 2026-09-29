@@ -40,6 +40,7 @@ async function wait_for_emails(sent_emails, count, timeout_ms = 500)
 const tables_in_delete_order = [
     'auth_events',
     'sessions',
+    'confirm_codes',
     'personal_access_tokens',
     'password_reset_tokens',
     'email_verify_tokens',

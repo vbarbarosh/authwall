@@ -8,6 +8,8 @@ const const_auth_event = {
     identity_added: 'identity_added',
     identity_removed: 'identity_removed',
     password_changed: 'password_changed',
+    identity_confirmation_requested: 'identity_confirmation_requested',
+    identity_confirmed: 'identity_confirmed',
     password_reset_requested: 'password_reset_requested',
     password_reset_completed: 'password_reset_completed',
     email_verification_requested: 'email_verification_requested',

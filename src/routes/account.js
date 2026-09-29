@@ -28,6 +28,7 @@ async function account_remove_post(req, res)
 
     await db.transaction(async function () {
         const user_id = user.id;
+        await db('confirm_codes').where({user_id}).del();
         await db('email_change_tokens').where({user_id}).del();
         await db('email_verify_tokens').where({user_id}).del();
         await db('password_reset_tokens').where({user_id}).del();

@@ -61,6 +61,7 @@ Templates are plain text; there is currently no HTML version.
 | `email-changed.txt`                   | Notice sent to the *old* address that the email is being changed |
 | `magic-link.txt`                      | A passwordless sign-in link/code is requested                    |
 | `password-reset.txt`                  | A password reset is requested                                    |
+| `confirm-code.txt`                    | A code confirming the owner, sent to the primary address         |
 | `new-sign-in.txt`                     | A new sign-in to the account is detected                         |
 | `password-changed-from-profile.txt`   | The password was changed from the profile page                   |
 | `password-changed-via-reset-link.txt` | The password was changed through a reset link                    |
