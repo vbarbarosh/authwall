@@ -44,6 +44,7 @@ Testable now
 - [x] Authwall is started with `AUTHWALL_FLOWS=username` and an email access rule; nothing could ever satisfy the rule, so it refuses to start rather than announce an allow-list over a door nobody can enter → `username_only_flow_with_access_rules.md`, `username_only_flow_with_access_rules.test.js`
 - [x] a client sends its own `X-Auth-User` and the underscore spelling `X_Auth_User`; the upstream receives only the value Authwall sets, over both the HTTP proxy and a WebSocket upgrade → `identity_header_underscore_strip.md`, `identity_header_underscore_strip.test.js`
 - [x] a borrowed session links a second Google account to the owner's; the connect is refused, and the database refuses a second account of one provider for one user → `one_account_per_provider.md`, `one_account_per_provider.test.js`
+- [ ] a borrowed session links the attacker's own Google account; the owner resets the password as the "connected" mail says, and the attacker's Google sign-in must no longer reach the account (fails until AW-24 step 10 is decided) → `oauth_link_survives_reset.md`, `oauth_link_survives_reset.test.js`
 
 Needs product decision
 
