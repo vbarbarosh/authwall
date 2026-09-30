@@ -12,6 +12,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const is_code_budget_spent = require('../helpers/is_code_budget_spent');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
@@ -154,6 +155,11 @@ async function magic_link_confirm_post(req, res)
     await authorize_email(email_normalized);
 
     const now = new Date();
+    const wrong_codes = req.app.locals.wrong_codes;
+    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent('magic_links', email_normalized, now)) {
+        throw new UserFriendlyError('Too many attempts. Try again later.');
+    }
+
     const magic_link = await db('magic_links')
         .where({id: req.session.magic_link_id ?? 0, email_normalized})
         .whereNull('used_at')
@@ -161,15 +167,9 @@ async function magic_link_confirm_post(req, res)
         .first();
     // A case- and accent-blind collation (MySQL) can match the row of another
     // address, "alice@acmé.test" for "alice@acme.test"; only an exact one counts.
-    if (!magic_link || (magic_link.email_normalized !== email_normalized)) {
-        throw new UserFriendlyError('Invalid or expired code');
-    }
-    if (!await spend_attempt('magic_links', magic_link.id, config.flows.magic_link.max_attempts, now)) {
-        throw new UserFriendlyError('Invalid or expired code');
-    }
-
-    const ok = await bcrypt.compare(code, magic_link.code_hash);
-    if (!ok) {
+    const found = magic_link && (magic_link.email_normalized === email_normalized);
+    if (!found || !await spend_attempt('magic_links', magic_link.id, config.flows.magic_link.max_attempts, now) || !await bcrypt.compare(code, magic_link.code_hash)) {
+        wrong_codes.record_failure(req.ip);
         throw new UserFriendlyError('Invalid or expired code');
     }
 

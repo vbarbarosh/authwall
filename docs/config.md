@@ -175,6 +175,7 @@ When enabled, the following endpoints are rate-limited per client IP:
 - Magic-link request — 5 requests per hour.
 - Personal access token creation — 5 requests per hour.
 - Failed bearer-token validation — 20 requests per 15 minutes (returns `429` with `Retry-After`).
+- Wrong magic-link or email-verification codes — 20 per 15 minutes, across addresses.
 
 Counts are tracked in memory only, so they do not persist across restarts and are not shared between processes.
 Disable rate limiting only in environments where requests are throttled by an upstream proxy or load balancer, or in tests where the limits would interfere.
@@ -739,7 +740,7 @@ Any value outside the list above disables confirmation and logs a warning.
 > [!WARNING]
 > If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is disabled while an allow list (`AUTHWALL_ALLOWED_EMAILS`, `AUTHWALL_ALLOWED_DOMAINS`) is set and the email sign-in flow is enabled, Authwall refuses to start.
 
-A few related knobs are not exposed as environment variables and are tuned in `config/settings.yaml` under `confirm_email`: `expires_minutes` (default `15`), `code_length` (default `6`), `max_attempts` (default `5`), and `resend_cooldown_seconds` (default `60`).
+A few related knobs are not exposed as environment variables and are tuned in `config/settings.yaml` under `confirm_email`: `expires_minutes` (default `15`), `code_length` (default `6`), `max_attempts` (default `5`), and `resend_cooldown_seconds` (default `60`). Across codes, an address gets 10 wrong codes per hour ([security](security.md#rate-limiting)).
 
 Example:
 
@@ -903,7 +904,7 @@ Any value outside the list above disables the flow and logs a warning.
 > [!WARNING]
 > If the value is one of `link`, `code`, or `link_and_code` but no mailer is configured, Authwall refuses to start.
 
-The magic-code retry limit is not exposed as an environment variable and is tuned in `config/settings.yaml` under `flows.magic_link`: `max_attempts` (default `5`) — the number of code guesses allowed per issued code before it is rejected.
+The magic-code retry limit is not exposed as an environment variable and is tuned in `config/settings.yaml` under `flows.magic_link`: `max_attempts` (default `5`) — the number of code guesses allowed per issued code before it is rejected. Across codes, an address gets 10 wrong codes per hour ([security](security.md#rate-limiting)).
 
 Example:
 

@@ -14,6 +14,7 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
+const is_code_budget_spent = require('../helpers/is_code_budget_spent');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
@@ -137,6 +138,11 @@ async function email_verify_confirm_post(req, res)
     }
 
     const now = new Date();
+    const wrong_codes = req.app.locals.wrong_codes;
+    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent('email_verify_tokens', ident.value_normalized, now)) {
+        throw new UserFriendlyError('Too many attempts. Try again later.');
+    }
+
     const record = await db('email_verify_tokens')
         .where({
             user_id,
@@ -146,15 +152,8 @@ async function email_verify_confirm_post(req, res)
         .where('expires_at', '>', now)
         .orderBy('id', 'desc')
         .first();
-    if (!record || !record.code_hash) {
-        throw new UserFriendlyError('Invalid or expired verification code');
-    }
-    if (!await spend_attempt('email_verify_tokens', record.id, config.confirm_email.max_attempts, now)) {
-        throw new UserFriendlyError('Invalid or expired verification code');
-    }
-
-    const ok = await bcrypt.compare(code, record.code_hash);
-    if (!ok) {
+    if (!record?.code_hash || !await spend_attempt('email_verify_tokens', record.id, config.confirm_email.max_attempts, now) || !await bcrypt.compare(code, record.code_hash)) {
+        wrong_codes.record_failure(req.ip);
         throw new UserFriendlyError('Invalid or expired verification code');
     }
 

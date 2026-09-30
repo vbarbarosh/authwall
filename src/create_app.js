@@ -170,6 +170,9 @@ async function create_app()
         app.use(make_personal_access_token_auth(bearer_miss_limiter));
     }
 
+    // Wrong one-time codes per IP, across addresses: magic-link and email-verify (AW-02).
+    app.locals.wrong_codes = make_failure_counter(20, 15*60*1000);
+
     app.get('/auth', function (req, res) {
         if (req.session?.user_id) {
             res.redirect(config.pages.profile);

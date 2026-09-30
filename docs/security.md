@@ -82,6 +82,7 @@ When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled
 | E-mail add / e-mail change request | 5 requests / hour       |
 | Personal access token creation    | 5 requests / hour        |
 | Failed bearer-token validation    | 20 requests / 15 minutes |
+| Wrong magic-link or verification code | 20 codes / 15 minutes |
 
 The bearer-token limiter covers both HTTP requests and WebSocket upgrades that
 authenticate with a PAT.
@@ -89,6 +90,14 @@ authenticate with a PAT.
 Counts are held in memory, so they are not shared between processes and reset
 on restart. This slows credential stuffing and brute-force attempts; it is not
 a substitute for an upstream WAF or load-balancer throttling.
+
+Wrong one-time codes are also counted **per address**, in the database, across
+all of the address's codes: 10 wrong sign-in codes, or 10 wrong verification
+codes, per hour. After that every code for the address is refused, the right
+one too, until the wrong guesses are an hour old. This budget holds across
+processes and restarts and does not depend on `AUTHWALL_RATE_LIMITING`. A
+stranger can spend it and block code sign-in for an address for up to an
+hour; a link in the same mail still works.
 
 ## Password storage
 
