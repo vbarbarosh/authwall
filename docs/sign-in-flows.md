@@ -102,8 +102,8 @@ This flow always requires a configured mailer.
 **Which channel users get** is set by
 [`AUTHWALL_MAGIC_LINK`](config.md#authwall_magic_link):
 
-- `link` — email contains only a clickable link.
-- `code` — email contains only a code the user types into the browser.
+- `link` — email contains only a clickable link; codes are refused.
+- `code` — email contains only a code the user types into the browser; the link is refused.
 - `link_and_code` — email contains both (the default in `auto`).
 - `off` / `disabled` — magic-link sign-in is disabled.
 

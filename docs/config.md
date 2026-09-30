@@ -894,8 +894,8 @@ How each value behaves:
 
 - `auto` — enabled when a mailer is configured, otherwise disabled. The default channel is `link_and_code`.
 - `off` / `disabled` — magic-link sign-in is disabled.
-- `link` — emails contain only a clickable link.
-- `code` — emails contain only a one-time code that the user types into the browser.
+- `link` — emails contain only a clickable link. No code is issued, and a posted code is refused.
+- `code` — emails contain only a one-time code that the user types into the browser. The link is refused.
 - `link_and_code` — emails contain both.
 
 Any value outside the list above disables the flow and logs a warning.

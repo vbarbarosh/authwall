@@ -53,14 +53,15 @@ async function magic_link_request_post(req, res)
         throw new UserFriendlyError('Magic link already sent. Please wait.');
     }
 
-    const code = random_code();
+    // Link mode mails no code, so it stores none to be guessed (AW-26).
+    const code = (config.flows.magic_link.mode === 'link') ? null : random_code();
     const token = random_hex();
 
     const now = new Date();
     await db('magic_links').insert({
         email,
         email_normalized,
-        code_hash: await bcrypt.hash(code, config.bcrypt_rounds),
+        code_hash: code ? await bcrypt.hash(code, config.bcrypt_rounds) : null,
         token_hash: crypto_hash_sha256(token).toString('base64url'),
         created_at: now,
         updated_at: now,
@@ -73,6 +74,10 @@ async function magic_link_request_post(req, res)
 // GET /auth/magic-link/confirm
 async function magic_link_confirm_get(req, res)
 {
+    if (config.flows.magic_link.mode === 'code') {
+        throw new UserFriendlyError('Sign-in by link is disabled');
+    }
+
     const {token} = req.query;
     if (!token) {
         throw new UserFriendlyError('Missing token');
@@ -126,6 +131,10 @@ async function magic_link_confirm_get(req, res)
 // POST /auth/magic-link/confirm
 async function magic_link_confirm_post(req, res)
 {
+    if (config.flows.magic_link.mode === 'link') {
+        throw new UserFriendlyError('Sign-in by code is disabled');
+    }
+
     const {code} = req.body;
     if (!req.body.email || !code) {
         throw new UserFriendlyError('Missing fields');
