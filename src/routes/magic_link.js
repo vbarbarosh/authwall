@@ -17,6 +17,7 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
 const users_create = require('../helpers/models/users_create');
 
@@ -58,15 +59,21 @@ async function magic_link_request_post(req, res)
     const token = random_hex();
 
     const now = new Date();
+    const token_hash = crypto_hash_sha256(token).toString('base64url');
     await db('magic_links').insert({
         email,
         email_normalized,
         code_hash: code ? await bcrypt.hash(code, config.bcrypt_rounds) : null,
-        token_hash: crypto_hash_sha256(token).toString('base64url'),
+        token_hash,
         created_at: now,
         updated_at: now,
         expires_at: date_add_minutes(new Date(), 10),
     });
+
+    // The code is entered only in this browser; a stranger's guesses never reach it (AW-36).
+    const {id} = await db('magic_links').where({token_hash}).first('id');
+    req.session.magic_link_id = id;
+    await save_session(req);
 
     await complete_magic_link_request(req, res, email, code, token);
 }
@@ -148,10 +155,9 @@ async function magic_link_confirm_post(req, res)
 
     const now = new Date();
     const magic_link = await db('magic_links')
-        .where({email_normalized})
+        .where({id: req.session.magic_link_id ?? 0, email_normalized})
         .whereNull('used_at')
         .where('expires_at', '>', now)
-        .orderBy('id', 'desc')
         .first();
     // A case- and accent-blind collation (MySQL) can match the row of another
     // address, "alice@acmé.test" for "alice@acme.test"; only an exact one counts.

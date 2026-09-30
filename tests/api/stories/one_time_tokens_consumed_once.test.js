@@ -67,7 +67,9 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
         const {code} = this.sent_emails.find(v => v.name === const_email.magic_link).placeholders;
 
-        await race(this, 5, (_, _csrf) => this.client.post_json('/auth/magic-link/confirm', {_csrf, email: 'mocha@authwall.test', code: '000000'}));
+        // From the browser that asked: a code is not checked in any other.
+        const {csrf_token: _csrf} = await this.client.get_json('/auth/status');
+        await Promise.all([1, 2, 3, 4, 5].map(() => this.client.post_json('/auth/magic-link/confirm', {_csrf, email: 'mocha@authwall.test', code: '000000'})));
         assert.strictEqual((await db('magic_links').first()).attempts, 3);
 
         // The guesses were spent: the right code no longer signs in.

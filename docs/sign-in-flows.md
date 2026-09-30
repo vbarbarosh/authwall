@@ -104,6 +104,7 @@ This flow always requires a configured mailer.
 
 - `link` — email contains only a clickable link; codes are refused.
 - `code` — email contains only a code the user types into the browser; the link is refused.
+  A code works only in the browser that asked for it.
 - `link_and_code` — email contains both (the default in `auto`).
 - `off` / `disabled` — magic-link sign-in is disabled.
 
