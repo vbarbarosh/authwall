@@ -18,9 +18,24 @@ function init_sentry(config)
     const options = {
         dsn: config.sentry.dsn,
         release: `${pkg.name}@${pkg.version}`,
-        sendDefaultPii: false,
+        // v11 collects cookies, bodies, headers and the client IP unless told
+        // otherwise; this is the v10 `sendDefaultPii: false` baseline.
+        dataCollection: {
+            userInfo: false,
+            cookies: false,
+            httpHeaders: {
+                request: {deny: ['forwarded', '-ip', 'remote-', 'via', '-user']},
+                response: {deny: ['forwarded', '-ip', 'remote-', 'via', '-user']},
+            },
+            httpBodies: [],
+            urlQueryParams: {deny: ['forwarded', '-ip', 'remote-', 'via', '-user']},
+            genAI: {inputs: false, outputs: false},
+            databaseQueryData: false,
+            queues: false,
+            graphQL: {document: false, variables: false},
+        },
         beforeSend: sentry_before_send,
-        beforeSendTransaction: sanitize_sentry_event,
+        beforeSendSpan: sanitize_sentry_span,
         beforeBreadcrumb: sanitize_sentry_breadcrumb,
     };
 
@@ -72,6 +87,7 @@ function sanitize_sentry_event(event)
         event.request.url = urlxxx(event.request.url);
         delete event.request.query_string;
         delete event.request.data;
+        delete event.request.cookies;
 
         if (event.request.headers) {
             for (const key of Object.keys(event.request.headers)) {
@@ -90,15 +106,46 @@ function sanitize_sentry_event(event)
     return event;
 }
 
+// Spans are streamed one by one in v11 (no transaction event to scrub), and
+// carry the incoming and outgoing URLs and the request headers as attributes.
+function sanitize_sentry_span(span)
+{
+    const attributes = span?.attributes;
+    if (!attributes || typeof attributes !== 'object') {
+        return span;
+    }
+    for (const key of ['url.full', 'http.url']) {
+        if (typeof attributes[key] === 'string') {
+            attributes[key] = urlxxx(attributes[key]);
+        }
+    }
+    for (const key of ['url.query', 'http.query']) {
+        if (typeof attributes[key] === 'string') {
+            attributes[key] = queryxxx(attributes[key]);
+        }
+    }
+    for (const key of Object.keys(attributes)) {
+        if (key.startsWith('http.request.header.') && is_referer_header(key.slice('http.request.header.'.length))) {
+            attributes[key] = Array.isArray(attributes[key]) ? attributes[key].map(urlxxx) : urlxxx(attributes[key]);
+        }
+    }
+    return span;
+}
+
 function sanitize_sentry_breadcrumb(breadcrumb)
 {
     if (!breadcrumb || typeof breadcrumb !== 'object') {
         return breadcrumb;
     }
     if (breadcrumb.data && typeof breadcrumb.data === 'object') {
-        for (const key of ['url', 'http.query', 'from', 'to']) {
+        for (const key of ['url', 'from', 'to']) {
             if (typeof breadcrumb.data[key] === 'string') {
                 breadcrumb.data[key] = urlxxx(breadcrumb.data[key]);
+            }
+        }
+        for (const key of ['url.query', 'http.query']) {
+            if (typeof breadcrumb.data[key] === 'string') {
+                breadcrumb.data[key] = queryxxx(breadcrumb.data[key]);
             }
         }
     }
@@ -106,6 +153,18 @@ function sanitize_sentry_breadcrumb(breadcrumb)
         breadcrumb.message = urlxxx(breadcrumb.message);
     }
     return breadcrumb;
+}
+
+// A query string without its URL: `code=abc` (v11) or `?code=abc` (v10)
+function queryxxx(query)
+{
+    if (!query) {
+        return query;
+    }
+    if (query.startsWith('?')) {
+        return urlxxx(query);
+    }
+    return urlxxx(`?${query}`).slice(1);
 }
 
 function is_referer_header(key)
@@ -129,5 +188,6 @@ module.exports = {
     sentry_request_context,
     setup_sentry_error_handler,
     sanitize_sentry_event,
+    sanitize_sentry_span,
     sanitize_sentry_breadcrumb,
 };
