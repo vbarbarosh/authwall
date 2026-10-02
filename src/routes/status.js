@@ -179,7 +179,9 @@ async function get_confirm_email_status(user_id, identities)
 // GET /auth/sidecar
 //
 // The reverse proxy passes the original request path in X-Original-URI
-// (nginx auth_request) or X-Forwarded-Uri (Caddy forward_auth). When it is
+// (nginx auth_request) or X-Forwarded-Uri (Caddy forward_auth). Each proxy
+// overwrites only its own and passes a client's copy of the other, so two
+// that name different paths leave the path unknown (H-02). When it is
 // present, the sidecar applies the same public/optional-auth scoping the HTTP
 // proxy applies, so a public asset is not held at sign-in in sidecar mode.
 // When it is absent the path is treated as protected, matching the previous
@@ -230,11 +232,12 @@ async function sidecar_get(req, res)
 
 function sidecar_original_path(req)
 {
-    const raw = req.headers['x-original-uri'] ?? req.headers['x-forwarded-uri'] ?? null;
-    if (!raw) {
+    const raws = [req.headers['x-original-uri'], req.headers['x-forwarded-uri']].filter(v => v !== undefined);
+    const paths = raws.map(v => target_path(String(v)));
+    if (!paths.length || paths.some(v => v === null || v !== paths[0])) {
         return null;
     }
-    return target_path(String(raw));
+    return paths[0];
 }
 
 module.exports = routes;

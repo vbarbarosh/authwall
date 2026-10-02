@@ -73,6 +73,9 @@ backend app:
 
 - `X-Auth-User` is taken from the auth subrequest's trusted response — the app
   can rely on it.
+- `forward_auth` sends the request path in `X-Forwarded-Uri`, over any copy a
+  client sent. A client's own `X-Original-URI` still passes through, so
+  Authwall protects a request whose two headers name different paths.
 - The apps are reachable only through Caddy — do not publish the `apps` /
   `notes` / `echo` services directly, or requests would bypass the auth check.
 

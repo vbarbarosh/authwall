@@ -73,6 +73,9 @@ A single `*.mydomain.test` server serves two things:
 
 - `X-Auth-User` is set by nginx from the auth subrequest's response, which
   overrides any value a client tried to send. The app can trust it.
+- The auth subrequest sends the request path in `X-Original-URI`, over any
+  copy a client sent. A client's own `X-Forwarded-Uri` still passes through,
+  so Authwall protects a request whose two headers name different paths.
 - The apps are reachable only through nginx — do not publish the `apps` /
   `notes` / `echo` services directly, or requests would bypass the auth check.
 

@@ -353,6 +353,8 @@ Entries may be exact paths or prefix entries ending in `/*`. For example, `/lib/
 
 When `AUTHWALL_PUBLIC_PATHS` is set, it replaces the `public_paths` list from `config/settings.yaml`.
 
+In a sidecar deployment, `/auth/sidecar` matches these paths, and those of `AUTHWALL_OPTIONAL_AUTH_PATHS`, against the path the reverse proxy sends in `X-Original-URI` (nginx) or `X-Forwarded-Uri` (Caddy). Without either header, or when the two name different paths, every path is protected.
+
 Example:
 
 ```sh
