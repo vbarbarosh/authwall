@@ -8,12 +8,13 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: production
-      - uses: actions/setup-node@v4
+      # Node 24, the major of the Dockerfile's node:24-alpine; lts/* would move on its own.
+      - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: 24
       # Production dependencies only. The remaining dev-tree advisories are
       # transitive under mocha with no forward fix available — `npm audit fix
       # --force` downgrades it — and nothing in devDependencies ships in the
@@ -39,12 +40,12 @@ jobs:
         ports:
           - 8080:8080
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: production
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: 24
       # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
       # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
       # the package's gypfile:false). The Playwright image has no compiler.
@@ -57,7 +58,7 @@ jobs:
           # Inside a container job, service containers are reached by label, not localhost.
           AUTHWALL_UPSTREAM_URL: http://echo:8080
         run: bin/test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-sqlite
@@ -91,12 +92,12 @@ jobs:
           --health-timeout=5s
           --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: production
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: 24
       # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
       # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
       # the package's gypfile:false). The Playwright image has no compiler.
@@ -132,7 +133,7 @@ jobs:
           AUTHWALL_DB: mysql://root:root@mysql:3306/authwall
           AUTHWALL_UPSTREAM_URL: http://echo:8080
         run: bin/test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-mysql-${{ matrix.mysql-version }}
@@ -164,12 +165,12 @@ jobs:
           --health-timeout=5s
           --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: production
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: 24
       # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
       # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
       # the package's gypfile:false). The Playwright image has no compiler.
@@ -182,7 +183,7 @@ jobs:
           AUTHWALL_DB: postgres://authwall:authwall@postgres:5432/authwall
           AUTHWALL_UPSTREAM_URL: http://echo:8080
         run: bin/test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-postgres
@@ -194,11 +195,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [audit, test-sqlite, test-mysql, test-postgres]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: production
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
