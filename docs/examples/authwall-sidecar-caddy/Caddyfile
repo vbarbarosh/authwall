@@ -33,7 +33,10 @@
 				redir * /auth/email-verify?return={http.request.uri.path}
 			}
 		}
-		reverse_proxy {args[0]}
+		reverse_proxy {args[0]} {
+			# Authwall validated the bearer token; the app gets X-Auth-User.
+			header_up -Authorization
+		}
 	}
 }
 

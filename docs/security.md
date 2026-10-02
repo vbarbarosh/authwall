@@ -18,7 +18,8 @@ Authwall's core guarantee: the upstream app can trust the `X-Auth-User` header.
 - When [personal access tokens](config.md#authwall_personal_access_tokens) are
   enabled, a valid `Authorization: Bearer ...` token is another way to establish
   the same upstream identity. Authwall validates the token, strips the bearer
-  credential, and forwards `X-Auth-User`.
+  credential, and forwards `X-Auth-User`. In sidecar mode the reverse proxy
+  strips it, as both sidecar recipes do.
 - Email-verification enforcement (`AUTHWALL_CONFIRM_EMAIL_REQUIRED`) applies to
   bearer tokens too: a valid token whose owner has no verified email is rejected
   with `403 Email verification required`.
