@@ -95,8 +95,10 @@ describe('sidecar authorization', function () {
         });
 
         it('rejects a traversal that resolves out of a public prefix', async function () {
-            const r = await sidecar(this.client, '/lib/../admin');
-            assert.strictEqual(r.status, 401);
+            for (const uri of ['/lib/../admin', '/lib/..;/admin', '/lib/%252e%252e/admin']) {
+                const r = await sidecar(this.client, uri);
+                assert.strictEqual(r.status, 401, uri);
+            }
         });
 
         it('rejects a fragment that hides a traversal out of a public path', async function () {

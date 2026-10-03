@@ -53,6 +53,7 @@ Testable now
 - [x] a borrowed session connects the attacker's own Google account; nothing links until the owner confirms with a code mailed to the primary address or the password, so the attacker's Google never signs in as the owner; the owner's own account links after confirming, and Facebook always asks → `oauth_link_survives_reset.md`, `oauth_link_survives_reset.test.js`
 - [x] a borrowed session asks to move the email to the attacker's address; the current primary must approve first, and only then does the new address get its link, so the attacker's address never hears of it → `primary_change_needs_both_addresses.md`, `primary_change_needs_both_addresses.test.js`
 - [x] behind Caddy or nginx, an anonymous client asks for a private path and adds the path header its proxy does not set, naming a public path; `/auth/sidecar` sees two headers that disagree and refuses → `sidecar_path_headers_must_agree.md`, `sidecar_path_headers_must_agree.test.js`
+- [x] a client sends its own `X-Forwarded-For`, `-Host`, `-Proto`, `-Prefix` and `X-Real-IP`; in proxy mode the upstream gets only the forwarded headers Authwall sets, in direct mode none, over HTTP and a WebSocket upgrade → `forwarded_headers_come_from_authwall.md`, `forwarded_headers_come_from_authwall.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

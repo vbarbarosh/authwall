@@ -272,13 +272,13 @@ async function create_app()
         // and its own unauthenticated listener races ahead, forwarding upgrades
         // without X-Auth-User — so every WS after the first HTTP request breaks.
         ws: false,
-        xfwd: (config.upstream.mode === 'proxy'),
         changeOrigin: (config.upstream.mode === 'direct'),
         pathFilter: function (pathname) {
             return !(pathname === '/auth' || pathname.startsWith('/auth/'));
         },
         on: {
             proxyReq: function (proxy_req, req) {
+                set_forwarded_headers(proxy_req, req.ip, req.protocol, req.host);
                 // // ⚠️ Beware that headers are proxied too
                 // // ⚠️ Take special care not to special headers
                 // // curl http://localhost:3000/foo/bar -H X-Auth-User:foo -H 'Cookie: connect.sid=s%3A7lIgELaKCxNmyCw5iDcFsAUq6-nVQ6o6.LCvDq0niOJtMT75hMUL2sqvssyXC4Ilm99ftI9Fa4BE'
@@ -310,6 +310,7 @@ async function create_app()
                 proxy_req.flushHeaders();
             },
             proxyReqWs: function (proxy_req, req) {
+                set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
                 if (req.ws_user_uid) {
                     proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
                 }
@@ -548,6 +549,11 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             delete req.headers.authorization;
 
             req.ws_user_uid = auth.user_uid;
+            req.ws_forwarded = {
+                ip,
+                proto: trusted_forwarded_value(req, 'x-forwarded-proto', trust_proxy) ?? (req.socket.encrypted ? 'https' : 'http'),
+                host: trusted_forwarded_value(req, 'x-forwarded-host', trust_proxy) ?? req.headers.host,
+            };
             als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(urlxxx(req.url))}`);
             proxy.upgrade(req, socket, head);
         }
@@ -556,6 +562,39 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             reject(500, 'Internal Server Error');
         }
     };
+}
+
+// The client's own X-Forwarded-* and X-Real-IP never reach the upstream; in
+// proxy mode Authwall sets them from the request it resolved (AW-20).
+function set_forwarded_headers(proxy_req, ip, proto, host)
+{
+    for (const name of proxy_req.getHeaderNames()) {
+        if (name.startsWith('x-forwarded-') || name === 'x-real-ip') {
+            proxy_req.removeHeader(name);
+        }
+    }
+    if (config.upstream.mode !== 'proxy') {
+        return;
+    }
+    if (ip) {
+        proxy_req.setHeader('X-Forwarded-For', ip);
+    }
+    proxy_req.setHeader('X-Forwarded-Proto', proto);
+    if (host) {
+        proxy_req.setHeader('X-Forwarded-Host', host);
+        proxy_req.setHeader('X-Forwarded-Port', /:(\d+)$/.exec(host)?.[1] ?? (proto === 'https' ? '443' : '80'));
+    }
+}
+
+// The first value of a forwarded header, when the peer is a trusted proxy:
+// what Express's req.protocol and req.host read on the HTTP path.
+function trusted_forwarded_value(req, name, trust_proxy)
+{
+    const value = req.headers[name];
+    if (!value || !trust_proxy(req.socket.remoteAddress, 0)) {
+        return null;
+    }
+    return String(value).split(',')[0].trim();
 }
 
 // WebSocket upgrades authenticate either with Authorization: Bearer personal

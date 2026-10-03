@@ -27,6 +27,23 @@ describe('canonical_path', function () {
         }
     });
 
+    it('rejects a dot segment that carries path parameters', function () {
+        for (const p of ['/lib/..;/admin', '/lib/%2e%2e;/admin', '/lib/..;x=1/admin', '/lib/.;/admin', '/lib/;/admin']) {
+            assert.strictEqual(canonical_path(p), null, p);
+        }
+    });
+
+    it('rejects any percent-encoding that survives one decode', function () {
+        for (const p of ['/lib/%252e%252e/admin', '/lib/%252E%252E/admin', '/lib/a%2541']) {
+            assert.strictEqual(canonical_path(p), null, p);
+        }
+    });
+
+    it('keeps path parameters on a plain segment', function () {
+        assert.strictEqual(canonical_path('/lib/app.js;v=1'), '/lib/app.js;v=1');
+        assert.strictEqual(canonical_path('/lib/100%25'), '/lib/100%');
+    });
+
     it('rejects undecodable and non-path input', function () {
         for (const p of ['/lib/%zz', '/lib/%', 'lib/app.js', '', null, undefined, 42]) {
             assert.strictEqual(canonical_path(p), null, String(p));

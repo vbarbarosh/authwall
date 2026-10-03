@@ -8,6 +8,8 @@ services:
     environment:
       AUTHWALL_PUBLIC_URL: http://localhost:3000
       AUTHWALL_UPSTREAM_URL: http://app:8080
+      # No proxy in front, so a client's X-Forwarded-For is not trusted.
+      AUTHWALL_TRUST_PROXY: none
     ports:
       - 3000:3000
     volumes:

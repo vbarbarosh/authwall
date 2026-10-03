@@ -33,7 +33,7 @@ not a silent default; an empty value means "use the default".
 | [`AUTHWALL_OPTIONAL_AUTH_PATHS`](#authwall_optional_auth_paths)             | Public paths that receive auth headers when signed in  |
 | [`AUTHWALL_UPSTREAM_URL`](#authwall_upstream_url)                           | Upstream application URL                               |
 | [`AUTHWALL_UPSTREAM_MODE`](#authwall_upstream_mode)                         | Upstream proxy behavior mode                           |
-| [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy)                             | How many front proxies set `X-Forwarded-For`           |
+| [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy)                             | Which front proxies set `X-Forwarded-For`              |
 | [`AUTHWALL_SET_HEADERS`](#authwall_set_headers)                             | Headers to add to upstream requests                    |
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
@@ -443,7 +443,9 @@ Use `proxy` when **several** domains sit behind Authwall. The upstream is a
 reverse proxy (such as nginx or Caddy) that routes each domain to its own app.
 Authwall preserves the client's original `Host` header so that proxy can tell
 the domains apart, and additionally sends `X-Forwarded-For`, `X-Forwarded-Host`,
-and `X-Forwarded-Proto`.
+`X-Forwarded-Proto` and `X-Forwarded-Port`, set from the request it resolved
+under [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy). A client's own
+`X-Forwarded-*` and `X-Real-IP` headers never reach the upstream, in either mode.
 
 Example:
 
@@ -502,24 +504,33 @@ drives the per-IP rate-limit keys, the last-used IP on sessions and tokens,
 and the source IP in the audit log, so trusting a header a client can forge is
 what makes those spoofable.
 
-- Type: hop count, boolean, or a comma list of trusted IPs/subnets/presets
-- Default: `1`
+- Type: `none`, `hops/N`, a comma list of trusted IPs/subnets/presets, or `any`
+- Default: `hops/1`
 
-- A number is how many proxies sit in front of Authwall (`1` for a single
-  reverse proxy or load balancer, `2` for a CDN in front of that, and so on).
-- `false` (or `0`) trusts no proxy: use it when Authwall is directly reachable,
-  so `req.ip` is always the real connection.
-- A list such as `10.0.0.0/8, loopback` trusts only those sources.
+- `none` trusts no proxy: use it when Authwall is directly reachable, so
+  `req.ip` is always the real connection.
+- `hops/N` trusts the N proxies in front of Authwall, whatever their addresses
+  (`hops/1` for a single reverse proxy or load balancer, `hops/2` for a CDN in
+  front of that, and so on).
+- A list such as `10.0.0.0/8, loopback` trusts only proxies at those addresses,
+  however many sit in a row. Presets are `loopback`, `linklocal` and
+  `uniquelocal`.
+- `any` trusts every hop, so the leftmost `X-Forwarded-For` entry is the
+  client. It is safe only when the first proxy overwrites that header.
+
+`none`, `hops/N` and `any` stand alone, never in a list. Anything else stops
+startup. So do the values of the earlier form, each with its replacement:
+`false` and `0` are now `none`, a number `N` is `hops/N`, and `true` is `any`.
 
 The same value governs both HTTP requests and WebSocket upgrades. Deploy behind
-a proxy that **overwrites** `X-Forwarded-For` and set this to the number of
-proxies you actually run.
+a proxy that **overwrites** `X-Forwarded-For` and set this to the proxies you
+actually run.
 
 Example:
 
 ```sh
-AUTHWALL_TRUST_PROXY=1
-AUTHWALL_TRUST_PROXY=false
+AUTHWALL_TRUST_PROXY=none
+AUTHWALL_TRUST_PROXY=hops/2
 AUTHWALL_TRUST_PROXY=10.0.0.0/8,loopback
 ```
 

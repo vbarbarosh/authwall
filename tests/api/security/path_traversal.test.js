@@ -62,6 +62,9 @@ describe('path traversal past public_paths | security', function () {
         '/lib/..%2fadmin',
         '/lib/%2e%2e%2fadmin',
         '/lib/;/../admin',
+        '/lib/..;/admin',
+        '/lib/%2e%2e;/admin',
+        '/lib/%252e%252e/admin',
         '/lib/./admin',
         '/lib//admin',
         '/lib/%252fadmin',
@@ -79,8 +82,10 @@ describe('path traversal past public_paths | security', function () {
     }
 
     it('does not treat a traversal into an optional-auth prefix as optional', async function () {
-        const r = await raw_get('/landing/../admin');
-        assert.strictEqual(r.status, 302);
+        for (const target of ['/landing/../admin', '/landing/..;/admin']) {
+            const r = await raw_get(target);
+            assert.strictEqual(r.status, 302, target);
+        }
     });
 
     it('proxies a non-canonical path for a signed-in user with X-Auth-User set', async function () {
