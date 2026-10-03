@@ -647,6 +647,12 @@ and every verified email must pass these rules. This check applies even when
 eligibility for username sign-in. With no email access rules, username sign-up
 and sign-in work as usual.
 
+Every sign-in, by any method, also checks every verified address the account
+already holds, not only the one presented: an account that holds a denied
+address cannot sign in through another address or a linked provider. Email and
+password sign-in answers such a refusal as a wrong password, so it never
+confirms the password.
+
 Because a username alone can never satisfy these rules, they need a flow that
 brings an email in: `email`, a magic-link mode, or an OAuth provider. With
 `AUTHWALL_FLOWS=username` and any rule set, Authwall refuses to start and names

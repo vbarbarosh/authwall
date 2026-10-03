@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const account_email_refusal = require('../helpers/account_email_refusal');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
@@ -115,13 +116,11 @@ async function sign_in_post(req, res)
         throw new UserFriendlyError('Invalid username or password');
     }
 
-    if (!is_email) {
-        // Answered as a wrong password is: see username_sign_in_refusal.
-        const refusal = await username_sign_in_refusal(user);
-        if (refusal) {
-            await insert_auth_event_sign_in_failure({req, ident, user, custom: refusal});
-            throw new UserFriendlyError('Invalid username or password');
-        }
+    // Answered as a wrong password is: see username_sign_in_refusal.
+    const refusal = is_email ? await account_email_refusal(user) : await username_sign_in_refusal(user);
+    if (refusal) {
+        await insert_auth_event_sign_in_failure({req, ident, user, custom: refusal});
+        throw new UserFriendlyError('Invalid username or password');
     }
 
     await complete_sign_in(req, res, user, ident);

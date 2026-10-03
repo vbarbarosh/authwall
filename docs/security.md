@@ -147,7 +147,8 @@ create an account. To run Authwall as a gate for a known set of users,
 configure the [access rules](config.md#access-rules): `AUTHWALL_ALLOWED_EMAILS`,
 `AUTHWALL_ALLOWED_DOMAINS`, and the matching deny lists. When any allow list is
 set, the default flips to deny. The rules are enforced on every sign-in flow,
-including OAuth (checked against the provider's verified emails).
+including OAuth (checked against the provider's verified emails), and against
+every verified address the account already holds.
 
 The rules also bind username accounts: registration by username is disabled
 while any rule is configured, and a username sign-in is admitted only on the

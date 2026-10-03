@@ -54,6 +54,7 @@ Testable now
 - [x] a borrowed session asks to move the email to the attacker's address; the current primary must approve first, and only then does the new address get its link, so the attacker's address never hears of it → `primary_change_needs_both_addresses.md`, `primary_change_needs_both_addresses.test.js`
 - [x] behind Caddy or nginx, an anonymous client asks for a private path and adds the path header its proxy does not set, naming a public path; `/auth/sidecar` sees two headers that disagree and refuses → `sidecar_path_headers_must_agree.md`, `sidecar_path_headers_must_agree.test.js`
 - [x] a client sends its own `X-Forwarded-For`, `-Host`, `-Proto`, `-Prefix` and `X-Real-IP`; in proxy mode the upstream gets only the forwarded headers Authwall sets, in direct mode none, over HTTP and a WebSocket upgrade → `forwarded_headers_come_from_authwall.md`, `forwarded_headers_come_from_authwall.test.js`
+- [x] the operator denies an address the account holds; the account still signs in through GitHub with a new address, email and password with its other allowed address, or a magic link; every method is refused, password sign-in as a wrong password → `sign_in_checks_the_whole_account.md`, `sign_in_checks_the_whole_account.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

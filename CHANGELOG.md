@@ -24,6 +24,10 @@
   `X-Forwarded-*` and `X-Real-IP` never reach it. `X-Forwarded-For` is the one
   address Authwall resolved, not the chain; on a WebSocket upgrade
   `X-Forwarded-Proto` is `http` or `https`, no longer `ws` or `wss`.
+- Under email access rules, every sign-in checks every verified address the
+  account holds, as username sign-in already did. An account that holds an
+  address the rules refuse, such as one outside an allow list, can no longer
+  sign in by any method.
 
 ### Upgrading
 
@@ -68,6 +72,9 @@
   for a private request behind Caddy (H-02).
 - Sentry: the signed session cookie no longer reaches it; span URLs, query
   strings and the Referer are scrubbed like event URLs.
+- An account that holds a denied address no longer signs in through another
+  address, a linked provider or a magic link; email and password answers as a
+  wrong password (AW-28).
 
 ### Added
 

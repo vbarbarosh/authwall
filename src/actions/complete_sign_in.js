@@ -1,3 +1,5 @@
+const EmailNotAuthorized = require('../helpers/errors/EmailNotAuthorized');
+const account_email_refusal = require('../helpers/account_email_refusal');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_email = require('../helpers/const/const_email');
@@ -11,6 +13,13 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function complete_sign_in(req, res, user, ident, auth_event_custom)
 {
+    // Every sign-in method ends here, so the access rules see every address
+    // the account holds, not only the one presented (AW-28).
+    const refusal = await account_email_refusal(user);
+    if (refusal) {
+        throw new EmailNotAuthorized(refusal.error);
+    }
+
     const replaced_session_uid = req.session.uid;
     await replace_session(req, user);
     await insert_auth_event({
