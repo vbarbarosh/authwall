@@ -1,6 +1,8 @@
+const WebSocket = require('ws');
 const assert = require('assert');
 const config = require('../../../config');
 const create_app = require('../../../src/create_app');
+const db = require('../../../db');
 const http = require('http');
 const net = require('net');
 
@@ -262,6 +264,104 @@ describe('websocket proxy', function () {
         const bad = await this.ws_roundtrip('/realtime', {token: 'awp_invalid'});
         assert.strictEqual(bad.opened, false);
         assert.strictEqual(bad.status, 401);
+    });
+
+    // M-04: an open WebSocket ends with the credential it was opened with.
+    describe('revocation', function () {
+
+        beforeEach(function () {
+            config.websockets.recheck_seconds = 0.5;
+        });
+
+        // A WebSocket held open through the proxy; `closed` settles when either side closes it.
+        async function open_ws(headers) {
+            const socket = new WebSocket(config.public_url.replace(/^http/, 'ws') + '/realtime', {headers});
+            const closed = new Promise(v => socket.on('close', v));
+            await new Promise(function (resolve, reject) {
+                socket.on('message', v => (JSON.parse(v.toString()).type === 'upstream_open') && resolve());
+                socket.on('error', reject);
+            });
+            return {socket, closed};
+        }
+
+        function closes_within(ws, ms) {
+            return Promise.race([ws.closed.then(() => true), new Promise(v => setTimeout(v, ms, false))]);
+        }
+
+        async function end_ws(ws) {
+            ws.socket.terminate();
+            await ws.closed;
+        }
+
+        function session_headers(client) {
+            return {Cookie: Array.from(client.cookies.values()).join('; '), Origin: config.public_url};
+        }
+
+        it('closes a token\'s WebSocket when the token is revoked', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass1234'});
+            const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
+            const ws = await open_ws({Authorization: `Bearer ${created.token}`});
+            try {
+                await this.http_post_json('/auth/personal-access-tokens/revoke', {uid: created.personal_access_token.uid});
+                assert.strictEqual(await closes_within(ws, 2000), true);
+            }
+            finally {
+                await end_ws(ws);
+            }
+        });
+
+        it('closes a session\'s WebSocket on sign-out', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass1234'});
+            const ws = await open_ws(session_headers(this.client));
+            try {
+                await this.http_post_json('/auth/sign-out');
+                assert.strictEqual(await closes_within(ws, 2000), true);
+            }
+            finally {
+                await end_ws(ws);
+            }
+        });
+
+        it('closes a session\'s WebSocket when another session revokes it', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass1234'});
+            const first = (await this.http_get_json('/auth/status')).current_session_uid;
+            const ws = await open_ws(session_headers(this.client));
+            try {
+                this.client.cookies.clear();
+                await this.http_post_json('/auth/sign-in', {username: 'mocha', password: 'pass1234'});
+                await this.http_post_json('/auth/sessions/revoke', {uid: first});
+                assert.strictEqual(await closes_within(ws, 2000), true);
+            }
+            finally {
+                await end_ws(ws);
+            }
+        });
+
+        it('closes a WebSocket whose session is deleted outside Authwall, within the lease', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass1234'});
+            const uid = (await this.http_get_json('/auth/status')).current_session_uid;
+            const ws = await open_ws(session_headers(this.client));
+            try {
+                await db('sessions').where({uid}).del();
+                assert.strictEqual(await closes_within(ws, 2000), true);
+            }
+            finally {
+                await end_ws(ws);
+            }
+        });
+
+        it('keeps a WebSocket open while its credential stands', async function () {
+            await this.sign_in({username: 'mocha', password: 'pass1234'});
+            const ws = await open_ws(session_headers(this.client));
+            try {
+                await this.http_get_json('/auth/status');
+                assert.strictEqual(await closes_within(ws, 1500), false);
+            }
+            finally {
+                await end_ws(ws);
+            }
+        });
+
     });
 
 });

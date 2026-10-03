@@ -314,6 +314,14 @@ Authwall validates the token, strips the `Authorization` header before
 forwarding the upgrade, and shares the same failed-attempt rate limiter
 used by HTTP bearer authentication.
 
+### When an open WebSocket ends
+
+An open WebSocket ends with the credential it was opened with. Signing out,
+revoking the session or the token, a password change or reset, and removing
+the account close it as soon as that request is done. A credential removed any
+other way, by another Authwall instance or in the database, closes it within
+`websockets.recheck_seconds` of `config/settings.yaml`, 30 seconds by default.
+
 Example:
 
 ```sh

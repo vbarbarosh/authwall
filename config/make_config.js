@@ -158,6 +158,8 @@ function make_config(input = {})
 
         websockets: make(settings.websockets, {
             enabled: {type: 'bool', default: false, before: strict_bool('AUTHWALL_WEBSOCKETS')},
+            // How often open WebSockets are checked against revocations made elsewhere.
+            recheck_seconds: {type: 'int', min: 1, default: 30},
         }),
 
         listen: env.LISTEN ?? '127.0.0.1',

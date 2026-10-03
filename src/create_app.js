@@ -65,6 +65,16 @@ async function create_app()
     app.set('trust proxy', trust_proxy);
     app.disable('x-powered-by');
 
+    // Open WebSockets end with their credential (M-04). Every revocation is
+    // an /auth request, so each one ends with a check; the lease catches the rest.
+    const ws_lease = config.websockets.enabled ? make_ws_lease(config.websockets.recheck_seconds*1000) : null;
+    if (ws_lease) {
+        app.use('/auth', function (req, res, next) {
+            res.on('finish', ws_lease.check);
+            next();
+        });
+    }
+
     // Response headers for Authwall's own pages and endpoints (everything
     // under /auth). Not applied to proxied upstream responses, which set
     // their own. frame-ancestors/X-Frame-Options stop the sign-in and profile
@@ -303,6 +313,14 @@ async function create_app()
     });
     proxy.on('proxyReqWs', function (proxy_req, req, socket) {
         socket.on('error', ignore_socket_error);
+        // A WebSocket has no use for a half-closed connection: when either side
+        // ends or goes away, both close, so no upstream connection is left open.
+        proxy_req.on('upgrade', function (proxy_res, proxy_socket) {
+            for (const event of ['end', 'close']) {
+                socket.once(event, () => proxy_socket.destroy());
+                proxy_socket.once(event, () => socket.destroy());
+            }
+        });
         set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
         if (req.ws_user_uid) {
             proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
@@ -352,7 +370,7 @@ async function create_app()
     });
 
     if (config.websockets.enabled) {
-        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy);
+        const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy, ws_lease);
         app.setup_server = function (server) {
             server.on('upgrade', handle_ws_upgrade);
         };
@@ -524,7 +542,7 @@ function authenticated_user_uid(req)
     return req.auth?.user_uid ?? req.session?.user_uid ?? null;
 }
 
-function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
+function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy, ws_lease)
 {
     return async function handle_ws_upgrade(req, socket, head) {
         // Node drops its own listener once a socket is upgraded; a client reset
@@ -571,6 +589,7 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             delete req.headers.authorization;
 
             req.ws_user_uid = auth.user_uid;
+            ws_lease.add(socket, auth.credential);
             req.ws_forwarded = {
                 ip,
                 proto: trusted_forwarded_value(req, 'x-forwarded-proto', trust_proxy) ?? (req.socket.encrypted ? 'https' : 'http'),
@@ -586,6 +605,87 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
             reject(500, 'Internal Server Error');
         }
     };
+}
+
+// The upgraded sockets of one app and the credential each came in with. A check
+// destroys every socket whose session or token is gone; checks asked for while
+// one runs coalesce into one more. The lease timer runs only while sockets are open.
+function make_ws_lease(interval_ms)
+{
+    const entries = new Map();
+    let timer = null;
+    let running = false;
+    let again = false;
+
+    return {add, check};
+
+    function add(socket, credential) {
+        entries.set(socket, credential);
+        socket.once('close', function () {
+            entries.delete(socket);
+            if (!entries.size && timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        });
+        if (!timer) {
+            timer = setInterval(check, interval_ms);
+            timer.unref();
+        }
+    }
+
+    function check() {
+        if (!entries.size) {
+            return;
+        }
+        if (running) {
+            again = true;
+            return;
+        }
+        running = true;
+        check_now().catch(function (error) {
+            als.logger.write(`[ws_lease_error] ⚠️ ${error.message}`);
+        }).finally(function () {
+            running = false;
+            if (again) {
+                again = false;
+                check();
+            }
+        });
+    }
+
+    async function check_now() {
+        const now = new Date();
+        const list = Array.from(entries);
+        const live = new Set();
+        for (const uids of chunks(list.map(v => v[1].session_uid).filter(Boolean), 500)) {
+            for (const uid of await db('sessions').whereIn('uid', uids).where('expires_at', '>', now).pluck('uid')) {
+                live.add(`session:${uid}`);
+            }
+        }
+        for (const uids of chunks(list.map(v => v[1].pat_uid).filter(Boolean), 500)) {
+            const rows = await db('personal_access_tokens').whereIn('uid', uids).whereNull('revoked_at')
+                .where(v => v.whereNull('expires_at').orWhere('expires_at', '>', now)).pluck('uid');
+            for (const uid of rows) {
+                live.add(`pat:${uid}`);
+            }
+        }
+        for (const [socket, credential] of list) {
+            const key = credential.session_uid ? `session:${credential.session_uid}` : `pat:${credential.pat_uid}`;
+            if (!live.has(key)) {
+                socket.destroy();
+            }
+        }
+    }
+}
+
+function chunks(items, size)
+{
+    const out = [];
+    for (let i = 0; i < items.length; i += size) {
+        out.push(items.slice(i, i + size));
+    }
+    return out;
 }
 
 // http.request takes an IPv6 host without its brackets, and `::` is no
@@ -682,6 +782,7 @@ async function authenticate_ws_upgrade(req, ip, bearer_miss_limiter)
 
     return {
         user_uid: result.user_uid,
+        credential: {pat_uid: result.personal_access_token_uid},
         reason: null,
         details: ws_auth_details(req, result.user_uid, 'bearer'),
     };
@@ -724,6 +825,7 @@ async function authenticate_ws_session(req)
 
     return {
         user_uid: session.user_uid,
+        credential: {session_uid: session.uid},
         reason: null,
         details: ws_auth_details(req, session.user_uid, 'session'),
     };

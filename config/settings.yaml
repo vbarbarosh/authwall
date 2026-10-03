@@ -73,6 +73,7 @@ personal_access_tokens:
 
 websockets:
   enabled: ${AUTHWALL_WEBSOCKETS}
+  recheck_seconds: 30
 
 cookie:
   domain: ${AUTHWALL_COOKIE_DOMAIN}

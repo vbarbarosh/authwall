@@ -86,6 +86,10 @@
   (AW-25).
 - A client that drops its connection while a WebSocket upgrade is being
   authenticated no longer ends the process (AW-30).
+- An open WebSocket ends with its credential: revoking the session or token,
+  signing out, a password reset or change, or removing the account closes it
+  at once; a revocation made elsewhere closes it within
+  `websockets.recheck_seconds`, 30 by default (M-04).
 
 ### Added
 

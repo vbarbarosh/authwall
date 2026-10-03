@@ -101,6 +101,7 @@ describe('make_config', function () {
 
         assert.deepStrictEqual(config.websockets, {
             enabled: false,
+            recheck_seconds: 30,
         });
     });
 
@@ -113,6 +114,7 @@ describe('make_config', function () {
 
         assert.deepStrictEqual(config.websockets, {
             enabled: true,
+            recheck_seconds: 30,
         });
     });
 

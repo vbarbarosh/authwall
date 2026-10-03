@@ -54,7 +54,8 @@ opaque session id.
 **Why server-side sessions, not stateless cookies?** This is a deliberate choice
 for an auth proxy. Server-side sessions buy *instant revocation*: revoking a
 session from the profile, signing out everywhere on a password reset, and account
-removal all kill live sessions immediately by deleting their rows. Stateless
+removal all kill live sessions immediately by deleting their rows, and the
+open WebSockets opened with them ([details](config.md#when-an-open-websocket-ends)). Stateless
 signed-cookie sessions can't revoke a session before it expires without
 reintroducing a server-side denylist — which puts the state right back and gives
 you the worst of both. For a tool whose entire job is gatekeeping, immediate
