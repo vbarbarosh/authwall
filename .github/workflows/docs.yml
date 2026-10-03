@@ -6,6 +6,7 @@ on:
     paths:
       - .docs/**
       - .github/workflows/docs.yml
+      - CHANGELOG.md
       - bin/build-docs
       - docs/**
       - img/**

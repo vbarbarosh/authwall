@@ -62,3 +62,5 @@ nav:
     file: config.md
   - title: Glossary
     file: glossary.md
+  - title: Changelog
+    file: ../CHANGELOG.md

@@ -34,3 +34,5 @@ app, handles sign-in, and forwards authenticated requests with an
 - [Configuration reference](config.md) — every environment variable, with
   defaults, validation rules, and examples.
 - [Glossary](glossary.md) — terms used throughout the docs and code.
+- [Changelog](../CHANGELOG.md) — what changed in each release, and how to
+  upgrade.

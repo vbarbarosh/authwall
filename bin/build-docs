@@ -71,7 +71,7 @@ async function create_highlighter()
 {
     return shiki.createHighlighter({
         themes: ['catppuccin-latte', 'ayu-dark'],
-        langs: ['bash', 'docker', 'http', 'javascript', 'js', 'nginx', 'sh', 'shell', 'yaml'],
+        langs: ['bash', 'docker', 'http', 'javascript', 'js', 'nginx', 'sh', 'shell', 'sql', 'yaml'],
     });
 }
 
@@ -828,9 +828,11 @@ function normalize_doc_path(value)
     return path.posix.normalize(String(value).replaceAll(path.sep, '/')).replace(/^\.\//, '');
 }
 
+// A page outside the source dir (../CHANGELOG.md) is written under its
+// repo-relative path, inside the output dir.
 function output_path_for_doc(file)
 {
-    const parsed = path.posix.parse(file);
+    const parsed = path.posix.parse(file.replace(/^(\.\.\/)+/, ''));
     if (parsed.base.toLowerCase() === 'readme.md') {
         return parsed.dir ? path.posix.join(parsed.dir, 'index.html') : 'index.html';
     }
