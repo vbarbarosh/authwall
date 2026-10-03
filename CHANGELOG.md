@@ -28,6 +28,12 @@
   account holds, as username sign-in already did. An account that holds an
   address the rules refuse, such as one outside an allow list, can no longer
   sign in by any method.
+- A confirmation link opened outside a browser signed in to its account
+  hands an account whose only way in is its password to whoever opened it:
+  every session and token ends, the password stops working, and that browser
+  sets a new password. An account with a linked provider or a confirmed
+  address is not handed over: the link asks to sign in first. In a browser
+  signed in to the account nothing changes.
 
 ### Upgrading
 
@@ -75,6 +81,9 @@
 - An account that holds a denied address no longer signs in through another
   address, a linked provider or a magic link; email and password answers as a
   wrong password (AW-28).
+- A stranger who signs up with someone else's address no longer gets in when
+  its owner clicks the confirmation link: the account becomes the owner's
+  (AW-25).
 
 ### Added
 

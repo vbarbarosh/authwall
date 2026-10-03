@@ -12,12 +12,16 @@ const consume_one_time_token = require('../helpers/consume_one_time_token');
 const create_email_verify_token = require('../helpers/create_email_verify_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
+const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const is_code_budget_spent = require('../helpers/is_code_budget_spent');
+const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
+const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const SECOND = 1000;
 
@@ -95,26 +99,67 @@ async function email_verify_confirm_get(req, res)
         throw new UserFriendlyError('Invalid or expired verification link');
     }
 
+    // The link proves who reads the mailbox, not who signed up (AW-25). Opened
+    // outside the account's own browser, it hands over an account whose only
+    // way in is its password: every session and the old password go. An
+    // account with another way in (a provider, a confirmed address) waits for
+    // the link in a browser signed in to it.
+    const user_id = record.user_id;
+    const elsewhere = (req.session?.user_id !== user_id);
+    const other_way_in = await db('user_identities')
+        .where({user_id})
+        .whereNot({type: const_user_identity.username})
+        .whereNot({type: const_user_identity.email, value_normalized: record.email_normalized})
+        .whereNotNull('verified_at')
+        .first();
+    if (elsewhere && other_way_in) {
+        req.session.error = 'Sign in to confirm this address';
+        await save_session(req);
+        res.redirect(urlmod(config.pages.sign_in, {return: req.originalUrl}));
+        return;
+    }
+    const new_owner = elsewhere;
+    const reset_token = random_hex();
+
     await db.transaction(async function () {
         if (!await consume_one_time_token('email_verify_tokens', record.id, now)) {
             throw new UserFriendlyError('Invalid or expired verification link');
         }
         await db('user_identities')
             .where({
-                user_id: record.user_id,
+                user_id,
                 type: const_user_identity.email,
                 value_normalized: record.email_normalized,
             })
             .whereNull('verified_at')
             .update({verified_at: now, updated_at: now});
-        await assign_primary_email(record.user_id);
+        await assign_primary_email(user_id);
+        if (new_owner) {
+            await db('users').where({id: user_id}).update({password_hash: null, updated_at: now});
+            await revoke_pending_tokens(user_id);
+            await db('sessions').where({user_id}).del();
+            await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
+            await db('password_reset_tokens').insert({
+                user_id,
+                token_hash: crypto_hash_sha256(reset_token).toString('base64url'),
+                created_at: now,
+                updated_at: now,
+                expires_at: date_add_minutes(now, 10),
+            });
+        }
     });
 
     const ident = await db('user_identities').where({
-        user_id: record.user_id,
+        user_id,
         type: const_user_identity.email,
         value_normalized: record.email_normalized,
     }).first();
+
+    if (new_owner) {
+        await insert_auth_event({req, ident, event_type: const_auth_event.email_verified, custom: {new_owner: true}});
+        res.redirect(urlmod(config.pages.password_reset_confirm, {token: reset_token}));
+        return;
+    }
 
     await complete_email_verify_confirm(req, res, ident);
 }

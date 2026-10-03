@@ -161,6 +161,16 @@ any request reaches the app. With an allow list and the email flow it cannot be
 turned off: Authwall refuses to start, since a typed address would otherwise
 pass the list as is.
 
+A confirmation link proves who reads the mailbox, not who signed up. Opened in
+the browser that signed up, or another one signed in to the account, it just
+confirms the address. Opened anywhere else, it hands an account whose only way
+in is its password to whoever reads the mailbox: every session and personal
+access token of the account ends, the password stops working, and the browser
+that opened the link sets a new one. A stranger who signed up with someone
+else's address is shut out the moment its owner clicks. An account with
+another way in, a linked provider or a confirmed address, is not handed over:
+the link asks to sign in to that account first, and stays valid.
+
 ## Open-redirect protection
 
 Sign-in and similar flows accept a `return` parameter so the user lands back

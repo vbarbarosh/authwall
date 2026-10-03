@@ -28,8 +28,11 @@ describe('Email verification link opened in another session | stories', function
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
+        // Opened outside Bob's own browser, the link hands his account to
+        // whoever reads his mailbox (AW-25): Alice's browser sets a password.
         this.client.cookies = cookies_a;
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        const tap = await this.client.get_json_no_redirects(urlmod(config.pages.email_verify_confirm, {token}));
+        assert.match(tap.headers.location, /^\/auth\/password-reset\/confirm\?token=/);
 
         const alice_session_after = await this.client.get_session();
         assert.strictEqual(alice_session_after.email, 'alice@authwall.test');
@@ -44,10 +47,33 @@ describe('Email verification link opened in another session | stories', function
             .first();
         assert.ok(bob_email.verified_at);
 
-        // Bob's session was signed in before he verified, so its snapshot is
-        // stale. His next request must read the live state and let him
-        // through, rather than holding him at verification forever.
+        // Bob's old session ended with the change of owner.
         this.client.cookies = cookies_b;
+        const bob_proxied = await this.client.get_json_no_redirects('/some/protected/path');
+        assert.strictEqual(bob_proxied.status, 302);
+        assert.match(bob_proxied.headers.location, /^\/auth\/sign-in\?/);
+    });
+
+    it('lets a second browser of the same account through once the first verifies', async function () {
+        config.confirm_email.required = true;
+
+        const cookies_a = new Map();
+        const cookies_b = new Map();
+
+        this.client.cookies = cookies_a;
+        await this.sign_in({email: 'bob@authwall.test', password: 'pass123', verified: false});
+        this.client.cookies = cookies_b;
+        await this.http_post_json('/auth/sign-in', {username: 'bob@authwall.test', password: 'pass123'});
+        await this.http_post_json('/auth/email-verify/request');
+        await this.wait_for_emails(1);
+        const {link} = this.sent_emails.find(v => v.placeholders?.link).placeholders;
+        const token = new URL(link).searchParams.get('token');
+        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+
+        // The first browser was signed in before Bob verified, so its snapshot
+        // is stale. Its next request must read the live state and let him
+        // through, rather than holding him at verification forever.
+        this.client.cookies = cookies_a;
         const bob_proxied = await this.client.get_json_no_redirects('/some/protected/path');
         assert.strictEqual(bob_proxied.status, 200);
         assert.partialDeepStrictEqual(bob_proxied.data, {echo_server: 'authwall_testing_echo_server'});

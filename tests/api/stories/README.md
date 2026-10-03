@@ -55,6 +55,9 @@ Testable now
 - [x] behind Caddy or nginx, an anonymous client asks for a private path and adds the path header its proxy does not set, naming a public path; `/auth/sidecar` sees two headers that disagree and refuses → `sidecar_path_headers_must_agree.md`, `sidecar_path_headers_must_agree.test.js`
 - [x] a client sends its own `X-Forwarded-For`, `-Host`, `-Proto`, `-Prefix` and `X-Real-IP`; in proxy mode the upstream gets only the forwarded headers Authwall sets, in direct mode none, over HTTP and a WebSocket upgrade → `forwarded_headers_come_from_authwall.md`, `forwarded_headers_come_from_authwall.test.js`
 - [x] the operator denies an address the account holds; the account still signs in through GitHub with a new address, email and password with its other allowed address, or a magic link; every method is refused, password sign-in as a wrong password → `sign_in_checks_the_whole_account.md`, `sign_in_checks_the_whole_account.test.js`
+- [x] a stranger signs up with Vera's address and their own password; Vera taps the verification link on her phone; the account becomes hers: the stranger's sessions and password end, and Vera sets a password → `verification_link_from_a_stranger.md`, `verification_link_from_a_stranger.test.js`
+- [x] Mark signs up on the laptop and confirms on the phone; he sets a password there and the laptop signs in again; confirmed on the laptop, nothing changes → `verification_link_on_another_device.md`, `verification_link_on_another_device.test.js`
+- [x] Sam (username, password, GitHub) adds Vera's address; Vera taps the link on her phone; nothing is confirmed and she is sent to sign in; Sam confirms in a browser signed in to his account → `added_address_needs_its_account.md`, `added_address_needs_its_account.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision
