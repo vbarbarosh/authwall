@@ -99,6 +99,9 @@
   `@vbarbarosh/node-helpers` 3.78.1 (axios 1.20.0; `npm audit` clean).
 - `@vbarbarosh/express-helpers` removed, and the deprecated `cuid` with it;
   Express's "Promise-like handlers" warning is gone.
+- `http-proxy-middleware` removed: Authwall drives `httpxy`, the engine under
+  it, directly. `micromatch` and `braces` leave production, and with them
+  GHSA-vfj7-8cjw-p6xm, which has no patched `braces`.
 - CI actions on their Node 24 majors, Node pinned to 24.
 
 ## 1.16.0 and earlier

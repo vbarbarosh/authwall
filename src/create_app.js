@@ -17,7 +17,7 @@ const express_session = require('express-session');
 const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
-const http_proxy_middleware = require('http-proxy-middleware');
+const httpxy = require('httpxy');
 const insert_auth_event = require('./helpers/insert_auth_event');
 const is_optional_auth_path = require('./helpers/is_optional_auth_path');
 const is_origin_form = require('./helpers/is_origin_form');
@@ -262,79 +262,94 @@ async function create_app()
 
     app.use(clean_headers);
     app.use(sign_in_required);
-    const proxy = http_proxy_middleware.createProxyMiddleware({
-        target: config.upstream.url,
-        // ⚠️ Do NOT set `ws: true` here. Authwall owns the server 'upgrade' event
-        // itself (see app.setup_server below) so it can authenticate the personal
-        // access token before forwarding the upgrade. With `ws: true`,
-        // http-proxy-middleware lazily self-subscribes to 'upgrade' on the first
-        // proxied HTTP request; from then on our proxy.upgrade() becomes a no-op
-        // and its own unauthenticated listener races ahead, forwarding upgrades
-        // without X-Auth-User — so every WS after the first HTTP request breaks.
-        ws: false,
+    // Authwall owns the server 'upgrade' event itself (see app.setup_server
+    // below), so it authenticates a WebSocket before proxy.ws() forwards it.
+    const proxy = httpxy.createProxyServer({
+        target: proxy_target(config.upstream.url),
         changeOrigin: (config.upstream.mode === 'direct'),
-        pathFilter: function (pathname) {
-            return !(pathname === '/auth' || pathname.startsWith('/auth/'));
-        },
-        on: {
-            proxyReq: function (proxy_req, req) {
-                set_forwarded_headers(proxy_req, req.ip, req.protocol, req.host);
-                // // ⚠️ Beware that headers are proxied too
-                // // ⚠️ Take special care not to special headers
-                // // curl http://localhost:3000/foo/bar -H X-Auth-User:foo -H 'Cookie: connect.sid=s%3A7lIgELaKCxNmyCw5iDcFsAUq6-nVQ6o6.LCvDq0niOJtMT75hMUL2sqvssyXC4Ilm99ftI9Fa4BE'
-                // // curl http://localhost:3000/bypass/foo/bar -H X-Auth-User:foo
-                // const headers = proxy_req.getHeaderNames();
-                // for (let i = 0, ii = headers.length; i < ii; ++i) {
-                //     const header = headers[i];
-                //     if (header.startsWith('x-auth-')) {
-                //         proxy_req.removeHeader(header);
-                //     }
-                // }
-                const user_uid = authenticated_user_uid(req);
-                if (user_uid && !is_public_path(target_path(req.originalUrl))) {
-                    proxy_req.setHeader('X-Auth-User', user_uid);
-                }
-                for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
-                    const header = config.upstream.set_headers[i];
-                    proxy_req.setHeader(header.name, header.value);
-                }
-                for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
-                    proxy_req.removeHeader(config.upstream.unset_headers[i]);
-                }
-                // httpxy (http-proxy-middleware >= 4) pipes the client body only
-                // after the upstream socket connects, and Node holds the request
-                // line + headers back until the first write. Send them now so the
-                // upstream sees the request as soon as the socket is up. This also
-                // avoids a deadlock with socket-level interceptors (nock/msw wait
-                // for the headers before they let the socket "connect").
-                proxy_req.flushHeaders();
-            },
-            proxyReqWs: function (proxy_req, req) {
-                set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
-                if (req.ws_user_uid) {
-                    proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
-                }
-                for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
-                    const header = config.upstream.set_headers[i];
-                    proxy_req.setHeader(header.name, header.value);
-                }
-                for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
-                    proxy_req.removeHeader(config.upstream.unset_headers[i]);
-                }
-            },
-            error: function (error, req, res) {
-                als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
-                // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
-                if (typeof res.status === 'function') {
-                    res.status(502).send('Upstream service unavailable');
-                }
-                else {
-                    res.destroy();
-                }
-            },
-        },
     });
-    app.use(proxy);
+    proxy.on('proxyReq', function (proxy_req, req, res) {
+        res.on('error', ignore_socket_error);
+        set_forwarded_headers(proxy_req, req.ip, req.protocol, req.host);
+        // // ⚠️ Beware that headers are proxied too
+        // // ⚠️ Take special care not to special headers
+        // // curl http://localhost:3000/foo/bar -H X-Auth-User:foo -H 'Cookie: connect.sid=s%3A7lIgELaKCxNmyCw5iDcFsAUq6-nVQ6o6.LCvDq0niOJtMT75hMUL2sqvssyXC4Ilm99ftI9Fa4BE'
+        // // curl http://localhost:3000/bypass/foo/bar -H X-Auth-User:foo
+        // const headers = proxy_req.getHeaderNames();
+        // for (let i = 0, ii = headers.length; i < ii; ++i) {
+        //     const header = headers[i];
+        //     if (header.startsWith('x-auth-')) {
+        //         proxy_req.removeHeader(header);
+        //     }
+        // }
+        const user_uid = authenticated_user_uid(req);
+        if (user_uid && !is_public_path(target_path(req.originalUrl))) {
+            proxy_req.setHeader('X-Auth-User', user_uid);
+        }
+        for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
+            const header = config.upstream.set_headers[i];
+            proxy_req.setHeader(header.name, header.value);
+        }
+        for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
+            proxy_req.removeHeader(config.upstream.unset_headers[i]);
+        }
+        // httpxy (http-proxy-middleware >= 4) pipes the client body only
+        // after the upstream socket connects, and Node holds the request
+        // line + headers back until the first write. Send them now so the
+        // upstream sees the request as soon as the socket is up. This also
+        // avoids a deadlock with socket-level interceptors (nock/msw wait
+        // for the headers before they let the socket "connect").
+        proxy_req.flushHeaders();
+    });
+    proxy.on('proxyReqWs', function (proxy_req, req, socket) {
+        socket.on('error', ignore_socket_error);
+        set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
+        if (req.ws_user_uid) {
+            proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
+        }
+        for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
+            const header = config.upstream.set_headers[i];
+            proxy_req.setHeader(header.name, header.value);
+        }
+        for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
+            proxy_req.removeHeader(config.upstream.unset_headers[i]);
+        }
+    });
+    proxy.on('error', function (error, req, res) {
+        als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
+        // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
+        if (typeof res.status === 'function') {
+            res.status(502).send('Upstream service unavailable');
+        }
+        else {
+            res.destroy();
+        }
+    });
+    // The client went away before the upstream finished: stop reading it.
+    proxy.on('proxyRes', function (proxy_res, req, res) {
+        res.on('close', function () {
+            if (!res.writableEnded) {
+                proxy_res.destroy();
+            }
+        });
+    });
+    proxy.on('open', function (proxy_socket) {
+        proxy_socket.on('error', ignore_socket_error);
+    });
+    proxy.on('close', function (req, proxy_socket) {
+        proxy_socket.on('error', ignore_socket_error);
+    });
+    app.use(function (req, res, next) {
+        const {pathname} = new URL(req.url, 'http://0.0.0.0');
+        if (pathname === '/auth' || pathname.startsWith('/auth/')) {
+            next();
+            return;
+        }
+        proxy.web(req, res).catch(function (error) {
+            proxy.emit('error', error, req, res);
+            next(error);
+        });
+    });
 
     if (config.websockets.enabled) {
         const handle_ws_upgrade = make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy);
@@ -555,13 +570,40 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
                 host: trusted_forwarded_value(req, 'x-forwarded-host', trust_proxy) ?? req.headers.host,
             };
             als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(urlxxx(req.url))}`);
-            proxy.upgrade(req, socket, head);
+            proxy.ws(req, socket, {}, head).catch(function (error) {
+                proxy.emit('error', error, req, socket);
+            });
         }
         catch (error) {
             als.logger.write(`[ws_upgrade_error] ⚠️ ${error.message} ip=${ip}`);
             reject(500, 'Internal Server Error');
         }
     };
+}
+
+// http.request takes an IPv6 host without its brackets, and `::` is no
+// destination, so it stands for loopback, as http-proxy-middleware had it.
+function proxy_target(url)
+{
+    const target = new URL(url);
+    if (!(target.hostname.startsWith('[') && target.hostname.endsWith(']'))) {
+        return url;
+    }
+    const hostname = target.hostname.slice(1, -1);
+    return {
+        hostname: (hostname === '::') ? '::1' : hostname,
+        auth: (target.username || target.password) ? `${target.username}:${target.password}` : undefined,
+        pathname: target.pathname,
+        port: target.port,
+        protocol: target.protocol,
+        search: target.search,
+    };
+}
+
+// A socket 'error' with no listener would crash the process; the request it
+// belonged to is already answered or gone.
+function ignore_socket_error()
+{
 }
 
 // The client's own X-Forwarded-* and X-Real-IP never reach the upstream; in
