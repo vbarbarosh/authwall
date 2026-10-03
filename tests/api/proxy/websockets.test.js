@@ -1,5 +1,8 @@
 const assert = require('assert');
 const config = require('../../../config');
+const create_app = require('../../../src/create_app');
+const http = require('http');
+const net = require('net');
 
 describe('websocket proxy', function () {
 
@@ -179,6 +182,41 @@ describe('websocket proxy', function () {
             return v.includes('[ws_upgrade_reject] reason=connect_sid_bad_signature')
                 && v.includes('cookie=connect_sid_present');
         }));
+    });
+
+    // AW-30: a client reset while the upgrade awaits its authentication used
+    // to reach a socket with no 'error' listener and end the process.
+    it('survives a client that resets its socket while the upgrade is authenticated', async function () {
+        const token = 'awp_invalid';
+        const app = await create_app();
+        const server = http.createServer(app);
+        const upgraded = [];
+        server.on('upgrade', function (req, socket) {
+            upgraded.push(socket);
+            queueMicrotask(() => socket.emit('error', Object.assign(new Error('read ECONNRESET'), {code: 'ECONNRESET'})));
+        });
+        app.setup_server(server);
+        await new Promise(v => server.listen(0, '127.0.0.1', v));
+        const {port} = server.address();
+        try {
+            const client = net.connect(port, '127.0.0.1');
+            client.on('error', () => null);
+            client.write(['GET /realtime HTTP/1.1', `Host: 127.0.0.1:${port}`, 'Connection: Upgrade', 'Upgrade: websocket', 'Sec-WebSocket-Version: 13', 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==', `Authorization: Bearer ${token}`, '', ''].join('\r\n'));
+            await new Promise(v => setTimeout(v, 300));
+            client.destroy();
+
+            const status = await new Promise(function (resolve, reject) {
+                http.get({host: '127.0.0.1', port, path: '/auth/status'}, v => resolve(v.statusCode)).on('error', reject);
+            });
+            assert.strictEqual(status, 200);
+        }
+        finally {
+            for (const socket of upgraded) {
+                socket.destroy();
+            }
+            server.closeAllConnections();
+            await new Promise(v => server.close(v));
+        }
     });
 
     it('rejects an upgrade on an /auth path', async function () {

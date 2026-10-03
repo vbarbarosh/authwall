@@ -84,6 +84,8 @@
 - A stranger who signs up with someone else's address no longer gets in when
   its owner clicks the confirmation link: the account becomes the owner's
   (AW-25).
+- A client that drops its connection while a WebSocket upgrade is being
+  authenticated no longer ends the process (AW-30).
 
 ### Added
 

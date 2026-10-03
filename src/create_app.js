@@ -527,11 +527,18 @@ function authenticated_user_uid(req)
 function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy)
 {
     return async function handle_ws_upgrade(req, socket, head) {
+        // Node drops its own listener once a socket is upgraded; a client reset
+        // during the awaits below must not end the process (AW-30).
+        socket.on('error', ignore_socket_error);
+
         // Same resolution Express applies to req.ip, so the bearer limiter
         // keys on the real client, not the proxy in front of every upgrade.
         const ip = proxyaddr(req, trust_proxy);
 
         function reject(code, text) {
+            if (socket.destroyed) {
+                return;
+            }
             socket.write(`HTTP/1.1 ${code} ${text}\r\nConnection: close\r\n\r\n`);
             socket.destroy();
         }
