@@ -18,15 +18,20 @@ async function insert_auth_event(params)
         event_type: params.event_type,
         event_status: params.event_status ?? const_auth_event_status.success,
         identity_type: params.ident?.type ?? null,
-        identity_value: params.ident?.value ?? null,
-        identity_value_normalized: params.ident?.value_normalized ?? null,
-        ip: req.ip ?? req.session?.ip ?? null,
-        ua: req.headers?.['user-agent'] ?? req.session?.ua ?? null,
+        identity_value: auth_event_text(params.ident?.value, 255),
+        identity_value_normalized: auth_event_text(params.ident?.value_normalized, 255),
+        ip: auth_event_text(req.ip ?? req.session?.ip, 64),
+        ua: auth_event_text(req.headers?.['user-agent'] ?? req.session?.ua, 512),
         custom: JSON.stringify(params.custom ?? null),
         created_at: new Date(),
     });
 
     return uid;
+}
+
+function auth_event_text(value, length)
+{
+    return (typeof value === 'string') ? Array.from(value).slice(0, length).join('') : null;
 }
 
 module.exports = insert_auth_event;
