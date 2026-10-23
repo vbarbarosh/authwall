@@ -220,10 +220,11 @@ function render_activity_summary(summary)
 {
     const out = [
         'Authwall activity summary',
+        `Period: ${summary.label} (${summary.since} to ${summary.until})`,
     ];
 
     if (!summary.total) {
-        out.push('No auth events found in this period.');
+        out.push('No auth events found.');
         return out;
     }
 
@@ -231,7 +232,6 @@ function render_activity_summary(summary)
         'Auth events:',
         ...format_events(summary.events).map(v => `  ${v}`),
         'Summary:',
-        `  Period: ${summary.label} (${summary.since} to ${summary.until})`,
         `  Events: ${summary.total} total, ${count(summary.statuses.success)} success, ${count(summary.statuses.failure)} failure, ${count(summary.statuses.noop)} noop`,
         `  Actors: ${summary.actors.users} users, ${summary.actors.sessions} sessions, ${summary.actors.ips} IPs`,
         'Events by type/status:',
@@ -433,6 +433,8 @@ function usage()
 {
     return [
         'Usage: bin/activity-summary [day|several-days|week|<days>d] [options]',
+        '',
+        'Default: the last 24 hours, ending now. Timestamps are shown in UTC.',
         '',
         'Options:',
         '  --days N       Summarize the last N days',

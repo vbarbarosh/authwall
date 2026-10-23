@@ -64,10 +64,15 @@ Two read-only tools summarize what an Authwall instance has been doing.
 ### `bin/activity-summary`
 
 Summarizes authentication events (sign-ins, sign-ups, password changes, and so
-on) recorded in the database over a time window.
+on) recorded in the database over a time window. With no arguments, it shows
+the last 24 hours, ending when the command runs. Text output always includes
+the selected period and its exact UTC start and end timestamps, even when
+there are no events.
 
 ```
 Usage: bin/activity-summary [day|several-days|week|<days>d] [options]
+
+Default: the last 24 hours, ending now. Timestamps are shown in UTC.
 
 Options:
   --days N       Summarize the last N days
