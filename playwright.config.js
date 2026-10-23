@@ -84,6 +84,8 @@ module.exports = defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
         env: {
+            PORT: '3000',
+            LISTEN: '127.0.0.1',
             AUTHWALL_LOGGER: 'daily',
             // Own database file: an e2e run must not seed users into data/db.sqlite3.
             AUTHWALL_DB: process.env.AUTHWALL_DB ?? `sqlite://${require('path').join(require('os').tmpdir(), 'authwall-e2e.sqlite3')}`,
@@ -114,5 +116,6 @@ module.exports = defineConfig({
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',
+        env: {DOCS_PORT: '3100'},
     }],
 });
