@@ -7,7 +7,7 @@ const db = require('../../db');
 const destroy_session = require('../helpers/destroy_session');
 const fs = require('fs/promises');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
-const random_uid_auth_event = require('../helpers/random/random_uid_auth_event');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 
 const routes = [
@@ -37,19 +37,12 @@ async function account_remove_post(req, res)
         await db('user_identities').where({user_id}).del();
         await db('auth_events').where({user_id}).update({user_id: null});
         await db('users').where({id: user_id}).del();
-        await db('auth_events').insert({
-            uid: random_uid_auth_event(),
-            user_id: null,
-            session_uid: req.sessionID ?? null,
+        await insert_auth_event({
+            req,
+            user: null,
             event_type: const_auth_event.account_removed,
-            event_status: 'success',
-            identity_type: null,
-            identity_value: user.uid,
-            identity_value_normalized: user.uid,
-            ip: req.ip ?? req.session?.ip ?? null,
-            ua: req.headers?.['user-agent'] ?? req.session?.ua ?? null,
-            custom: JSON.stringify({user_uid: user.uid, user_slug: user.slug}),
-            created_at: new Date(),
+            ident: {value: user.uid, value_normalized: user.uid},
+            custom: {user_uid: user.uid, user_slug: user.slug},
         });
     });
 
