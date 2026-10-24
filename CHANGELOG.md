@@ -118,6 +118,9 @@
   it, directly. `micromatch` and `braces` leave production, and with them
   GHSA-vfj7-8cjw-p6xm, which has no patched `braces`.
 - CI actions on their Node 24 majors, Node pinned to 24.
+- `body-parser` 2.4.0 and `multer` 2.5.0 close GHSA-27r3-jxmh-p828 and
+  GHSA-q7qp-rjg7-q26m, two high advisories of 2026-10; `npm audit` is clean
+  again.
 
 ## 1.16.0 and earlier
 
