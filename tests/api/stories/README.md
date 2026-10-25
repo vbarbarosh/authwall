@@ -69,6 +69,7 @@ Testable now
 - [x] Mallory, with GitHub, adds Vera's address and leaves it pending; Vera's magic link, Vera's Google or the mailed link's *Not my account* moves it to Vera at once; nobody's proof, the address yields once nobody confirmed it within the window; a confirmed address never moves → `pending_address_yields_to_its_owner.md`, `pending_address_yields_to_its_owner.test.js`
 - [x] Ann's laptop has a slow request in flight when Ann revokes its session; the request ends and saves, and the session stays revoked → `revoked_session_stays_revoked.md`, `revoked_session_stays_revoked.test.js`
 - [x] Ann uses Authwall every day and Mallory replays a copied cookie; on day 29 the deadline stays put, past day 30 both are signed out, a WebSocket neither extends nor admits past it, a re-issued cookie keeps its deadline and attributes → `session_ends_at_its_deadline.md`, `session_ends_at_its_deadline.test.js`
+- [x] confirmation required; Ann confirms on the phone and the laptop's WebSocket opens at once; the address loses its confirmation and the open sockets, a session's and a token's, close within the lease → `websocket_follows_verification.md`, `websocket_follows_verification.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

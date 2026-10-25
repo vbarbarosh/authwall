@@ -1,7 +1,7 @@
 const account_access_refusal = require('./account_access_refusal');
 const config = require('../../config');
-const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
+const session_email_verification = require('./models/session_email_verification');
 const {personal_access_token_hash} = require('./personal_access_tokens');
 
 const TOUCH_MIN_INTERVAL_MS = 5*60*1000;
@@ -32,14 +32,9 @@ async function authenticate_personal_access_token({token, ip = null, ua = null, 
         return {kind: 'invalid'};
     }
 
-    if (config.confirm_email.required) {
-        const verified_email = await db('user_identities')
-            .where({user_id: user.id, type: const_user_identity.email})
-            .whereNotNull('verified_at')
-            .first();
-        if (!verified_email) {
-            return {kind: 'unverified_email'};
-        }
+    // The same live decision a session gets (M-03).
+    if (config.confirm_email.required && !(await session_email_verification(user.id)).email_verified_at) {
+        return {kind: 'unverified_email'};
     }
 
     const refusal = await account_access_refusal(user.id);

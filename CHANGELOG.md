@@ -13,6 +13,10 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- A WebSocket follows the account's verification as pages do: a session
+  confirmed elsewhere opens one at once, and an open one, a session's or a
+  token's, closes within the lease once its account loses verification or is
+  refused by the access rules.
 - A session ends 30 days after sign-in, however often it is used, as the
   browser's cookie always did: a copied cookie no longer outlives it. A
   reloaded session re-issues its cookie with the configured attributes and

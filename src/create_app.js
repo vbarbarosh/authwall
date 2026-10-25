@@ -9,6 +9,7 @@ const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
 const const_cookie = require('./helpers/const/const_cookie');
+const const_user_identity = require('./helpers/const/const_user_identity');
 const cookie_signature = require('cookie-signature');
 const db = require('../db');
 const email_verification_required = require('./helpers/email_verification_required');
@@ -38,6 +39,7 @@ const random_base62 = require('./helpers/random/random_base62');
 const random_uid = require('./helpers/random/random_uid');
 const random_uid_session = require('./helpers/random/random_uid_session');
 const save_session = require('./helpers/save_session');
+const session_email_verification = require('./helpers/models/session_email_verification');
 const target_path = require('./helpers/target_path');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('@vbarbarosh/node-helpers/src/urlparts');
@@ -695,29 +697,59 @@ function make_ws_lease(interval_ms)
         });
     }
 
+    // A socket lives while its credential does and its account may still
+    // pass, as the upgrade decided: verified when confirmation is required
+    // (AW-97), admitted by the access rules (AW-80).
     async function check_now() {
         const now = new Date();
         const list = Array.from(entries);
-        const live = new Set();
-        for (const uids of chunks(list.map(v => v[1].session_uid).filter(Boolean), 500)) {
-            for (const uid of await db('sessions').whereIn('uid', uids).where('expires_at', '>', now).pluck('uid')) {
-                live.add(`session:${uid}`);
+        const user_by_credential = new Map();
+        const session_uids = Array.from(new Set(list.map(v => v[1].session_uid).filter(Boolean)));
+        for (const uids of chunks(session_uids, 500)) {
+            const rows = await db('sessions').whereIn('uid', uids).where('expires_at', '>', now)
+                .where('created_at', '>', new Date(now.getTime() - config.cookie.max_age_days*86400000)).select('uid', 'user_id');
+            for (const row of rows) {
+                user_by_credential.set(`session:${row.uid}`, row.user_id);
             }
         }
-        for (const uids of chunks(list.map(v => v[1].pat_uid).filter(Boolean), 500)) {
+        const pat_uids = Array.from(new Set(list.map(v => v[1].pat_uid).filter(Boolean)));
+        for (const uids of chunks(pat_uids, 500)) {
             const rows = await db('personal_access_tokens').whereIn('uid', uids).whereNull('revoked_at')
-                .where(v => v.whereNull('expires_at').orWhere('expires_at', '>', now)).pluck('uid');
-            for (const uid of rows) {
-                live.add(`pat:${uid}`);
+                .where(v => v.whereNull('expires_at').orWhere('expires_at', '>', now)).select('uid', 'user_id');
+            for (const row of rows) {
+                user_by_credential.set(`pat:${row.uid}`, row.user_id);
             }
         }
+        const admitted = await lease_admitted_users(new Set(user_by_credential.values()));
         for (const [socket, credential] of list) {
             const key = credential.session_uid ? `session:${credential.session_uid}` : `pat:${credential.pat_uid}`;
-            if (!live.has(key)) {
+            if (!admitted.has(user_by_credential.get(key))) {
                 socket.destroy();
             }
         }
     }
+}
+
+// The accounts among these whose sockets may stay open.
+async function lease_admitted_users(user_ids)
+{
+    let verified = null;
+    if (config.confirm_email.required) {
+        verified = new Set();
+        for (const ids of chunks(Array.from(user_ids), 500)) {
+            const rows = await db('user_identities').whereIn('user_id', ids).where({type: const_user_identity.email}).whereNotNull('verified_at').distinct('user_id');
+            for (const row of rows) {
+                verified.add(row.user_id);
+            }
+        }
+    }
+    const out = new Set();
+    for (const user_id of user_ids) {
+        if (((verified === null) || verified.has(user_id)) && !await account_access_refusal(user_id)) {
+            out.add(user_id);
+        }
+    }
+    return out;
 }
 
 function chunks(items, size)
@@ -907,14 +939,21 @@ async function authenticate_ws_session(req)
         return ws_auth_reject('invalid_session_data', req);
     }
 
+    // The snapshot is a shortcut for a verified session; the account's
+    // addresses decide, as they do over HTTP, and heal it (M-03).
     if (config.confirm_email.required && !custom.email_verified_at) {
-        return ws_auth_reject('session_email_unverified', req);
+        const {email, email_verified_at} = await session_email_verification(session.user_id);
+        if (!email_verified_at) {
+            return ws_auth_reject('session_email_unverified', req);
+        }
+        custom = {...custom, email, email_verified_at};
     }
     if (await account_access_refusal(session.user_id)) {
         return ws_auth_reject('session_refused_by_access_rules', req);
     }
 
     await db('sessions').where({id: session.id}).update({
+        custom: JSON.stringify(custom),
         expires_at: new Date(Math.min(now.getTime() + max_age_ms, new Date(session.created_at).getTime() + max_age_ms)),
         last_seen_at: now,
     });
