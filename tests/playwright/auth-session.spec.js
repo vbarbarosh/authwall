@@ -48,4 +48,21 @@ test.describe('auth spa session', function () {
         await expect(page.getByTestId('signin-view')).toBeVisible();
     });
 
+    // AW-31: the sign-out changed the session's token without a reload; the
+    // form must post the new one.
+    test('signs in again right after signing out, without a reload', async function ({page}) {
+        await sign_in_as_seeded_user(page);
+        await page.goto('/auth/sign-out');
+        await page.getByTestId('signout-submit').click();
+        await expect(page.getByTestId('signin-view')).toBeVisible();
+
+        const status = await (await page.request.get('/auth/status')).json();
+        await expect(page.getByTestId('signin-csrf')).toHaveValue(status.csrf_token);
+        await page.getByTestId('signin-username').fill('foo');
+        await page.getByTestId('signin-password').fill('foo');
+        await page.getByTestId('signin-submit').click();
+        await page.waitForURL(v => v.pathname !== '/auth/sign-in');
+        expect((await (await page.request.get('/auth/status')).json()).authenticated).toBe(true);
+    });
+
 });

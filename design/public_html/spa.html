@@ -1329,6 +1329,12 @@ async function api_status() {
   const r = await fetch('/auth/status');
   _status = await r.json();
   _csrf = _status.csrf_token;
+  // The sign-in form posts itself: its token follows every status answer, as
+  // a sign-out or a password reset changes it without a reload (AW-31).
+  const si_csrf = document.getElementById('si-csrf');
+  if (si_csrf) {
+    si_csrf.value = _csrf || '';
+  }
   return _status;
 }
 

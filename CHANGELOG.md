@@ -114,6 +114,9 @@
 - The owner hears of a new personal access token, of a removed verified
   address (the mail goes to that address) and of the account's removal
   (AW-92, AW-40).
+- Signing in right after signing out, or after a password reset, no longer
+  fails with "Invalid CSRF Token": the sign-in form takes the token of every
+  status answer (AW-31).
 
 ### Added
 

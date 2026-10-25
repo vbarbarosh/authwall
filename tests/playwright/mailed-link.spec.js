@@ -130,9 +130,7 @@ test.describe('mailed link', function () {
         await page.locator('#rc-submit').click();
         await page.waitForURL(v => v.pathname === '/auth/sign-in');
 
-        // A fresh load: the sign-in form keeps the CSRF token of its first load
-        // (AW-31), and the reset changed it.
-        await page.goto('/auth/sign-in');
+        // No reload: the sign-in form takes the token the reset left (AW-31).
         await expect(page.getByTestId('signin-csrf')).toHaveValue(/.+/);
         await page.getByTestId('signin-username').fill(username);
         await page.getByTestId('signin-password').fill('new-pass-1234');
