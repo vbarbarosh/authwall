@@ -233,6 +233,12 @@ async function callback_get(oauth_provider, req, res)
                 updated_at: now,
                 verified_at: now,
             }).onConflict(['type', 'value_normalized']).ignore();
+            // The same address, still pending on this account, is the one the
+            // provider vouches for: it counts now (AW-51).
+            await db('user_identities')
+                .where({user_id: req.session.user_id, type: const_user_identity.email, value_normalized: verified_email.email_normalized})
+                .whereNull('verified_at')
+                .update({verified_at: now, updated_at: now});
             await assign_primary_email(req.session.user_id);
         }
 

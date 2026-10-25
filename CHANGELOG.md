@@ -13,6 +13,8 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- Connecting a provider that vouches for an address still pending on the
+  account confirms it, and makes it the primary if there was none.
 - Access rules hold existing sessions and tokens, not only new sign-ins: after
   a restart that adds a rule refusing an account, its sessions are sent to
   sign in, its tokens get 403 and its WebSockets are refused. They stay
