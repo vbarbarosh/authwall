@@ -1390,34 +1390,41 @@ function plural(n, singular, plural, zero) {
   return plural.split('#').join(n);
 }
 
+// A post asks where it lands instead of following the redirect, and the page
+// goes there itself, once: a followed redirect loaded the landing twice, and
+// never reached a return on a subdomain (AW-32).
+const ASK_LANDING = { 'X-Authwall-Landing': 'ask' };
+
 async function http_post_urlencoded(path, fields) {
   if (!_csrf) await api_status();
   const body = new URLSearchParams({ ...fields, _csrf });
   const res = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...ASK_LANDING },
     body,
     redirect: 'follow',
   });
+  const final_url = await landing_of(res);
   const status = await api_status();
   if (status.flows) apply_flows(status.flows);
   render_confirm_email_status(status);
-  return { final_url: res.url, error: status.error };
+  return { final_url, error: status.error };
 }
 
 async function http_post_multipart(path, form_data) {
   if (!_csrf) await api_status();
   form_data.append('_csrf', _csrf);
-  const res = await fetch(path, { method: 'POST', body: form_data, redirect: 'follow' });
+  const res = await fetch(path, { method: 'POST', headers: ASK_LANDING, body: form_data, redirect: 'follow' });
+  const final_url = await landing_of(res);
   const status = await api_status();
-  return { final_url: res.url, error: status.error };
+  return { final_url, error: status.error };
 }
 
 async function http_post_json(path, fields) {
   if (!_csrf) await api_status();
   const res = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...ASK_LANDING },
     body: JSON.stringify({ ...fields, _csrf }),
     redirect: 'follow',
   });
@@ -1428,17 +1435,25 @@ async function http_post_json(path, fields) {
   return { data, error: status.error };
 }
 
-// After a successful POST, figure out where to go based on the redirect URL
+// Where a post landed: the {next} the server answers when asked, else the
+// address the response came from.
+async function landing_of(res) {
+  const content_type = res.headers.get('content-type') || '';
+  if (!content_type.includes('application/json')) {
+    return res.url;
+  }
+  const data = await res.json().catch(() => null);
+  return data?.next ?? res.url;
+}
+
+// After a successful POST, go where it landed: a view of this page, or any
+// other address, a subdomain's too, loaded once.
 function navigate_after(final_url) {
-  try {
-    const pathname = new URL(final_url).pathname;
-    if (ROUTES[pathname]) {
-      showView(ROUTES[pathname], true);
-    } else {
-      window.location.href = final_url;
-    }
-  } catch {
-    window.location.href = final_url;
+  const url = new URL(final_url, window.location.href);
+  if ((url.origin === window.location.origin) && ROUTES[url.pathname]) {
+    showView(ROUTES[url.pathname], true);
+  } else {
+    window.location.assign(url.href);
   }
 }
 

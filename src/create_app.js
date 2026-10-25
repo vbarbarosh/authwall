@@ -23,6 +23,7 @@ const insert_auth_event = require('./helpers/insert_auth_event');
 const is_optional_auth_path = require('./helpers/is_optional_auth_path');
 const is_origin_form = require('./helpers/is_origin_form');
 const is_public_path = require('./helpers/is_public_path');
+const landing_middleware = require('./helpers/middleware/landing_middleware');
 const make_failure_counter = require('./helpers/middleware/make_failure_counter');
 const make_oauth_flow = require('./helpers/make/make_oauth_flow');
 const oauth_provider_discord = require('./oauth_providers/oauth_provider_discord');
@@ -136,6 +137,7 @@ async function create_app()
 
     app.use('/auth', express.json());
     app.use('/auth', express.urlencoded({extended: false}));
+    app.use('/auth', landing_middleware);
 
     // always send secure cookies when told so
     if (config.cookie.secure) {
@@ -1025,7 +1027,7 @@ function security_headers(req, res, next)
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self'",
-        "form-action 'self'",
+        form_action(),
         "base-uri 'self'",
         "frame-ancestors 'none'",
         "object-src 'none'",
@@ -1034,6 +1036,16 @@ function security_headers(req, res, next)
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
     next();
+}
+
+// A return may land on a subdomain of the public host (redirect.js), and the
+// sign-in form posts itself: Chromium checks the redirect it is answered with
+// against form-action, so the subdomains are listed there too, on any port,
+// as redirect.js takes them (AW-32).
+function form_action()
+{
+    const {protocol, hostname} = new URL(config.public_url);
+    return `form-action 'self' ${protocol}//*.${hostname}:*`;
 }
 
 function clean_headers(req, res, next)

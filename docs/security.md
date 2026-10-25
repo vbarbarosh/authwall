@@ -200,7 +200,10 @@ where they started. Authwall only honours a `return` value that is either a
 relative path, or an absolute URL on the same host as — or a subdomain of —
 `AUTHWALL_PUBLIC_URL`'s hostname. Protocol-relative URLs (`//evil.com`),
 backslash tricks, and encoded leading slashes are rejected, so `return` cannot
-be used to bounce users to an attacker's site.
+be used to bounce users to an attacker's site. Every subdomain of that
+hostname is a landing, so one taken over by someone else is one too: keep the
+subdomains under the public host your own. The sign-in page's
+`Content-Security-Policy` lets its form through to them, and nowhere else.
 
 ## Audit log
 
@@ -227,8 +230,9 @@ Authwall sets these on its own pages and endpoints (everything under `/auth`);
 proxied upstream responses are untouched and keep whatever the app sends.
 
 - `Content-Security-Policy` — confines the sign-in SPA to its own origin
-  (`default-src 'self'`), allows avatar images over HTTPS and `data:` previews,
-  and blocks framing with `frame-ancestors 'none'`. `script-src`/`style-src`
+  (`default-src 'self'`), lets its forms land on subdomains of the public
+  host as well (`form-action`), allows avatar images over HTTPS and `data:`
+  previews, and blocks framing with `frame-ancestors 'none'`. `script-src`/`style-src`
   keep `'unsafe-inline'` because the SPA still uses inline handlers; tightening
   that to a nonce is tracked separately.
 - `X-Frame-Options: DENY` — clickjacking protection for browsers predating

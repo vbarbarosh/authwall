@@ -13,6 +13,10 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- A sign-in or sign-up from the SPA lands on its `return` once: the page no
+  longer fetches the landing before it opens it. A `return` on a subdomain of
+  `AUTHWALL_PUBLIC_URL`'s host now works from the sign-in form and the SPA;
+  the sign-in page's `form-action` lists those subdomains.
 - A Facebook address is stored pending, never verified: Facebook does not say
   it confirmed it. A new account gets Authwall's confirmation link with the
   welcome, and the address counts once it is opened. With an allow list and
