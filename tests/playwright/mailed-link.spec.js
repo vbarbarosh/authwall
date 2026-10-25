@@ -109,6 +109,38 @@ test.describe('mailed link', function () {
         expect((await db('user_identities').where({type: 'email', value_normalized: added}).first()).verified_at).not.toBeNull();
     });
 
+    test('a confirmation link opened in another browser says the account would change hands, and hands it over only on its button', async function ({page}) {
+        const {username, email, user_id} = await sign_up_with_primary(page, {primary: false});
+        const {token, token_hash} = token_pair();
+        const now = new Date();
+        await using db = open_e2e_db();
+        await db('email_verify_tokens').insert({user_id, email_normalized: email, token_hash, created_at: now, updated_at: now, expires_at: new Date(Date.now() + 30*60*1000)});
+
+        await page.context().clearCookies();
+        await page.goto(`/auth/email-verify/confirm?token=${token}`);
+        await expect(page.getByTestId('link-text')).toHaveText(`This account was signed up in another browser. Confirming ${email} here makes it yours: its password stops working, every browser signed in to it is signed out, and you set a new password next. If you signed up yourself, open this link in that browser instead.`);
+        await expect(page.getByTestId('link-submit')).toHaveText('Confirm and set a password');
+        expect((await db('users').where({id: user_id}).first()).password_hash).not.toBeNull();
+
+        await page.getByTestId('link-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/password-reset/confirm');
+        expect((await db('users').where({id: user_id}).first()).password_hash).toBeNull();
+        await page.locator('#rc-pass').fill('new-pass-1234');
+        await page.locator('#rc-pass2').fill('new-pass-1234');
+        await page.locator('#rc-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/sign-in');
+
+        // A fresh load: the sign-in form keeps the CSRF token of its first load
+        // (AW-31), and the reset changed it.
+        await page.goto('/auth/sign-in');
+        await expect(page.getByTestId('signin-csrf')).toHaveValue(/.+/);
+        await page.getByTestId('signin-username').fill(username);
+        await page.getByTestId('signin-password').fill('new-pass-1234');
+        await page.getByTestId('signin-submit').click();
+        await page.waitForURL(v => v.pathname !== '/auth/sign-in');
+        expect((await (await page.request.get('/auth/status')).json()).authenticated).toBe(true);
+    });
+
     test('a very long address wraps inside the card, above the button', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
         const email = `${'a'.repeat(64)}@${'b'.repeat(60)}.${'c'.repeat(60)}.authwall.test`;

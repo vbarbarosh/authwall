@@ -29,9 +29,9 @@
   address the rules refuse, such as one outside an allow list, can no longer
   sign in by any method.
 - A confirmation link opened outside a browser signed in to its account
-  hands an account whose only way in is its password to whoever opened it:
-  every session and token ends, the password stops working, and that browser
-  sets a new password. An account with a linked provider or a confirmed
+  hands an account whose only way in is its password to whoever presses its
+  page's button, a page that says so first: every session and token ends,
+  the password stops working, and that browser sets a new password. An account with a linked provider or a confirmed
   address is not handed over: the link asks to sign in first. In a browser
   signed in to the account nothing changes.
 - The mailed links (the magic link, the confirmation link, the email-change
@@ -101,6 +101,9 @@
   approves an email change for whoever asked, or takes over an account from
   its confirmation link: each link opens a page, and only its button acts
   (AW-78, AW-11).
+- A confirmation link opened in another browser says, before its button is
+  pressed, that the account will change hands: its password stops working,
+  every browser signed in to it is signed out (AW-79).
 
 ### Added
 

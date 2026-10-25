@@ -107,9 +107,19 @@ describe('GET /auth/email-verify/confirm/open', function () {
         await this.sign_in({email: 'Mocha@authwall.test', password: 'pass123', verified: false});
         const url = await request_link(this);
 
-        assert.deepStrictEqual(await this.http_get_json(url), {error: null, email: 'Mocha@authwall.test'});
+        assert.deepStrictEqual(await this.http_get_json(url), {error: null, email: 'Mocha@authwall.test', handover: false});
         assert.strictEqual((await db('user_identities').where({type: const_user_identity.email}).first()).verified_at, null);
         assert.strictEqual((await db('email_verify_tokens').first()).used_at, null);
+    });
+
+    it('says the account would change hands when opened elsewhere and its only way in is the password', async function () {
+        await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        const url = await request_link(this);
+
+        this.client.cookies.clear();
+        assert.deepStrictEqual(await this.http_get_json(url), {error: null, email: 'mocha@authwall.test', handover: true});
+        await this.assert_password({email: 'mocha@authwall.test', password: 'pass123'});
+        assert.strictEqual((await db('password_reset_tokens')).length, 0);
     });
 
     it('asks to sign in when opened elsewhere and the account has another way in', async function () {

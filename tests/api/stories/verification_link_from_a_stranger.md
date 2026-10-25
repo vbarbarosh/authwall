@@ -28,7 +28,8 @@ she lands in the stranger's account.
 ## Expected
 
 Vera's tap never lets the stranger in. Opened outside the browser that
-signed up, the link verifies the address and hands the account to whoever
+signed up, the link opens a page that says the account will change hands
+(AW-79); its button verifies the address and hands the account to whoever
 reads the mailbox: every session of the account ends, the stranger's
 password stops working, and Vera's phone goes to "set a new password". The
 account is hers.

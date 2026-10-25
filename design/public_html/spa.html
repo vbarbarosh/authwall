@@ -1253,7 +1253,11 @@ const PATH_FOR = Object.fromEntries(Object.entries(ROUTES).map(([p, v]) => [v, p
 // view keeps the link's own address.
 const LINKS = {
     '/auth/magic-link/confirm': {title: 'Sign in', before: 'Sign in to your account as ', after: '.', button: 'Sign in'},
-    '/auth/email-verify/confirm': {title: 'Confirm your email', before: 'Confirm ', after: ' as the address of your account.', button: 'Confirm email'},
+    '/auth/email-verify/confirm': {title: 'Confirm your email', before: 'Confirm ', after: ' as the address of your account.', button: 'Confirm email', handover: {
+        before: 'This account was signed up in another browser. Confirming ',
+        after: ' here makes it yours: its password stops working, every browser signed in to it is signed out, and you set a new password next. If you signed up yourself, open this link in that browser instead.',
+        button: 'Confirm and set a password',
+    }},
     '/auth/email-change/approve': {title: 'Approve the move', before: 'Move your account to ', after: '. We then send a confirmation link there. Approve only if you asked for it.', button: 'Approve the move'},
     '/auth/email-change/confirm': {title: 'Confirm your new address', before: 'Make ', after: ' the address of your account. The address it replaces no longer signs in.', button: 'Confirm new address'},
 };
@@ -2150,7 +2154,11 @@ async function refresh_link_view()
     catch {
         answer = {error: 'The link could not be checked. Reload the page to try again.', email: null};
     }
-    render_link_text(link, answer.email);
+    // Opened outside the account's browser, a password-only account changes
+    // hands on the button; the page says so first (AW-79).
+    const words = answer.handover ? link.handover : link;
+    submit.textContent = words.button;
+    render_link_text(words, answer.email);
     if (answer.error) {
         show_error('lk-error-msg', 'lk-error', answer.error);
         if (answer.sign_in) {

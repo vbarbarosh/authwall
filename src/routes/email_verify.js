@@ -106,7 +106,9 @@ async function email_verify_open_get(req, res)
         res.send({error: 'Sign in to confirm this address', email, sign_in: true});
         return;
     }
-    res.send({error: null, email});
+    // Pressed here, the button hands the account over (AW-25); the page says
+    // so before it is pressed (AW-79).
+    res.send({error: null, email, handover: elsewhere});
 }
 
 // POST /auth/email-verify/confirm/open (body)

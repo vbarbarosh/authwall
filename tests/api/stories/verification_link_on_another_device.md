@@ -22,9 +22,11 @@ and another clicked. Whatever stops the stranger also touches Mark.
 
 ## Expected
 
-Mark finishes with one extra step. The phone goes to "set a new password";
-he sets one and signs in there. His laptop was signed out and signs in again
-with that password.
+Mark finishes with one extra step. The phone shows a page that says the
+account will change hands and that he can open the link on the laptop
+instead (AW-79). He presses its button, the phone goes to "set a new
+password", and he sets one and signs in there. His laptop was signed out and
+signs in again with that password.
 
 Clicked on the laptop itself, in the browser that signed up, nothing changes:
 the address is verified and the laptop is let in, as before.
