@@ -4,7 +4,7 @@ const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
 const db = require('../../../db');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-describe('GET /auth/magic-link/confirm', function () {
+describe('POST /auth/magic-link/confirm/open', function () {
 
     it('signs in existing user via magic link token', async function () {
         const {email} = await this.add_user({email: 'mocha@authwall.test'});
@@ -15,7 +15,7 @@ describe('GET /auth/magic-link/confirm', function () {
         const magic_link = await db('magic_links').where('token_hash', crypto_hash_sha256(token).toString('base64url')).first();
         assert.strictEqual(magic_link.used_at, null);
 
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token}));
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: null,
             authenticated: true,
@@ -29,7 +29,7 @@ describe('GET /auth/magic-link/confirm', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'new-user@authwall.test'});
 
         const {token} = this.sent_emails[0].placeholders;
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token}));
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -42,7 +42,7 @@ describe('GET /auth/magic-link/confirm', function () {
     });
 
     it('fails with missing token', async function () {
-        await this.http_get_json('/auth/magic-link/confirm');
+        await this.open_link('/auth/magic-link/confirm');
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Missing token',
@@ -51,7 +51,7 @@ describe('GET /auth/magic-link/confirm', function () {
     });
 
     it('fails with invalid token', async function () {
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token: 'invalid'}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token: 'invalid'}));
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid or expired magic link',
@@ -64,11 +64,39 @@ describe('GET /auth/magic-link/confirm', function () {
 
         const {token} = this.sent_emails[0].placeholders;
         await db('magic_links').update({expires_at: date_trunc_ms()});
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token}));
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid or expired magic link',
             authenticated: false,
+        });
+    });
+
+});
+
+describe('GET /auth/magic-link/confirm/open', function () {
+
+    it('names the address and changes nothing', async function () {
+        await this.add_user({email: 'mocha@authwall.test'});
+        await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
+        const {token} = this.sent_emails[0].placeholders;
+
+        assert.deepStrictEqual(await this.http_get_json(urlmod('/auth/magic-link/confirm/open', {token})), {
+            error: null,
+            email: 'mocha@authwall.test',
+        });
+        assert.strictEqual((await db('magic_links').first()).used_at, null);
+        assert.strictEqual((await this.http_get_json('/auth/status')).authenticated, false);
+    });
+
+    it('gives the reason the link would fail', async function () {
+        assert.deepStrictEqual(await this.http_get_json('/auth/magic-link/confirm/open'), {
+            error: 'Missing token',
+            email: null,
+        });
+        assert.deepStrictEqual(await this.http_get_json(urlmod('/auth/magic-link/confirm/open', {token: 'invalid'})), {
+            error: 'Invalid or expired magic link',
+            email: null,
         });
     });
 

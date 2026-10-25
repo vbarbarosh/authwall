@@ -24,7 +24,7 @@ test.describe('email change', function () {
         expect(rows).toEqual([{email: `new-${email}`, approved_at: null}]);
     });
 
-    test('the approval link sends the new address its link', async function ({page}) {
+    test('the approval link\'s button sends the new address its link', async function ({page}) {
         const {email, user_id} = await sign_up_with_primary(page);
         // The approval link's token is stored hashed; the test inserts one it knows.
         const token = crypto.randomBytes(16).toString('hex');
@@ -41,7 +41,12 @@ test.describe('email change', function () {
             expires_at: new Date(Date.now() + 30*60*1000),
         });
 
+        // The link opens a page that changes nothing; its button approves (AW-78).
         await page.goto(`/auth/email-change/approve?token=${token}`);
+        await expect(page.getByTestId('link-text')).toHaveText(`Move your account to new-${email}. We then send a confirmation link there. Approve only if you asked for it.`);
+        expect((await db('email_change_tokens').where({user_id}).first()).approved_at).toBeNull();
+
+        await page.getByTestId('link-submit').click();
         await expect(page.locator('[data-view="email-change-sent"]')).toContainText('We\'ve sent a confirmation link to the new address.');
         const row = await db('email_change_tokens').where({user_id}).first();
         expect(row.approved_at).not.toBeNull();

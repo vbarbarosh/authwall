@@ -34,6 +34,11 @@
   sets a new password. An account with a linked provider or a confirmed
   address is not handed over: the link asks to sign in first. In a browser
   signed in to the account nothing changes.
+- The mailed links (the magic link, the confirmation link, the email-change
+  approval and the new address's link) act only on a `POST` to their path
+  plus `/open`, with the token and the CSRF token. A `GET` of the link serves
+  a page that names the address and changes nothing; links in mails already
+  sent open that page.
 
 ### Upgrading
 
@@ -92,6 +97,10 @@
   `websockets.recheck_seconds`, 30 by default (M-04).
 - An upstream that drops its connection after its headers no longer ends the
   process: that answer is cut short, and the next request is served (AW-76).
+- A mail scanner that fetches every link in a message no longer signs it in,
+  approves an email change for whoever asked, or takes over an account from
+  its confirmation link: each link opens a page, and only its button acts
+  (AW-78, AW-11).
 
 ### Added
 

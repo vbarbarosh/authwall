@@ -22,7 +22,7 @@ describe('Email change preserves the entered address | stories', function () {
         const change_email = this.sent_emails.find(v => v.placeholders?.confirm_link);
         assert.ok(change_email, 'email change confirmation email should be sent');
 
-        await this.http_get_json(change_email.placeholders.confirm_link);
+        await this.open_link(change_email.placeholders.confirm_link);
 
         // The profile shows what the user entered; matching uses the normalized form
         const status2 = await this.http_get_json('/auth/status');

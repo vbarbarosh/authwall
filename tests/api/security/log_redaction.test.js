@@ -17,11 +17,12 @@ describe('request log redaction', function () {
         const {link} = this.sent_emails.find(v => v.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await this.client.get_json(urlmod(config.pages.magic_link_confirm, {token}));
+        await this.open_link(urlmod(config.pages.magic_link_confirm, {token}));
 
         const logs = this.written_logs.join('\n');
         assert.strictEqual(logs.includes(token), false);
         assert.ok(logs.includes('/auth/magic-link/confirm?token=%5BFiltered%5D'));
+        assert.ok(logs.includes('/auth/magic-link/confirm/open?token=%5BFiltered%5D'));
     });
 
     it('does not log a token carried by the Referer header', async function () {

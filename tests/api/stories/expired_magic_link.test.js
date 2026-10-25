@@ -19,7 +19,7 @@ describe('Expired magic link does not affect authenticated session | stories', f
         await db('magic_links').where({id: magic_link.id}).update({expires_at: date_trunc_ms()});
 
         // Try to use the expired link
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token: this.sent_emails[0].placeholders.token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token: this.sent_emails[0].placeholders.token}));
 
         // Session must still be authenticated
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {

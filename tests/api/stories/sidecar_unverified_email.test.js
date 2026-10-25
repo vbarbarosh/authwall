@@ -25,7 +25,7 @@ describe('Sidecar auth check and an unverified email | stories', function () {
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(v => v.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         const sidecar = await this.client.get_json_no_redirects('/auth/sidecar');
         assert.strictEqual(sidecar.status, 200);

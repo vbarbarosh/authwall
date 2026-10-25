@@ -23,7 +23,7 @@ describe('A stranger signs up with your address | stories', function () {
 
         // Vera's phone: no session there.
         this.client.cookies.clear();
-        const tap = await this.client.get_json_no_redirects(new URL(link).pathname + new URL(link).search);
+        const tap = await this.open_link_no_redirects(new URL(link).pathname + new URL(link).search);
         assert.match(tap.headers.location, /^\/auth\/password-reset\/confirm\?token=/);
 
         // The stranger's browser is out, and the stranger's password no longer signs in.

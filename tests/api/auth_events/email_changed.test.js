@@ -11,7 +11,7 @@ describe('auth_events • email_changed', function () {
         await this.http_post_json('/auth/email-change/request', {email: 'new@authwall.test'});
         await this.approve_email_change();
 
-        await this.http_get_json(this.sent_emails.find(v => v.placeholders?.confirm_link).placeholders.confirm_link);
+        await this.open_link(this.sent_emails.find(v => v.placeholders?.confirm_link).placeholders.confirm_link);
 
         const events = await db('auth_events').where({event_type: const_auth_event.email_changed}).orderBy('id');
         assert.strictEqual(events.length, 1);

@@ -1,10 +1,12 @@
 const assert = require('assert');
 const config = require('../../../config');
+const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const date_trunc_ms = require('../../../src/helpers/date/date_trunc_ms');
 const db = require('../../../db');
+const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
-describe('GET /auth/email-verify/confirm', function () {
+describe('POST /auth/email-verify/confirm/open', function () {
 
     it('verifies email with valid token', async function () {
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
@@ -18,7 +20,7 @@ describe('GET /auth/email-verify/confirm', function () {
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         const status2 = await this.http_get_json('/auth/status');
         assert.strictEqual(status2.error, null);
@@ -38,7 +40,7 @@ describe('GET /auth/email-verify/confirm', function () {
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         const session2 = await this.client.get_session();
         assert.strictEqual(session2.email, 'mocha@authwall.test');
@@ -46,14 +48,14 @@ describe('GET /auth/email-verify/confirm', function () {
     });
 
     it('fails with missing token', async function () {
-        await this.http_get_json(config.pages.email_verify_confirm);
+        await this.open_link(config.pages.email_verify_confirm);
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Missing token',
         });
     });
 
     it('fails with invalid token', async function () {
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token: 'invalid-token'}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token: 'invalid-token'}));
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid or expired verification link',
         });
@@ -67,7 +69,7 @@ describe('GET /auth/email-verify/confirm', function () {
         const token = new URL(link).searchParams.get('token');
 
         await db('email_verify_tokens').update({expires_at: date_trunc_ms()});
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid or expired verification link',
@@ -82,12 +84,47 @@ describe('GET /auth/email-verify/confirm', function () {
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Invalid or expired verification link',
         });
+    });
+
+});
+
+describe('GET /auth/email-verify/confirm/open', function () {
+
+    async function request_link(ctx) {
+        await ctx.http_post_json('/auth/email-verify/request');
+        await ctx.wait_for_emails(1);
+        const {link} = ctx.sent_emails.find(v => v.placeholders?.link).placeholders;
+        return urlmod(`${config.pages.email_verify_confirm}/open`, {token: new URL(link).searchParams.get('token')});
+    }
+
+    it('names the address and changes nothing', async function () {
+        await this.sign_in({email: 'Mocha@authwall.test', password: 'pass123', verified: false});
+        const url = await request_link(this);
+
+        assert.deepStrictEqual(await this.http_get_json(url), {error: null, email: 'Mocha@authwall.test'});
+        assert.strictEqual((await db('user_identities').where({type: const_user_identity.email}).first()).verified_at, null);
+        assert.strictEqual((await db('email_verify_tokens').first()).used_at, null);
+    });
+
+    it('asks to sign in when opened elsewhere and the account has another way in', async function () {
+        const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: false});
+        const now = new Date();
+        await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '777', value_normalized: '777', created_at: now, updated_at: now, verified_at: now});
+        const url = await request_link(this);
+
+        this.client.cookies.clear();
+        assert.deepStrictEqual(await this.http_get_json(url), {error: 'Sign in to confirm this address', email: 'mocha@authwall.test', sign_in: true});
+    });
+
+    it('gives the reason the link would fail', async function () {
+        assert.deepStrictEqual(await this.http_get_json(`${config.pages.email_verify_confirm}/open`), {error: 'Missing token', email: null});
+        assert.deepStrictEqual(await this.http_get_json(urlmod(`${config.pages.email_verify_confirm}/open`, {token: 'invalid-token'})), {error: 'Invalid or expired verification link', email: null});
     });
 
 });

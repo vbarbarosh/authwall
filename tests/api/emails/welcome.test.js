@@ -19,7 +19,7 @@ describe('emails • welcome', function () {
     it('should be sent after sign up via magic link', async function () {
 
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
-        await this.http_get_json(this.sent_emails[0].placeholders.link);
+        await this.open_link(this.sent_emails[0].placeholders.link);
         await this.wait_for_emails(2);
 
         const actual = this.sent_emails.map(v => v.name)

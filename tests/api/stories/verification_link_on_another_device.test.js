@@ -21,7 +21,7 @@ describe('You sign up on the laptop and confirm on the phone | stories', functio
         const laptop = new Map(this.client.cookies);
 
         this.client.cookies.clear();
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.match(tap.headers.location, /^\/auth\/password-reset\/confirm\?token=/);
         const token = new URL(tap.headers.location, config.public_url).searchParams.get('token');
         await this.http_post_json('/auth/password-reset/confirm', {token, password: 'marks-new-pass', password_confirm: 'marks-new-pass'});
@@ -36,7 +36,7 @@ describe('You sign up on the laptop and confirm on the phone | stories', functio
 
     it('confirmed on the laptop itself, nothing changes for Mark', async function () {
         const link = await sign_up(this);
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.strictEqual(tap.headers.location, config.pages.email_verify_success);
         const laptop = await this.http_get_json('/auth/status');
         assert.strictEqual(laptop.authenticated, true);

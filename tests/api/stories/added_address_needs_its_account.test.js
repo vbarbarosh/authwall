@@ -27,7 +27,7 @@ describe('An added address is confirmed only where its account is signed in | st
         const sam = new Map(this.client.cookies);
 
         this.client.cookies.clear();
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.strictEqual(tap.headers.location, `${config.pages.sign_in}?return=${encodeURIComponent(link)}`);
         assert.strictEqual((await this.http_get_json('/auth/status')).error, 'Sign in to confirm this address');
         assert.strictEqual((await veras_address(user_id)).verified_at, null);
@@ -39,7 +39,7 @@ describe('An added address is confirmed only where its account is signed in | st
 
     it('Sam confirms it in his own browser', async function () {
         const {user_id, link} = await add_veras_address(this);
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.strictEqual(tap.headers.location, config.pages.email_verify_success);
         assert.ok((await veras_address(user_id)).verified_at);
     });
@@ -48,9 +48,9 @@ describe('An added address is confirmed only where its account is signed in | st
         const {user_id, link} = await add_veras_address(this);
 
         this.client.cookies.clear();
-        await this.client.get_json_no_redirects(link);
+        await this.open_link_no_redirects(link);
         await this.http_post_json('/auth/sign-in', {username: 'sam', password: 'sams-pass'});
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.strictEqual(tap.headers.location, config.pages.email_verify_success);
         assert.ok((await veras_address(user_id)).verified_at);
     });
@@ -58,7 +58,7 @@ describe('An added address is confirmed only where its account is signed in | st
     it('an account whose only way in is its password is handed over, as a sign-up is', async function () {
         const {link} = await add_veras_address(this, {github: false});
         this.client.cookies.clear();
-        const tap = await this.client.get_json_no_redirects(link);
+        const tap = await this.open_link_no_redirects(link);
         assert.match(tap.headers.location, /^\/auth\/password-reset\/confirm\?token=/);
     });
 

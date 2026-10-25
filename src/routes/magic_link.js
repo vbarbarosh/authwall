@@ -27,12 +27,15 @@ const MINUTE = 60*SECOND;
 
 const magic_link_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
+// The mailed link opens a page; only its button acts, so a mail scanner's GET
+// changes nothing (AW-11).
 const routes = [
-    {req: `GET ${config.pages.magic_link_confirm}`, fn: magic_link_confirm_get},
     {prepend: [csrf_middleware], routes: [
         {req: 'POST /auth/magic-link/request', prepend: [magic_link_limiter], fn: magic_link_request_post},
         {req: 'POST /auth/magic-link/confirm', fn: magic_link_confirm_post},
+        {req: `POST ${config.pages.magic_link_confirm}/open`, fn: magic_link_open_post},
     ]},
+    {req: `GET ${config.pages.magic_link_confirm}/open`, fn: magic_link_open_get},
 ];
 
 // POST /auth/magic-link/request
@@ -79,26 +82,22 @@ async function magic_link_request_post(req, res)
     await complete_magic_link_request(req, res, email, code, token);
 }
 
-// GET /auth/magic-link/confirm
-async function magic_link_confirm_get(req, res)
+// GET /auth/magic-link/confirm/open (query)
+// Would the link sign in now? The page asks before it draws its button; this
+// changes nothing (UIM-14).
+async function magic_link_open_get(req, res)
 {
-    if (config.flows.magic_link.mode === 'code') {
-        throw new UserFriendlyError('Sign-in by link is disabled');
-    }
+    const {error, magic_link} = await find_magic_link_to_open(req.query.token, new Date());
+    res.send({error, email: magic_link?.email ?? null});
+}
 
-    const {token} = req.query;
-    if (!token) {
-        throw new UserFriendlyError('Missing token');
-    }
-
+// POST /auth/magic-link/confirm/open (body)
+async function magic_link_open_post(req, res)
+{
     const now = new Date();
-    const magic_link = await db('magic_links')
-        .whereNull('used_at')
-        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
-        .where('expires_at', '>', now)
-        .first();
-    if (!magic_link) {
-        throw new UserFriendlyError('Invalid or expired magic link');
+    const {error, magic_link} = await find_magic_link_to_open(req.body.token, now);
+    if (error) {
+        throw new UserFriendlyError(error);
     }
 
     if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
@@ -204,6 +203,26 @@ async function magic_link_confirm_post(req, res)
         };
         await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_code'});
     }
+}
+
+async function find_magic_link_to_open(token, now)
+{
+    if (config.flows.magic_link.mode === 'code') {
+        return {error: 'Sign-in by link is disabled', magic_link: null};
+    }
+    if ((typeof token !== 'string') || !token) {
+        return {error: 'Missing token', magic_link: null};
+    }
+
+    const magic_link = await db('magic_links')
+        .whereNull('used_at')
+        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
+        .where('expires_at', '>', now)
+        .first();
+    if (!magic_link) {
+        return {error: 'Invalid or expired magic link', magic_link: null};
+    }
+    return {error: null, magic_link};
 }
 
 // A magic link proves control of the mailbox, not ownership of whichever

@@ -11,11 +11,12 @@ describe('error_handler', function () {
         config.flows.github.redirect_url = 'mocha_github_redirect_url';
     });
 
-    // GET /auth/email-verify/confirm without ?token throws UserFriendlyError('Missing token')
-    // — a convenient way to trigger a user-facing error on a non-sign_in route.
+    // The verify link's button without a token throws UserFriendlyError('Missing
+    // token') — a convenient way to trigger a user-facing error on a non-sign_in
+    // route.
 
     it('error on a non-sign_in route redirects to sign-in', async function () {
-        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/email-verify/confirm'), {
+        assert.partialDeepStrictEqual(await this.open_link_no_redirects(config.pages.email_verify_confirm), {
             status: 302,
             headers: {
                 location: config.pages.sign_in,
@@ -24,7 +25,7 @@ describe('error_handler', function () {
     });
 
     it('UserFriendlyError message is stored in session', async function () {
-        await this.http_get_json('/auth/email-verify/confirm');
+        await this.open_link(config.pages.email_verify_confirm);
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Missing token',
         });
@@ -32,7 +33,7 @@ describe('error_handler', function () {
 
     it('error on a non-sign_in route redirects authenticated user to profile', async function () {
         await this.sign_in({email: 'jonny@gmail.com', password: 'pass1234'});
-        assert.partialDeepStrictEqual(await this.client.get_json_no_redirects('/auth/email-verify/confirm'), {
+        assert.partialDeepStrictEqual(await this.open_link_no_redirects(config.pages.email_verify_confirm), {
             status: 302,
             headers: {
                 location: config.pages.profile,

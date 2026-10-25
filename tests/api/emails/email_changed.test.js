@@ -11,7 +11,7 @@ describe('emails • email_changed', function () {
         await this.approve_email_change();
 
         // confirm email change using token from email
-        await this.http_get_json(this.sent_emails.find(v => v.name === const_email.email_change_requested).placeholders.confirm_link);
+        await this.open_link(this.sent_emails.find(v => v.name === const_email.email_change_requested).placeholders.confirm_link);
 
         const actual = this.sent_emails.map(v => v.name);
         const expected = [const_email.email_change_approve, const_email.email_change_requested, const_email.email_changed];

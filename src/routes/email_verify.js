@@ -25,8 +25,13 @@ const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 const SECOND = 1000;
 
+// The mailed link opens a page; only its button acts, so a mail scanner's GET
+// changes nothing (AW-11).
 const routes = [
-    {req: `GET ${config.pages.email_verify_confirm}`, fn: email_verify_confirm_get},
+    {prepend: [csrf_middleware], routes: [
+        {req: `POST ${config.pages.email_verify_confirm}/open`, fn: email_verify_open_post},
+    ]},
+    {req: `GET ${config.pages.email_verify_confirm}/open`, fn: email_verify_open_get},
     {prepend: [auth_middleware, csrf_middleware], routes: [
         {req: 'POST /auth/email-verify/request', fn: email_verify_request_post},
         {req: 'POST /auth/email-verify/confirm', fn: email_verify_confirm_post},
@@ -81,22 +86,36 @@ async function email_verify_request_post(req, res)
     await complete_email_verify_request(req, res, user_id, ident, token, code);
 }
 
-// GET /auth/email-verify/confirm?token=xxx
-async function email_verify_confirm_get(req, res)
+// GET /auth/email-verify/confirm/open (query)
+// Would the link confirm the address now? The page asks before it draws its
+// button; this changes nothing (UIM-14).
+async function email_verify_open_get(req, res)
 {
-    const {token} = req.query;
-    if (!token) {
-        throw new UserFriendlyError('Missing token');
+    const {error, record} = await find_email_verify_to_open(req.query.token, new Date());
+    if (error) {
+        res.send({error, email: null});
+        return;
     }
 
-    const now = new Date();
-    const record = await db('email_verify_tokens')
-        .whereNull('used_at')
-        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
-        .where('expires_at', '>', now)
+    const ident = await db('user_identities')
+        .where({user_id: record.user_id, type: const_user_identity.email, value_normalized: record.email_normalized})
         .first();
-    if (!record) {
-        throw new UserFriendlyError('Invalid or expired verification link');
+    const email = ident?.value ?? null;
+    const elsewhere = (req.session?.user_id !== record.user_id);
+    if (elsewhere && await has_other_way_in(record)) {
+        res.send({error: 'Sign in to confirm this address', email, sign_in: true});
+        return;
+    }
+    res.send({error: null, email});
+}
+
+// POST /auth/email-verify/confirm/open (body)
+async function email_verify_open_post(req, res)
+{
+    const now = new Date();
+    const {error, record} = await find_email_verify_to_open(req.body.token, now);
+    if (error) {
+        throw new UserFriendlyError(error);
     }
 
     // The link proves who reads the mailbox, not who signed up (AW-25). Opened
@@ -106,16 +125,10 @@ async function email_verify_confirm_get(req, res)
     // the link in a browser signed in to it.
     const user_id = record.user_id;
     const elsewhere = (req.session?.user_id !== user_id);
-    const other_way_in = await db('user_identities')
-        .where({user_id})
-        .whereNot({type: const_user_identity.username})
-        .whereNot({type: const_user_identity.email, value_normalized: record.email_normalized})
-        .whereNotNull('verified_at')
-        .first();
-    if (elsewhere && other_way_in) {
+    if (elsewhere && await has_other_way_in(record)) {
         req.session.error = 'Sign in to confirm this address';
         await save_session(req);
-        res.redirect(urlmod(config.pages.sign_in, {return: req.originalUrl}));
+        res.redirect(urlmod(config.pages.sign_in, {return: urlmod(config.pages.email_verify_confirm, {token: req.body.token})}));
         return;
     }
     const new_owner = elsewhere;
@@ -219,6 +232,36 @@ async function email_verify_confirm_post(req, res)
 
     const fresh_ident = await db('user_identities').where({id: ident.id}).first();
     await complete_email_verify_confirm(req, res, fresh_ident);
+}
+
+async function find_email_verify_to_open(token, now)
+{
+    if ((typeof token !== 'string') || !token) {
+        return {error: 'Missing token', record: null};
+    }
+
+    const record = await db('email_verify_tokens')
+        .whereNull('used_at')
+        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
+        .where('expires_at', '>', now)
+        .first();
+    if (!record) {
+        return {error: 'Invalid or expired verification link', record: null};
+    }
+    return {error: null, record};
+}
+
+// A provider or another confirmed address: a way in besides this address and
+// the password.
+async function has_other_way_in(record)
+{
+    const ident = await db('user_identities')
+        .where({user_id: record.user_id})
+        .whereNot({type: const_user_identity.username})
+        .whereNot({type: const_user_identity.email, value_normalized: record.email_normalized})
+        .whereNotNull('verified_at')
+        .first();
+    return Boolean(ident);
 }
 
 module.exports = routes;

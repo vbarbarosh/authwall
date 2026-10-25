@@ -70,6 +70,13 @@ on) require that token in the request body, and compare it in **constant time**.
 A request without the matching token is rejected. The token is delivered to the
 frontend through the `GET /auth/status` response.
 
+The links Authwall mails (a sign-in link, an address confirmation, the
+approval of an email change and the new address's confirmation) open a page
+that names the address and change nothing. Only the page's button acts: a
+`POST` to the link's path plus `/open`, with the token and the CSRF token. A
+mail filter that fetches every link in a message before it is read spends
+none of them.
+
 ## Rate limiting
 
 When [`AUTHWALL_RATE_LIMITING`](config.md#authwall_rate_limiting) is enabled

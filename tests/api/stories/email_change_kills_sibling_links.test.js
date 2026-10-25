@@ -24,10 +24,10 @@ describe('A changed or removed address kills its sibling links | stories', funct
         await this.http_post_json(config.pages.email_change_request, {email: 'owner-new@authwall.test'});
         await this.approve_email_change();
 
-        await this.http_get_json(change_link(this, 'owner-new@authwall.test'));
+        await this.open_link(change_link(this, 'owner-new@authwall.test'));
         assert.deepStrictEqual(await account_emails(), ['owner-new@authwall.test']);
 
-        await this.http_get_json(change_link(this, 'attacker@evil.test'));
+        await this.open_link(change_link(this, 'attacker@evil.test'));
         assert.deepStrictEqual(await account_emails(), ['owner-new@authwall.test']);
     });
 
@@ -39,7 +39,7 @@ describe('A changed or removed address kills its sibling links | stories', funct
         await this.http_post_json('/auth/email/add', {email: 'other@authwall.test'});
         assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
 
-        await this.http_get_json(change_link(this, 'attacker@evil.test'));
+        await this.open_link(change_link(this, 'attacker@evil.test'));
         assert.deepStrictEqual(await account_emails(), ['other@authwall.test']);
     });
 
@@ -50,7 +50,7 @@ describe('A changed or removed address kills its sibling links | stories', funct
         await this.http_post_json('/auth/email/remove');
 
         const link = new URL(verify.placeholders.link);
-        await this.http_get_json(link.pathname + link.search);
+        await this.open_link(link.pathname + link.search);
         assert.strictEqual((await this.http_get_json('/auth/status')).error, 'Invalid or expired verification link');
     });
 

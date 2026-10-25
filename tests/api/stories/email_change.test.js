@@ -38,7 +38,7 @@ describe('Email change invalidates old email sign-in | stories', function () {
         assert.ok(change_email, 'email change confirmation email should be sent');
 
         // Confirm email change
-        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change_email.placeholders.token}));
+        await this.open_link(urlmod(config.pages.email_change_confirm, {token: change_email.placeholders.token}));
 
         // Old email sign-in must now fail
         await this.http_post_json('/auth/sign-out');

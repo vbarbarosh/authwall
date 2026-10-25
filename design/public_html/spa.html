@@ -1192,6 +1192,27 @@
     </div>
   </div>
 
+  <!-- ── A MAILED LINK: ITS PAGE, THEN ITS BUTTON ── -->
+  <div data-view="link" data-testid="link-view">
+    <div class="card">
+      <div class="card-header">
+        <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
+        <h1 class="page-title" id="lk-title" data-testid="link-title"></h1>
+        <p class="page-sub mt-4" id="lk-text" data-testid="link-text"></p>
+      </div>
+      <div class="card-body">
+        <div class="form">
+          <div id="lk-error" class="alert alert-error" style="display:none" data-testid="link-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="lk-error-msg"></span>
+          </div>
+          <button id="lk-submit" class="btn btn-primary mt-4" data-testid="link-submit" disabled></button>
+        </div>
+      </div>
+      <div class="card-footer"><a class="text-link" id="lk-sign-in" href="/auth/sign-in">← Back to sign in</a></div>
+    </div>
+  </div>
+
 </div><!-- /viewport -->
 
 <footer class="app-footer">
@@ -1226,10 +1247,27 @@ const ROUTES = {
 };
 const PATH_FOR = Object.fromEntries(Object.entries(ROUTES).map(([p, v]) => [v, p]));
 
+// The page of each mailed link: the link opens it and changes nothing; only
+// its button acts, posting the token to the link's path plus /open, so a mail
+// scanner's GET is spent on nothing (AW-78, AW-11). Kept out of ROUTES: the
+// view keeps the link's own address.
+const LINKS = {
+    '/auth/magic-link/confirm': {title: 'Sign in', before: 'Sign in to your account as ', after: '.', button: 'Sign in'},
+    '/auth/email-verify/confirm': {title: 'Confirm your email', before: 'Confirm ', after: ' as the address of your account.', button: 'Confirm email'},
+    '/auth/email-change/approve': {title: 'Approve the move', before: 'Move your account to ', after: '. We then send a confirmation link there. Approve only if you asked for it.', button: 'Approve the move'},
+    '/auth/email-change/confirm': {title: 'Confirm your new address', before: 'Make ', after: ' the address of your account. The address it replaces no longer signs in.', button: 'Confirm new address'},
+};
+
 const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
 function viewFromPath(pathname) {
-  return ROUTES[pathname.split('?')[0]] || 'sign-in';
+    const path = pathname.split('?')[0];
+    // The magic link shares its path with the code form, which has no token.
+    const has_token = new URLSearchParams(window.location.search).has('token');
+    if (LINKS[path] && (has_token || !ROUTES[path])) {
+        return 'link';
+    }
+    return ROUTES[path] || 'sign-in';
 }
 
 function build_sign_in_action() {
@@ -2086,6 +2124,83 @@ document.getElementById('ecr-submit').addEventListener('click', async () => {
     return show_error('ecr-error-msg', 'ecr-error', error);
   }
   navigate_after(final_url);
+});
+
+// ── A mailed link ────────────────────────────────────────────────────────────
+// The page asks the link first and draws its button only when the link would
+// work now; otherwise the reason stands above a disabled button (UIM-14).
+async function refresh_link_view()
+{
+    const link = LINKS[window.location.pathname];
+    const token = new URLSearchParams(window.location.search).get('token') ?? '';
+    const submit = document.getElementById('lk-submit');
+    document.getElementById('lk-title').textContent = link.title;
+    document.getElementById('lk-sign-in').href = `/auth/sign-in?${new URLSearchParams({return: window.location.pathname + window.location.search})}`;
+    submit.textContent = link.button;
+    submit.disabled = true;
+    delete submit.dataset.signIn;
+    hide_error('lk-error');
+    document.getElementById('lk-text').textContent = 'Checking the link…';
+    let answer = null;
+    try {
+        const response = await fetch(`${window.location.pathname}/open?${new URLSearchParams({token})}`);
+        // A 404: this kind of link is turned off here, as the magic link can be.
+        answer = response.ok ? await response.json() : {error: 'This link cannot be used here.', email: null};
+    }
+    catch {
+        answer = {error: 'The link could not be checked. Reload the page to try again.', email: null};
+    }
+    render_link_text(link, answer.email);
+    if (answer.error) {
+        show_error('lk-error-msg', 'lk-error', answer.error);
+        if (answer.sign_in) {
+            // Opened outside the account's browser: signing in is the way on,
+            // and the sign-in brings the person back here.
+            submit.textContent = 'Sign in to confirm';
+            submit.dataset.signIn = '1';
+            submit.disabled = false;
+        }
+        return;
+    }
+    submit.disabled = false;
+}
+
+function render_link_text(link, email)
+{
+    const text = document.getElementById('lk-text');
+    text.textContent = '';
+    if (!email) {
+        return;
+    }
+    const strong = document.createElement('strong');
+    strong.style.overflowWrap = 'anywhere';
+    strong.textContent = email;
+    text.append(link.before, strong, link.after);
+}
+
+document.getElementById('lk-submit').addEventListener('click', async function () {
+    if (this.dataset.signIn) {
+        window.location.href = document.getElementById('lk-sign-in').href;
+        return;
+    }
+    hide_error('lk-error');
+    const token = new URLSearchParams(window.location.search).get('token') ?? '';
+    set_loading('lk-submit', true);
+    const {final_url, error} = await http_post_urlencoded(`${window.location.pathname}/open`, {token});
+    if (error) {
+        set_loading('lk-submit', false);
+        show_error('lk-error-msg', 'lk-error', error);
+        return;
+    }
+    // A full load: the next page may carry a token of its own, as the reset page does.
+    window.location.href = final_url;
+});
+
+// The link view asks its link as soon as the page is up.
+document.addEventListener('DOMContentLoaded', function () {
+    if (viewFromPath(window.location.pathname) === 'link') {
+        refresh_link_view();
+    }
 });
 
 // ── Profile — Save display name / avatar ─────────────────────────────────────

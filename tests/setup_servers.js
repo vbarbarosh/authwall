@@ -50,6 +50,12 @@ async function spin(ctx, _this, fn)
         _this.approve_email_change = approve_email_change;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
+        _this.open_link = function (url) {
+            return open_link(_this.client, url);
+        };
+        _this.open_link_no_redirects = function (url) {
+            return open_link(_this.client, url, true);
+        };
         _this.http_post_json = async function (url, data = {}) {
             if ('_csrf' in data) {
                 return _this.client.post_json(url, data);
@@ -360,6 +366,23 @@ async function append_form_value(form, key, value)
     form.append(key, String(value));
 }
 
+// Opens a mailed link as a person does: its page first, and the page's question
+// whether the link would work, neither of which changes anything; then its
+// button, which posts the token to the link's path plus /open (AW-78, AW-11).
+async function open_link(client, url, no_redirects = false)
+{
+    const {pathname, searchParams} = new URL(url, config.public_url);
+    await client.get_json(`${pathname}?${searchParams}`);
+    await client.get_json(`${pathname}/open?${searchParams}`);
+    const sess = await client.get_session();
+    const csrf_token = (sess ?? await client.get_json('/auth/status')).csrf_token;
+    const data = {token: searchParams.get('token') ?? '', _csrf: csrf_token};
+    if (no_redirects) {
+        return client.post_json_no_redirects(`${pathname}/open`, data);
+    }
+    return client.post_json(`${pathname}/open`, data);
+}
+
 async function add_user(params = {})
 {
     const verified = Boolean(params.verified ?? true);
@@ -433,13 +456,14 @@ async function confirm({password = null} = {})
 }
 
 // Opens the approval link that a change of the primary address mails to the
-// current primary, as its owner would; the new address then gets its link.
+// current primary, and presses its button, as its owner would; the new address
+// then gets its link.
 async function approve_email_change()
 {
     const sent = this.sent_emails.findLast(v => v.name === const_email.email_change_approve);
     assert.ok(sent, 'no approval request was mailed');
     const before = this.sent_emails.length;
-    await this.http_get_json(urlmod(config.pages.email_change_approve, {token: sent.placeholders.token}));
+    await this.open_link(urlmod(config.pages.email_change_approve, {token: sent.placeholders.token}));
     await this.wait_for_emails(before + 1);
 }
 

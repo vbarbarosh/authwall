@@ -30,7 +30,7 @@ describe('A password change settles the recovery | stories', function () {
             await this.http_post_json(route.url, {current_password: 'pass123', password: 'pass456', password_confirm: 'pass456'});
             assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
 
-            await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
+            await this.open_link(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
             const emails = await db('user_identities').where({type: 'email'}).pluck('value_normalized');
             assert.deepStrictEqual(emails, ['mocha@authwall.test']);
         });
@@ -45,7 +45,7 @@ describe('A password change settles the recovery | stories', function () {
             assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
 
             const link = new URL(verify.placeholders.link);
-            await this.http_get_json(link.pathname + link.search);
+            await this.open_link(link.pathname + link.search);
             const ident = await db('user_identities').where({type: 'email', value_normalized: 'attacker@evil.test'}).first();
             assert.strictEqual(ident.verified_at, null);
         });

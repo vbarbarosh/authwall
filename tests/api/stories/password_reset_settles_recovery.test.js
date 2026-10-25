@@ -45,7 +45,7 @@ describe('A completed reset settles the recovery | stories', function () {
         await this.http_post_json(config.pages.email_change_request, {email: 'new@authwall.test'});
         await this.approve_email_change();
         const change = this.sent_emails.find(v => v.placeholders?.token && v.to === 'new@authwall.test');
-        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
+        await this.open_link(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
 
         assert.strictEqual(await confirm_reset(this, token, 'hacked'), 'Invalid reset token');
         await this.assert_password({username: 'mocha', password: 'pass123'});
@@ -64,7 +64,7 @@ describe('A completed reset settles the recovery | stories', function () {
         assert.strictEqual(await confirm_reset(this, token, 'pass456'), null);
         assert.strictEqual((await db('email_change_tokens').whereNull('used_at')).length, 0);
 
-        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
+        await this.open_link(urlmod(config.pages.email_change_confirm, {token: change.placeholders.token}));
         const emails = await db('user_identities').where({type: 'email'}).pluck('value_normalized');
         assert.deepStrictEqual(emails, ['mocha@authwall.test']);
     });

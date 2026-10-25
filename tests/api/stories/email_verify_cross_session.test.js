@@ -31,7 +31,7 @@ describe('Email verification link opened in another session | stories', function
         // Opened outside Bob's own browser, the link hands his account to
         // whoever reads his mailbox (AW-25): Alice's browser sets a password.
         this.client.cookies = cookies_a;
-        const tap = await this.client.get_json_no_redirects(urlmod(config.pages.email_verify_confirm, {token}));
+        const tap = await this.open_link_no_redirects(urlmod(config.pages.email_verify_confirm, {token}));
         assert.match(tap.headers.location, /^\/auth\/password-reset\/confirm\?token=/);
 
         const alice_session_after = await this.client.get_session();
@@ -68,7 +68,7 @@ describe('Email verification link opened in another session | stories', function
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(v => v.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
-        await this.http_get_json(urlmod(config.pages.email_verify_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_verify_confirm, {token}));
 
         // The first browser was signed in before Bob verified, so its snapshot
         // is stale. Its next request must read the live state and let him

@@ -26,7 +26,7 @@ describe('Magic link for an address registered but unverified by someone else | 
         await this.http_post_json('/auth/magic-link/request', {email: 'victim@authwall.test'});
         await this.wait_for_emails(1);
         const {token} = this.sent_emails[0].placeholders;
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token}));
 
         const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, false);
@@ -56,7 +56,7 @@ describe('Magic link for an address registered but unverified by someone else | 
         await this.http_post_json('/auth/magic-link/request', {email: 'owner@authwall.test'});
         await this.wait_for_emails(1);
         const {token} = this.sent_emails[0].placeholders;
-        await this.http_get_json(urlmod('/auth/magic-link/confirm', {token}));
+        await this.open_link(urlmod('/auth/magic-link/confirm', {token}));
 
         const status = await this.http_get_json('/auth/status');
         assert.strictEqual(status.authenticated, true);

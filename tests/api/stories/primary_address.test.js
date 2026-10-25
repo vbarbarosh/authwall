@@ -32,7 +32,7 @@ describe('The primary address | stories', function () {
         assert.deepStrictEqual(await primary_addresses(), []);
 
         const link = new URL(this.sent_emails[0].placeholders.link);
-        await this.http_get_json(link.pathname + link.search);
+        await this.open_link(link.pathname + link.search);
         assert.deepStrictEqual(await primary_addresses(), ['mocha@authwall.test']);
 
         const status = await this.http_get_json('/auth/status');
@@ -66,7 +66,7 @@ describe('The primary address | stories', function () {
         await this.http_post_json(config.pages.email_change_request, {email: 'mocha@new.test'});
         await this.approve_email_change();
         const {token} = this.sent_emails.find(v => v.to === 'mocha@new.test').placeholders;
-        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_change_confirm, {token}));
 
         assert.deepStrictEqual(await primary_addresses(), ['mocha@new.test']);
     });

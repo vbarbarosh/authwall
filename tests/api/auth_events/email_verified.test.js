@@ -12,7 +12,7 @@ describe('auth_events • email_verified', function () {
         await this.http_post_json('/auth/email-verify/request');
         await this.wait_for_emails(1);
 
-        await this.http_get_json(this.sent_emails[0].placeholders.link);
+        await this.open_link(this.sent_emails[0].placeholders.link);
 
         const events = await db('auth_events').where({event_type: const_auth_event.email_verified}).orderBy('id');
         assert.strictEqual(events.length, 1);

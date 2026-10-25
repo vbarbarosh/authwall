@@ -56,7 +56,7 @@ describe('auth_events • sign_up', function () {
         await db('auth_events').del();
 
         await this.http_post_json('/auth/magic-link/request', {email: 'newuser@authwall.test'});
-        await this.http_get_json(this.sent_emails[0].placeholders.link);
+        await this.open_link(this.sent_emails[0].placeholders.link);
 
         const events = await db('auth_events').where({event_type: const_auth_event.sign_up}).orderBy('id');
         assert.strictEqual(events.length, 1);

@@ -6,12 +6,12 @@ Someone signed in to your account asked to move it from this address to:
 
   {{new_email}}
 
-If it was you, approve the move with the link below. We will then send a
-confirmation link to the new address. The link expires in {{expires_minutes}} minutes.
+If it was you, open the link below and press "Approve the move". We will then
+send a confirmation link to the new address. The link expires in {{expires_minutes}} minutes.
 {{approve_link}}
 
-If it was not you, do not open the link: nothing changes. Someone may be using
-your signed-in session; sign out of all devices from your profile and change
-your password.
+If it was not you, do not approve: nothing changes, even if the link is
+opened. Someone may be using your signed-in session; sign out of all devices
+from your profile and change your password.
 
 — Authwall

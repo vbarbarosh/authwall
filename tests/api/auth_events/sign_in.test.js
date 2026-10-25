@@ -53,7 +53,7 @@ describe('auth_events • sign_in', function () {
         await this.add_user({email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
 
-        await this.http_get_json(this.sent_emails[0].placeholders.link);
+        await this.open_link(this.sent_emails[0].placeholders.link);
 
         const events = await db('auth_events').orderBy('id');
         const sign_in_event = events.find(v => v.event_type === const_auth_event.sign_in);

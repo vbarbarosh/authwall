@@ -30,7 +30,7 @@ describe('Changing the primary address needs both addresses | stories', function
         const {token} = this.sent_emails.find(v => v.to === 'mocha@new.test').placeholders;
         assert.deepStrictEqual(await primary(), ['mocha@authwall.test']);
 
-        await this.http_get_json(urlmod(config.pages.email_change_confirm, {token}));
+        await this.open_link(urlmod(config.pages.email_change_confirm, {token}));
         assert.deepStrictEqual(await primary(), ['mocha@new.test']);
         assert.ok(this.sent_emails.some(v => (v.name === const_email.email_changed) && (v.to === 'mocha@authwall.test')));
     });
@@ -41,7 +41,7 @@ describe('Changing the primary address needs both addresses | stories', function
         await this.approve_email_change();
 
         const {token} = this.sent_emails.find(v => v.name === const_email.email_change_approve).placeholders;
-        await this.http_get_json(urlmod(config.pages.email_change_approve, {token}));
+        await this.open_link(urlmod(config.pages.email_change_approve, {token}));
         assert.strictEqual((await this.http_get_json('/auth/status')).error, 'Invalid or expired approval link');
     });
 

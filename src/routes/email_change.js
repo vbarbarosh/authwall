@@ -31,9 +31,15 @@ const MINUTE = 60*SECOND;
 // Every call sends a confirmation to an address the caller typed in.
 const email_change_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
+// A mailed link opens a page; only its button acts, so a mail scanner's GET
+// changes nothing (AW-78).
 const routes = [
-    {req: `GET ${config.pages.email_change_approve}`, fn: email_change_approve_get},
-    {req: `GET ${config.pages.email_change_confirm}`, fn: email_change_confirm_get},
+    {prepend: [csrf_middleware], routes: [
+        {req: `POST ${config.pages.email_change_approve}/open`, fn: email_change_approve_open_post},
+        {req: `POST ${config.pages.email_change_confirm}/open`, fn: email_change_confirm_open_post},
+    ]},
+    {req: `GET ${config.pages.email_change_approve}/open`, fn: email_change_approve_open_get},
+    {req: `GET ${config.pages.email_change_confirm}/open`, fn: email_change_confirm_open_get},
     {prepend: [auth_middleware, csrf_middleware], routes: [
         {req: `POST ${config.pages.email_change_request}`, prepend: [email_change_limiter], fn: email_change_request_post},
     ]},
@@ -100,7 +106,8 @@ async function email_change_request_post(req, res)
     }
 
     // With a primary, the new address gets its link only once the primary
-    // approves (email_change_approve_get); the token stored here is never sent.
+    // approves (email_change_approve_open_post); the token stored here is
+    // never sent.
     const token = random_hex();
     const approve_token = primary ? random_hex() : null;
     const now = new Date();
@@ -143,23 +150,23 @@ async function email_change_request_post(req, res)
     redirect(req, res, config.pages.email_change_approval_notice);
 }
 
-// GET /auth/email-change/approve?token=xxx (the link mailed to the current primary)
-async function email_change_approve_get(req, res)
+// GET /auth/email-change/approve/open (query)
+// Would the approval go through now, and to which address? The page asks before
+// it draws its button; this changes nothing (UIM-14).
+async function email_change_approve_open_get(req, res)
 {
-    const {token} = req.query;
-    if (!token) {
-        throw new UserFriendlyError('Missing token');
-    }
+    const {error, email_change} = await find_email_change_to_approve(req.query.token, new Date());
+    res.send({error, email: email_change?.email ?? null});
+}
 
+// POST /auth/email-change/approve/open (body)
+// The button of the link mailed to the current primary.
+async function email_change_approve_open_post(req, res)
+{
     const now = new Date();
-    const email_change = await db('email_change_tokens')
-        .whereNull('used_at')
-        .whereNull('approved_at')
-        .where('approve_token_hash', crypto_hash_sha256(token).toString('base64url'))
-        .where('expires_at', '>=', now)
-        .first();
-    if (!email_change) {
-        throw new UserFriendlyError('Invalid or expired approval link');
+    const {error, email_change} = await find_email_change_to_approve(req.body.token, now);
+    if (error) {
+        throw new UserFriendlyError(error);
     }
 
     // Only now does the new address get a link, with a window of its own.
@@ -186,24 +193,22 @@ async function email_change_approve_get(req, res)
     await complete_email_change_request(req, res, email_change.user_id, email_change.email, confirm_token);
 }
 
-// GET /auth/email-change/confirm?token=xxx
-async function email_change_confirm_get(req, res)
+// GET /auth/email-change/confirm/open (query)
+// Would the change go through now? The page asks before it draws its button;
+// this changes nothing (UIM-14).
+async function email_change_confirm_open_get(req, res)
 {
-    const {token} = req.query;
-    if (!token) {
-        throw new UserFriendlyError('Missing token');
-    }
+    const {error, email_change} = await find_email_change_to_confirm(req.query.token, new Date());
+    res.send({error, email: email_change?.email ?? null});
+}
 
+// POST /auth/email-change/confirm/open (body)
+async function email_change_confirm_open_post(req, res)
+{
     const now = new Date();
-    const email_change = await db('email_change_tokens')
-        .whereNull('used_at')
-        .whereNotNull('approved_at')
-        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
-        .where('expires_at', '>=', now)
-        .first();
-
-    if (!email_change) {
-        throw new UserFriendlyError('Invalid or expired email change link');
+    const {error, email_change} = await find_email_change_to_confirm(req.body.token, now);
+    if (error) {
+        throw new UserFriendlyError(error);
     }
 
     // The change replaces the primary; an account without one, its only address.
@@ -247,6 +252,42 @@ async function email_change_confirm_get(req, res)
         const new_email = email_change.email;
         await complete_email_change_confirm(req, res, user_id, old_email, new_email);
     });
+}
+
+async function find_email_change_to_approve(token, now)
+{
+    if ((typeof token !== 'string') || !token) {
+        return {error: 'Missing token', email_change: null};
+    }
+
+    const email_change = await db('email_change_tokens')
+        .whereNull('used_at')
+        .whereNull('approved_at')
+        .where('approve_token_hash', crypto_hash_sha256(token).toString('base64url'))
+        .where('expires_at', '>=', now)
+        .first();
+    if (!email_change) {
+        return {error: 'Invalid or expired approval link', email_change: null};
+    }
+    return {error: null, email_change};
+}
+
+async function find_email_change_to_confirm(token, now)
+{
+    if ((typeof token !== 'string') || !token) {
+        return {error: 'Missing token', email_change: null};
+    }
+
+    const email_change = await db('email_change_tokens')
+        .whereNull('used_at')
+        .whereNotNull('approved_at')
+        .where('token_hash', crypto_hash_sha256(token).toString('base64url'))
+        .where('expires_at', '>=', now)
+        .first();
+    if (!email_change) {
+        return {error: 'Invalid or expired email change link', email_change: null};
+    }
+    return {error: null, email_change};
 }
 
 module.exports = routes;

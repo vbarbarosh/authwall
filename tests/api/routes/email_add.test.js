@@ -20,7 +20,7 @@ describe('POST /auth/email/add', function () {
         assert.strictEqual(actual[0].value_normalized, email);
         assert.strictEqual(actual[0].verified_at, null);
 
-        await this.http_get_json(this.sent_emails[0].placeholders.link);
+        await this.open_link(this.sent_emails[0].placeholders.link);
 
         const status2 = await this.http_get_json('/auth/status');
         const actual2 = status2.providers.filter(v => v.type === const_user_identity.email);

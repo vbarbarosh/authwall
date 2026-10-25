@@ -25,7 +25,7 @@ describe('The magic-link mode decides what signs in | stories', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
         const {token, code} = this.sent_emails[0].placeholders;
 
-        await this.http_get_json(urlmod(config.pages.magic_link_confirm, {token}));
+        await this.open_link(urlmod(config.pages.magic_link_confirm, {token}));
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {
             error: 'Sign-in by link is disabled',
             authenticated: false,

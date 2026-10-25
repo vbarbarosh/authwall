@@ -13,7 +13,7 @@ describe('Setting a first password | stories', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'nopass@authwall.test'});
         await this.wait_for_emails(1);
         const {link} = this.sent_emails.find(v => v.placeholders?.link).placeholders;
-        await this.http_get_json(urlmod(config.pages.magic_link_confirm, {
+        await this.open_link(urlmod(config.pages.magic_link_confirm, {
             token: new URL(link).searchParams.get('token'),
         }));
         assert.strictEqual((await this.http_get_json('/auth/status')).authenticated, true);

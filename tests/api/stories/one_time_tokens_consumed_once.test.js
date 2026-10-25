@@ -4,7 +4,6 @@ const config = require('../../../config');
 const const_auth_event = require('../../../src/helpers/const/const_auth_event');
 const const_email = require('../../../src/helpers/const/const_email');
 const db = require('../../../db');
-const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 // [concurrent] hands each request its own pooled connection, as in
 // production; see mocha.api.js. Inside the usual per-test transaction the
@@ -54,7 +53,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'fresh@authwall.test'});
         const {token} = this.sent_emails.find(v => v.name === const_email.magic_link).placeholders;
 
-        await race(this, 2, () => this.client.get_json_no_redirects(urlmod(config.pages.magic_link_confirm, {token})));
+        await race(this, 2, (i, _csrf) => this.client.post_json_no_redirects(`${config.pages.magic_link_confirm}/open`, {_csrf, token}));
 
         assert.strictEqual((await db('users')).length, 1);
         assert.strictEqual((await db('user_identities')).length, 1);
@@ -86,7 +85,7 @@ describe('One-time tokens are consumed exactly once | stories', function () {
         const {link} = this.sent_emails.find(e => e.placeholders?.link).placeholders;
         const token = new URL(link).searchParams.get('token');
 
-        await race(this, 2, () => this.client.get_json_no_redirects(urlmod(config.pages.email_verify_confirm, {token})));
+        await race(this, 2, (i, _csrf) => this.client.post_json_no_redirects(`${config.pages.email_verify_confirm}/open`, {_csrf, token}));
 
         assert.strictEqual((await db('auth_events').where({event_type: const_auth_event.email_verified})).length, 1);
     });
