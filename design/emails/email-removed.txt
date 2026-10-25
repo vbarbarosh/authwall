@@ -1,0 +1,14 @@
+Subject: Your address was removed from your account
+
+Hi {{display_name}},
+
+The address {{email}} was removed from your account on {{date}} from IP
+address {{ip}}. Sign-in links, codes and password resets no longer come here.
+
+If you made this change, no action is needed.
+
+If you did not, someone may be using your signed-in session. Sign in, add
+the address back and change your password:
+{{sign_in_link}}
+
+— Authwall

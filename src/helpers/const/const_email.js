@@ -33,6 +33,9 @@ const const_email = {
     discord_disconnected: 'discord_disconnected',
     password_changed_from_profile: 'password_changed_from_profile',
     password_changed_via_reset_link: 'password_changed_via_reset_link',
+    personal_access_token_created: 'personal_access_token_created',
+    email_removed: 'email_removed', // sent to the removed address itself
+    account_removed: 'account_removed',
 };
 
 module.exports = const_email;

@@ -2,14 +2,18 @@ const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFrien
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
+const const_email = require('../helpers/const/const_email');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const destroy_session = require('../helpers/destroy_session');
+const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
 const fs = require('fs/promises');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 const require_confirmation = require('../helpers/require_confirmation');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 
 const routes = [
     {req: 'POST /auth/account/remove', fn: [auth_middleware, csrf_middleware, account_remove_post]},
@@ -38,6 +42,10 @@ async function account_remove_post(req, res)
     const factors = Math.max(1, Math.min(2, ways.filter(Boolean).length));
     await require_confirmation(req, {reason: 'account_remove', next: config.pages.profile, message: 'Confirm it is you before removing your account', factors});
 
+    // Where to tell the owner, read before the account goes (AW-40).
+    const email_and_name = await get_user_email_and_name(user.id, {verified_only: true});
+    const ip = req.session.ip ?? 'n/a';
+
     await db.transaction(async function () {
         const user_id = user.id;
         await db('confirm_codes').where({user_id}).del();
@@ -61,6 +69,18 @@ async function account_remove_post(req, res)
     await fs.rm(fs_path_resolve(config.uploads_dir, user.slug), {recursive: true, force: true});
     await destroy_session(req);
     redirect(req, res, config.pages.sign_in);
+
+    if (email_and_name) {
+        await send_email_nothrow({
+            name: const_email.account_removed,
+            to: email_and_name,
+            placeholders: {
+                display_name: user.display_name,
+                date: format_date_pretty_24(new Date()),
+                ip,
+            },
+        });
+    }
 }
 
 module.exports = routes;

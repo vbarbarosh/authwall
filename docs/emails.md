@@ -66,6 +66,9 @@ Templates are plain text; there is currently no HTML version.
 | `new-sign-in.txt`                     | A new sign-in to the account is detected                         |
 | `password-changed-from-profile.txt`   | The password was changed from the profile page                   |
 | `password-changed-via-reset-link.txt` | The password was changed through a reset link                    |
+| `personal-access-token-created.txt`   | A personal access token was created                              |
+| `email-removed.txt`                   | A verified address was removed — sent to that address            |
+| `account-removed.txt`                 | The account was removed — sent to its verified address           |
 | `<provider>-connected.txt`            | An OAuth provider was linked to the account                      |
 | `<provider>-disconnected.txt`         | An OAuth provider was unlinked from the account                  |
 
@@ -107,6 +110,8 @@ relevant to its message.
 | `{{date}}`            | A formatted timestamp                          |
 | `{{ip}}`              | The client IP address                          |
 | `{{ua}}`              | The client browser / user-agent                |
+| `{{label}}`           | A personal access token's label                |
+| `{{tokens_link}}`     | The personal access tokens page URL            |
 
 ## Customizing the templates
 

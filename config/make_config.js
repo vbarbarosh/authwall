@@ -93,6 +93,9 @@ function make_config(input = {})
             [const_email.discord_disconnected]: `${emails_dir}/discord-disconnected.txt`,
             [const_email.password_changed_from_profile]: `${emails_dir}/password-changed-from-profile.txt`,
             [const_email.password_changed_via_reset_link]: `${emails_dir}/password-changed-via-reset-link.txt`,
+            [const_email.personal_access_token_created]: `${emails_dir}/personal-access-token-created.txt`,
+            [const_email.email_removed]: `${emails_dir}/email-removed.txt`,
+            [const_email.account_removed]: `${emails_dir}/account-removed.txt`,
         },
 
         pages: {

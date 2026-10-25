@@ -1,0 +1,15 @@
+Subject: A personal access token was created
+
+Hi {{display_name}},
+
+A personal access token named "{{label}}" was created for your account on
+{{date}} from IP address {{ip}}. It acts as you in the apps behind Authwall
+until it expires or is revoked.
+
+If you created it, no action is needed.
+
+If you did not, revoke it here and reset your password:
+{{tokens_link}}
+{{reset_link}}
+
+— Authwall

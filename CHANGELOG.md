@@ -111,6 +111,9 @@
 - A confirmation no longer covers every action for ten minutes: it is spent
   by the one that asked for it, so a borrower at a confirmed session cannot
   link a provider in the owner's name (AW-81).
+- The owner hears of a new personal access token, of a removed verified
+  address (the mail goes to that address) and of the account's removal
+  (AW-92, AW-40).
 
 ### Added
 

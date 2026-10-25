@@ -4,14 +4,17 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
+const const_email = require('../helpers/const/const_email');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
+const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 
 const routes = [
     {req: 'POST /auth/email/remove', fn: [auth_middleware, csrf_middleware, email_remove_post]},
@@ -83,6 +86,23 @@ async function email_remove_post(req, res)
     });
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, config.pages.profile);
+
+    // The removed address hears of it: it was a way back into the account
+    // (AW-92, AW-77). An unverified one may not be the owner's.
+    if (ident.verified_at) {
+        const user = await db('users').where({id: user_id}).first();
+        await send_email_nothrow({
+            name: const_email.email_removed,
+            to: {name: user.display_name, email: ident.value},
+            placeholders: {
+                display_name: user.display_name,
+                email: ident.value,
+                date: format_date_pretty_24(new Date()),
+                ip: req.session.ip ?? 'n/a',
+                sign_in_link: config.public_url + config.pages.sign_in,
+            },
+        });
+    }
 }
 
 module.exports = routes;

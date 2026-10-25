@@ -3,12 +3,17 @@ const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
 const const_auth_event_status = require('../helpers/const/const_auth_event_status');
+const const_email = require('../helpers/const/const_email');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
+const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24');
+const get_user_email_and_name = require('../helpers/models/get_user_email_and_name');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const random_uid_personal_access_token = require('../helpers/random/random_uid_personal_access_token');
 const require_confirmation = require('../helpers/require_confirmation');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const {
     create_personal_access_token_secret,
     personal_access_token_hash,
@@ -84,6 +89,24 @@ async function personal_access_tokens_post(req, res)
             last_used_ua: null,
         },
     });
+
+    // A token acts as the owner for months: the owner hears of it (AW-92).
+    const user = await db('users').where({id: req.session.user_id}).first();
+    const email_and_name = await get_user_email_and_name(user.id, {verified_only: true});
+    if (email_and_name) {
+        await send_email_nothrow({
+            name: const_email.personal_access_token_created,
+            to: email_and_name,
+            placeholders: {
+                display_name: user.display_name,
+                label,
+                date: format_date_pretty_24(now),
+                ip: req.session.ip ?? 'n/a',
+                tokens_link: config.public_url + config.pages.personal_access_tokens,
+                reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
+            },
+        });
+    }
 }
 
 // POST /auth/personal-access-tokens/revoke
