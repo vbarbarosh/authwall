@@ -49,16 +49,25 @@ class SessionStore extends express_session.Store
         }
     }
 
+    // A session read from a row (get() put its uid in it) only updates that
+    // row: when a revocation deleted it while the request ran, the late save
+    // changes nothing and the session stays revoked (M-01). A session made in
+    // this request writes its row, as many times as the request saves it.
     async set(uid, data, callback) {
         try {
             const now = new Date();
             const expires_at = row_expires_at(data, now);
 
             const {user_id, user_uid, ip, ua, cookie, ...custom} = data;
-            await db('sessions')
-                .insert({uid, user_id, user_uid, ip, ua, custom: JSON.stringify(custom), created_at: now, updated_at: now, last_seen_at: now, expires_at})
-                .onConflict('uid')
-                .merge(['user_id', 'user_uid', 'ip', 'ua', 'custom', 'updated_at', 'expires_at', 'last_seen_at']);
+            if (data.uid === uid) {
+                await db('sessions').where({uid}).update({user_id, user_uid, ip, ua, custom: JSON.stringify(custom), updated_at: now, last_seen_at: now, expires_at});
+            }
+            else {
+                await db('sessions')
+                    .insert({uid, user_id, user_uid, ip, ua, custom: JSON.stringify(custom), created_at: now, updated_at: now, last_seen_at: now, expires_at})
+                    .onConflict('uid')
+                    .merge(['user_id', 'user_uid', 'ip', 'ua', 'custom', 'updated_at', 'expires_at', 'last_seen_at']);
+            }
 
             callback(null);
         }

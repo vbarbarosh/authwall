@@ -67,6 +67,7 @@ Testable now
 - [x] Ann is signed in with a token; Authwall restarts with a rule that denies Ann's address: every door refuses the session and the token, the account pages allow only signing out, nothing is deleted; the rule removed, the same session and token work again → `authwall_restarts_with_new_settings.md`, `authwall_restarts_with_new_settings.test.js`
 - [x] Ann's address is still pending when Ann connects Google, which vouches for it; the address counts now and becomes the primary; Google under another address leaves it pending → `connect_confirms_the_pending_address.md`, `connect_confirms_the_pending_address.test.js`
 - [x] Mallory, with GitHub, adds Vera's address and leaves it pending; Vera's magic link, Vera's Google or the mailed link's *Not my account* moves it to Vera at once; nobody's proof, the address yields once nobody confirmed it within the window; a confirmed address never moves → `pending_address_yields_to_its_owner.md`, `pending_address_yields_to_its_owner.test.js`
+- [x] Ann's laptop has a slow request in flight when Ann revokes its session; the request ends and saves, and the session stays revoked → `revoked_session_stays_revoked.md`, `revoked_session_stays_revoked.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

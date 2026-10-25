@@ -13,6 +13,8 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- A revoked session stays revoked: a request that loaded it before the
+  revocation no longer writes its row back when it ends.
 - The proxy recipes and the root `docker-compose.yaml` set
   `AUTHWALL_TRUST_PROXY: none`, as the direct recipe does: Authwall is
   published there with no proxy in front, so a client's `X-Forwarded-For` is
