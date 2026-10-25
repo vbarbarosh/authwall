@@ -10,6 +10,9 @@ services:
       AUTHWALL_UPSTREAM_URL: http://echo-server:8080
       AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall
       # AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
+      # No proxy in front, so a client's X-Forwarded-For is not trusted; a
+      # TLS terminator in front says AUTHWALL_TRUST_PROXY=hops/1 in .env.
+      AUTHWALL_TRUST_PROXY: ${AUTHWALL_TRUST_PROXY:-none}
     ports:
       - 3000:3000
     volumes:

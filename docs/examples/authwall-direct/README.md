@@ -39,5 +39,6 @@ request back — look for the `X-Auth-User` header Authwall added.
 
 - Storage is SQLite, kept in `./data` along with the generated session secret.
 - This example serves plain HTTP. For HTTPS, terminate TLS at a cloud load
-  balancer in front of Authwall, and set `AUTHWALL_PUBLIC_URL` to the `https://`
-  address.
+  balancer in front of Authwall, set `AUTHWALL_PUBLIC_URL` to the `https://`
+  address, and `AUTHWALL_TRUST_PROXY=hops/1` so Authwall takes the client's
+  address from that load balancer, and from nothing else.

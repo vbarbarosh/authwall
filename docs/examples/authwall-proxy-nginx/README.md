@@ -70,4 +70,5 @@ preserved the `Host` and nginx routed on it.
 - Edit the `map $host $upstream` entries in `nginx.conf` to match your domains.
 - For production, give the domains real DNS records, and terminate TLS at a
   load balancer in front of Authwall; set `AUTHWALL_PUBLIC_URL` to the
-  `https://` address.
+  `https://` address, and `AUTHWALL_TRUST_PROXY=hops/1` so Authwall takes the
+  client's address from that load balancer, and from nothing else.

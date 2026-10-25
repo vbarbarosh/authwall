@@ -13,6 +13,8 @@ services:
       AUTHWALL_UPSTREAM_URL: http://nginx
       AUTHWALL_UPSTREAM_MODE: proxy
       AUTHWALL_COOKIE_DOMAIN: mydomain.test
+      # No proxy in front, so a client's X-Forwarded-For is not trusted.
+      AUTHWALL_TRUST_PROXY: none
     ports:
       - 3000:3000
     volumes:

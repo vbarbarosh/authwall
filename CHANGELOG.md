@@ -13,6 +13,10 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- The proxy recipes and the root `docker-compose.yaml` set
+  `AUTHWALL_TRUST_PROXY: none`, as the direct recipe does: Authwall is
+  published there with no proxy in front, so a client's `X-Forwarded-For` is
+  not its address. The recipes say `hops/1` once a TLS terminator is in front.
 - The upstream no longer gets a client's `X_Forwarded_*` or `X_Real_IP`
   (underscore spellings), `Forwarded`, `X-Original-URL`, `X-Rewrite-URL`,
   `X-Original-Host`, `X-Host` or a vendor client-address header
