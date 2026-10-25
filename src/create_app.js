@@ -336,7 +336,8 @@ async function create_app()
     proxy.on('error', function (error, req, res) {
         als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
         // res is a `Socket` for WS upgrade errors and a `ServerResponse` for HTTP errors.
-        if (typeof res.status === 'function') {
+        // An answer already started or cut cannot become a 502 (AW-76).
+        if ((typeof res.status === 'function') && !res.headersSent && !res.destroyed) {
             res.status(502).send('Upstream service unavailable');
         }
         else {
@@ -363,9 +364,9 @@ async function create_app()
             next();
             return;
         }
+        // The 'error' handler answers or destroys the response; next() would answer twice (AW-76).
         proxy.web(req, res).catch(function (error) {
             proxy.emit('error', error, req, res);
-            next(error);
         });
     });
 

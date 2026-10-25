@@ -90,6 +90,8 @@
   signing out, a password reset or change, or removing the account closes it
   at once; a revocation made elsewhere closes it within
   `websockets.recheck_seconds`, 30 by default (M-04).
+- An upstream that drops its connection after its headers no longer ends the
+  process: that answer is cut short, and the next request is served (AW-76).
 
 ### Added
 

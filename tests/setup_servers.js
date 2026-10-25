@@ -75,6 +75,13 @@ async function spin(ctx, _this, fn)
 async function create_echo_server()
 {
     const server = http.createServer(function (req, res) {
+        // An upstream that resets mid-answer: its headers and one chunk, then
+        // the connection is gone (AW-76).
+        if (req.url === '/reset-mid-body') {
+            res.writeHead(200, {'content-type': 'text/plain'});
+            res.write('partial', () => res.socket.destroy());
+            return;
+        }
         const chunks = [];
         req.on('data', chunk => chunks.push(chunk));
         req.on('end', () => {

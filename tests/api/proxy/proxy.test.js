@@ -1,6 +1,7 @@
 const assert = require('assert');
 const axios = require('axios');
 const config = require('../../../config');
+const http = require('http');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 describe('proxy', function () {
@@ -219,6 +220,25 @@ describe('proxy', function () {
             },
         });
         assert.deepStrictEqual(auth_headers, []);
+    });
+
+    // AW-76: an upstream that broke after its headers went out made the 502
+    // handler write to a sent response, and the throw ended the process.
+    it('survives an upstream that resets after its headers', async function () {
+        config.public_paths = ['/reset-mid-body'];
+        const r = await new Promise(function (resolve, reject) {
+            const request = http.get(`${config.public_url}/reset-mid-body`, function (response) {
+                response.on('error', () => {});
+                response.on('close', () => resolve({status: response.statusCode, complete: response.complete}));
+                response.resume();
+            });
+            request.on('error', reject);
+        });
+        assert.deepStrictEqual(r, {status: 200, complete: false});
+        assert.ok(this.written_logs.some(v => v.includes('[proxy_error]')), 'no [proxy_error] line');
+
+        const health = await axios.get('/auth/health', {baseURL: config.public_url});
+        assert.strictEqual(health.status, 200);
     });
 
 });
