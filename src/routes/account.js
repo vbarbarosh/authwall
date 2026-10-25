@@ -26,7 +26,17 @@ async function account_remove_post(req, res)
     if (!user) {
         throw new UserFriendlyError('User not found');
     }
-    await require_confirmation(req, {reason: 'account_remove', next: config.pages.profile, message: 'Confirm it is you before removing your account'});
+    // Removing the account takes two different ways to confirm it is the
+    // owner when the account has two: its password, a code to its primary
+    // address, a fresh sign-in with a linked provider (the author, 10-25).
+    const identities = await db('user_identities').where({user_id: user.id});
+    const ways = [
+        user.password_hash !== null,
+        config.mailer.enabled && identities.some(v => v.primary_at),
+        identities.some(v => v.type.startsWith('oauth_') && v.verified_at),
+    ];
+    const factors = Math.max(1, Math.min(2, ways.filter(Boolean).length));
+    await require_confirmation(req, {reason: 'account_remove', next: config.pages.profile, message: 'Confirm it is you before removing your account', factors});
 
     await db.transaction(async function () {
         const user_id = user.id;

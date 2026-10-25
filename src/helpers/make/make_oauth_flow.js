@@ -19,6 +19,7 @@ const oauth_intent_from_state = require('../oauth_intent_from_state');
 const oauth_state_from_intent = require('../oauth_state_from_intent');
 const random_base62 = require('../random/random_base62');
 const random_uid_user_identity = require('../random/random_uid_user_identity');
+const record_confirmation = require('../record_confirmation');
 const redirect = require('../redirect');
 const require_confirmation = require('../require_confirmation');
 const save_session = require('../save_session');
@@ -318,11 +319,12 @@ async function confirm_with_provider(oauth_provider, req, res, ident)
         await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure, custom});
         throw new UserFriendlyError('This account is not linked to yours. Sign in with an account you have linked.');
     }
-    req.session.confirmed_at = new Date().toJSON();
-    req.session.confirmed_for = req.session.confirmation ?? null;
+    const enough = record_confirmation(req, 'provider');
     await save_session(req);
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_confirmed, custom});
-    res.redirect(req.session.confirmation?.next ?? config.pages.profile);
+    // An action that wants a second way to confirm (account removal) comes
+    // back to the confirmation page for it.
+    res.redirect(enough ? (req.session.confirmation?.next ?? config.pages.profile) : config.pages.confirm);
 }
 
 // A provider account vouches for the owner only when it returns the account's

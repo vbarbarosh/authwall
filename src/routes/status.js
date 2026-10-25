@@ -1,4 +1,5 @@
 const config = require('../../config');
+const confirmation_key = require('../helpers/confirmation_key');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
 const email_verification_required = require('../helpers/email_verification_required');
@@ -140,6 +141,7 @@ async function status_get(req, res)
         // An action waiting for the owner to confirm it is them (routes/confirm.js).
         confirmation: bearer ? null : (req.session.confirmation ?? null),
         confirmed: bearer ? false : is_recently_confirmed(req),
+        confirmed_with: bearer ? [] : confirmed_with(req),
         ...optional,
         version: pkg.version,
     });
@@ -238,6 +240,16 @@ function sidecar_original_path(req)
         return null;
     }
     return paths[0];
+}
+
+// The ways the owner has confirmed for the confirmation now asked: an action
+// that wants two (account removal) is asked the other way next.
+function confirmed_with(req)
+{
+    if (!is_recently_confirmed(req) || (confirmation_key(req.session.confirmed_for) !== confirmation_key(req.session.confirmation))) {
+        return [];
+    }
+    return req.session.confirmed_with ?? [];
 }
 
 module.exports = routes;

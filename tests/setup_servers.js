@@ -50,11 +50,11 @@ async function spin(ctx, _this, fn)
         _this.approve_email_change = approve_email_change;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
-        // The owner confirmed it is them a moment ago for the action asked
-        // (routes/confirm.js): for a test whose subject is that action, not
-        // the gate before it.
+        // The owner confirmed it is them a moment ago, every way, for the
+        // action asked (routes/confirm.js): for a test whose subject is that
+        // action, not the gate before it.
         _this.mark_confirmed = function (asked) {
-            return _this.client.add_to_session({confirmed_at: new Date().toJSON(), confirmed_for: asked});
+            return _this.client.add_to_session({confirmed_at: new Date().toJSON(), confirmed_for: asked, confirmed_with: ['password', 'code', 'provider']});
         };
         _this.open_link = function (url) {
             return open_link(_this.client, url);
@@ -449,11 +449,16 @@ async function confirm({password = null} = {})
         await this.http_post_json('/auth/confirm', {password});
     }
     else {
-        const before = this.sent_emails.length;
-        await this.http_post_json('/auth/confirm/request');
-        await this.wait_for_emails(before + 1);
-        const {code} = this.sent_emails[before].placeholders;
-        this.sent_emails.splice(before);
+        // An action that asked has mailed a code already; otherwise ask for one.
+        let i = this.sent_emails.findLastIndex(v => v.name === const_email.confirm_code);
+        if (i === -1) {
+            const before = this.sent_emails.length;
+            await this.http_post_json('/auth/confirm/request');
+            await this.wait_for_emails(before + 1);
+            i = before;
+        }
+        const {code} = this.sent_emails[i].placeholders;
+        this.sent_emails.splice(i, 1);
         await this.http_post_json('/auth/confirm', {code});
     }
 

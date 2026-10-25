@@ -122,6 +122,7 @@ describe('shape • status', function () {
             ],
             confirmation: null,
             confirmed: false,
+            confirmed_with: [],
             personal_access_tokens: [],
             version: pkg.version,
         };

@@ -121,7 +121,9 @@
   account without a primary, removing a verified address, disconnecting a
   provider, creating a personal access token, setting a first password and
   removing the account. A confirmation covers the action that asked for it,
-  once, within ten minutes.
+  once, within ten minutes. The ask mails the code to the primary address.
+  Removing the account takes two different ways (the password, the code, a
+  linked provider) when the account has two.
 - Changing the email from the profile.
 
 ### Recipes

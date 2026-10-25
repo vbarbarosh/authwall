@@ -47,6 +47,8 @@ test.describe('email change', function () {
         expect((await db('email_change_tokens').where({user_id}).first()).approved_at).toBeNull();
 
         await page.getByTestId('link-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/email-change/sent');
+        await expect(page.locator('[data-view="email-change-sent"]')).toBeVisible();
         await expect(page.locator('[data-view="email-change-sent"]')).toContainText('We\'ve sent a confirmation link to the new address.');
         const row = await db('email_change_tokens').where({user_id}).first();
         expect(row.approved_at).not.toBeNull();

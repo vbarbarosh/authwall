@@ -153,7 +153,9 @@ session alone must not take: removing a verified address, disconnecting a
 provider, creating a personal access token, setting a first password and
 removing the account. A confirmation covers the one action that asked for
 it, in the session that made it, within ten minutes; that action spends it,
-and the next one asks again. An unverified address is removed without asking: it is no way in,
+and the next one asks again. Removing the account takes two different ways
+when the account has two: its password, the code mailed to its primary
+address, a fresh sign-in with a linked provider. An unverified address is removed without asking: it is no way in,
 and removing it is how a typo is fixed.
 
 ## Access control

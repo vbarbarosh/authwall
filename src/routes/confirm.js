@@ -9,6 +9,7 @@ const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
+const record_confirmation = require('../helpers/record_confirmation');
 const redirect = require('../helpers/redirect');
 const save_session = require('../helpers/save_session');
 const send_confirm_code = require('../helpers/send_confirm_code');
@@ -67,8 +68,7 @@ async function confirm_post(req, res)
     }
 
     // For the action that asked, for a few minutes, once (AW-81).
-    req.session.confirmed_at = now.toJSON();
-    req.session.confirmed_for = req.session.confirmation ?? null;
+    record_confirmation(req, method);
     await save_session(req);
     await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, custom: {method}});
 

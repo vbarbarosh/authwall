@@ -1,5 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
+const const_email = require('../../../src/helpers/const/const_email');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const db = require('../../../db');
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
@@ -70,12 +71,29 @@ describe('Actions that need the owner ask "confirm it is you" | stories', functi
         await this.assert_password({username: 'ann', password: 'new-pass'});
     });
 
-    it('removing the account asks first', async function () {
+    it('removing the account asks two ways: the password, then the code to the primary', async function () {
         await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass'});
 
         await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
-        await assert_asked(this, 'Confirm it is you before removing your account', {next: config.pages.profile, reason: 'account_remove'});
+        await assert_asked(this, 'Confirm it is you before removing your account', {next: config.pages.profile, reason: 'account_remove', factors: 2});
+        assert.deepStrictEqual(this.sent_emails.map(v => [v.name, v.to]), [[const_email.confirm_code, 'ann@authwall.test']]);
+
+        // The password alone is not enough.
+        await this.confirm({password: 'anns-pass'});
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
         assert.strictEqual((await db('users')).length, 1);
+        assert.deepStrictEqual((await this.http_get_json('/auth/status')).confirmed_with, ['password']);
+
+        await this.confirm();
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
+        assert.strictEqual((await db('users')).length, 0);
+    });
+
+    it('removing an account with only a password asks for the password alone', async function () {
+        await this.sign_in({username: 'ann', password: 'anns-pass'});
+
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
+        await assert_asked(this, 'Confirm it is you before removing your account', {next: config.pages.profile, reason: 'account_remove', factors: 1});
 
         await this.confirm({password: 'anns-pass'});
         await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});

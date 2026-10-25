@@ -2055,6 +2055,16 @@ const OWNER_ACTIONS = {
     provider_disconnect: 'Disconnecting {provider} needs the owner. Confirm it is you, then disconnect it again.',
 };
 
+// An action that takes two ways to confirm (account removal, the author on
+// 10-25): which step this is, and what is left.
+function confirm_steps_text(given)
+{
+    if (!given.length) {
+        return 'Removing your account takes two ways to confirm it is you, one after the other. Start with either.';
+    }
+    return 'One more, a different way. Then remove your account again.';
+}
+
 // After a refused action: whether it was refused for want of a confirmation,
 // in which case the confirm view is shown instead of the error.
 async function confirm_if_asked()
@@ -2074,6 +2084,8 @@ function render_confirm(s) {
   if (!reason) return;
   if (c && (c.reason === 'email_change')) {
     reason.textContent = 'Your account has no verified primary address to approve an email change. Confirm it is you to continue.';
+  } else if (c && (c.factors > 1)) {
+    reason.textContent = confirm_steps_text(s.confirmed_with || []);
   } else if (c && OWNER_ACTIONS[c.reason]) {
     reason.textContent = OWNER_ACTIONS[c.reason].replace('{provider}', CONFIRM_PROVIDER_LABELS[c.disconnect] || 'this account');
   } else if (c && c.provider) {
@@ -2086,14 +2098,16 @@ function render_confirm(s) {
   } else {
     reason.textContent = 'Confirm it is you to continue.';
   }
+  // A way already given for this ask is not offered again: the next is another.
+  const given = s.confirmed_with || [];
   document.getElementById('cf-primary').textContent = primary ? primary.value : '';
-  document.getElementById('cf-code-block').style.display = primary ? '' : 'none';
-  document.getElementById('cf-password-block').style.display = s.has_password ? '' : 'none';
+  document.getElementById('cf-code-block').style.display = (primary && !given.includes('code')) ? '' : 'none';
+  document.getElementById('cf-password-block').style.display = (s.has_password && !given.includes('password')) ? '' : 'none';
   // A fresh sign-in with a linked account confirms too; labels and routes come
   // from the fixed maps above, never from the server's values.
   const linked = (s.providers || []).map(p => p.type).filter(v => CONFIRM_PROVIDER_ROUTES[v]);
   document.getElementById('cf-providers').innerHTML = linked.map(v => `<a class="btn btn-outline mt-8" href="${CONFIRM_PROVIDER_ROUTES[v]}?confirm=1" data-testid="confirm-provider-${v}">Sign in again with ${CONFIRM_PROVIDER_LABELS[v]}</a>`).join('');
-  document.getElementById('cf-providers-block').style.display = linked.length ? '' : 'none';
+  document.getElementById('cf-providers-block').style.display = (linked.length && !given.includes('provider')) ? '' : 'none';
   document.getElementById('cf-none').style.display = (primary || s.has_password || linked.length) ? 'none' : '';
 }
 
@@ -2104,6 +2118,15 @@ async function confirm_submit(fields, button_id) {
   set_loading(button_id, false);
   if (error) return show_error('cf-error-msg', 'cf-error', error);
   const s = await api_status();
+  // An action that takes two ways stays here for the second one.
+  if (s.confirmation && ((s.confirmation.factors || 1) > (s.confirmed_with || []).length)) {
+    for (const input of document.querySelectorAll('#cf-code .otp-input')) {
+      input.value = '';
+    }
+    document.getElementById('cf-password').value = '';
+    render_confirm(s);
+    return;
+  }
   // The action that asked for confirmation continues with a full page load:
   // a connect goes through the provider, which fetch() cannot follow.
   if (s.confirmation && s.confirmation.next) {

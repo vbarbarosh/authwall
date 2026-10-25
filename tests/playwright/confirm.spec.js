@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const open_e2e_db = require('./open_e2e_db');
 const sign_up_with_primary = require('./sign_up_with_primary');
 const {test, expect} = require('@playwright/test');
@@ -33,18 +34,28 @@ test.describe('confirm it is you', function () {
 
     // AW-04, AW-77: an action that needs the owner asks first, then the owner
     // comes back to the profile and does it again.
-    test('removing the account asks to confirm, then removes it', async function ({page}) {
+    test('removing the account asks two ways, the password then the code, then removes it', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
 
         await page.goto('/auth/profile');
         await page.getByTestId('profile-remove-confirm').fill('DELETE');
         await page.getByTestId('profile-remove-account').click();
-        await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account needs the owner. Confirm it is you, then remove it again.');
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account takes two ways to confirm it is you, one after the other. Start with either.');
         await using db = open_e2e_db();
         expect(await db('users').where({id: user_id}).first()).toBeTruthy();
 
         await page.getByTestId('confirm-password').fill('pass1234');
         await page.getByTestId('confirm-password-submit').click();
+        await expect(page.getByTestId('confirm-reason')).toHaveText('One more, a different way. Then remove your account again.');
+        await expect(page.getByTestId('confirm-password')).toBeHidden();
+
+        // The e2e mailer delivers nothing: the mailed code is set to one the test knows.
+        await db('confirm_codes').where({user_id}).update({code_hash: bcrypt.hashSync('246810', 4)});
+        const digits = page.getByTestId('confirm-code').locator('.otp-input');
+        for (let i = 0; i < 6; i++) {
+            await digits.nth(i).fill('246810'[i]);
+        }
+        await page.getByTestId('confirm-code-submit').click();
         await page.waitForURL(v => v.pathname === '/auth/profile');
         await page.getByTestId('profile-remove-confirm').fill('DELETE');
         await page.getByTestId('profile-remove-account').click();
