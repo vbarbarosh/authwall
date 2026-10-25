@@ -484,8 +484,8 @@ function validate_email_verification_required(config)
         return;
     }
 
-    if (!email_flow_enabled(config)) {
-        throw new Error('AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow to be enabled');
+    if (!email_flow_enabled(config) && !config.flows.facebook.enabled) {
+        throw new Error('AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow or Facebook to be enabled');
     }
 }
 
@@ -512,17 +512,24 @@ function validate_email_access_rules(config)
     }
 
     // An address typed into email sign-up proves nothing until it is
-    // confirmed; with confirmation off it would pass an allow list as typed (AW-01).
+    // confirmed; with confirmation off it would pass an allow list as typed
+    // (AW-01). Facebook's is pending the same way: Facebook never says it
+    // confirmed it (AW-05).
     const allow_rules = configured.filter(v => v.startsWith('AUTHWALL_ALLOWED_'));
-    if (allow_rules.length && email_flow_enabled(config) && !config.confirm_email.required) {
-        throw new Error(`Email allow rules (${allow_rules.join(', ')}) need confirmed addresses: set AUTHWALL_CONFIRM_EMAIL_REQUIRED=true, or disable the email flow`);
+    const pending_flows = [email_flow_enabled(config) && 'the email flow', config.flows.facebook.enabled && 'Facebook'].filter(Boolean);
+    if (allow_rules.length && pending_flows.length && !config.confirm_email.required) {
+        throw new Error(`Email allow rules (${allow_rules.join(', ')}) need confirmed addresses: set AUTHWALL_CONFIRM_EMAIL_REQUIRED=true, or disable ${pending_flows.join(' and ')}`);
     }
 }
 
+// Unset, confirmation is required where an address comes in pending: from the
+// email flow, and from Facebook under an allow list (AW-05), which must not
+// admit an address before it is confirmed.
 function resolve_email_verification_required(config)
 {
     if (config.confirm_email.required === null) {
-        config.confirm_email.required = email_flow_enabled(config);
+        const allow_rules = [...config.access.allowed_emails, ...config.access.allowed_domains];
+        config.confirm_email.required = email_flow_enabled(config) || (config.flows.facebook.enabled && (allow_rules.length > 0));
     }
 }
 

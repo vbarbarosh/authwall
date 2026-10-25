@@ -50,6 +50,10 @@ async function exchange_code_for_tokens(code, code_verifier)
     return tokens;
 }
 
+// Facebook returns "the primary email on the profile" and never says whether
+// it confirmed it: no flag beside it, as Google's email_verified or GitHub's
+// verified is (AW-05). So the address is pending, never verified: Authwall
+// stores it so and mails its own link; it counts once that link is opened.
 async function fetch_user_info(tokens)
 {
     const user_info = await http_get_json(urlmod('https://graph.facebook.com/v22.0/me', {fields: 'id,name,email,picture'}), {
@@ -60,7 +64,8 @@ async function fetch_user_info(tokens)
         sub: user_info.id,
         name: user_info.name || null,
         avatar: user_info.picture?.data?.url || null,
-        verified_emails: [user_info.email].filter(Boolean),
+        verified_emails: [],
+        pending_emails: [user_info.email].filter(Boolean),
     };
 }
 

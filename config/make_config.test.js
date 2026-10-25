@@ -244,7 +244,7 @@ describe('make_config', function () {
                 AUTHWALL_FLOWS: 'username',
                 AUTHWALL_CONFIRM_EMAIL_REQUIRED: 'true',
             }),
-            /AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow to be enabled/
+            /AUTHWALL_CONFIRM_EMAIL_REQUIRED requires the email flow or Facebook to be enabled/
         );
     });
 

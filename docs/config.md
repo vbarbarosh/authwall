@@ -670,8 +670,11 @@ An allow list admits addresses, and an address typed into email sign-up is
 proof of nothing until it is confirmed. So with `AUTHWALL_ALLOWED_EMAILS` or
 `AUTHWALL_ALLOWED_DOMAINS` set and the email flow enabled, Authwall refuses to
 start when `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`. Leave it unset (it then
-resolves to enabled) or disable the email flow; magic links and OAuth bring in
-only addresses they have verified.
+resolves to enabled) or disable the email flow. Facebook's address comes in
+pending the same way ([Facebook](oauth-providers.md#facebook)): with an allow
+list and Facebook enabled, unset resolves to enabled and `false` refuses to
+start. Magic links and the other providers bring in only addresses they have
+verified.
 
 A username sign-in refused by these rules answers *"Invalid username or
 password"*, exactly as a wrong password does, so the form cannot be used to
@@ -745,7 +748,7 @@ AUTHWALL_DENIED_EMAILS=fired@myapp.test
 
 Controls whether Authwall asks users to confirm an email address, and how the confirmation message is delivered.
 
-- `AUTHWALL_CONFIRM_EMAIL_REQUIRED` — whether a confirmed email is required to reach the protected app. Type: boolean flag. Values: `yes`, `no`, `true`, `false`, `on`, `off`. Default: unset, which resolves to enabled whenever the email sign-in flow is enabled. When enabled, users without a confirmed email are held at the confirmation step instead of being proxied upstream.
+- `AUTHWALL_CONFIRM_EMAIL_REQUIRED` — whether a confirmed email is required to reach the protected app. Type: boolean flag. Values: `yes`, `no`, `true`, `false`, `on`, `off`. Default: unset, which resolves to enabled whenever the email sign-in flow is enabled, or Facebook is with an allow list. When enabled, users without a confirmed email are held at the confirmation step instead of being proxied upstream.
 - `AUTHWALL_CONFIRM_EMAIL` — confirmation delivery mode. Type: enum. Values: `auto`, `off`, `disabled`, `link`, `code`, `link_and_code`. Default: `auto`.
 
 How each `AUTHWALL_CONFIRM_EMAIL` value behaves:
@@ -762,10 +765,10 @@ Any value outside the list above disables confirmation and logs a warning.
 > If `AUTHWALL_CONFIRM_EMAIL` is one of `link`, `code`, or `link_and_code` but no mailer is configured, Authwall refuses to start.
 
 > [!WARNING]
-> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is enabled while the email sign-in flow is disabled, Authwall refuses to start.
+> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is enabled while neither the email sign-in flow nor Facebook is enabled, Authwall refuses to start.
 
 > [!WARNING]
-> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is disabled while an allow list (`AUTHWALL_ALLOWED_EMAILS`, `AUTHWALL_ALLOWED_DOMAINS`) is set and the email sign-in flow is enabled, Authwall refuses to start.
+> If `AUTHWALL_CONFIRM_EMAIL_REQUIRED` is disabled while an allow list (`AUTHWALL_ALLOWED_EMAILS`, `AUTHWALL_ALLOWED_DOMAINS`) is set and the email sign-in flow or Facebook is enabled, Authwall refuses to start.
 
 A few related knobs are not exposed as environment variables and are tuned in `config/settings.yaml` under `confirm_email`: `expires_minutes` (default `15`), `code_length` (default `6`), `max_attempts` (default `5`), and `resend_cooldown_seconds` (default `60`). Across codes, an address gets 10 wrong codes per hour ([security](security.md#rate-limiting)).
 

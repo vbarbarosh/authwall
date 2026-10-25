@@ -1,6 +1,6 @@
 const nock = require('nock');
 
-function mock_facebook()
+function mock_facebook(user_info_overrides = {})
 {
     const tokens = {
         access_token: 'fake-token',
@@ -17,6 +17,7 @@ function mock_facebook()
                 url: 'https://example.com/facebook-avatar.jpg',
             },
         },
+        ...user_info_overrides,
     };
 
     nock.cleanAll();

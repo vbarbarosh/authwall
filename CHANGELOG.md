@@ -13,6 +13,12 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- A Facebook address is stored pending, never verified: Facebook does not say
+  it confirmed it. A new account gets Authwall's confirmation link with the
+  welcome, and the address counts once it is opened. With an allow list and
+  Facebook, an unset `AUTHWALL_CONFIRM_EMAIL_REQUIRED` resolves to enabled, so
+  the sign-in waits at confirmation, and `false` refuses to start. Connecting
+  Facebook from the profile no longer adds its address.
 - `AUTHWALL_MAGIC_LINK` is enforced: `link` issues no code and refuses one,
   `code` refuses the link. `link_and_code` works as before.
 - The proxy answers 400 to a request target with `#` or one not in origin

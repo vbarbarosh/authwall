@@ -1,7 +1,7 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const assign_primary_email = require('../assign_primary_email');
 const auth_middleware = require('../middleware/auth_middleware');
-const authorize_oauth_verified_emails = require('../authorize_oauth_verified_emails');
+const authorize_oauth_emails = require('../authorize_oauth_emails');
 const complete_sign_in = require('../../actions/complete_sign_in');
 const complete_sign_up = require('../../actions/complete_sign_up');
 const config = require('../../../config');
@@ -9,6 +9,7 @@ const const_auth_event = require('../const/const_auth_event');
 const const_auth_event_status = require('../const/const_auth_event_status');
 const const_oauth_intent = require('../const/const_oauth_intent');
 const const_user_identity = require('../const/const_user_identity');
+const create_email_verify_token = require('../create_email_verify_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../middleware/csrf_middleware');
 const db = require('../../../db');
@@ -28,6 +29,8 @@ const send_email_nothrow = require('../send_email_nothrow');
 const spend_confirmation = require('../spend_confirmation');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../models/users_create');
+
+const SECOND = 1000;
 
 function make_oauth_flow(oauth_provider)
 {
@@ -95,9 +98,15 @@ async function callback_get(oauth_provider, req, res)
         await confirm_with_provider(oauth_provider, req, res, ident);
         return;
     }
-    const verified_emails = await authorize_oauth_verified_emails(user_info.verified_emails,
-        {require_one_when_access_rules: oauth_intent === const_oauth_intent.login}
+    // An address the provider does not vouch for (Facebook's, AW-05) passes
+    // the access rules as a verified one does and stands in for one at
+    // sign-in: it is stored pending, and under an allow list the session it
+    // opens waits at email verification until Authwall's own link is opened.
+    const pending_emails = await authorize_oauth_emails(user_info.pending_emails ?? []);
+    const verified_emails = await authorize_oauth_emails(user_info.verified_emails,
+        {require_one_when_access_rules: (oauth_intent === const_oauth_intent.login) && !pending_emails.length}
     );
+    const provider_emails = [...verified_emails, ...pending_emails].map(v => v.email);
 
     // Connect account flow
     if (oauth_intent === const_oauth_intent.connect) {
@@ -159,7 +168,7 @@ async function callback_get(oauth_provider, req, res)
             next: urlmod(oauth_provider.route_authorize, {connect: 1}),
             reason: 'provider_connect',
             provider: oauth_provider.user_identity_type,
-            provider_emails: verified_emails.map(v => v.email),
+            provider_emails,
         };
         if (!await returns_primary_email(req.session.user_id, oauth_provider, verified_emails) && !spend_confirmation(req, asked)) {
             req.session.confirmation = asked;
@@ -238,7 +247,7 @@ async function callback_get(oauth_provider, req, res)
                 verified_only: true,
                 placeholders: {
                     display_name: user.display_name,
-                    email: user_info.verified_emails[0] ?? '',
+                    email: provider_emails[0] ?? '',
                     date: format_date_pretty_24(new Date()),
                     ip: req.session.ip ?? 'n/a',
                     reset_link: config.public_url + urlmod(config.pages.password_reset_request, {email: email_and_name.email}),
@@ -289,6 +298,21 @@ async function callback_get(oauth_provider, req, res)
                 }).onConflict(['type', 'value_normalized']).ignore();
                 await assign_primary_email(user_id);
             }
+            // An address another account holds stays with it, as a verified
+            // one does.
+            const pending_email = pending_emails[0];
+            if (!verified_email && pending_email) {
+                await db('user_identities').insert({
+                    uid: random_uid_user_identity(),
+                    user_id,
+                    type: const_user_identity.email,
+                    value: pending_email.email,
+                    value_normalized: pending_email.email_normalized,
+                    created_at: now,
+                    updated_at: now,
+                    verified_at: null,
+                }).onConflict(['type', 'value_normalized']).ignore();
+            }
         });
     }
 
@@ -298,12 +322,29 @@ async function callback_get(oauth_provider, req, res)
         await complete_sign_in(req, res, user, ident);
     }
     else {
-        await complete_sign_up(req, res, user, null, {
-            type: oauth_provider.user_identity_type,
-            value: sub,
-            value_normalized: sub,
-        });
+        const {token, code} = await create_pending_email_token(user_id);
+        const oauth_ident = {type: oauth_provider.user_identity_type, value: sub, value_normalized: sub};
+        await complete_sign_up(req, res, user, token, oauth_ident, {}, code);
     }
+}
+
+// The link that confirms a new account's pending address, mailed with the
+// welcome as an email sign-up's is. None when nothing is pending, or when the
+// address was mailed within the resend cooldown: an account removed and made
+// again must not mail it more often than a resend would.
+async function create_pending_email_token(user_id)
+{
+    const ident = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNull('verified_at').first();
+    if (!ident) {
+        return {token: null, code: null};
+    }
+
+    const recent = await db('email_verify_tokens').where({email_normalized: ident.value_normalized}).orderBy('id', 'desc').first();
+    if (recent && ((Date.now() - new Date(recent.created_at).getTime()) < config.confirm_email.resend_cooldown_seconds*SECOND)) {
+        return {token: null, code: null};
+    }
+
+    return create_email_verify_token(user_id, ident.value_normalized);
 }
 
 // A fresh sign-in with a provider account already linked to this user

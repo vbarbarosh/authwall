@@ -18,7 +18,7 @@ describe('sign up via facebook | scenarios', function () {
         mock_facebook();
     });
 
-    it('signup via facebook should mark the email as verified', async function () {
+    it('signup via facebook should store the email pending, never verified (AW-05)', async function () {
         const r = await this.client.get_json_no_redirects('/auth/facebook');
         const sess = await this.client.get_session();
 
@@ -45,7 +45,7 @@ describe('sign up via facebook | scenarios', function () {
             avatar_url: 'https://example.com/facebook-avatar.jpg',
         });
         assert.ok(status.providers.find(v => v.type === 'oauth_facebook' && v.value === 'facebook-user-123').verified_at !== null);
-        assert.ok(status.providers.find(v => v.type === 'email' && v.value === 'test@example.com').verified_at !== null);
+        assert.strictEqual(status.providers.find(v => v.type === 'email' && v.value === 'test@example.com').verified_at, null);
     });
 
 });

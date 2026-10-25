@@ -147,6 +147,15 @@ Facebook returns an email address only if the user grants the `email`
 permission; accounts that decline it, or that have no email on file, sign in
 without an email identity.
 
+Facebook never says whether it confirmed the address it returns: no flag comes
+with it, as `email_verified` comes from Google. So a new account stores it
+pending, never verified, and Authwall mails its own confirmation link with the
+welcome; the address counts once that link is opened. Under an allow list the
+sign-in waits at email confirmation until then
+([`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](config.md#authwall_confirm_email_required)
+resolves to enabled), so that deployment needs a mailer. Connecting a Facebook
+account from the profile does not bring its address along.
+
 ```sh
 AUTHWALL_FACEBOOK_CLIENT_ID=1234567890123456
 AUTHWALL_FACEBOOK_CLIENT_SECRET=...
