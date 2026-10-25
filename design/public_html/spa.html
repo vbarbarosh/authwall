@@ -2055,14 +2055,18 @@ const OWNER_ACTIONS = {
     provider_disconnect: 'Disconnecting {provider} needs the owner. Confirm it is you, then disconnect it again.',
 };
 
-// An action that takes two ways to confirm (account removal, the author on
-// 10-25): which step this is, and what is left.
-function confirm_steps_text(given)
+// An action that takes two ways to confirm (account removal) asks one at a
+// time: the password first, then the emailed code, then a linked account
+// (the author, 10-25 18:03).
+const CONFIRM_STEPS = ['password', 'code', 'provider'];
+const CONFIRM_STEP_WORDS = {password: 'your password', code: 'the code we sent to your email', provider: 'a fresh sign-in with a linked account'};
+
+function confirm_steps_text(step, given)
 {
     if (!given.length) {
-        return 'Removing your account takes two ways to confirm it is you, one after the other. Start with either.';
+        return `Removing your account takes two steps. First, ${CONFIRM_STEP_WORDS[step]}.`;
     }
-    return 'One more, a different way. Then remove your account again.';
+    return `Second step: ${CONFIRM_STEP_WORDS[step]}. Then remove your account again.`;
 }
 
 // After a refused action: whether it was refused for want of a confirmation,
@@ -2082,10 +2086,18 @@ function render_confirm(s) {
   const c = s.confirmation;
   const reason = document.getElementById('cf-reason');
   if (!reason) return;
+  // The ways this account has; a way already given for this ask is not
+  // offered again. Two-step actions offer only the next one.
+  const given = s.confirmed_with || [];
+  const linked = (s.providers || []).map(p => p.type).filter(v => CONFIRM_PROVIDER_ROUTES[v]);
+  // A code needs the mailer; can_change_email says whether it is on.
+  const ways = {password: Boolean(s.has_password), code: Boolean(primary && s.actions?.can_change_email !== false), provider: linked.length > 0};
+  const step = (c && (c.factors > 1)) ? CONFIRM_STEPS.find(v => ways[v] && !given.includes(v)) : null;
+  const shown = Object.fromEntries(CONFIRM_STEPS.map(v => [v, step ? (step === v) : (ways[v] && !given.includes(v))]));
   if (c && (c.reason === 'email_change')) {
     reason.textContent = 'Your account has no verified primary address to approve an email change. Confirm it is you to continue.';
-  } else if (c && (c.factors > 1)) {
-    reason.textContent = confirm_steps_text(s.confirmed_with || []);
+  } else if (step) {
+    reason.textContent = confirm_steps_text(step, given);
   } else if (c && OWNER_ACTIONS[c.reason]) {
     reason.textContent = OWNER_ACTIONS[c.reason].replace('{provider}', CONFIRM_PROVIDER_LABELS[c.disconnect] || 'this account');
   } else if (c && c.provider) {
@@ -2098,16 +2110,17 @@ function render_confirm(s) {
   } else {
     reason.textContent = 'Confirm it is you to continue.';
   }
-  // A way already given for this ask is not offered again: the next is another.
-  const given = s.confirmed_with || [];
   document.getElementById('cf-primary').textContent = primary ? primary.value : '';
-  document.getElementById('cf-code-block').style.display = (primary && !given.includes('code')) ? '' : 'none';
-  document.getElementById('cf-password-block').style.display = (s.has_password && !given.includes('password')) ? '' : 'none';
+  document.getElementById('cf-code-block').style.display = shown.code ? '' : 'none';
+  document.getElementById('cf-password-block').style.display = shown.password ? '' : 'none';
+  // "Or" only under another way; alone, the password button is the main one.
+  document.querySelector('label[for="cf-password"]').textContent = shown.code ? 'Or enter your password' : 'Your password';
+  document.getElementById('cf-password-submit').className = `btn ${shown.code ? 'btn-outline' : 'btn-primary'} mt-8`;
+  document.querySelector('#cf-providers-block > p').textContent = (shown.code || shown.password) ? 'Or sign in again with an account you have linked:' : 'Sign in again with an account you have linked:';
   // A fresh sign-in with a linked account confirms too; labels and routes come
   // from the fixed maps above, never from the server's values.
-  const linked = (s.providers || []).map(p => p.type).filter(v => CONFIRM_PROVIDER_ROUTES[v]);
   document.getElementById('cf-providers').innerHTML = linked.map(v => `<a class="btn btn-outline mt-8" href="${CONFIRM_PROVIDER_ROUTES[v]}?confirm=1" data-testid="confirm-provider-${v}">Sign in again with ${CONFIRM_PROVIDER_LABELS[v]}</a>`).join('');
-  document.getElementById('cf-providers-block').style.display = (linked.length && !given.includes('provider')) ? '' : 'none';
+  document.getElementById('cf-providers-block').style.display = shown.provider ? '' : 'none';
   document.getElementById('cf-none').style.display = (primary || s.has_password || linked.length) ? 'none' : '';
 }
 

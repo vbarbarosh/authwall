@@ -34,20 +34,24 @@ test.describe('confirm it is you', function () {
 
     // AW-04, AW-77: an action that needs the owner asks first, then the owner
     // comes back to the profile and does it again.
-    test('removing the account asks two ways, the password then the code, then removes it', async function ({page}) {
+    test('removing the account asks the password alone, then the code alone, then removes it', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
 
         await page.goto('/auth/profile');
         await page.getByTestId('profile-remove-confirm').fill('DELETE');
         await page.getByTestId('profile-remove-account').click();
-        await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account takes two ways to confirm it is you, one after the other. Start with either.');
+        // The password alone first: no code, no "or" (the author, 10-25 18:03).
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account takes two steps. First, your password.');
+        await expect(page.getByTestId('confirm-code')).toBeHidden();
+        await expect(page.locator('label[for="cf-password"]')).toHaveText('Your password');
         await using db = open_e2e_db();
         expect(await db('users').where({id: user_id}).first()).toBeTruthy();
 
         await page.getByTestId('confirm-password').fill('pass1234');
         await page.getByTestId('confirm-password-submit').click();
-        await expect(page.getByTestId('confirm-reason')).toHaveText('One more, a different way. Then remove your account again.');
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Second step: the code we sent to your email. Then remove your account again.');
         await expect(page.getByTestId('confirm-password')).toBeHidden();
+        await expect(page.getByTestId('confirm-code')).toBeVisible();
 
         // The e2e mailer delivers nothing: the mailed code is set to one the test knows.
         await db('confirm_codes').where({user_id}).update({code_hash: bcrypt.hashSync('246810', 4)});
