@@ -661,6 +661,11 @@ address cannot sign in through another address or a linked provider. Email and
 password sign-in answers such a refusal as a wrong password, so it never
 confirms the password.
 
+An account the rules come to refuse after a restart is refused with its
+sessions and tokens still stored: the browser is sent to sign in, a token gets
+403. Removing the rule and restarting lets them back in, with nothing to sign
+in to or make anew ([security](security.md#access-control)).
+
 Because a username alone can never satisfy these rules, they need a flow that
 brings an email in: `email`, a magic-link mode, or an OAuth provider. With
 `AUTHWALL_FLOWS=username` and any rule set, Authwall refuses to start and names

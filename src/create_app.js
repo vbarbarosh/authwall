@@ -1,6 +1,7 @@
 const EmailNotAuthorized = require('./helpers/errors/EmailNotAuthorized');
 const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const account_access_refusal = require('./helpers/account_access_refusal');
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
 const compile_trust_proxy = require('./helpers/compile_trust_proxy');
@@ -468,6 +469,14 @@ async function sign_in_required(req, res, next)
             return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
         }
 
+        // A session the access rules came to refuse stays stored and is sent
+        // to sign in, where /auth/status names the reason (AW-80); a token
+        // never gets here.
+        if (await account_access_refusal(user_id)) {
+            als.logger.write(`[auth_refused_by_access_rules] ${req.method} ${req.path}`);
+            return res.redirect(urlmod('/auth/sign-in', {return: req.originalUrl}));
+        }
+
         // Bearer-authenticated requests have email verification enforced earlier,
         // in personal_access_token_auth (with a 403). Redirecting an API client to
         // a browser verify-email page wouldn't make sense.
@@ -524,6 +533,11 @@ function make_personal_access_token_auth(bearer_miss_limiter)
                 // 403 (not 401) because the credential is valid — the user is just not authorized to use it yet.
                 // Not counted as a miss either: the credential matched, the owner is just unverified.
                 res.status(403).type('text').send('Email verification required');
+                return;
+            }
+            if (result.kind === 'refused') {
+                // The token is kept, and works again once the rule is lifted (AW-80).
+                res.status(403).type('text').send(result.error);
                 return;
             }
 
@@ -828,6 +842,9 @@ async function authenticate_ws_upgrade(req, ip, bearer_miss_limiter)
     if (result.kind === 'unverified_email') {
         return ws_auth_reject('bearer_email_unverified', req);
     }
+    if (result.kind === 'refused') {
+        return ws_auth_reject('bearer_refused_by_access_rules', req);
+    }
 
     return {
         user_uid: result.user_uid,
@@ -865,6 +882,9 @@ async function authenticate_ws_session(req)
 
     if (config.confirm_email.required && !custom.email_verified_at) {
         return ws_auth_reject('session_email_unverified', req);
+    }
+    if (await account_access_refusal(session.user_id)) {
+        return ws_auth_reject('session_refused_by_access_rules', req);
     }
 
     await db('sessions').where({id: session.id}).update({

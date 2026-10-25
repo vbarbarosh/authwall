@@ -1,3 +1,4 @@
+const account_access_refusal = require('../helpers/account_access_refusal');
 const config = require('../../config');
 const confirmation_key = require('../helpers/confirmation_key');
 const const_user_identity = require('../helpers/const/const_user_identity');
@@ -31,8 +32,16 @@ async function status_get(req, res)
         user = await db('users').where({id: user_id}).first();
     }
 
-    const error = req.session.error ?? null;
+    let error = req.session.error ?? null;
     delete req.session.error;
+
+    // A session the access rules came to refuse answers as signed out, with
+    // the reason; it stays stored for when the rule is lifted (AW-80).
+    const refusal = user && await account_access_refusal(user.id);
+    if (refusal) {
+        user = null;
+        error = refusal.error;
+    }
 
     // {
     //   "authenticated": true,
@@ -212,6 +221,12 @@ async function sidecar_get(req, res)
 
     const user = await db('users').where({id: user_id}).first();
     if (!user) {
+        res.status(401).send();
+        return;
+    }
+
+    // As the proxy does: to sign in, where /auth/status names the reason (AW-80).
+    if (await account_access_refusal(user.id)) {
         res.status(401).send();
         return;
     }

@@ -13,6 +13,10 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- Access rules hold existing sessions and tokens, not only new sign-ins: after
+  a restart that adds a rule refusing an account, its sessions are sent to
+  sign in, its tokens get 403 and its WebSockets are refused. They stay
+  stored, and work again once the rule is removed.
 - A sign-in or sign-up from the SPA lands on its `return` once: the page no
   longer fetches the landing before it opens it. A `return` on a subdomain of
   `AUTHWALL_PUBLIC_URL`'s host now works from the sign-in form and the SPA;

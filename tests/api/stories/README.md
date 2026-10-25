@@ -64,6 +64,7 @@ Testable now
 - [x] the app behind Authwall gets a signed-in request, in proxy or direct mode or over a WebSocket; it sees its own cookies only, never Authwall's `authwall.sid` nor an old `connect.sid` Authwall signed; a browser left with the old cookie signs in once → `upstream_never_sees_the_session_cookie.md`, `upstream_never_sees_the_session_cookie.test.js`
 - [x] Ann signs in with Facebook, which never says it confirmed the address; it is stored pending with Authwall's own link mailed, under an allow list the session waits at confirmation until the link is opened, and a Facebook account under someone else's address is never admitted → `facebook_address_pending_until_confirmed.md`, `facebook_address_pending_until_confirmed.test.js`
 - [x] Ann signs up or signs in from the SPA with a `return` on `wiki.corp.test` under the public host `corp.test`; the SPA's posts get `{next}` and open it once, the sign-in form's redirect passes `form-action`, a return elsewhere lands on `/` → `return_to_a_subdomain.md`, `return_to_a_subdomain.test.js`
+- [x] Ann is signed in with a token; Authwall restarts with a rule that denies Ann's address: every door refuses the session and the token, the account pages allow only signing out, nothing is deleted; the rule removed, the same session and token work again → `authwall_restarts_with_new_settings.md`, `authwall_restarts_with_new_settings.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

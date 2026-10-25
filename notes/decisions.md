@@ -4,6 +4,22 @@ Options considered for Authwall, with what was chosen and what was left on the
 table. An entry marked *Not implemented* describes a design that has been
 thought through but deliberately not built.
 
+## Sessions and tokens of an account the rules come to refuse
+
+**Status: implemented** on 2026-10-25 (AW-80), the author's pick. Story:
+`tests/api/stories/authwall_restarts_with_new_settings.md`.
+
+| Option | After a restart with a rule that refuses Ann | After the rule is removed |
+| --- | --- | --- |
+| A. Refused while denied (chosen) | every door refuses Ann's session and tokens; they stay stored | the same session and tokens work again |
+| B. Swept at the start | the session is deleted and the tokens revoked | Ann signs in again; every script needs a new token |
+
+A is the soft way the entry below names as worth exploring: nothing is
+destroyed and nothing is down, and a mistyped rule costs no one a token. The
+answer for an account is asked once per account and kept while the rules stand
+(`src/helpers/account_access_refusal.js`), since the rules are read at startup
+and every address is checked against them before it joins an account.
+
 ## Refusing to start when the database holds denied sessions or tokens
 
 **Status: not implemented.** Recorded as an option, not a plan.

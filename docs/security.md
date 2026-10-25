@@ -172,6 +172,13 @@ set, the default flips to deny. The rules are enforced on every sign-in flow,
 including OAuth (checked against the provider's verified emails), and against
 every verified address the account already holds.
 
+They hold what is already signed in too. The rules are read at startup; once
+Authwall restarts with a rule that refuses an account, its browser sessions are
+sent to sign in, its personal access tokens get 403, its WebSockets are
+refused, and its account pages allow only signing out. Nothing is deleted:
+when the rule is removed and Authwall restarts, the same sessions and tokens
+work again.
+
 The rules also bind username accounts: registration by username is disabled
 while any rule is configured, and a username sign-in is admitted only on the
 strength of the account's verified emails. How that is decided, and how a

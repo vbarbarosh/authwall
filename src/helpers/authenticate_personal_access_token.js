@@ -1,3 +1,4 @@
+const account_access_refusal = require('./account_access_refusal');
 const config = require('../../config');
 const const_user_identity = require('./const/const_user_identity');
 const db = require('../../db');
@@ -9,6 +10,7 @@ const TOUCH_MIN_INTERVAL_MS = 5*60*1000;
 // touches the row's last_used_* columns. Returns one of:
 //   {kind: 'invalid'}
 //   {kind: 'unverified_email'}     // credential matched, owner not yet verified
+//   {kind: 'refused', error}       // credential matched, the access rules refuse its owner
 //   {kind: 'ok', user_id, user_uid, personal_access_token_uid}
 async function authenticate_personal_access_token({token, ip = null, ua = null, now = new Date()})
 {
@@ -38,6 +40,11 @@ async function authenticate_personal_access_token({token, ip = null, ua = null, 
         if (!verified_email) {
             return {kind: 'unverified_email'};
         }
+    }
+
+    const refusal = await account_access_refusal(user.id);
+    if (refusal) {
+        return {kind: 'refused', error: refusal.error};
     }
 
     await touch(personal_access_token, {ip, ua, now});
