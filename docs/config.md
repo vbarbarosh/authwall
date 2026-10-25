@@ -453,7 +453,14 @@ Authwall preserves the client's original `Host` header so that proxy can tell
 the domains apart, and additionally sends `X-Forwarded-For`, `X-Forwarded-Host`,
 `X-Forwarded-Proto` and `X-Forwarded-Port`, set from the request it resolved
 under [`AUTHWALL_TRUST_PROXY`](#authwall_trust_proxy). A client's own
-`X-Forwarded-*` and `X-Real-IP` headers never reach the upstream, in either mode.
+`X-Forwarded-*` and `X-Real-IP` headers never reach the upstream, in either mode,
+nor their underscore spellings (`X_Forwarded_For`), which PHP and Apache read as
+the same, nor the other headers an upstream may re-decide the client, the host
+or the path from: `Forwarded`, `X-Original-URL`, `X-Rewrite-URL`,
+`X-Original-Host`, `X-Host`, `X-Client-IP`, `True-Client-IP`,
+`CF-Connecting-IP`, `X-Cluster-Client-IP` and `X-ProxyUser-Ip`.
+`X-HTTP-Method-Override` passes: Authwall judges a request by its path and its
+credential, never by its method, so the method stays the upstream's business.
 
 Example:
 

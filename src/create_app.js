@@ -56,6 +56,24 @@ const LOGGED_HEADERS = new Set([
     'x-real-ip',
 ]);
 
+// Besides X-Forwarded-*, the headers common upstreams read to re-decide the
+// client address, the host or the path Authwall already judged (AW-84):
+// RFC 7239 Forwarded (Spring, Symfony, Go), the IIS URL Rewrite ones, and the
+// vendor client-address ones (Rails, Laravel, Cloudflare-aware apps).
+const FORWARDED_HEADERS = new Set([
+    'forwarded',
+    'x-real-ip',
+    'x-original-url',
+    'x-rewrite-url',
+    'x-original-host',
+    'x-host',
+    'x-client-ip',
+    'true-client-ip',
+    'cf-connecting-ip',
+    'x-cluster-client-ip',
+    'x-proxyuser-ip',
+]);
+
 async function create_app()
 {
     const app = express();
@@ -736,12 +754,15 @@ function ignore_socket_error()
 {
 }
 
-// The client's own X-Forwarded-* and X-Real-IP never reach the upstream; in
-// proxy mode Authwall sets them from the request it resolved (AW-20).
+// The client's own X-Forwarded-* and the other forwarded headers never reach
+// the upstream; in proxy mode Authwall sets X-Forwarded-* from the request it
+// resolved (AW-20). Underscores read as dashes, as for the identity headers:
+// PHP and Apache fold X_Forwarded_For onto X-Forwarded-For (AW-83).
 function set_forwarded_headers(proxy_req, ip, proto, host)
 {
     for (const name of proxy_req.getHeaderNames()) {
-        if (name.startsWith('x-forwarded-') || name === 'x-real-ip') {
+        const folded = name.replace(/_/g, '-');
+        if (folded.startsWith('x-forwarded-') || FORWARDED_HEADERS.has(folded)) {
             proxy_req.removeHeader(name);
         }
     }

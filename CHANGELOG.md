@@ -13,6 +13,12 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- The upstream no longer gets a client's `X_Forwarded_*` or `X_Real_IP`
+  (underscore spellings), `Forwarded`, `X-Original-URL`, `X-Rewrite-URL`,
+  `X-Original-Host`, `X-Host` or a vendor client-address header
+  (`X-Client-IP`, `True-Client-IP`, `CF-Connecting-IP`,
+  `X-Cluster-Client-IP`, `X-ProxyUser-Ip`), in either mode, over HTTP and
+  WebSockets.
 - A pending address yields to its owner: a magic link or a provider that
   vouches for it takes it from another account that has another way in, the
   mailed confirmation link offers *Not my account*, and a pending address
