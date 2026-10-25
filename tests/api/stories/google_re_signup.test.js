@@ -54,7 +54,7 @@ describe('Google re-signup after disconnect | stories', function () {
         await this.http_get_json(urlmod('/auth/github/callback', {state: sess_gh.oauth_state, code: 'fake_code'}));
 
         // Disconnect Google
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'provider_disconnect', disconnect: 'oauth_google'});
         await this.http_post_json('/auth/google/disconnect');
 
         // Sign out

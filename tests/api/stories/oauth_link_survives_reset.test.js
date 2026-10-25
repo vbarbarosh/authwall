@@ -71,7 +71,7 @@ describe('A link planted from a borrowed session survives the owner\'s recovery 
         await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@gmail.test'});
         assert.deepStrictEqual(await google_subs(), []);
         const status = await this.http_get_json('/auth/status');
-        assert.deepStrictEqual(status.confirmation, {next: '/auth/google?connect=1', provider: 'oauth_google', provider_emails: ['mocha@gmail.test']});
+        assert.deepStrictEqual(status.confirmation, {next: '/auth/google?connect=1', reason: 'provider_connect', provider: 'oauth_google', provider_emails: ['mocha@gmail.test']});
         assert.strictEqual(status.confirmed, false);
 
         await this.wait_for_emails(1);

@@ -32,7 +32,7 @@ describe('The upstream\'s forwarded headers come from Authwall | stories', funct
 
     async function ws_upstream_headers(_this) {
         await _this.sign_in({username: 'mocha', password: 'pass1234'});
-        await _this.mark_confirmed();
+        await _this.mark_confirmed({reason: 'pat_create'});
         const created = await _this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
         const r = await _this.ws_roundtrip('/realtime', {token: created.token, headers: FORGED});
         assert.strictEqual(r.opened, true, r.error);

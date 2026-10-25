@@ -26,7 +26,7 @@ describe('auth_events • identity_removed', function () {
             {uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '583231', value_normalized: '583231', created_at: now, updated_at: now, verified_at: now},
         ]);
 
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'provider_disconnect', disconnect: 'oauth_github'});
         await this.http_post_json('/auth/github/disconnect');
 
         const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');
@@ -49,7 +49,7 @@ describe('auth_events • identity_removed', function () {
             {uid: random_uid_user_identity(), user_id: user_id, type: const_user_identity.oauth_google, value: 'google-user-123', value_normalized: 'google-user-123', created_at: now, updated_at: now, verified_at: now},
         ]);
 
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'provider_disconnect', disconnect: 'oauth_google'});
         await this.http_post_json('/auth/google/disconnect');
 
         const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');
@@ -67,7 +67,7 @@ describe('auth_events • identity_removed', function () {
 
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'email_remove'});
         await this.http_post_json('/auth/email/remove');
 
         const events = await db('auth_events').where({event_type: const_auth_event.identity_removed}).orderBy('id');

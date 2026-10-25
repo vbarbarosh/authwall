@@ -18,7 +18,7 @@ async function assert_oauth_connected_email(ctx, {provider, mock, expected})
     mock();
 
     await ctx.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
-    await ctx.confirm({password: 'pass123'});
+    await ctx.mark_confirmed({reason: 'provider_connect', provider: `oauth_${provider}`});
     await ctx.client.get_json_no_redirects(`/auth/${provider}?connect=1`);
     const sess = await ctx.client.get_session();
     await ctx.http_get_json(urlmod(`/auth/${provider}/callback`, {
@@ -46,7 +46,7 @@ async function assert_oauth_disconnected_email(ctx, {provider, provider_user_id,
         verified_at: now,
     });
 
-    await ctx.mark_confirmed();
+    await ctx.mark_confirmed({reason: 'provider_disconnect', disconnect: `oauth_${provider}`});
     await ctx.http_post_json(`/auth/${provider}/disconnect`);
     await ctx.wait_for_emails(1);
 

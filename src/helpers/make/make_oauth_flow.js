@@ -15,7 +15,6 @@ const db = require('../../../db');
 const format_date_pretty_24 = require('../format/format_date_pretty_24');
 const get_user_email_and_name = require('../models/get_user_email_and_name');
 const insert_auth_event = require('../insert_auth_event');
-const is_recently_confirmed = require('../is_recently_confirmed');
 const oauth_intent_from_state = require('../oauth_intent_from_state');
 const oauth_state_from_intent = require('../oauth_state_from_intent');
 const random_base62 = require('../random/random_base62');
@@ -25,6 +24,7 @@ const require_confirmation = require('../require_confirmation');
 const save_session = require('../save_session');
 const send_confirm_code = require('../send_confirm_code');
 const send_email_nothrow = require('../send_email_nothrow');
+const spend_confirmation = require('../spend_confirmation');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../models/users_create');
 
@@ -152,13 +152,16 @@ async function callback_get(oauth_provider, req, res)
         }
 
         // The primary address vouches for the owner. A provider account under
-        // any other address waits until the owner confirms it is them (AW-24).
-        if (!is_recently_confirmed(req) && !await returns_primary_email(req.session.user_id, oauth_provider, verified_emails)) {
-            req.session.confirmation = {
-                next: urlmod(oauth_provider.route_authorize, {connect: 1}),
-                provider: oauth_provider.user_identity_type,
-                provider_emails: verified_emails.map(v => v.email),
-            };
+        // any other address waits until the owner confirms it is them for this
+        // connect (AW-24, AW-81).
+        const asked = {
+            next: urlmod(oauth_provider.route_authorize, {connect: 1}),
+            reason: 'provider_connect',
+            provider: oauth_provider.user_identity_type,
+            provider_emails: verified_emails.map(v => v.email),
+        };
+        if (!await returns_primary_email(req.session.user_id, oauth_provider, verified_emails) && !spend_confirmation(req, asked)) {
+            req.session.confirmation = asked;
             await save_session(req);
             await insert_auth_event({
                 req,
@@ -316,6 +319,7 @@ async function confirm_with_provider(oauth_provider, req, res, ident)
         throw new UserFriendlyError('This account is not linked to yours. Sign in with an account you have linked.');
     }
     req.session.confirmed_at = new Date().toJSON();
+    req.session.confirmed_for = req.session.confirmation ?? null;
     await save_session(req);
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_confirmed, custom});
     res.redirect(req.session.confirmation?.next ?? config.pages.profile);

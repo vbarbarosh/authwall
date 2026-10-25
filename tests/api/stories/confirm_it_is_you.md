@@ -16,8 +16,10 @@ Mocha has a password and the primary address `mocha@authwall.test`.
 
 ## Expected
 
-Either way the session is marked confirmed (`confirmed_at`). The mark lives in
-this session only: a new sign-in starts without it.
+Either way the session is marked confirmed (`confirmed_at`), for the action
+that asked (`confirmed_for`). The mark lives in this session only: a new
+sign-in starts without it, and the action spends it
+(confirmation_is_spent_once.md).
 
 - A wrong code or password is refused, and so is the sixth attempt within 15
   minutes, even with the right answer. Wrong codes and wrong passwords count

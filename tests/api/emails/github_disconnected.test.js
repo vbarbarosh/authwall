@@ -29,7 +29,7 @@ describe('emails • github_disconnected', function () {
             verified_at: now,
         });
 
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'provider_disconnect', disconnect: 'oauth_github'});
         await this.http_post_json('/auth/github/disconnect');
         await this.wait_for_emails(1);
 

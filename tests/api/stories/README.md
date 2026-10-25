@@ -60,6 +60,7 @@ Testable now
 - [x] Sam (username, password, GitHub) adds Vera's address; Vera taps the link on her phone; nothing is confirmed and she is sent to sign in; Sam confirms in a browser signed in to his account → `added_address_needs_its_account.md`, `added_address_needs_its_account.test.js`
 - [x] a mail scanner fetches every link in Ann's mail before she reads it: the sign-in link, the confirmation link, the approval of a move and the new address's link; each opens a page and changes nothing until its button is pressed → `mailed_links_opened_by_a_scanner.md`, `mailed_links_opened_by_a_scanner.test.js`
 - [x] someone at Ann's signed-in laptop removes her address, disconnects a provider, creates a token, sets a first password or removes the account; each asks "confirm it is you" first, and an unverified address still goes without asking → `owner_actions_need_confirmation.md`, `owner_actions_need_confirmation.test.js`
+- [x] Ann confirms it is her to remove an address and walks away; a second token, or someone linking their Google account at her laptop, is asked again; a confirmation is spent by the action that asked for it → `confirmation_is_spent_once.md`, `confirmation_is_spent_once.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

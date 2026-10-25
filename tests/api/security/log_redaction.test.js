@@ -69,7 +69,7 @@ describe('websocket upgrade log redaction', function () {
 
     it('redacts a credential in the query on an accepted upgrade', async function () {
         await this.sign_in({username: 'mocha', password: 'pass1234'});
-        await this.mark_confirmed();
+        await this.mark_confirmed({reason: 'pat_create'});
         const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
 
         const r = await this.ws_roundtrip('/realtime?code=WS_ACCEPT_SECRET', {token: created.token});

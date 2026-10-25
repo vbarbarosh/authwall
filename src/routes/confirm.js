@@ -66,8 +66,9 @@ async function confirm_post(req, res)
         throw new UserFriendlyError((method === 'code') ? 'Invalid or expired code' : 'Password is incorrect');
     }
 
-    // Read by the actions that need the owner, for a few minutes.
+    // For the action that asked, for a few minutes, once (AW-81).
     req.session.confirmed_at = now.toJSON();
+    req.session.confirmed_for = req.session.confirmation ?? null;
     await save_session(req);
     await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, custom: {method}});
 

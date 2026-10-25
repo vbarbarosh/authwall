@@ -57,13 +57,14 @@ async function sign_in_via_github(client, opts)
 }
 
 // A GitHub-only account with no email has neither a primary address nor a
-// password: it confirms it is the owner by signing in with GitHub again.
+// password: it confirms it is the owner by signing in with GitHub again. The
+// redirect after it, to the action that asked, is not followed.
 async function confirm_via_github(client, opts)
 {
     mock_github(opts);
     await client.get_json_no_redirects('/auth/github?confirm=1');
     const sess = await client.get_session();
-    await client.get_json(urlmod('/auth/github/callback', {state: sess.oauth_state, code: 'fake_code'}));
+    await client.get_json_no_redirects(urlmod('/auth/github/callback', {state: sess.oauth_state, code: 'fake_code'}));
 }
 
 async function connect_google(client, opts)
@@ -113,7 +114,10 @@ describe('GitHub user without email — password setup impossible | stories', fu
     it('can set a password after connecting Google with a verified email', async function () {
         await sign_in_via_github(this.client, {email: null});
 
-        // Connect Google — brings in a verified email identity
+        // Connect Google — brings in a verified email identity. With no
+        // primary to vouch, the connect asks first; GitHub confirms it, and the
+        // confirmation is for this connect only (AW-81).
+        await connect_google(this.client, {email: 'user@example.com'});
         await confirm_via_github(this.client, {email: null});
         await connect_google(this.client, {email: 'user@example.com'});
 
@@ -124,6 +128,7 @@ describe('GitHub user without email — password setup impossible | stories', fu
         // Now password setup should succeed. There is no existing password, so
         // current_password is not required — and the new one must actually work
         // for sign-in afterwards.
+        await this.mark_confirmed({reason: 'first_password'});
         await this.http_post_json('/auth/change-password', {
             _csrf: status.csrf_token,
             password: 'newpassword',

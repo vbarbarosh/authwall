@@ -54,7 +54,7 @@ describe('Changing the primary address needs both addresses | stories', function
         assert.deepStrictEqual(status.confirmation, {next: config.pages.email_change_request, reason: 'email_change'});
         assert.deepStrictEqual(this.sent_emails, []);
 
-        await this.confirm({password: 'pass123'});
+        await this.mark_confirmed({reason: 'email_change'});
         await this.http_post_json(config.pages.email_change_request, {email: 'mocha@new.test'});
         assert.deepStrictEqual(this.sent_emails.map(v => [v.name, v.to]), [[const_email.email_change_requested, 'mocha@new.test']]);
         assert.strictEqual((await this.http_get_json('/auth/status')).confirmation, null);

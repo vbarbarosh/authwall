@@ -34,7 +34,7 @@ describe('One account per provider | stories', function () {
 
     it('refuses to connect a second Google account', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.confirm({password: 'pass123'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
         assert.strictEqual((await connect_google(this, 'owner-google')).error, null);
 
         const status = await connect_google(this, 'attacker-google');
@@ -46,7 +46,7 @@ describe('One account per provider | stories', function () {
 
     it('refuses a second Google account for one user in the database', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.confirm({password: 'pass123'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
         await connect_google(this, 'owner-google');
         const owner = await db('user_identities').where({value_normalized: 'owner-google'}).first();
 

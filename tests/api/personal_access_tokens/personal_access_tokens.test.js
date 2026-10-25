@@ -31,7 +31,7 @@ describe('personal_access_tokens', function () {
         it('creates a token, stores only its hash, and lists metadata', async function () {
             await this.sign_in({username: 'mocha', password: 'pass123'});
 
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'My Laptop',
                 expires_days: '30',
@@ -65,7 +65,7 @@ describe('personal_access_tokens', function () {
             await db('auth_events').del();
             await this.sign_in({username: 'mocha', password: 'pass123'});
 
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'CLI',
             });
@@ -115,7 +115,7 @@ describe('personal_access_tokens', function () {
 
         it('rejects revoking an already-revoked token', async function () {
             await this.sign_in({username: 'mocha', password: 'pass123'});
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'CLI',
             });
@@ -147,7 +147,7 @@ describe('personal_access_tokens', function () {
 
             this.client.cookies = cookies_a;
             const {user_id: owner_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'Mocha laptop',
             });
@@ -180,7 +180,7 @@ describe('personal_access_tokens', function () {
         it('authenticates proxied requests with a bearer token', async function () {
             const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
             const user = await db('users').where({id: user_id}).first();
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'Desktop app',
             });
@@ -210,7 +210,7 @@ describe('personal_access_tokens', function () {
 
         it('rejects revoked bearer tokens', async function () {
             await this.sign_in({username: 'mocha', password: 'pass123'});
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {
                 label: 'Old app',
             });
@@ -236,7 +236,7 @@ describe('personal_access_tokens', function () {
             it('returns the authenticated payload for the token owner', async function () {
                 const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
                 const user = await db('users').where({id: user_id}).first();
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });
@@ -281,10 +281,11 @@ describe('personal_access_tokens', function () {
 
             it('does not include revoked tokens in the status payload', async function () {
                 await this.sign_in({username: 'mocha', password: 'pass123'});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const keep = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Keep me',
                 });
+                await this.mark_confirmed({reason: 'pat_create'});
                 const drop = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Revoke me',
                 });
@@ -303,7 +304,7 @@ describe('personal_access_tokens', function () {
 
             it('cannot create another PAT using a bearer token', async function () {
                 await this.sign_in({username: 'mocha', password: 'pass123'});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });
@@ -327,7 +328,7 @@ describe('personal_access_tokens', function () {
 
             it('cannot revoke a PAT using a bearer token', async function () {
                 await this.sign_in({username: 'mocha', password: 'pass123'});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });
@@ -350,7 +351,7 @@ describe('personal_access_tokens', function () {
 
             it('cannot revoke a browser session using a bearer token', async function () {
                 const {user_id} = await this.sign_in({username: 'mocha', password: 'pass123'});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });
@@ -409,7 +410,7 @@ describe('personal_access_tokens', function () {
 
             it('rejects bearer requests when the owner has no verified email', async function () {
                 await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });
@@ -432,7 +433,7 @@ describe('personal_access_tokens', function () {
 
             it('rejects bearer requests for username-only users when verification is required', async function () {
                 await this.sign_in({username: 'mocha', password: 'pass123'});
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'CLI',
                 });
@@ -455,7 +456,7 @@ describe('personal_access_tokens', function () {
             it('allows bearer requests when the owner has at least one verified email', async function () {
                 const {user_id} = await this.sign_in({email: 'mocha@authwall.test', password: 'pass123', verified: true});
                 const user = await db('users').where({id: user_id}).first();
-                await this.mark_confirmed();
+                await this.mark_confirmed({reason: 'pat_create'});
                 const created = await this.http_post_json('/auth/personal-access-tokens', {
                     label: 'Desktop app',
                 });

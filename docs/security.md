@@ -151,8 +151,9 @@ account without a primary confirms it is the owner before asking.
 The same confirmation is asked before the other actions that a signed-in
 session alone must not take: removing a verified address, disconnecting a
 provider, creating a personal access token, setting a first password and
-removing the account. A confirmation lasts ten minutes in the session that
-made it. An unverified address is removed without asking: it is no way in,
+removing the account. A confirmation covers the one action that asked for
+it, in the session that made it, within ten minutes; that action spends it,
+and the next one asks again. An unverified address is removed without asking: it is no way in,
 and removing it is how a typo is fixed.
 
 ## Access control

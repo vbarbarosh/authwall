@@ -108,6 +108,9 @@
   verified address asks "confirm it is you" first, as do disconnecting a
   provider, creating a token, setting a first password and removing the
   account (AW-77, AW-04).
+- A confirmation no longer covers every action for ten minutes: it is spent
+  by the one that asked for it, so a borrower at a confirmed session cannot
+  link a provider in the owner's name (AW-81).
 
 ### Added
 
@@ -117,7 +120,8 @@
   provider that does not use the primary address, changing the email of an
   account without a primary, removing a verified address, disconnecting a
   provider, creating a personal access token, setting a first password and
-  removing the account; a confirmation lasts ten minutes.
+  removing the account. A confirmation covers the action that asked for it,
+  once, within ten minutes.
 - Changing the email from the profile.
 
 ### Recipes

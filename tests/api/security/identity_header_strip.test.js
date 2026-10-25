@@ -72,7 +72,7 @@ describe('inbound identity header strip', function () {
         it('strips dash and underscore identity headers on a bearer upgrade', async function () {
             await this.sign_in({username: 'mocha', password: 'pass1234'});
             const sess = await this.client.get_session();
-            await this.mark_confirmed();
+            await this.mark_confirmed({reason: 'pat_create'});
             const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
 
             const r = await this.ws_roundtrip('/realtime', {
