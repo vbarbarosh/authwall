@@ -16,6 +16,7 @@ describe('websocket proxy', function () {
     async function sign_in_with_token(_this, label = 'ws') {
         await _this.sign_in({username: 'mocha', password: 'pass1234'});
         const sess = await _this.client.get_session();
+        await _this.mark_confirmed();
         const created = await _this.http_post_json('/auth/personal-access-tokens', {label});
         return {token: created.token, user_uid: sess.user_uid};
     }
@@ -299,6 +300,7 @@ describe('websocket proxy', function () {
 
         it('closes a token\'s WebSocket when the token is revoked', async function () {
             await this.sign_in({username: 'mocha', password: 'pass1234'});
+            await this.mark_confirmed();
             const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
             const ws = await open_ws({Authorization: `Bearer ${created.token}`});
             try {

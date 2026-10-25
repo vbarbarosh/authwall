@@ -148,6 +148,13 @@ current primary first: Authwall mails it a link to approve the move, and only
 after that approval does the new address get its confirmation link. An
 account without a primary confirms it is the owner before asking.
 
+The same confirmation is asked before the other actions that a signed-in
+session alone must not take: removing a verified address, disconnecting a
+provider, creating a personal access token, setting a first password and
+removing the account. A confirmation lasts ten minutes in the session that
+made it. An unverified address is removed without asking: it is no way in,
+and removing it is how a typo is fixed.
+
 ## Access control
 
 Registration is **open by default** — anyone who can reach the sign-in page can

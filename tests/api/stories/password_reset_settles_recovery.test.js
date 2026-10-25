@@ -73,6 +73,7 @@ describe('A completed reset settles the recovery | stories', function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         const token = await request_reset_token(this, 'mocha@authwall.test');
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/email/remove');
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {error: null, authenticated: true});
 

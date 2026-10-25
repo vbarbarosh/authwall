@@ -104,12 +104,20 @@
 - A confirmation link opened in another browser says, before its button is
   pressed, that the account will change hands: its password stops working,
   every browser signed in to it is signed out (AW-79).
+- A borrowed session can no longer swap the account's address: removing a
+  verified address asks "confirm it is you" first, as do disconnecting a
+  provider, creating a token, setting a first password and removing the
+  account (AW-77, AW-04).
 
 ### Added
 
 - A primary address per account, shown with a badge in the profile.
-- "Confirm it is you" before sensitive actions: a code to the primary
-  address, the password, or a fresh sign-in with a linked provider.
+- "Confirm it is you": a code to the primary address, the password, or a
+  fresh sign-in with a linked provider. It is asked before connecting a
+  provider that does not use the primary address, changing the email of an
+  account without a primary, removing a verified address, disconnecting a
+  provider, creating a personal access token, setting a first password and
+  removing the account; a confirmation lasts ten minutes.
 - Changing the email from the profile.
 
 ### Recipes

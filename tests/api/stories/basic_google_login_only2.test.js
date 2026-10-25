@@ -69,6 +69,7 @@ describe('Basic Google login only 2 | stories', function () {
 
         const signed_in_session = await this.client.get_session();
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/google/disconnect');
 
         const disconnected_status = await this.http_get_json('/auth/status');

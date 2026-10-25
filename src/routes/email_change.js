@@ -14,14 +14,13 @@ const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
-const is_recently_confirmed = require('../helpers/is_recently_confirmed');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
-const save_session = require('../helpers/save_session');
 const send_email = require('../helpers/send_email');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
@@ -80,11 +79,8 @@ async function email_change_request_post(req, res)
     // The current primary approves a move away from it. An account without a
     // primary has no one to ask, so the owner confirms it is them first.
     const primary = await db('user_identities').where({user_id, type: const_user_identity.email}).whereNotNull('primary_at').first();
-    if (!primary && !is_recently_confirmed(req)) {
-        // The confirmation page brings the owner back to the form.
-        req.session.confirmation = {next: config.pages.email_change_request, reason: 'email_change'};
-        await save_session(req);
-        throw new UserFriendlyError('Confirm it is you before changing your email');
+    if (!primary) {
+        await require_confirmation(req, {reason: 'email_change', next: config.pages.email_change_request, message: 'Confirm it is you before changing your email'});
     }
     delete req.session.confirmation;
 

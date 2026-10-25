@@ -9,6 +9,7 @@ describe('auth_events • account_removed', function () {
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
         const status = await this.http_get_json('/auth/status');
+        await this.mark_confirmed();
         await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
 
         const events = await db('auth_events').where({event_type: const_auth_event.account_removed}).orderBy('id');

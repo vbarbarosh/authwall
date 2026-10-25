@@ -32,6 +32,7 @@ describe('story: an underscore identity header must not reach the upstream', fun
         it('the upstream receives only Authwall\'s X-Auth-User', async function () {
             await this.sign_in({username: 'mocha', password: 'pass1234'});
             const sess = await this.client.get_session();
+            await this.mark_confirmed();
             const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'ws'});
 
             const r = await this.ws_roundtrip('/realtime', {

@@ -45,6 +45,7 @@ describe('OAuth user removes their email under access rules | stories', function
         const user_id = (await db('users').first()).id;
         assert.strictEqual((await db('user_identities').where({user_id, type: const_user_identity.email})).length, 1);
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/email/remove', {});
 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {authenticated: true, error: null});

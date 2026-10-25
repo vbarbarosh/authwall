@@ -31,6 +31,46 @@ test.describe('confirm it is you', function () {
         expect(status.confirmed).toBe(true);
     });
 
+    // AW-04, AW-77: an action that needs the owner asks first, then the owner
+    // comes back to the profile and does it again.
+    test('removing the account asks to confirm, then removes it', async function ({page}) {
+        const {user_id} = await sign_up_with_primary(page);
+
+        await page.goto('/auth/profile');
+        await page.getByTestId('profile-remove-confirm').fill('DELETE');
+        await page.getByTestId('profile-remove-account').click();
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account needs the owner. Confirm it is you, then remove it again.');
+        await using db = open_e2e_db();
+        expect(await db('users').where({id: user_id}).first()).toBeTruthy();
+
+        await page.getByTestId('confirm-password').fill('pass1234');
+        await page.getByTestId('confirm-password-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/profile');
+        await page.getByTestId('profile-remove-confirm').fill('DELETE');
+        await page.getByTestId('profile-remove-account').click();
+        await page.waitForURL(v => v.pathname !== '/auth/profile');
+        expect(await db('users').where({id: user_id}).first()).toBeUndefined();
+    });
+
+    test('disconnecting a provider asks to confirm, naming it', async function ({page}) {
+        const {user_id} = await sign_up_with_primary(page);
+        const now = new Date();
+        await using db = open_e2e_db();
+        await db('user_identities').insert({uid: `gh${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`, user_id, type: 'oauth_github', value: 'gh-user', value_normalized: `gh-${user_id}`, created_at: now, updated_at: now, verified_at: now});
+
+        await page.goto('/auth/profile');
+        const github = page.getByTestId('profile-connections').locator('.connection-item', {hasText: 'GitHub'});
+        await github.getByRole('button', {name: 'Disconnect'}).click();
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Disconnecting GitHub needs the owner. Confirm it is you, then disconnect it again.');
+
+        await page.getByTestId('confirm-password').fill('pass1234');
+        await page.getByTestId('confirm-password-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/profile');
+        await github.getByRole('button', {name: 'Disconnect'}).click();
+        await expect(github.getByRole('button', {name: 'Disconnect'})).toHaveCount(0);
+        expect(await db('user_identities').where({user_id, type: 'oauth_github'}).first()).toBeUndefined();
+    });
+
     test('offers a fresh sign-in with each linked provider account', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
         await using db = open_e2e_db();

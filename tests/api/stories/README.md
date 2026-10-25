@@ -59,6 +59,7 @@ Testable now
 - [x] Mark signs up on the laptop and confirms on the phone; he sets a password there and the laptop signs in again; confirmed on the laptop, nothing changes → `verification_link_on_another_device.md`, `verification_link_on_another_device.test.js`
 - [x] Sam (username, password, GitHub) adds Vera's address; Vera taps the link on her phone; nothing is confirmed and she is sent to sign in; Sam confirms in a browser signed in to his account → `added_address_needs_its_account.md`, `added_address_needs_its_account.test.js`
 - [x] a mail scanner fetches every link in Ann's mail before she reads it: the sign-in link, the confirmation link, the approval of a move and the new address's link; each opens a page and changes nothing until its button is pressed → `mailed_links_opened_by_a_scanner.md`, `mailed_links_opened_by_a_scanner.test.js`
+- [x] someone at Ann's signed-in laptop removes her address, disconnects a provider, creates a token, sets a first password or removes the account; each asks "confirm it is you" first, and an unverified address still goes without asking → `owner_actions_need_confirmation.md`, `owner_actions_need_confirmation.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

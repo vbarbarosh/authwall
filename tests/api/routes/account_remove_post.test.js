@@ -74,6 +74,7 @@ describe('POST /auth/account/remove', function () {
         const sign_in_event_uids = sign_in_events_before.map(v => v.uid);
 
         this.client.cookies = cookies_a;
+        await this.mark_confirmed();
         await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
 
         const status_a = await this.http_get_json('/auth/status');

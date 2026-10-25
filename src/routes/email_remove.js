@@ -10,6 +10,7 @@ const db = require('../../db');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
+const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 
 const routes = [
@@ -65,6 +66,12 @@ async function email_remove_post(req, res)
             custom: {reason: 'last_verified_email'},
         });
         throw new UserFriendlyError('Cannot remove email: a verified email is required to sign in');
+    }
+    // A verified address is a way in and the way back (AW-77); an unverified
+    // one authorizes nothing, and a user held at the verify step fixes a typo
+    // by removing it.
+    if (ident.verified_at) {
+        await require_confirmation(req, {reason: 'email_remove', next: config.pages.profile, message: 'Confirm it is you before removing your email'});
     }
 
     await db.transaction(async function () {

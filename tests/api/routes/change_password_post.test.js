@@ -36,6 +36,7 @@ describe('POST /auth/change-password', function () {
         // password to verify a current_password against.
         await db('users').where({id: user_id}).update({password_hash: null});
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/change-password', {
             password: 'pass456',
             password_confirm: 'pass456',

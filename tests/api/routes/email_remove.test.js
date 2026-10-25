@@ -7,6 +7,7 @@ describe('POST /auth/email/remove', function () {
     it('removes the email identity when another identity remains', async function () {
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/email/remove');
 
         const status = await this.http_get_json('/auth/status');

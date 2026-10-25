@@ -35,6 +35,7 @@ describe('A changed or removed address kills its sibling links | stories', funct
         await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
         await this.http_post_json(config.pages.email_change_request, {email: 'attacker@evil.test'});
         await this.approve_email_change();
+        await this.mark_confirmed();
         await this.http_post_json('/auth/email/remove');
         await this.http_post_json('/auth/email/add', {email: 'other@authwall.test'});
         assert.strictEqual((await this.http_get_json('/auth/status')).error, null);

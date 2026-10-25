@@ -50,6 +50,11 @@ async function spin(ctx, _this, fn)
         _this.approve_email_change = approve_email_change;
         _this.assert_password = assert_password;
         _this.http_get_json = (url) => _this.client.get_json(url);
+        // The owner confirmed it is them a moment ago (routes/confirm.js): for
+        // a test whose subject is an action behind the gate, not the gate.
+        _this.mark_confirmed = function () {
+            return _this.client.add_to_session({confirmed_at: new Date().toJSON()});
+        };
         _this.open_link = function (url) {
             return open_link(_this.client, url);
         };

@@ -28,6 +28,7 @@ const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const username_sign_in_refusal = require('../helpers/username_sign_in_refusal');
 const users_create = require('../helpers/models/users_create');
@@ -376,6 +377,10 @@ async function change_password_post(req, res)
 
     if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
         throw new UserFriendlyError('Current password is incorrect');
+    }
+    // A first password has no current one to prove the owner (AW-04).
+    if (!has_password) {
+        await require_confirmation(req, {reason: 'first_password', next: config.pages.profile, message: 'Confirm it is you before setting a password'});
     }
 
     const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);

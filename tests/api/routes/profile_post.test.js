@@ -109,6 +109,7 @@ describe('POST /auth/profile', function () {
         // password to verify a current_password against.
         await db('users').where({id: user_id}).update({password_hash: null});
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/profile', {password: 'pass456', password_confirm: 'pass456'});
 
         assert.strictEqual((await this.http_get_json('/auth/status')).error, null);

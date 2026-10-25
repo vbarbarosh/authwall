@@ -8,6 +8,7 @@ const db = require('../../db');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const random_uid_personal_access_token = require('../helpers/random/random_uid_personal_access_token');
+const require_confirmation = require('../helpers/require_confirmation');
 const {
     create_personal_access_token_secret,
     personal_access_token_hash,
@@ -43,6 +44,7 @@ async function personal_access_tokens_post(req, res)
     }
 
     const expires_at = parse_expires_at(req.body.expires_days);
+    await require_confirmation(req, {reason: 'pat_create', next: config.pages.personal_access_tokens, message: 'Confirm it is you before creating a token'});
     const token = create_personal_access_token_secret();
     const now = new Date();
     const row = {

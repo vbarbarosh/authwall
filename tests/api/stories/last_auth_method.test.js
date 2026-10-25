@@ -70,6 +70,7 @@ describe('Last auth method cannot be removed | stories', function () {
         assert.strictEqual(status.authenticated, true);
         assert.strictEqual(status.providers.length, 2);
 
+        await this.mark_confirmed();
         await this.http_post_json('/auth/google/disconnect', {_csrf: status.csrf_token});
 
         const status2 = await this.http_get_json('/auth/status');

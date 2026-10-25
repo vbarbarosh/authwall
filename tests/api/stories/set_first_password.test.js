@@ -19,6 +19,7 @@ describe('Setting a first password | stories', function () {
         assert.strictEqual((await this.http_get_json('/auth/status')).authenticated, true);
 
         // No current_password: there is none to verify against.
+        await this.mark_confirmed();
         await this.http_post_json('/auth/change-password', {
             password: 'newpassword',
             password_confirm: 'newpassword',

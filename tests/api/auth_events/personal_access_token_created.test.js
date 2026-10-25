@@ -13,6 +13,7 @@ describe('auth_events • personal_access_token_created', function () {
         await db('auth_events').del();
         await this.sign_in({username: 'mocha', password: 'pass123'});
 
+        await this.mark_confirmed();
         const created = await this.http_post_json('/auth/personal-access-tokens', {
             label: 'CLI',
         });

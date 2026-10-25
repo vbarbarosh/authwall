@@ -46,6 +46,7 @@ async function assert_oauth_disconnected_email(ctx, {provider, provider_user_id,
         verified_at: now,
     });
 
+    await ctx.mark_confirmed();
     await ctx.http_post_json(`/auth/${provider}/disconnect`);
     await ctx.wait_for_emails(1);
 

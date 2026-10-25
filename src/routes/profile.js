@@ -17,6 +17,7 @@ const multer = require('multer');
 const plural = require('@vbarbarosh/node-helpers/src/plural');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
+const require_confirmation = require('../helpers/require_confirmation');
 const sharp = require('sharp');
 
 const upload_avatar = multer({
@@ -135,6 +136,10 @@ async function profile_post(req, res)
         }
         if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
             throw new UserFriendlyError('Current password is incorrect');
+        }
+        // A first password has no current one to prove the owner (AW-04).
+        if (!has_password) {
+            await require_confirmation(req, {reason: 'first_password', next: config.pages.profile, message: 'Confirm it is you before setting a password'});
         }
         update.password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     }

@@ -26,6 +26,7 @@ describe('Password reset and an unverified address | stories', function () {
 
     it('revokes personal access tokens when the password is reset', async function () {
         const {user_id} = await this.sign_in({email: 'owner@authwall.test', password: 'pass123', verified: true});
+        await this.mark_confirmed();
         const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'laptop'});
         await this.http_post_json('/auth/sign-out');
         this.client.cookies.clear();

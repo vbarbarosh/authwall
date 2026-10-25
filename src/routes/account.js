@@ -9,6 +9,7 @@ const fs = require('fs/promises');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
+const require_confirmation = require('../helpers/require_confirmation');
 
 const routes = [
     {req: 'POST /auth/account/remove', fn: [auth_middleware, csrf_middleware, account_remove_post]},
@@ -25,6 +26,7 @@ async function account_remove_post(req, res)
     if (!user) {
         throw new UserFriendlyError('User not found');
     }
+    await require_confirmation(req, {reason: 'account_remove', next: config.pages.profile, message: 'Confirm it is you before removing your account'});
 
     await db.transaction(async function () {
         const user_id = user.id;

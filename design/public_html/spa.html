@@ -2044,6 +2044,29 @@ document.getElementById('mc-submit').addEventListener('click', async () => {
 const CONFIRM_PROVIDER_LABELS = {oauth_google: 'Google', oauth_github: 'GitHub', oauth_microsoft: 'Microsoft', oauth_facebook: 'Facebook', oauth_twitter: 'X', oauth_discord: 'Discord'};
 const CONFIRM_PROVIDER_ROUTES = {oauth_google: '/auth/google', oauth_github: '/auth/github', oauth_microsoft: '/auth/microsoft', oauth_facebook: '/auth/facebook', oauth_twitter: '/auth/twitter', oauth_discord: '/auth/discord'};
 
+// The actions that need the owner, not just a signed-in session (AW-04,
+// AW-77): refused without a recent confirmation, they come back here; once
+// confirmed, the owner returns to the action's page and does it again.
+const OWNER_ACTIONS = {
+    pat_create: 'Creating a token needs the owner. Confirm it is you, then create it again.',
+    first_password: 'Setting a first password needs the owner. Confirm it is you, then set it again.',
+    account_remove: 'Removing your account needs the owner. Confirm it is you, then remove it again.',
+    email_remove: 'Removing your email address needs the owner. Confirm it is you, then remove it again.',
+    provider_disconnect: 'Disconnecting {provider} needs the owner. Confirm it is you, then disconnect it again.',
+};
+
+// After a refused action: whether it was refused for want of a confirmation,
+// in which case the confirm view is shown instead of the error.
+async function confirm_if_asked()
+{
+    const s = await api_status();
+    if (s.confirmed || !s.confirmation || !OWNER_ACTIONS[s.confirmation.reason]) {
+        return false;
+    }
+    showView('confirm');
+    return true;
+}
+
 function render_confirm(s) {
   const primary = (s.providers || []).find(p => p.type === 'email' && p.primary_at);
   const c = s.confirmation;
@@ -2051,6 +2074,8 @@ function render_confirm(s) {
   if (!reason) return;
   if (c && (c.reason === 'email_change')) {
     reason.textContent = 'Your account has no verified primary address to approve an email change. Confirm it is you to continue.';
+  } else if (c && OWNER_ACTIONS[c.reason]) {
+    reason.textContent = OWNER_ACTIONS[c.reason].replace('{provider}', CONFIRM_PROVIDER_LABELS[c.disconnect] || 'this account');
   } else if (c && c.provider) {
     const label = CONFIRM_PROVIDER_LABELS[c.provider] || 'provider';
     const emails = c.provider_emails.length ? c.provider_emails.join(', ') : 'no email address';
@@ -2256,6 +2281,9 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   set_loading('p-chpw', true);
   const { error } = await http_post_urlencoded('/auth/change-password', { current_password, password, password_confirm });
   set_loading('p-chpw', false);
+  if (error && await confirm_if_asked()) {
+    return;
+  }
   if (error) return show_error('p-chpw-error-msg', 'p-chpw-error', error);
   show_ok('p-chpw-ok');
   document.getElementById('p-curpass').value = '';
@@ -2283,6 +2311,9 @@ document.getElementById('p-remove').addEventListener('click', async () => {
   set_loading('p-remove', true);
   const { final_url, error } = await http_post_urlencoded('/auth/account/remove', { confirmation });
   set_loading('p-remove', false);
+  if (error && await confirm_if_asked()) {
+    return;
+  }
   if (error) return show_error('p-remove-error-msg', 'p-remove-error', error);
   navigate_after(final_url);
 });
@@ -2290,6 +2321,9 @@ document.getElementById('p-remove').addEventListener('click', async () => {
 // ── OAuth — Disconnect ───────────────────────────────────────────────────────
 async function handle_disconnect(endpoint) {
   const { error } = await http_post_urlencoded(endpoint, {});
+  if (error && await confirm_if_asked()) {
+    return;
+  }
   if (error) return alert(error);
   const s = await api_status();
   if (s.authenticated) render_user_data(s);
@@ -2334,6 +2368,9 @@ document.getElementById('pat-create').addEventListener('click', async () => {
   set_loading('pat-create', true);
   const { data, error } = await http_post_json('/auth/personal-access-tokens', { label, expires_days });
   set_loading('pat-create', false);
+  if (error && await confirm_if_asked()) {
+    return;
+  }
   if (error) return show_error('pat-error-msg', 'pat-error', error);
 
   const token = data?.token || '';

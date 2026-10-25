@@ -21,6 +21,7 @@ const oauth_state_from_intent = require('../oauth_state_from_intent');
 const random_base62 = require('../random/random_base62');
 const random_uid_user_identity = require('../random/random_uid_user_identity');
 const redirect = require('../redirect');
+const require_confirmation = require('../require_confirmation');
 const save_session = require('../save_session');
 const send_confirm_code = require('../send_confirm_code');
 const send_email_nothrow = require('../send_email_nothrow');
@@ -380,6 +381,7 @@ async function disconnect_post(oauth_provider, req, res)
         });
         throw new UserFriendlyError(oauth_provider.error_last_auth_method);
     }
+    await require_confirmation(req, {reason: 'provider_disconnect', next: config.pages.profile, message: 'Confirm it is you before disconnecting an account', disconnect: oauth_provider.user_identity_type});
 
     await db('user_identities').where({id: ident.id}).delete();
 
