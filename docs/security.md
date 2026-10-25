@@ -198,7 +198,17 @@ access token of the account ends, the password stops working, and the browser
 that opened the link sets a new one. A stranger who signed up with someone
 else's address is shut out the moment its owner clicks. An account with
 another way in, a linked provider or a confirmed address, is not handed over:
-the link asks to sign in to that account first, and stays valid.
+the link asks to sign in to that account first, and stays valid; beside it,
+*Not my account* takes the address off that account and lets the reader sign
+up with it.
+
+An address still pending on one account never locks its owner out of another.
+A proof that someone reads the mailbox takes it from an account that has
+another way in: a magic link, or a provider that vouches for the address.
+Without a proof, a pending address nobody confirmed within the confirmation
+window, with no link still open, yields to whoever signs up with it, adds it
+or moves to it. A confirmed address never moves, and each release is in the
+auth log against the account that lost it.
 
 ## Open-redirect protection
 

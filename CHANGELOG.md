@@ -13,6 +13,11 @@
   `AUTHWALL_ALLOWED_DOMAINS`) with the email flow on and
   `AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`: a typed address would pass the
   list unverified.
+- A pending address yields to its owner: a magic link or a provider that
+  vouches for it takes it from another account that has another way in, the
+  mailed confirmation link offers *Not my account*, and a pending address
+  nobody confirmed within the confirmation window no longer blocks a sign-up,
+  an added address or an email change.
 - Connecting a provider that vouches for an address still pending on the
   account confirms it, and makes it the primary if there was none.
 - Access rules hold existing sessions and tokens, not only new sign-ins: after

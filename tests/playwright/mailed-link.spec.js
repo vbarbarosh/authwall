@@ -109,6 +109,32 @@ test.describe('mailed link', function () {
         expect((await db('user_identities').where({type: 'email', value_normalized: added}).first()).verified_at).not.toBeNull();
     });
 
+    test('a confirmation link opened by the address\'s owner frees it from someone else\'s account on "Not my account"', async function ({page}) {
+        const {username, user_id} = await sign_up_with_primary(page);
+        const added = `vera-${username}@authwall.test`;
+        const {token, token_hash} = token_pair();
+        const now = new Date();
+        await using db = open_e2e_db();
+        await db('user_identities').insert([
+            {uid: crypto.randomBytes(12).toString('hex'), user_id, type: 'oauth_github', value: username, value_normalized: username, created_at: now, updated_at: now, verified_at: now},
+            {uid: crypto.randomBytes(12).toString('hex'), user_id, type: 'email', value: added, value_normalized: added, created_at: now, updated_at: now},
+        ]);
+        await db('email_verify_tokens').insert({user_id, email_normalized: added, token_hash, created_at: now, updated_at: now, expires_at: new Date(Date.now() + 30*60*1000)});
+
+        await page.context().clearCookies();
+        await page.goto(`/auth/email-verify/confirm?token=${token}`);
+        await expect(page.getByTestId('link-submit')).toHaveText('Sign in to confirm');
+        await expect(page.getByTestId('link-not-mine')).toBeVisible();
+        const submit = await page.getByTestId('link-submit').boundingBox();
+        const not_mine = await page.getByTestId('link-not-mine').boundingBox();
+        expect(not_mine.y).toBeGreaterThanOrEqual(submit.y + submit.height);
+
+        await page.getByTestId('link-not-mine').click();
+        await page.waitForURL(v => v.pathname === '/auth/sign-up');
+        await expect(page.getByTestId('signup-view')).toBeVisible();
+        expect(await db('user_identities').where({type: 'email', value_normalized: added}).first()).toBeUndefined();
+    });
+
     test('a confirmation link opened in another browser says the account would change hands, and hands it over only on its button', async function ({page}) {
         const {username, email, user_id} = await sign_up_with_primary(page, {primary: false});
         const {token, token_hash} = token_pair();

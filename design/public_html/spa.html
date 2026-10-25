@@ -1207,6 +1207,7 @@
             <span id="lk-error-msg"></span>
           </div>
           <button id="lk-submit" class="btn btn-primary mt-4" data-testid="link-submit" disabled></button>
+          <button id="lk-not-mine" class="btn btn-outline mt-8" data-testid="link-not-mine" style="display:none">Not my account</button>
         </div>
       </div>
       <div class="card-footer"><a class="text-link" id="lk-sign-in" href="/auth/sign-in">← Back to sign in</a></div>
@@ -2225,6 +2226,7 @@ async function refresh_link_view()
     submit.textContent = link.button;
     submit.disabled = true;
     delete submit.dataset.signIn;
+    document.getElementById('lk-not-mine').style.display = 'none';
     hide_error('lk-error');
     document.getElementById('lk-text').textContent = 'Checking the link…';
     let answer = null;
@@ -2249,6 +2251,9 @@ async function refresh_link_view()
             submit.textContent = 'Sign in to confirm';
             submit.dataset.signIn = '1';
             submit.disabled = false;
+            // Or the account that added the address is someone else's: the
+            // address is freed for whoever reads the mailbox (AW-82).
+            document.getElementById('lk-not-mine').style.display = answer.not_mine ? '' : 'none';
         }
         return;
     }
@@ -2284,6 +2289,19 @@ document.getElementById('lk-submit').addEventListener('click', async function ()
     }
     // A full load: the next page may carry a token of its own, as the reset page does.
     window.location.href = final_url;
+});
+
+document.getElementById('lk-not-mine').addEventListener('click', async function () {
+    hide_error('lk-error');
+    const token = new URLSearchParams(window.location.search).get('token') ?? '';
+    set_loading('lk-not-mine', true);
+    const {final_url, error} = await http_post_urlencoded(`${window.location.pathname}/open`, {token, not_mine: '1'});
+    if (error) {
+        set_loading('lk-not-mine', false);
+        show_error('lk-error-msg', 'lk-error', error);
+        return;
+    }
+    navigate_after(final_url);
 });
 
 // The link view asks its link as soon as the page is up.

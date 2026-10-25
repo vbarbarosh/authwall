@@ -129,7 +129,7 @@ describe('GET /auth/email-verify/confirm/open', function () {
         const url = await request_link(this);
 
         this.client.cookies.clear();
-        assert.deepStrictEqual(await this.http_get_json(url), {error: 'Sign in to confirm this address', email: 'mocha@authwall.test', sign_in: true});
+        assert.deepStrictEqual(await this.http_get_json(url), {error: 'Sign in to confirm this address', email: 'mocha@authwall.test', sign_in: true, not_mine: true});
     });
 
     it('gives the reason the link would fail', async function () {

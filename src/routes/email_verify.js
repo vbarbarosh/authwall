@@ -14,10 +14,12 @@ const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const has_other_way_in = require('../helpers/has_other_way_in');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const is_code_budget_spent = require('../helpers/is_code_budget_spent');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const redirect = require('../helpers/redirect');
+const release_pending_email = require('../helpers/release_pending_email');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
@@ -103,7 +105,7 @@ async function email_verify_open_get(req, res)
     const email = ident?.value ?? null;
     const elsewhere = (req.session?.user_id !== record.user_id);
     if (elsewhere && await has_other_way_in(record)) {
-        res.send({error: 'Sign in to confirm this address', email, sign_in: true});
+        res.send({error: 'Sign in to confirm this address', email, sign_in: true, not_mine: true});
         return;
     }
     // Pressed here, the button hands the account over (AW-25); the page says
@@ -127,6 +129,17 @@ async function email_verify_open_post(req, res)
     // the link in a browser signed in to it.
     const user_id = record.user_id;
     const elsewhere = (req.session?.user_id !== user_id);
+    if (elsewhere && await has_other_way_in(record) && req.body.not_mine) {
+        // "Not my account": whoever reads the mailbox says the account that
+        // added the address is someone else's, so the address leaves it and
+        // is free to sign up with (AW-82).
+        if (!await consume_one_time_token('email_verify_tokens', record.id, now)) {
+            throw new UserFriendlyError('Invalid or expired verification link');
+        }
+        await release_pending_email(req, record.email_normalized, {user_id: req.session?.user_id ?? null, proof: true, now});
+        res.redirect(config.pages.sign_up);
+        return;
+    }
     if (elsewhere && await has_other_way_in(record)) {
         req.session.error = 'Sign in to confirm this address';
         await save_session(req);
@@ -251,19 +264,6 @@ async function find_email_verify_to_open(token, now)
         return {error: 'Invalid or expired verification link', record: null};
     }
     return {error: null, record};
-}
-
-// A provider or another confirmed address: a way in besides this address and
-// the password.
-async function has_other_way_in(record)
-{
-    const ident = await db('user_identities')
-        .where({user_id: record.user_id})
-        .whereNot({type: const_user_identity.username})
-        .whereNot({type: const_user_identity.email, value_normalized: record.email_normalized})
-        .whereNotNull('verified_at')
-        .first();
-    return Boolean(ident);
 }
 
 module.exports = routes;

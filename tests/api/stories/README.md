@@ -66,6 +66,7 @@ Testable now
 - [x] Ann signs up or signs in from the SPA with a `return` on `wiki.corp.test` under the public host `corp.test`; the SPA's posts get `{next}` and open it once, the sign-in form's redirect passes `form-action`, a return elsewhere lands on `/` → `return_to_a_subdomain.md`, `return_to_a_subdomain.test.js`
 - [x] Ann is signed in with a token; Authwall restarts with a rule that denies Ann's address: every door refuses the session and the token, the account pages allow only signing out, nothing is deleted; the rule removed, the same session and token work again → `authwall_restarts_with_new_settings.md`, `authwall_restarts_with_new_settings.test.js`
 - [x] Ann's address is still pending when Ann connects Google, which vouches for it; the address counts now and becomes the primary; Google under another address leaves it pending → `connect_confirms_the_pending_address.md`, `connect_confirms_the_pending_address.test.js`
+- [x] Mallory, with GitHub, adds Vera's address and leaves it pending; Vera's magic link, Vera's Google or the mailed link's *Not my account* moves it to Vera at once; nobody's proof, the address yields once nobody confirmed it within the window; a confirmed address never moves → `pending_address_yields_to_its_owner.md`, `pending_address_yields_to_its_owner.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

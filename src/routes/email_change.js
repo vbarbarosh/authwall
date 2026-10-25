@@ -19,6 +19,7 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const release_pending_email = require('../helpers/release_pending_email');
 const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const send_email = require('../helpers/send_email');
@@ -58,6 +59,7 @@ async function email_change_request_post(req, res)
     }
     await authorize_email(email_normalized);
 
+    await release_pending_email(req, email_normalized, {user_id: req.session.user_id});
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (ident) {
         await insert_auth_event({

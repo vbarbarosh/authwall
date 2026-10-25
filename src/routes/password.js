@@ -28,6 +28,7 @@ const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const release_pending_email = require('../helpers/release_pending_email');
 const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const username_sign_in_refusal = require('../helpers/username_sign_in_refusal');
@@ -167,6 +168,7 @@ async function sign_up_post(req, res)
     }
 
     if (email_normalized) {
+        await release_pending_email(req, email_normalized);
         if (await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first()) {
             throw new UserFriendlyError('Email already exists');
         }

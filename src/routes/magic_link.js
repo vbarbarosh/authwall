@@ -18,6 +18,7 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const release_pending_email = require('../helpers/release_pending_email');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
 const users_create = require('../helpers/models/users_create');
@@ -108,6 +109,8 @@ async function magic_link_open_post(req, res)
     const email_normalized = magic_link.email_normalized;
     await authorize_email(email_normalized);
 
+    // The link proves the mailbox (AW-82).
+    await release_pending_email(req, email_normalized, {proof: true, now});
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
@@ -178,6 +181,8 @@ async function magic_link_confirm_post(req, res)
 
     // The address as typed when the code was mailed, as the GET link uses it.
     const email = magic_link.email;
+    // The code proves the mailbox (AW-82).
+    await release_pending_email(req, email_normalized, {proof: true, now});
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();

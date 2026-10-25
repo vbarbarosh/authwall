@@ -13,6 +13,7 @@ const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const release_pending_email = require('../helpers/release_pending_email');
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
@@ -51,6 +52,7 @@ async function email_add_post(req, res)
         throw new UserFriendlyError('Email already connected');
     }
 
+    await release_pending_email(req, email_normalized, {user_id});
     const existing_ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (existing_ident) {
         await insert_auth_event({

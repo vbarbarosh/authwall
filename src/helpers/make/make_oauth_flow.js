@@ -22,6 +22,7 @@ const random_base62 = require('../random/random_base62');
 const random_uid_user_identity = require('../random/random_uid_user_identity');
 const record_confirmation = require('../record_confirmation');
 const redirect = require('../redirect');
+const release_pending_email = require('../release_pending_email');
 const require_confirmation = require('../require_confirmation');
 const save_session = require('../save_session');
 const send_confirm_code = require('../send_confirm_code');
@@ -223,6 +224,7 @@ async function callback_get(oauth_provider, req, res)
         // Also add the verified email if not already taken
         const verified_email = verified_emails[0];
         if (verified_email) {
+            await release_pending_email(req, verified_email.email_normalized, {user_id: req.session.user_id, proof: true});
             await db('user_identities').insert({
                 uid: random_uid_user_identity(),
                 user_id: req.session.user_id,
@@ -274,6 +276,13 @@ async function callback_get(oauth_provider, req, res)
         user_id = ident.user_id;
     }
     else {
+        // The provider's word proves its address; its pending one claims only (AW-82).
+        if (verified_emails[0]) {
+            await release_pending_email(req, verified_emails[0].email_normalized, {proof: true});
+        }
+        else if (pending_emails[0]) {
+            await release_pending_email(req, pending_emails[0].email_normalized);
+        }
         await db.transaction(async function () {
             const now = new Date();
             const display_name = user_info.name;
