@@ -887,8 +887,14 @@ async function authenticate_ws_session(req)
         return ws_auth_reject(origin_rejection.reason, req, origin_rejection.details);
     }
 
+    // As the session store reads it: never past its deadline (AW-29).
     const now = new Date();
-    const session = await db('sessions').where({uid: cookie.uid}).where('expires_at', '>', now).first();
+    const max_age_ms = config.cookie.max_age_days*86400000;
+    const session = await db('sessions')
+        .where({uid: cookie.uid})
+        .where('expires_at', '>', now)
+        .where('created_at', '>', new Date(now.getTime() - max_age_ms))
+        .first();
     if (!session?.user_id || !session.user_uid) {
         return ws_auth_reject('session_not_found', req);
     }
@@ -909,7 +915,7 @@ async function authenticate_ws_session(req)
     }
 
     await db('sessions').where({id: session.id}).update({
-        expires_at: new Date(now.getTime() + config.cookie.max_age_days*86400000),
+        expires_at: new Date(Math.min(now.getTime() + max_age_ms, new Date(session.created_at).getTime() + max_age_ms)),
         last_seen_at: now,
     });
 

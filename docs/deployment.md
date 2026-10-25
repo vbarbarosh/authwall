@@ -98,7 +98,7 @@ but two cases need attention:
 - **Cross-site** — `AUTHWALL_COOKIE_SAMESITE=none` requires
   `AUTHWALL_COOKIE_SECURE=true`; Authwall refuses to start otherwise.
 
-The cookie lifetime is fixed at 30 days.
+The cookie lifetime is fixed at 30 days, counted from sign-in: use does not extend it.
 
 ## Forwarding to the upstream
 

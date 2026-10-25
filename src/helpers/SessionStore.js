@@ -19,28 +19,46 @@ const express_session = require('express-session');
 // behind. The row is still extended on every request, so a visitor who is
 // actually on the page keeps their token.
 const ANONYMOUS_MAX_AGE_MS = 24*60*60*1000;
+const DAY_MS = 24*60*60*1000;
 
 class SessionStore extends express_session.Store
 {
+    // A session ends at its deadline, its start plus the cookie's maximum age,
+    // however often it is used (AW-29): use extended it for ever, so a copied
+    // cookie kept working while the browser's own had expired. The cookie comes
+    // back whole, its policy from the configuration and its time left to the
+    // deadline, so express-session neither drops the expiry nor re-issues it
+    // without HttpOnly, SameSite, Domain or Secure (L-01).
     async get(uid, callback) {
         try {
             const now = new Date();
 
-            const row = await db('sessions').where({uid}).where('expires_at', '>', now).first();
+            const row = await db('sessions')
+                .where({uid})
+                .where('expires_at', '>', now)
+                .where('created_at', '>', new Date(now.getTime() - max_age_ms()))
+                .first();
             if (!row) {
                 callback(null, null);
                 return;
             }
 
+            const deadline = session_deadline(row.created_at);
             const out = JSON.parse(row.custom);
             out.uid = row.uid;
             out.user_id = row.user_id;
             out.user_uid = row.user_uid;
             out.ip = row.ip;
             out.ua = row.ua;
+            out.created_at = new Date(row.created_at).toJSON();
             out.cookie = {
-                expires: new Date(row.expires_at),
-                maxAge: new Date(row.expires_at).getTime() - Date.now(),
+                path: config.cookie.path,
+                httpOnly: true,
+                domain: config.cookie.domain,
+                sameSite: config.cookie.same_site,
+                secure: config.cookie.secure,
+                expires: deadline,
+                originalMaxAge: deadline.getTime() - now.getTime(),
             };
             callback(null, out);
         }
@@ -58,7 +76,7 @@ class SessionStore extends express_session.Store
             const now = new Date();
             const expires_at = row_expires_at(data, now);
 
-            const {user_id, user_uid, ip, ua, cookie, ...custom} = data;
+            const {user_id, user_uid, ip, ua, cookie, created_at, ...custom} = data;
             if (data.uid === uid) {
                 await db('sessions').where({uid}).update({user_id, user_uid, ip, ua, custom: JSON.stringify(custom), updated_at: now, last_seen_at: now, expires_at});
             }
@@ -99,15 +117,28 @@ class SessionStore extends express_session.Store
     }
 }
 
+// Never past the session's deadline; an anonymous one also lapses a day
+// after its last use.
 function row_expires_at(data, now)
 {
     const cookie_expires_at = data.cookie?.expires
         ? new Date(data.cookie.expires)
-        : new Date(now.getTime() + (data.cookie?.maxAge || config.cookie.max_age_days*86400000));
+        : new Date(now.getTime() + (data.cookie?.maxAge || max_age_ms()));
+    const deadline = session_deadline(data.created_at ?? now);
     if (data.user_id) {
-        return cookie_expires_at;
+        return new Date(Math.min(cookie_expires_at.getTime(), deadline.getTime()));
     }
-    return new Date(Math.min(cookie_expires_at.getTime(), now.getTime() + ANONYMOUS_MAX_AGE_MS));
+    return new Date(Math.min(cookie_expires_at.getTime(), deadline.getTime(), now.getTime() + ANONYMOUS_MAX_AGE_MS));
+}
+
+function session_deadline(created_at)
+{
+    return new Date(new Date(created_at).getTime() + max_age_ms());
+}
+
+function max_age_ms()
+{
+    return config.cookie.max_age_days*DAY_MS;
 }
 
 module.exports = SessionStore;

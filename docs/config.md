@@ -623,7 +623,7 @@ Modern browsers reject `SameSite=None` cookies that are not also `Secure`.
 > [!WARNING]
 > If `AUTHWALL_COOKIE_SAMESITE=none` is set without `AUTHWALL_COOKIE_SECURE=true`, Authwall refuses to start.
 
-The cookie's `Max-Age` is fixed at 30 days and cannot be changed via env vars.
+The cookie's `Max-Age` is fixed at 30 days and cannot be changed via env vars. A session ends 30 days after sign-in however often it is used; a cookie re-issued later keeps that deadline.
 
 Example:
 
