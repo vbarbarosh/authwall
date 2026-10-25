@@ -115,7 +115,7 @@ describe('websocket proxy', function () {
         assert.strictEqual(r.status, 401);
         assert(this.written_logs.some(v => {
             return v.includes('[ws_upgrade_reject] reason=missing_origin_header')
-                && v.includes('cookie=connect_sid_present')
+                && v.includes('cookie=session_cookie_present')
                 && v.includes('origin=missing');
         }));
     });
@@ -132,7 +132,7 @@ describe('websocket proxy', function () {
         assert.strictEqual(r.status, 401);
         assert(this.written_logs.some(v => {
             return v.includes('[ws_upgrade_reject] reason=invalid_origin_header')
-                && v.includes('cookie=connect_sid_present')
+                && v.includes('cookie=session_cookie_present')
                 && v.includes('origin_value="not a url"');
         }));
     });
@@ -150,7 +150,7 @@ describe('websocket proxy', function () {
         assert.strictEqual(r.status, 401);
         assert(this.written_logs.some(v => {
             return v.includes('[ws_upgrade_reject] reason=origin_mismatch')
-                && v.includes('cookie=connect_sid_present')
+                && v.includes('cookie=session_cookie_present')
                 && v.includes(`origin_expected=${JSON.stringify(expected_origin)}`)
                 && v.includes('origin_actual="https://evil.test"');
         }));
@@ -159,15 +159,15 @@ describe('websocket proxy', function () {
     it('logs malformed session cookies on rejected browser-style upgrades', async function () {
         const r = await this.ws_roundtrip('/realtime?user=someone', {
             headers: {
-                Cookie: 'connect.sid=not-signed',
+                Cookie: 'authwall.sid=not-signed',
                 Origin: config.public_url,
             },
         });
         assert.strictEqual(r.opened, false);
         assert.strictEqual(r.status, 401);
         assert(this.written_logs.some(v => {
-            return v.includes('[ws_upgrade_reject] reason=connect_sid_unsigned')
-                && v.includes('cookie=connect_sid_unsigned')
+            return v.includes('[ws_upgrade_reject] reason=session_cookie_unsigned')
+                && v.includes('cookie=session_cookie_unsigned')
                 && v.includes('requested_user="someone"');
         }));
     });
@@ -175,15 +175,15 @@ describe('websocket proxy', function () {
     it('logs bad session cookie signatures on rejected browser-style upgrades', async function () {
         const r = await this.ws_roundtrip('/realtime', {
             headers: {
-                Cookie: 'connect.sid=s%3Aaw_sess_bad.bad-signature',
+                Cookie: 'authwall.sid=s%3Aaw_sess_bad.bad-signature',
                 Origin: config.public_url,
             },
         });
         assert.strictEqual(r.opened, false);
         assert.strictEqual(r.status, 401);
         assert(this.written_logs.some(v => {
-            return v.includes('[ws_upgrade_reject] reason=connect_sid_bad_signature')
-                && v.includes('cookie=connect_sid_present');
+            return v.includes('[ws_upgrade_reject] reason=session_cookie_bad_signature')
+                && v.includes('cookie=session_cookie_present');
         }));
     });
 

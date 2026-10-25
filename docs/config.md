@@ -291,7 +291,7 @@ header it uses for HTTP requests, and forwards the upgrade to the upstream.
 
 ### Authenticating a WebSocket upgrade
 
-Browser clients authenticate with the signed `connect.sid` session cookie that
+Browser clients authenticate with the signed `authwall.sid` session cookie that
 Authwall sets after sign-in. Because browsers automatically attach cookies to
 WebSocket handshakes, Authwall also requires the `Origin` header to match
 the origin of `AUTHWALL_PUBLIC_URL`.

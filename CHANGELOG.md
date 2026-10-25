@@ -34,6 +34,10 @@
   the password stops working, and that browser sets a new password. An account with a linked provider or a confirmed
   address is not handed over: the link asks to sign in first. In a browser
   signed in to the account nothing changes.
+- The session cookie is `authwall.sid`, no longer `connect.sid`: every
+  browser signs in once after the upgrade. The app behind Authwall never
+  receives it; behind nginx or Caddy, add the cookie filter of the sidecar
+  examples.
 - The mailed links (the magic link, the confirmation link, the email-change
   approval and the new address's link) act only on a `POST` to their path
   plus `/open`, with the token and the CSRF token. A `GET` of the link serves
@@ -117,6 +121,9 @@
 - Signing in right after signing out, or after a password reset, no longer
   fails with "Invalid CSRF Token": the sign-in form takes the token of every
   status answer (AW-31).
+- The app behind Authwall no longer receives Authwall's session cookie,
+  over HTTP or a WebSocket, nor an old `connect.sid` Authwall signed; an
+  upstream built on Express keeps its own `connect.sid` (AW-19).
 
 ### Added
 

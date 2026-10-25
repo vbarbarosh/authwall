@@ -20,10 +20,10 @@ describe('sentry', function () {
                     password: 'secret',
                 },
                 cookies: {
-                    'connect.sid': 'secret',
+                    'authwall.sid': 'secret',
                 },
                 headers: {
-                    cookie: 'connect.sid=secret',
+                    cookie: 'authwall.sid=secret',
                     authorization: 'Bearer secret',
                     'x-csrf-token': 'secret',
                     'user-agent': 'mocha',

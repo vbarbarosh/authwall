@@ -36,6 +36,9 @@
 		reverse_proxy {args[0]} {
 			# Authwall validated the bearer token; the app gets X-Auth-User.
 			header_up -Authorization
+			# Authwall's session cookie stays with Authwall (AW-19).
+			header_up Cookie "(^|;\s*)authwall\.sid=[^;]*" ""
+			header_up Cookie "^;\s*" ""
 		}
 	}
 }

@@ -7,6 +7,7 @@ const compile_trust_proxy = require('./helpers/compile_trust_proxy');
 const config = require('../config');
 const const_auth_event = require('./helpers/const/const_auth_event');
 const const_auth_event_status = require('./helpers/const/const_auth_event_status');
+const const_cookie = require('./helpers/const/const_cookie');
 const cookie_signature = require('cookie-signature');
 const db = require('../db');
 const email_verification_required = require('./helpers/email_verification_required');
@@ -145,6 +146,9 @@ async function create_app()
     }
 
     app.use(express_session({
+        // Its own name: an upstream that is an Express app keeps connect.sid
+        // for itself (AW-19).
+        name: const_cookie.session,
         genid: random_uid_session,
         store: new SessionStore(),
         resave: false,
@@ -281,6 +285,7 @@ async function create_app()
     proxy.on('proxyReq', function (proxy_req, req, res) {
         res.on('error', ignore_socket_error);
         set_forwarded_headers(proxy_req, req.ip, req.protocol, req.host);
+        strip_authwall_cookies(proxy_req);
         // // ⚠️ Beware that headers are proxied too
         // // ⚠️ Take special care not to special headers
         // // curl http://localhost:3000/foo/bar -H X-Auth-User:foo -H 'Cookie: connect.sid=s%3A7lIgELaKCxNmyCw5iDcFsAUq6-nVQ6o6.LCvDq0niOJtMT75hMUL2sqvssyXC4Ilm99ftI9Fa4BE'
@@ -322,6 +327,7 @@ async function create_app()
             }
         });
         set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
+        strip_authwall_cookies(proxy_req);
         if (req.ws_user_uid) {
             proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
         }
@@ -736,6 +742,46 @@ function set_forwarded_headers(proxy_req, ip, proto, host)
     }
 }
 
+// The upstream never sees Authwall's session cookie (AW-19): neither
+// authwall.sid nor a connect.sid that Authwall signed before the rename. A
+// connect.sid of the upstream's own, which Authwall did not sign, passes.
+function strip_authwall_cookies(proxy_req)
+{
+    const cookie = proxy_req.getHeader('cookie');
+    if (!cookie) {
+        return;
+    }
+    const kept = String(cookie).split(';').filter(function (part) {
+        const index = part.indexOf('=');
+        const name = part.slice(0, (index === -1) ? undefined : index).trim();
+        if (name === const_cookie.session) {
+            return false;
+        }
+        if (name === const_cookie.legacy_session) {
+            return !signed_by_authwall(part.slice(index + 1).trim());
+        }
+        return part.trim() !== '';
+    });
+    if (kept.length) {
+        proxy_req.setHeader('cookie', kept.map(v => v.trim()).join('; '));
+    }
+    else {
+        proxy_req.removeHeader('cookie');
+    }
+}
+
+function signed_by_authwall(value)
+{
+    let decoded;
+    try {
+        decoded = decodeURIComponent(value);
+    }
+    catch (error) {
+        return false;
+    }
+    return decoded.startsWith('s:') && (cookie_signature.unsign(decoded.slice(2), config.secrets.express_session) !== false);
+}
+
 // The first value of a forwarded header, when the peer is a trusted proxy:
 // what Express's req.protocol and req.host read on the HTTP path.
 function trusted_forwarded_value(req, name, trust_proxy)
@@ -869,9 +915,9 @@ function ws_cookie_summary(cookie_header)
         return 'missing';
     }
 
-    const value = cookie_value(cookie_header, 'connect.sid');
+    const value = cookie_value(cookie_header, const_cookie.session);
     if (!value) {
-        return 'connect_sid_missing';
+        return 'session_cookie_missing';
     }
 
     let decoded;
@@ -879,18 +925,18 @@ function ws_cookie_summary(cookie_header)
         decoded = decodeURIComponent(value);
     }
     catch (error) {
-        return 'connect_sid_bad_encoding';
+        return 'session_cookie_bad_encoding';
     }
 
     if (!decoded.startsWith('s:')) {
-        return 'connect_sid_unsigned';
+        return 'session_cookie_unsigned';
     }
 
     if (!decoded.slice(2).includes('.')) {
-        return 'connect_sid_malformed';
+        return 'session_cookie_malformed';
     }
 
-    return 'connect_sid_present';
+    return 'session_cookie_present';
 }
 
 function ws_session_cookie(cookie_header)
@@ -899,9 +945,9 @@ function ws_session_cookie(cookie_header)
         return {uid: null, reason: 'missing_session_cookie'};
     }
 
-    const value = cookie_value(cookie_header, 'connect.sid');
+    const value = cookie_value(cookie_header, const_cookie.session);
     if (!value) {
-        return {uid: null, reason: 'connect_sid_missing'};
+        return {uid: null, reason: 'session_cookie_missing'};
     }
 
     let decoded;
@@ -909,20 +955,20 @@ function ws_session_cookie(cookie_header)
         decoded = decodeURIComponent(value);
     }
     catch (error) {
-        return {uid: null, reason: 'connect_sid_bad_encoding'};
+        return {uid: null, reason: 'session_cookie_bad_encoding'};
     }
 
     if (!decoded.startsWith('s:')) {
-        return {uid: null, reason: 'connect_sid_unsigned'};
+        return {uid: null, reason: 'session_cookie_unsigned'};
     }
 
     if (!decoded.slice(2).includes('.')) {
-        return {uid: null, reason: 'connect_sid_malformed'};
+        return {uid: null, reason: 'session_cookie_malformed'};
     }
 
     const uid = cookie_signature.unsign(decoded.slice(2), config.secrets.express_session);
     if (!uid) {
-        return {uid: null, reason: 'connect_sid_bad_signature'};
+        return {uid: null, reason: 'session_cookie_bad_signature'};
     }
 
     return {uid, reason: null};

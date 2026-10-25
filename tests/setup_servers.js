@@ -5,6 +5,7 @@ const assign_primary_email = require('../src/helpers/assign_primary_email');
 const axios = require('axios');
 const bcrypt = require('bcrypt');
 const config = require('../config');
+const const_cookie = require('../src/helpers/const/const_cookie');
 const const_email = require('../src/helpers/const/const_email');
 const const_user_identity = require('../src/helpers/const/const_user_identity');
 const cookie_signature = require('cookie-signature');
@@ -196,12 +197,12 @@ function create_client(base_url)
     };
 
     async function load_session(cookies) {
-        const pair = cookies.get('connect.sid');
+        const pair = cookies.get(const_cookie.session);
         if (!pair) {
             return null;
         }
 
-        const signed = decodeURIComponent(pair.slice('connect.sid='.length));
+        const signed = decodeURIComponent(pair.slice(`${const_cookie.session}=`.length));
         if (!signed.startsWith('s:')) {
             throw new Error('Invalid session cookie');
         }
@@ -227,12 +228,12 @@ function create_client(base_url)
     }
 
     async function add_to_session(cookies, vars) {
-        const pair = cookies.get('connect.sid');
+        const pair = cookies.get(const_cookie.session);
         if (!pair) {
             throw new Error('Empty session');
         }
 
-        const signed = decodeURIComponent(pair.slice('connect.sid='.length));
+        const signed = decodeURIComponent(pair.slice(`${const_cookie.session}=`.length));
         if (!signed.startsWith('s:')) {
             throw new Error('Invalid session cookie');
         }

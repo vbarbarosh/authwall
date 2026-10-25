@@ -61,6 +61,7 @@ Testable now
 - [x] a mail scanner fetches every link in Ann's mail before she reads it: the sign-in link, the confirmation link, the approval of a move and the new address's link; each opens a page and changes nothing until its button is pressed → `mailed_links_opened_by_a_scanner.md`, `mailed_links_opened_by_a_scanner.test.js`
 - [x] someone at Ann's signed-in laptop removes her address, disconnects a provider, creates a token, sets a first password or removes the account; each asks "confirm it is you" first, and an unverified address still goes without asking → `owner_actions_need_confirmation.md`, `owner_actions_need_confirmation.test.js`
 - [x] Ann confirms it is her to remove an address and walks away; a second token, or someone linking their Google account at her laptop, is asked again; a confirmation is spent by the action that asked for it → `confirmation_is_spent_once.md`, `confirmation_is_spent_once.test.js`
+- [x] the app behind Authwall gets a signed-in request, in proxy or direct mode or over a WebSocket; it sees its own cookies only, never Authwall's `authwall.sid` nor an old `connect.sid` Authwall signed; a browser left with the old cookie signs in once → `upstream_never_sees_the_session_cookie.md`, `upstream_never_sees_the_session_cookie.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

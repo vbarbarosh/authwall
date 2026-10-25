@@ -37,8 +37,12 @@ forge the header itself.
 ## Sessions and cookies
 
 Sign-in state is kept in a server-side session; the browser holds only an
-opaque session id.
+opaque session id, in the `authwall.sid` cookie.
 
+- The app behind Authwall never receives that cookie: Authwall drops it from
+  every request and WebSocket it forwards, in proxy and in direct mode, and
+  the nginx and Caddy sidecar examples drop it too. The app learns who the
+  user is from `X-Auth-User` alone.
 - The session cookie is **`HttpOnly`** (not readable from JavaScript) and
   **`SameSite`** (`lax` by default — see [`AUTHWALL_COOKIE_SAMESITE`](config.md#session-cookie)).
 - It is marked **`Secure`** automatically when [`AUTHWALL_PUBLIC_URL`](config.md#authwall_public_url)

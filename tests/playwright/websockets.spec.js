@@ -11,7 +11,8 @@ test.describe('browser websockets', function () {
         expect(result.opened).toBe(true);
         expect(result.echo).toBe('ping');
         expect(result.upstream_headers['x-auth-user']).toMatch(/^awuser_/);
-        expect(result.upstream_headers.cookie).toContain('connect.sid=');
+        // Authwall's session cookie stays with Authwall (AW-19).
+        expect(result.upstream_headers.cookie ?? '').not.toContain('authwall.sid=');
     });
 
     test('anonymous browser websocket is rejected', async function ({page}) {

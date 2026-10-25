@@ -6,9 +6,9 @@ describe('cookies', function () {
 
     it('config.cookie.secure=false', async function () {
         const r = await this.client.get_json_no_redirects('/auth/status');
-        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('authwall.sid='));
 
-        // connect.sid=s%3Aawsess_dpjmkkpdg3dg1lgeyqyuolyy.pjiK5F8GchQZJDQaf%2FloeUkvWHGTPHw9ZuvQJ0fuKdU; Path=/; Expires=Tue, 12 May 2026 17:50:30 GMT; HttpOnly; SameSite=Lax
+        // authwall.sid=s%3Aawsess_dpjmkkpdg3dg1lgeyqyuolyy.pjiK5F8GchQZJDQaf%2FloeUkvWHGTPHw9ZuvQJ0fuKdU; Path=/; Expires=Tue, 12 May 2026 17:50:30 GMT; HttpOnly; SameSite=Lax
         const attributes = cookie.match(/;\s*(.*)$/)[1];
         const expires = cookie.match(/\bExpires=([^;]+)/)[1];
 
@@ -19,7 +19,7 @@ describe('cookies', function () {
 
     it('over http [config.cookie.secure=true]', async function () {
         const r = await this.client.get_json_no_redirects_no_https('/auth/status');
-        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('authwall.sid='));
         const attributes = cookie.match(/;\s*(.*)$/)[1];
         const expires = cookie.match(/\bExpires=([^;]+)/)[1];
 
@@ -29,9 +29,9 @@ describe('cookies', function () {
 
     it('[config.cookie.secure=true]', async function () {
         const r = await this.client.get_json_no_redirects('/auth/status');
-        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('authwall.sid='));
 
-        // connect.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
+        // authwall.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
         const attributes = cookie.match(/;\s*(.*)$/)[1];
         const expires = cookie.match(/\bExpires=([^;]+)/)[1];
 
@@ -42,9 +42,9 @@ describe('cookies', function () {
 
     it('[config.cookie.domain=.authwall.test]', async function () {
         const r = await this.client.get_json_no_redirects('/auth/status');
-        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('authwall.sid='));
 
-        // connect.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
+        // authwall.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
         const attributes = cookie.match(/;\s*(.*)$/)[1];
         const expires = cookie.match(/\bExpires=([^;]+)/)[1];
 
@@ -55,9 +55,9 @@ describe('cookies', function () {
 
     it('[config.cookie.domain=.authwall.test][config.cookie.secure=true]', async function () {
         const r = await this.client.get_json_no_redirects('/auth/status');
-        const cookie = r.headers['set-cookie'].find(v => v.startsWith('connect.sid='));
+        const cookie = r.headers['set-cookie'].find(v => v.startsWith('authwall.sid='));
 
-        // connect.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
+        // authwall.sid=s%3Aawsess_w4wgeyicbcmnr1ausgm0gx1l.OtyvdQNJq4Mkq2rdC2BDiwewWbTAVVycNFkn%2B5a%2FCwA; Path=/; Expires=Tue, 12 May 2026 18:17:32 GMT; HttpOnly; Secure; SameSite=Lax
         const attributes = cookie.match(/;\s*(.*)$/)[1];
         const expires = cookie.match(/\bExpires=([^;]+)/)[1];
 
