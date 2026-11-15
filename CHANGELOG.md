@@ -191,9 +191,10 @@
 
 ### Dependencies
 
-- All dependencies at their latest; `@sentry/node` 11, `dotenv` 18,
-  `markdown-it-anchor` 10, `@vbarbarosh/type-helpers` 0.4,
-  `@vbarbarosh/node-helpers` 3.78.1 (axios 1.20.0; `npm audit` clean).
+- All dependencies at their latest on 2026-11-15; `@sentry/node` 11,
+  `dotenv` 18, `markdown-it-anchor` 10, `nock` 15, `express` 5.3,
+  `@vbarbarosh/type-helpers` 0.4, `@vbarbarosh/node-helpers` 3.80.1, axios
+  1.21.1; `npm audit` clean (follow-redirects 1.16.3, GHSA-mrwp-f3q8-3g9p).
 - `@vbarbarosh/express-helpers` removed, and the deprecated `cuid` with it;
   Express's "Promise-like handlers" warning is gone.
 - `http-proxy-middleware` removed: Authwall drives `httpxy`, the engine under
