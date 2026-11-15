@@ -22,6 +22,7 @@ describe('smoke tests', function () {
             error: null,
             authenticated: true,
         });
+        await this.wait_for_emails(1);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
         assert.strictEqual(this.sent_emails[0].name, const_email.new_sign_in);
         assert.ok(this.written_logs.length > 0);

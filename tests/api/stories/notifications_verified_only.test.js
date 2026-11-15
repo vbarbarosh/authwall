@@ -11,7 +11,7 @@ describe('Security notifications go to verified addresses only | stories', funct
         await this.http_post_json('/auth/sign-up', {username: 'squatter', email: 'victim@authwall.test', password: 'pw12', password_confirm: 'pw12'});
         await this.http_post_json('/auth/sign-out');
         this.client.cookies.clear();
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await this.wait_for_emails(1);
         this.sent_emails.splice(0);
 
         await this.http_post_json('/auth/sign-in', {username: 'squatter', password: 'pw12'});

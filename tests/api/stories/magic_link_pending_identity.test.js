@@ -16,6 +16,7 @@ describe('Magic link for an address registered but unverified by someone else | 
         assert.strictEqual(attacker.authenticated, true);
         await _this.http_post_json('/auth/sign-out');
         _this.client.cookies.clear();
+        await _this.wait_for_emails(1);
         _this.sent_emails.splice(0);
         return attacker.user_uid;
     }

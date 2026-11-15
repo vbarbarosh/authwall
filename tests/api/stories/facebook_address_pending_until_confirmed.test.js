@@ -82,6 +82,7 @@ describe('Facebook\'s address is pending until Authwall confirms it | stories', 
         const status = await sign_in_via_facebook(this, {email: 'ann@corp.test'});
         assert.partialDeepStrictEqual(status, {error: null, authenticated: true});
         assert.strictEqual(await sidecar_status(this), 200);
+        await this.wait_for_emails(1);
         assert.deepStrictEqual(this.sent_emails.map(v => v.name), [const_email.new_sign_in]);
     });
 

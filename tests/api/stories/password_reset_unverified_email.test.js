@@ -30,6 +30,7 @@ describe('Password reset and an unverified address | stories', function () {
         const created = await this.http_post_json('/auth/personal-access-tokens', {label: 'laptop'});
         await this.http_post_json('/auth/sign-out');
         this.client.cookies.clear();
+        await this.wait_for_emails(1);
         this.sent_emails.splice(0);
 
         await this.http_post_json('/auth/password-reset/request', {email: 'owner@authwall.test'});

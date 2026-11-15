@@ -20,6 +20,7 @@ describe('POST /auth/sign-up', function () {
             error: null,
             authenticated: true,
         });
+        await this.wait_for_emails(1);
         assert.strictEqual(this.sent_emails[0].to, 'mocha@authwall.test');
         assert.strictEqual(this.sent_emails[0].name, const_email.welcome_and_confirm_email);
     });
