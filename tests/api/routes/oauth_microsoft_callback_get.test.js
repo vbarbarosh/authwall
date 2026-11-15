@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const mock_microsoft = require('../../mock_microsoft');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 async function start_oauth_flow(client)

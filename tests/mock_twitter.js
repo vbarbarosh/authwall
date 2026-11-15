@@ -1,4 +1,4 @@
-const nock = require('nock');
+const nock = require('nock').default;
 
 const EXPECTED_BASIC = Buffer.from('mocha_twitter_client_id:mocha_twitter_client_secret').toString('base64');
 

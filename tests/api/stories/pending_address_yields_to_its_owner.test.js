@@ -2,7 +2,7 @@ const assert = require('assert');
 const config = require('../../../config');
 const const_user_identity = require('../../../src/helpers/const/const_user_identity');
 const db = require('../../../db');
-const nock = require('nock');
+const nock = require('nock').default;
 const random_uid_user_identity = require('../../../src/helpers/random/random_uid_user_identity');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 

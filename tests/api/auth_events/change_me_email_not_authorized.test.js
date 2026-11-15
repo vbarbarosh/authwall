@@ -3,7 +3,7 @@ const config = require('../../../config');
 const const_auth_event = require('../../../src/helpers/const/const_auth_event');
 const const_auth_event_status = require('../../../src/helpers/const/const_auth_event_status');
 const db = require('../../../db');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 function mock_google({sub = 'google-sub-123', email = null} = {})

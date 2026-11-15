@@ -1,4 +1,4 @@
-const nock = require('nock');
+const nock = require('nock').default;
 
 function mock_facebook(user_info_overrides = {})
 {

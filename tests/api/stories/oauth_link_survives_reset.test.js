@@ -3,7 +3,7 @@ const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
 const db = require('../../../db');
 const mock_facebook = require('../../mock_facebook');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 // AW-24: see oauth_link_survives_reset.md.

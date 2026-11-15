@@ -1,4 +1,4 @@
-const nock = require('nock');
+const nock = require('nock').default;
 
 function mock_discord({email = 'test@example.com', verified = true} = {})
 {

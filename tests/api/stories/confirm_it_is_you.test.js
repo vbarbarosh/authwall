@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const const_email = require('../../../src/helpers/const/const_email');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 // See confirm_it_is_you.md.

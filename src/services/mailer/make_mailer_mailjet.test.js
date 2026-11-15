@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const make_mailer_mailjet = require('./make_mailer_mailjet');
-const nock = require('nock');
+const nock = require('nock').default;
 
 describe('make_mailer_mailjet', function () {
 

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const config = require('../../../config');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 function mock_google({sub, email, email_verified = true})

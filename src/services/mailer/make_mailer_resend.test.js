@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const make_mailer_resend = require('./make_mailer_resend');
-const nock = require('nock');
+const nock = require('nock').default;
 const pkg = require('../../../package.json');
 
 describe('make_mailer_resend', function () {

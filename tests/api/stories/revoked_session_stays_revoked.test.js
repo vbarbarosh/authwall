@@ -1,7 +1,7 @@
 const assert = require('assert');
 const config = require('../../../config');
 const db = require('../../../db');
-const nock = require('nock');
+const nock = require('nock').default;
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
 // See revoked_session_stays_revoked.md.
