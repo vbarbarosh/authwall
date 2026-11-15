@@ -14,7 +14,7 @@
     "url": "https://github.com/vbarbarosh/authwall/issues"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "scripts": {
     "start": "node .",

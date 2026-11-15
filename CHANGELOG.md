@@ -87,6 +87,8 @@
 
 ### Upgrading
 
+- Running Authwall from source needs Node 26 (`engines`); the Docker image
+  carries its own.
 - Eight migrations: `utf8mb4_bin` on the magic-link, reset, verify and
   email-change token tables (MySQL), one OAuth account per provider per user,
   the primary address, confirm codes, and the email-change approval token.
@@ -200,7 +202,8 @@
 - `http-proxy-middleware` removed: Authwall drives `httpxy`, the engine under
   it, directly. `micromatch` and `braces` leave production, and with them
   GHSA-vfj7-8cjw-p6xm, which has no patched `braces`.
-- CI actions on their Node 24 majors, Node pinned to 24.
+- CI actions on their Node 24 majors; Node 26, the LTS since 2026-10, in
+  the image (`node:26-alpine`), in CI and in `engines`.
 - `body-parser` 2.4.0 and `multer` 2.5.0 close GHSA-27r3-jxmh-p828 and
   GHSA-q7qp-rjg7-q26m, two high advisories of 2026-10; `npm audit` is clean
   again.

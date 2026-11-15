@@ -4,7 +4,7 @@
 # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks the
 # package's gypfile:false), so a compiler is needed here. It stays out of the
 # runtime image below.
-FROM node:24-alpine AS deps
+FROM node:26-alpine AS deps
 
 RUN apk add --no-cache python3 make g++
 
@@ -13,7 +13,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Stage 2: runtime image.
-FROM node:24-alpine
+FROM node:26-alpine
 
 # https://github.com/Yelp/dumb-init
 # ADD --chmod=755 https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 /usr/bin/dumb-init

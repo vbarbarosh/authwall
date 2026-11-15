@@ -2,7 +2,7 @@
 
 An authentication proxy: it sits between clients and an internal app, handles
 sign-in, and forwards authenticated requests with an `X-Auth-User` header.
-Node.js 24, Express 5, knex over SQLite, MySQL or PostgreSQL, CommonJS.
+Node.js 26, Express 5, knex over SQLite, MySQL or PostgreSQL, CommonJS.
 
 ## The project
 
