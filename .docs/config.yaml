@@ -54,6 +54,8 @@ nav:
     file: oauth-providers.md
   - title: Emails
     file: emails.md
+  - title: Themes
+    file: themes.md
   - title: CLI tools
     file: cli.md
   - title: Security model

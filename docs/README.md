@@ -27,6 +27,8 @@ app, handles sign-in, and forwards authenticated requests with an
 - [OAuth providers](oauth-providers.md) — per-provider setup walkthroughs.
 - [Emails](emails.md) — the transactional email templates and how to
   customize them.
+- [Themes](themes.md) — your own look for the sign-in pages: the page to
+  copy, mounting it, and the demo bar that shows every screen.
 - [CLI tools](cli.md) — the `bin/` utilities for running, building, and
   operating Authwall.
 - [Security model](security.md) — the `X-Auth-User` trust boundary, sessions,
