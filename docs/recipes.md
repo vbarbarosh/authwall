@@ -83,6 +83,31 @@ docker run -d --name authwall -p 3000:3000 \
 - ban a single address on top of the domain rule with
   `AUTHWALL_DENIED_EMAILS=fired@myapp.test`
 
+## A few Google accounts only
+
+Named people sign in with their Google accounts; any other account is turned
+away, even one at the same domain. Needs the same
+[Google OAuth client](oauth-providers.md#google) as above.
+
+```sh
+docker run -d --name authwall -p 3000:3000 \
+    -e AUTHWALL_PUBLIC_URL=https://myapp.test \
+    -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
+    -e AUTHWALL_GOOGLE_CLIENT_SECRET=GOCSPX_xxx \
+    -e AUTHWALL_GOOGLE_REDIRECT_URL=https://myapp.test/auth/google/callback \
+    -e AUTHWALL_ALLOWED_EMAILS=alice@myapp.test,bob@myapp.test,carol@myapp.test \
+    -v ./data/authwall:/app/data \
+    vbarbarosh/authwall
+```
+
+- the sign-in page shows only **Continue with Google**: no password form, no
+  sign-up form; a listed address gets its account at its first sign-in
+- any address not in the list is refused, a Google account that signed in
+  before the list was set too
+- to add or remove someone, edit the list and restart; a removed address is
+  refused at its next request ([access rules](config.md#access-rules))
+
 ## API clients with personal access tokens
 
 Browser sessions don't help a script or a CI job.
