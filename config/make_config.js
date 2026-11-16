@@ -47,6 +47,9 @@ function make_config(input = {})
     const public_url = settings.public_url ?? 'http://127.0.0.1:3000';
 
     const config = {
+        sign_up: make(settings.sign_up, {
+            enabled: {type: 'bool', default: true, before: strict_bool('AUTHWALL_SIGN_UP')},
+        }),
         seed_users: parse_authwall_seed(settings.seed_users),
         public_url,
         public_paths: parse_paths(env.AUTHWALL_PUBLIC_PATHS ?? settings.public_paths),

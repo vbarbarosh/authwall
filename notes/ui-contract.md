@@ -26,7 +26,9 @@ The UI contract does not cover:
 ## Stable Routes
 
 - `/auth/sign-in` renders the sign-in view
-- `/auth/sign-up` renders the sign-up view
+- `/auth/sign-up` renders the sign-up view when signup is enabled; when
+  `actions.can_sign_up` is false it shows sign-in with a registration-closed
+  notice and no "Create one" link
 - `/auth/profile` renders the profile view for an authenticated user
 - `/auth/sessions` renders the sessions view for an authenticated user
 - `/auth/sign-out` renders the sign-out view for an authenticated user
@@ -74,7 +76,7 @@ The following `data-testid` values are the supported Playwright contract:
 ## Primary Expectations
 
 - The sign-in route exposes the sign-in form and both OAuth entry buttons.
-- The sign-up route exposes the sign-up view and both OAuth entry buttons.
+- With signup enabled, the sign-up route exposes the sign-up view and both OAuth entry buttons.
 - Unauthenticated navigation to `/auth/profile` resolves to the sign-in view.
 - Unauthenticated navigation to `/auth/sessions` resolves to the sign-in view.
 - Unauthenticated navigation to `/auth/sign-out` resolves to the sign-in view.

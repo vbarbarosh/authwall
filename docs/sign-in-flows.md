@@ -14,6 +14,11 @@ turned on. Which flows are active is decided at startup from
 [`AUTHWALL_FLOWS`](config.md#authwall_flows) and the supporting variables
 described below.
 
+To keep those sign-in methods available while preventing new accounts, set
+[`AUTHWALL_SIGN_UP=false`](config.md#authwall_sign_up). It closes public password,
+OAuth, and magic-link/code registration. `AUTHWALL_SEED` still provisions users
+at startup.
+
 ## Choosing flows: `AUTHWALL_FLOWS`
 
 `AUTHWALL_FLOWS` is the final step of configuration. Mailer, OAuth credentials,
@@ -72,7 +77,7 @@ In `auto` mode both are enabled when no OAuth provider is configured;
 | Path                           | Purpose                                                                               |
 |--------------------------------|---------------------------------------------------------------------------------------|
 | `/auth/sign-in`                | Sign-in page                                                                          |
-| `/auth/sign-up`                | Registration page — registration is open; the first visitor creates the first account |
+| `/auth/sign-up`                | Registration page when signup is enabled; otherwise shows sign-in                      |
 | `/auth/password-reset`         | Request a password-reset email                                                        |
 | `/auth/password-reset/confirm` | Set a new password from the reset link                                                |
 | `/auth/change-password`        | Change the password of the signed-in account (from the profile)                       |
@@ -95,7 +100,7 @@ AUTHWALL_FLOWS=username,email
 
 Passwordless sign-in: the user enters their email address and receives a
 one-time **link**, a one-time **code**, or both. A magic link is also a
-sign-up path — a first-time address creates an account.
+sign-up path when `AUTHWALL_SIGN_UP` is enabled — a first-time address creates an account.
 
 This flow always requires a configured mailer.
 

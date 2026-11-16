@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assert_sign_up_enabled = require('../helpers/assert/assert_sign_up_enabled');
 const assign_primary_email = require('../helpers/assign_primary_email');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
@@ -18,9 +19,11 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
+const redirect = require('../helpers/redirect');
 const release_pending_email = require('../helpers/release_pending_email');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
@@ -53,9 +56,21 @@ async function magic_link_request_post(req, res)
     }
     await authorize_email(email_normalized);
 
+    if (!config.sign_up.enabled) {
+        const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).whereNotNull('verified_at').first();
+        if (!ident) {
+            // The public response must not reveal whether the address exists.
+            delete req.session.magic_link_id;
+            return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
+        }
+    }
+
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
     if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
+        if (!config.sign_up.enabled) {
+            return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
+        }
         throw new UserFriendlyError('Magic link already sent. Please wait.');
     }
 
@@ -110,7 +125,9 @@ async function magic_link_open_post(req, res)
     await authorize_email(email_normalized);
 
     // The link proves the mailbox (AW-82).
-    await release_pending_email(req, email_normalized, {proof: true, now});
+    if (config.sign_up.enabled) {
+        await release_pending_email(req, email_normalized, {proof: true, now});
+    }
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
@@ -182,7 +199,9 @@ async function magic_link_confirm_post(req, res)
     // The address as typed when the code was mailed, as the GET link uses it.
     const email = magic_link.email;
     // The code proves the mailbox (AW-82).
-    await release_pending_email(req, email_normalized, {proof: true, now});
+    if (config.sign_up.enabled) {
+        await release_pending_email(req, email_normalized, {proof: true, now});
+    }
     const ident = await find_email_identity_for_sign_in(email_normalized);
     if (ident) {
         const user = await db('users').where({id: ident.user_id}).first();
@@ -227,6 +246,17 @@ async function find_magic_link_to_open(token, now)
     if (!magic_link) {
         return {error: 'Invalid or expired magic link', magic_link: null};
     }
+    if (!config.sign_up.enabled) {
+        try {
+            await find_email_identity_for_sign_in(magic_link.email_normalized);
+        }
+        catch (error) {
+            if (!(error instanceof UserFriendlyError)) {
+                throw error;
+            }
+            return {error: error.message, magic_link: null};
+        }
+    }
     return {error: null, magic_link};
 }
 
@@ -240,6 +270,7 @@ async function find_email_identity_for_sign_in(email_normalized)
 {
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
     if (!ident) {
+        assert_sign_up_enabled();
         return null;
     }
     if (!ident.verified_at) {

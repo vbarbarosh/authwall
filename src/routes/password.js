@@ -1,5 +1,6 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const account_email_refusal = require('../helpers/account_email_refusal');
+const assert_sign_up_enabled = require('../helpers/assert/assert_sign_up_enabled');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const bcrypt = require('bcrypt');
@@ -131,6 +132,8 @@ async function sign_in_post(req, res)
 // POST /auth/sign-up
 async function sign_up_post(req, res)
 {
+    assert_sign_up_enabled();
+
     const {email, username, password, password_confirm} = req.body;
 
     if ((!email && !username) || !password) {

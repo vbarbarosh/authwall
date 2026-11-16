@@ -1,11 +1,17 @@
+const assert_sign_up_enabled = require('../assert/assert_sign_up_enabled');
 const bcrypt = require('bcrypt');
 const config = require('../../../config');
 const db = require('../../../db');
 const random_slug = require('../random/random_slug');
 const random_uid_user = require('../random/random_uid_user');
 
-async function users_create(params = {})
+async function users_create(params = {}, {seed = false} = {})
 {
+    // Startup seeds are operator provisioning, independent of public signup.
+    if (!seed) {
+        assert_sign_up_enabled();
+    }
+
     const uid = params.uid ?? random_uid_user();
     const slug = params.slug ?? random_slug();
     const password_hash = params.password_hash

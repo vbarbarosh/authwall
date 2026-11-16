@@ -12,6 +12,18 @@ fell back to a different option. An out-of-range number, an
 unrecognized enum, or an unparseable boolean is a startup error,
 not a silent default; an empty value means "use the default".
 
+Boolean variables (`AUTHWALL_SIGN_UP`, `AUTHWALL_COOKIE_SECURE`,
+`AUTHWALL_CONFIRM_EMAIL_REQUIRED`, `AUTHWALL_PERSONAL_ACCESS_TOKENS`, and
+`AUTHWALL_WEBSOCKETS`) share these values:
+
+- True: `yes`, `on`, `true`, `1`, `y`.
+- False: `no`, `off`, `false`, `0`, `n`.
+
+Case and surrounding whitespace are ignored around recognized values; an empty
+value uses the variable's default. Other values, including `enabled`, `disabled`,
+and whitespace alone, are rejected. `AUTHWALL_RATE_LIMITING` is a legacy
+exception: only `0` disables it.
+
 ## Overview
 
 | Varname                                                                     | Short description                                      |
@@ -60,6 +72,7 @@ not a silent default; an empty value means "use the default".
 | [`AUTHWALL_SES_SESSION_TOKEN`](#authwall_ses_session_token)                 | Optional AWS session token for SES                     |
 | [`AUTHWALL_SES_FROM`](#authwall_ses_from)                                   | AWS SES sender address                                 |
 | [`AUTHWALL_FLOWS`](#authwall_flows)                                         | Enabled sign-in flows                                  |
+| [`AUTHWALL_SIGN_UP`](#authwall_sign_up)                                     | Allows public account registration                     |
 | [`AUTHWALL_MAGIC_LINK`](#authwall_magic_link)                               | Magic-link and magic-code mode                         |
 | [`AUTHWALL_GOOGLE_CLIENT_ID`](#authwall_google_client_id)                   | Google OAuth client id                                 |
 | [`AUTHWALL_GOOGLE_CLIENT_SECRET`](#authwall_google_client_secret)           | Google OAuth client secret                             |
@@ -578,6 +591,8 @@ AUTHWALL_DB=postgres://authwall:authwall@postgres/authwall
 Bootstrap users created at startup.
 Authwall creates missing users and adds missing username or email identities for existing users.
 Entries with neither a username nor a valid email are logged and skipped.
+Seeding is operator provisioning: it creates missing users and adds missing
+identities even with [`AUTHWALL_SIGN_UP=false`](#authwall_sign_up).
 
 - Type: compact string or JSON array
 - Default: none
@@ -924,6 +939,47 @@ Example — only password sign-in by username and Google:
 ```sh
 AUTHWALL_FLOWS=username,google
 ```
+
+## AUTHWALL_SIGN_UP
+
+Controls public account registration, independently of the enabled sign-in
+flows. Operator provisioning through `AUTHWALL_SEED` is always allowed.
+
+```sh
+AUTHWALL_SIGN_UP=false
+```
+
+- Default: `true`. An unset or empty value uses the default.
+- Disabled values: `no`, `off`, `false`, `0`, `n`.
+- Enabled values: `yes`, `on`, `true`, `1`, `y`.
+- Values are case-insensitive; surrounding whitespace is ignored. Any other
+  value, including `enabled`, `disabled`, or whitespace alone, is a startup error.
+
+When disabled, password signup, first-time OAuth login, and magic-link/code
+account creation are refused. This includes OAuth callbacks and magic links or
+codes issued before signup was disabled. Magic-link requests for addresses that
+cannot sign in receive the usual response without sending an email.
+
+The sign-in page hides the signup link and says registration is closed. Opening
+`/auth/sign-up` shows sign-in instead. Existing users can still sign in, verify
+their email, reset passwords, and connect providers. An OAuth account must
+already be linked to sign in; a matching email alone does not link accounts.
+
+Use `AUTHWALL_SEED` to provision users while public signup is closed. For example,
+start with two username/password users and refuse public registration:
+
+```sh
+AUTHWALL_FLOWS=username
+AUTHWALL_SIGN_UP=false
+AUTHWALL_SEED='alice:replace-alice-password;bob:replace-bob-password'
+```
+
+On startup, both users are created if missing and can sign in. Restarting does
+not duplicate them. Existing accounts remain available; this setting closes
+registration rather than restricting sign-in to the seed list.
+
+Restart Authwall after changing this environment variable, and use the same
+setting on every instance.
 
 ## AUTHWALL_MAGIC_LINK
 

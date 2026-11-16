@@ -66,7 +66,7 @@ async function status_get(req, res)
         flows.password = {
             allow_username,
             allow_email,
-            allow_username_sign_up: allow_username && !has_email_access_rules(),
+            allow_username_sign_up: config.sign_up.enabled && allow_username && !has_email_access_rules(),
             min_password_length,
         };
     }
@@ -107,6 +107,7 @@ async function status_get(req, res)
             csrf_token: req.session.csrf_token,
             flows,
             actions: {
+                can_sign_up: config.sign_up.enabled,
                 can_change_email: config.mailer.enabled,
                 can_manage_personal_access_tokens: false,
             },
@@ -135,6 +136,7 @@ async function status_get(req, res)
         authenticated: true,
         flows,
         actions: {
+            can_sign_up: config.sign_up.enabled,
             can_change_email: config.mailer.enabled,
             can_manage_personal_access_tokens: config.personal_access_tokens.enabled,
         },

@@ -448,6 +448,7 @@
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Welcome back</h1>
         <p class="page-sub mt-4">Sign in to continue to your application.</p>
+        <p class="page-sub mt-4 flow-hidden" data-testid="signup-closed">Registration is closed. Sign in with an existing account.</p>
       </div>
       <div class="card-body">
         <div class="form">
@@ -1407,7 +1408,9 @@ async function http_post_urlencoded(path, fields) {
   });
   const final_url = await landing_of(res);
   const status = await api_status();
-  if (status.flows) apply_flows(status.flows);
+    if (status.flows) {
+        apply_flows(status.flows, status.actions);
+    }
   render_confirm_email_status(status);
   return { final_url, error: status.error };
 }
@@ -1432,7 +1435,9 @@ async function http_post_json(path, fields) {
   const content_type = res.headers.get('content-type') || '';
   const data = content_type.includes('application/json') ? await res.json() : null;
   const status = await api_status();
-  if (status.flows) apply_flows(status.flows);
+    if (status.flows) {
+        apply_flows(status.flows, status.actions);
+    }
   return { data, error: status.error };
 }
 
@@ -1550,7 +1555,8 @@ const ICON_MOBILE  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 // ═══════════════════════════════════════════════════════════════════════════════
 // FLOWS — show/hide UI sections based on enabled flows
 // ═══════════════════════════════════════════════════════════════════════════════
-function apply_flows(flows) {
+function apply_flows(flows, actions = {})
+{
   function show(sel, visible) {
     document.querySelectorAll(sel).forEach(el => el.classList.toggle('flow-hidden', !visible));
   }
@@ -1630,10 +1636,16 @@ function apply_flows(flows) {
   // registration) and no OAuth there is nothing left to register with: route
   // /auth/sign-up back to sign-in and withdraw the invitation to it rather
   // than offer a link to an empty card.
-  const sign_up_reachable = has_password && (has_password_sign_up || has_oauth);
+    const allow_signup = actions.can_sign_up !== false;
+    const sign_up_reachable = allow_signup && has_password && (has_password_sign_up || has_oauth);
+    show('[data-testid="signup-closed"]', !allow_signup);
+    show('.demo-btn[data-goto="sign-up"]', sign_up_reachable);
+    if (!allow_signup) {
+        show('.demo-btn[data-signup-mode]', false);
+    }
+    ROUTES['/auth/sign-up'] = sign_up_reachable ? 'sign-up' : 'sign-in';
   show('[data-view="sign-in"] .card-footer[data-flow="password"]', sign_up_reachable);
   if (!sign_up_reachable) {
-    ROUTES['/auth/sign-up'] = 'sign-in';
     const active = document.querySelector('[data-view].active');
     if (active && active.dataset.view === 'sign-up') showView('sign-in', false);
   }
@@ -2646,7 +2658,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. Fetch status in parallel — update UI when it arrives
   const status = await api_status();
   render_version_link(status);
-  if (status.flows) apply_flows(status.flows);
+    if (status.flows) {
+        apply_flows(status.flows, status.actions);
+    }
   render_confirm_email_status(status);
   sync_sign_in_form();
   const si_csrf = document.getElementById('si-csrf');

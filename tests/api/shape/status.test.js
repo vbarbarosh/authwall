@@ -42,6 +42,7 @@ describe('shape • status', function () {
                 discord: {},
             },
             actions: {
+                can_sign_up: true,
                 can_change_email: true,
                 can_manage_personal_access_tokens: false,
             },
@@ -78,6 +79,7 @@ describe('shape • status', function () {
                 discord: {},
             },
             actions: {
+                can_sign_up: true,
                 can_change_email: true,
                 can_manage_personal_access_tokens: true,
             },

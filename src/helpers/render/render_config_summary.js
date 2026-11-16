@@ -9,6 +9,7 @@ function render_config_summary(config)
         `🧯 Sentry: ${format_sentry(config.sentry)}`,
         `🔑 Personal access tokens: ${config.personal_access_tokens.enabled ? 'enabled' : 'disabled'}`,
         `🔌 WebSockets: ${config.websockets.enabled ? 'enabled' : 'disabled'}`,
+        `👤 Sign-up: ${config.sign_up.enabled ? 'enabled' : 'disabled'}`,
         '🔐 Sign-in:',
         format_flows(config.flows).map(v => `  ${v}`),
         `📭 Mailer: ${format_mailer(config.mailer)}`,

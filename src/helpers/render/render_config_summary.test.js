@@ -5,6 +5,7 @@ describe('render_config_summary', function () {
 
     it('formats a resolved config summary without leaking secrets', function () {
         const lines = render_config_summary({
+            sign_up: {enabled: false},
             listen: '0.0.0.0',
             port: 3000,
             public_url: 'https://authwall.test',
@@ -138,6 +139,7 @@ describe('render_config_summary', function () {
         assert.match(text, /🧯 Sentry: enabled environment=production traces=0.25/);
         assert.match(text, /🔑 Personal access tokens: enabled/);
         assert.match(text, /🔌 WebSockets: enabled/);
+        assert.match(text, /👤 Sign-up: disabled/);
         assert.match(text, /🔐 Sign-in:/);
         assert.match(text, / - password: username, min 8/);
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);

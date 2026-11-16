@@ -1,5 +1,8 @@
 public_url: ${AUTHWALL_PUBLIC_URL}
 
+sign_up:
+  enabled: ${AUTHWALL_SIGN_UP}
+
 public_paths:
   # Only paths listed here are publicly accessible.
   # Entries ending in /* are treated as prefixes, e.g. /lib/* matches /lib/app.js.

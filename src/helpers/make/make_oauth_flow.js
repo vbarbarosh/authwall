@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assert_sign_up_enabled = require('../assert/assert_sign_up_enabled');
 const assign_primary_email = require('../assign_primary_email');
 const auth_middleware = require('../middleware/auth_middleware');
 const authorize_oauth_emails = require('../authorize_oauth_emails');
@@ -276,6 +277,7 @@ async function callback_get(oauth_provider, req, res)
         user_id = ident.user_id;
     }
     else {
+        assert_sign_up_enabled();
         // The provider's word proves its address; its pending one claims only (AW-82).
         if (verified_emails[0]) {
             await release_pending_email(req, verified_emails[0].email_normalized, {proof: true});

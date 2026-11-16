@@ -49,7 +49,7 @@ async function bootstrap_users()
             user_id = ident.user_id;
         }
         else {
-            const user = await users_create({password, password_hash, display_name});
+            const user = await users_create({password, password_hash, display_name}, {seed: true});
             user_id = user.id;
         }
 
