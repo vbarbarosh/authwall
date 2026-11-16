@@ -56,14 +56,11 @@ async function magic_link_request_post(req, res)
     }
     await authorize_email(email_normalized);
 
-    if (!config.sign_up.enabled) {
-        const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).whereNotNull('verified_at').first();
-        if (!ident) {
-            // The public response must not reveal whether the address exists.
-            delete req.session.magic_link_id;
-            return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
-        }
-    }
+    // A cooldown must pay the same bcrypt cost as a fresh request, or it
+    // reveals recent requests from other browsers. Link mode stores no code
+    // to be guessed (AW-26).
+    const code = (config.flows.magic_link.mode === 'link') ? null : random_code();
+    const code_hash = code ? await bcrypt.hash(code, config.bcrypt_rounds) : null;
 
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
@@ -74,8 +71,6 @@ async function magic_link_request_post(req, res)
         throw new UserFriendlyError('Magic link already sent. Please wait.');
     }
 
-    // Link mode mails no code, so it stores none to be guessed (AW-26).
-    const code = (config.flows.magic_link.mode === 'link') ? null : random_code();
     const token = random_hex();
 
     const now = new Date();
@@ -83,7 +78,7 @@ async function magic_link_request_post(req, res)
     await db('magic_links').insert({
         email,
         email_normalized,
-        code_hash: code ? await bcrypt.hash(code, config.bcrypt_rounds) : null,
+        code_hash,
         token_hash,
         created_at: now,
         updated_at: now,

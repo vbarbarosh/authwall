@@ -957,8 +957,15 @@ AUTHWALL_SIGN_UP=false
 
 When disabled, password signup, first-time OAuth login, and magic-link/code
 account creation are refused. This includes OAuth callbacks and magic links or
-codes issued before signup was disabled. Magic-link requests for addresses that
-cannot sign in receive the usual response without sending an email.
+codes issued before signup was disabled. Magic-link requests for addresses
+that cannot sign in receive the usual response without sending an email.
+
+Magic-code requests perform bcrypt hashing even during the resend cooldown.
+Repeating a request sends no extra email, preserves the original code and its
+browser binding, and does not extend the cooldown. Account eligibility and
+email delivery are handled after the response to avoid exposing addresses
+through account checks or mail latency. Delivery failures are logged; the
+browser still sees the usual notice.
 
 The sign-in page hides the signup link and says registration is closed. Opening
 `/auth/sign-up` shows sign-in instead. Existing users can still sign in, verify

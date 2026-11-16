@@ -115,11 +115,12 @@ describe('signup disabled', function () {
         const unknown = await this.client.post_json_no_redirects('/auth/magic-link/request', {_csrf: status.csrf_token, email: 'new@example.com'});
         assert.strictEqual(unknown.status, 302);
         assert.strictEqual(unknown.headers.location, '/auth/magic-link/sent?email=new%40example.com');
-        assert.deepStrictEqual(await db('magic_links'), []);
+        assert.strictEqual((await db('magic_links')).length, 1);
         assert.strictEqual(this.sent_emails.length, 0);
         const existing = await this.client.post_json_no_redirects('/auth/magic-link/request', {_csrf: status.csrf_token, email: 'existing@example.com'});
         assert.strictEqual(existing.status, unknown.status);
         assert.strictEqual(existing.headers.location, '/auth/magic-link/sent?email=existing%40example.com');
+        await this.wait_for_emails(1);
         assert.strictEqual(this.sent_emails.length, 1);
         const repeated = await this.client.post_json_no_redirects('/auth/magic-link/request', {_csrf: status.csrf_token, email: 'existing@example.com'});
         assert.strictEqual(repeated.status, existing.status);
@@ -150,6 +151,7 @@ describe('signup disabled', function () {
             await this.add_user({email: 'existing@example.com'});
             config.sign_up.enabled = false;
             await this.http_post_json('/auth/magic-link/request', {email: 'existing@example.com'});
+            await this.wait_for_emails(1);
             const {link, code} = this.sent_emails[0].placeholders;
             if (method === 'link') {
                 await this.open_link(link);
