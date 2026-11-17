@@ -65,10 +65,9 @@ async function magic_link_request_post(req, res)
     // prevent spamming
     const magic_link = await db('magic_links').where({email_normalized}).orderBy('id', 'desc').first();
     if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
-        if (!config.sign_up.enabled) {
-            return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
-        }
-        throw new UserFriendlyError('Magic link already sent. Please wait.');
+        // A shared notice explains the cooldown without disclosing whether
+        // another browser recently requested this address.
+        return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
     }
 
     const token = random_hex();

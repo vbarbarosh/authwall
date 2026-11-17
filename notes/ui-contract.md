@@ -72,6 +72,13 @@ The following `data-testid` values are the supported Playwright contract:
 - `magic-request-email`
 - `magic-request-submit`
 - `magic-sent-view`
+- `magic-notice-title`
+- `magic-notice-cooldown`
+- `magic-notice-browser`
+- `magic-notice-code`
+- `magic-notice-retry`
+- `magic-confirm-view`
+- `magic-confirm-submit`
 
 ## Primary Expectations
 
@@ -83,6 +90,9 @@ The following `data-testid` values are the supported Playwright contract:
 - Failed sign-in keeps the user on the sign-in view and exposes an error banner.
 - Successful sign-in with `?return=` lands on that protected route.
 - The magic-link request flow reaches the sent view after submission.
+- Fresh and repeated magic-link requests show the same "Check your email" notice;
+  it says that asking again within a minute sends nothing new and that a code
+  works only in the browser that asked. Sending a new email keeps the address.
 - The authenticated profile view exposes the connected identities section.
 - The authenticated sessions view exposes the current-device state.
 - The sign-out route is reachable after sign-in and can end the current session.

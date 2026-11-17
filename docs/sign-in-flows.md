@@ -124,7 +124,15 @@ compatible with `AUTHWALL_MAGIC_LINK` — asking for `magic_code` while
 |---|---|
 | `/auth/magic-link` | Request a magic link or code |
 | `/auth/magic-link/confirm` | Confirm a link or submit a code |
-| `/auth/magic-link/sent` | "Check your email" notice |
+| `/auth/magic-link/sent` | "Check your email" notice, the same for a repeated request |
+
+The request notice does not confirm that an email was sent. Repeating a request
+within 60 seconds sends no new email and does not extend that wait. A code
+received for a request in another browser cannot be used here: use the original
+browser, or wait 60 seconds and request again in this browser. Fresh and repeated
+requests show the same notice. With signup disabled they also take the same
+time, so the notice does not expose other browsers' requests; with signup
+enabled a fresh request waits until its email is sent, and a repeat does not.
 
 ```sh
 # Magic code only (also set AUTHWALL_MAGIC_LINK=code)

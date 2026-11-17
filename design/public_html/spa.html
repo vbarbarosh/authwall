@@ -138,6 +138,7 @@
     .page-title { font-size: 23px; font-weight: 700; letter-spacing: -.025em; color: var(--text); margin-bottom: 6px; }
     .page-sub { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin-bottom: 4px; }
     .page-sub strong { color: var(--text-2); font-weight: 600; }
+    #ml-sent-email, #mc-email-display { overflow-wrap: anywhere; }
 
     /* ── Forms ── */
     .form { display: flex; flex-direction: column; gap: 16px; }
@@ -659,7 +660,7 @@
       <div class="card-header">
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Passwordless sign in</h1>
-        <p class="page-sub mt-4">We'll email you a one-time link and code. No password needed.</p>
+        <p class="page-sub mt-4">Sign in with a one-time email. No password needed.</p>
       </div>
       <div class="card-body">
         <div class="form">
@@ -673,7 +674,7 @@
           </div>
           <button id="ml-submit" class="btn btn-primary mt-4" data-testid="magic-request-submit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Send magic link
+            Send sign-in email
           </button>
         </div>
       </div>
@@ -691,11 +692,13 @@
         <div class="notice-icon info">
           <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <h1 class="page-title">Check your email</h1>
-        <p class="page-sub mt-8">A magic link and 6-digit code have been sent to <strong id="ml-sent-email">your email</strong>. Both expire in <strong>10 minutes</strong>.</p>
+        <h1 class="page-title" data-testid="magic-notice-title">Check your email</h1>
+        <p class="page-sub mt-8">If <strong id="ml-sent-email">your email</strong> can sign in, we've sent it a sign-in email. It expires in <strong>10 minutes</strong>.</p>
+        <p class="page-sub mt-8" data-testid="magic-notice-cooldown">Asking again within a minute sends nothing new.</p>
+        <p class="page-sub mt-8" data-magic-mode="code" data-testid="magic-notice-browser">The code works only in the browser that asked.</p>
         <div class="flex flex-col gap-8 mt-20">
-          <button class="btn btn-primary" onclick="showView('magic-confirm')" data-magic-mode="code">Enter the code</button>
-          <button class="btn btn-ghost" onclick="showView('magic-req')">Use a different email</button>
+          <button class="btn btn-primary" onclick="showView('magic-confirm')" data-magic-mode="code" data-testid="magic-notice-code">Enter the code</button>
+          <button class="btn btn-ghost" onclick="showView('magic-req')" data-testid="magic-notice-retry">Send a new email</button>
         </div>
       </div>
       <div class="card-footer"><span class="text-link" onclick="showView('sign-in')">← Back to sign in</span></div>
@@ -703,12 +706,12 @@
   </div>
 
   <!-- ── 8. MAGIC LINK — CONFIRM ── -->
-  <div data-view="magic-confirm">
+  <div data-view="magic-confirm" data-testid="magic-confirm-view">
     <div class="card">
       <div class="card-header">
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Enter your code</h1>
-        <p class="page-sub mt-4">We sent a 6-digit code to <strong id="mc-email-display">your email</strong>.<br>Or click the link in the email to sign in instantly.</p>
+        <p class="page-sub mt-4">Enter the code from the email to <strong id="mc-email-display">your email</strong>. It works only in the browser that asked.</p>
       </div>
       <div class="card-body">
         <div class="form">
@@ -724,7 +727,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span id="mc-error-msg"></span>
           </div>
-          <button id="mc-submit" class="btn btn-primary mt-16">Verify code</button>
+          <button id="mc-submit" class="btn btn-primary mt-16" data-testid="magic-confirm-submit">Verify code</button>
           <p class="text-center text-sm text-muted mt-8">
             Didn't get a code? <span class="text-link" onclick="showView('magic-req')">Resend</span>
           </p>
@@ -2651,6 +2654,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (el) el.textContent = email_param;
     const mc = document.getElementById('mc-email-display');
     if (mc) mc.textContent = email_param;
+        document.getElementById('ml-email').value = email_param;
     const pr = document.getElementById('pr-email');
     if (pr) pr.value = email_param;
   }

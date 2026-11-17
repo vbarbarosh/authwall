@@ -32,7 +32,7 @@ describe('POST /auth/magic-link/request', function () {
         await this.http_post_json('/auth/magic-link/request', {email: 'mocha@authwall.test'});
 
         const status2 = await this.http_get_json('/auth/status');
-        assert.strictEqual(status2.error, 'Magic link already sent. Please wait.');
+        assert.strictEqual(status2.error, null);
         assert.strictEqual(this.sent_emails.length, 1);
     });
 

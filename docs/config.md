@@ -1017,7 +1017,10 @@ account eligibility and email delivery are handled after the response to avoid
 exposing addresses through account checks or mail latency: delivery failures
 are logged, and the browser still sees the usual notice. With signup enabled,
 every allowed address gets its email, and a delivery failure is shown as an
-error, as before.
+error, as before. Fresh and repeated requests show the same "Check your email"
+notice: asking again within a minute sends nothing new, and a code works only
+in the browser that asked. To use another browser, wait a minute and
+ask again there.
 
 The sign-in page hides the signup link and says registration is closed. Opening
 `/auth/sign-up` shows sign-in instead. Existing users can still sign in, verify
