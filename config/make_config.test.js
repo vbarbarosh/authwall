@@ -1,5 +1,8 @@
 const assert = require('assert');
+const fs = require('fs');
 const make_config = require('./make_config');
+const os = require('os');
+const path = require('path');
 
 describe('make_config', function () {
 
@@ -116,6 +119,27 @@ describe('make_config', function () {
             enabled: true,
             recheck_seconds: 30,
         });
+    });
+
+    it('takes the seed users from AUTHWALL_SEED_FILE', function () {
+        const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'seed-file-')), 'users.csv');
+        fs.writeFileSync(file, 'username,emails,password_hash\nalice,alice@myapp.test,\n');
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_SEED_FILE: file,
+        });
+
+        assert.deepStrictEqual(config.seed_users, [{username: 'alice', password_hash: undefined, display_name: undefined, email: ['alice@myapp.test']}]);
+    });
+
+    it('refuses AUTHWALL_SEED and AUTHWALL_SEED_FILE together', function () {
+        assert.throws(() => make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+            AUTHWALL_SEED: 'alice:alice-pass-1',
+            AUTHWALL_SEED_FILE: '/nonexistent/users.csv',
+        }), /AUTHWALL_SEED and AUTHWALL_SEED_FILE are both set/);
     });
 
     it('configures Sentry when AUTHWALL_SENTRY_DSN is set', function () {

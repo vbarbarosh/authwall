@@ -50,6 +50,7 @@ exception: only `0` disables it.
 | [`AUTHWALL_UNSET_HEADERS`](#authwall_unset_headers)                         | Headers to remove from upstream requests               |
 | [`AUTHWALL_DB`](#authwall_db)                                               | Database connection URI                                |
 | [`AUTHWALL_SEED`](#authwall_seed)                                           | Bootstrap users created at startup                     |
+| [`AUTHWALL_SEED_FILE`](#authwall_seed_file)                                 | A CSV or JSON file of seed users, passwords hashed     |
 | [`AUTHWALL_COOKIE_DOMAIN`](#authwall_cookie_domain)                         | Session cookie domain                                  |
 | [`AUTHWALL_COOKIE_PATH`](#authwall_cookie_path)                             | Session cookie path                                    |
 | [`AUTHWALL_COOKIE_SAMESITE`](#authwall_cookie_samesite)                     | SameSite value for the session cookie                  |
@@ -593,6 +594,8 @@ Authwall creates missing users and adds missing username or email identities for
 Entries with neither a username nor a valid email are logged and skipped.
 Seeding is operator provisioning: it creates missing users and adds missing
 identities even with [`AUTHWALL_SIGN_UP=false`](#authwall_sign_up).
+The same users can come from a file instead,
+[`AUTHWALL_SEED_FILE`](#authwall_seed_file); setting both stops startup.
 
 - Type: compact string or JSON array
 - Default: none
@@ -617,6 +620,53 @@ JSON format — an array of objects:
 
 ```sh
 AUTHWALL_SEED='[{"username":"admin","password":"change-me","display_name":"Admin","emails":["admin@myapp.test"]}]'
+```
+
+## AUTHWALL_SEED_FILE
+
+The seed users from a file, in place of [`AUTHWALL_SEED`](#authwall_seed):
+one seed, two sources, and setting both stops startup. They are seeded the
+same way: missing users are created, existing ones are left as they are. A
+password is kept in the file only as its bcrypt hash, the form the database
+stores, so the file holds no plain password.
+
+- Type: path to a CSV or JSON file
+- Default: none
+
+The format is told by the text: a file that starts with `[` is JSON, any
+other is CSV. Its fields:
+
+- `username` — optional if at least one email is present.
+- `emails` — one or more addresses; in CSV, separated by spaces or commas
+  (quote the cell for commas).
+- `display_name` — optional, shown in the profile.
+- `password_hash` — a bcrypt hash (`$2b$…`); empty for a user with no password.
+
+A CSV starts with a header row that names `username`, `emails` and
+`password_hash`, in any order, and may name `display_name`:
+
+```
+username,emails,display_name,password_hash
+alice,alice@myapp.test,Alice,$2b$12$5L5bc20D5Pw8ojbI/FiwPOih6AI08HsdR71vgglDpTTxe9X0rGX3e
+bob,,,$2b$12$RGEFicUo.RhlLMoygJs43ebk4hyWYf2VQFTNRNd8X.YF290yPT3km
+```
+
+JSON, an array of objects with the same fields:
+
+```
+[{"username": "alice", "emails": ["alice@myapp.test"], "password_hash": "$2b$12$5L5bc20D5Pw8ojbI/FiwPOih6AI08HsdR71vgglDpTTxe9X0rGX3e"}]
+```
+
+Authwall does not start, and says why, when the CSV header misses a column,
+names one it does not know, or is not there; when a field is called
+`password`; or when a `password_hash` is not a bcrypt hash.
+
+`bin/password-hash` makes a hash, with the configured cost; the image has it
+too:
+
+```sh
+bin/password-hash 'alice-pass-1'
+docker run --rm vbarbarosh/authwall bin/password-hash 'alice-pass-1'
 ```
 
 <a id="authwall_cookie_domain"></a>

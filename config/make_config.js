@@ -6,6 +6,7 @@ const knexfile = require('../knexfile');
 const make = require('@vbarbarosh/type-helpers');
 const normalize_email = require('../src/helpers/normalize/normalize_email');
 const parse_authwall_seed = require('../src/helpers/parse/parse_authwall_seed');
+const parse_authwall_seed_file = require('../src/helpers/parse/parse_authwall_seed_file');
 const parse_domains = require('../src/helpers/parse_domains');
 const parse_flows_setting = require('../src/helpers/parse/parse_flows_setting');
 const parse_magic_link_setting = require('../src/helpers/parse/parse_magic_link_setting');
@@ -46,11 +47,16 @@ function make_config(input = {})
     );
     const public_url = settings.public_url ?? 'http://127.0.0.1:3000';
 
+    // One seed, two sources: the variable or the file, never both.
+    if (settings.seed_users && settings.seed_file) {
+        throw new Error('AUTHWALL_SEED and AUTHWALL_SEED_FILE are both set: the seed users come from one of them');
+    }
+
     const config = {
         sign_up: make(settings.sign_up, {
             enabled: {type: 'bool', default: true, before: strict_bool('AUTHWALL_SIGN_UP')},
         }),
-        seed_users: parse_authwall_seed(settings.seed_users),
+        seed_users: settings.seed_file ? parse_authwall_seed_file(settings.seed_file) : parse_authwall_seed(settings.seed_users),
         public_url,
         public_paths: parse_paths(env.AUTHWALL_PUBLIC_PATHS ?? settings.public_paths),
         optional_auth_paths: parse_paths(env.AUTHWALL_OPTIONAL_AUTH_PATHS ?? settings.optional_auth_paths),

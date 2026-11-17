@@ -31,17 +31,19 @@ These wrap the Knex CLI for development work against the local SQLite database.
 
 ## Secrets and hashing
 
-| Command                 | What it does                                                                                     |
-|-------------------------|--------------------------------------------------------------------------------------------------|
-| `bin/random-secret`     | Print a random 32-character secret, suitable for [`AUTHWALL_SECRET`](config.md#authwall_secret). |
-| `bin/bcrypt <password>` | Print a bcrypt hash of `<password>`, using the configured cost factor.                           |
+| Command                        | What it does                                                                                     |
+|--------------------------------|--------------------------------------------------------------------------------------------------|
+| `bin/random-secret`            | Print a random 32-character secret, suitable for [`AUTHWALL_SECRET`](config.md#authwall_secret). |
+| `bin/password-hash <password>` | Print a bcrypt hash of `<password>`, using the configured cost factor.                           |
 
-`bin/bcrypt` is useful for pre-hashing a password for a bootstrap user defined
-as `password_hash` in `config/settings.yaml`.
+`bin/password-hash` makes the `password_hash` of a seed user: a line of
+[`AUTHWALL_SEED_FILE`](config.md#authwall_seed_file), or an entry in
+`config/settings.yaml`. The image has it too:
+`docker run --rm vbarbarosh/authwall bin/password-hash '…'`.
 
 ```sh
 bin/random-secret
-bin/bcrypt 'correct horse battery staple'
+bin/password-hash 'correct horse battery staple'
 ```
 
 ## Build and release

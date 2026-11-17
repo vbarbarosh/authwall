@@ -184,3 +184,7 @@ seed_users: ${AUTHWALL_SEED}
 #    email:
 #      - bar1@authwall.test
 #      - bar2@authwall.test
+
+# Or the seed users from a CSV or JSON file, passwords as bcrypt hashes;
+# never both.
+seed_file: ${AUTHWALL_SEED_FILE}

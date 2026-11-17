@@ -9,6 +9,15 @@
   mail is logged. A repeat within the cooldown costs the same bcrypt work as
   a fresh request, so it does not show that someone asked a minute ago.
 
+### Added
+
+- `AUTHWALL_SEED_FILE`: the seed users from a CSV or JSON file instead of
+  `AUTHWALL_SEED`, each password kept as its bcrypt hash; both set stops
+  startup. A CSV's header row names its columns; a missing or unknown column,
+  a plain password or a bad hash stops startup.
+- `bin/password-hash`, formerly `bin/bcrypt`, makes such a hash, and the image
+  has it: `docker run --rm vbarbarosh/authwall bin/password-hash '…'`.
+
 ## 1.17.0
 
 ### Breaking
