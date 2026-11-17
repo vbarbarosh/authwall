@@ -8,6 +8,9 @@
   account lookup and the mail, so neither tells who has an account; a failed
   mail is logged. A repeat within the cooldown costs the same bcrypt work as
   a fresh request, so it does not show that someone asked a minute ago.
+- A failing query's error, in the log and in Sentry, no longer carries the
+  values bound to it: a session id, a CSRF token, an IP, an email. It names
+  the query, with placeholders, and the database's reason.
 
 ### Added
 

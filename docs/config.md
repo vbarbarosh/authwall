@@ -214,6 +214,7 @@ Configures Sentry error reporting for the Node/Express process.
 
 Authwall registers Sentry's Express error handler before its own redirecting error handler, so exceptions are reported while users still receive Authwall's normal error redirect behavior.
 Authwall does not enable `sendDefaultPii`, strips cookies and authorization headers, drops request bodies, and redacts OAuth-style `code`, `state`, and `token` query parameters before events are sent.
+The error of a failing database query carries the query, not its values.
 
 Example:
 

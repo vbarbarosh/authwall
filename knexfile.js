@@ -10,6 +10,10 @@ module.exports = {
 
     sqlite: {
         client: 'better-sqlite3',
+        // A failing query's error carries the query with its placeholders,
+        // never the values bound to them (a session id, a CSRF token, an IP,
+        // an e-mail, a password hash): that message goes to the log and Sentry.
+        compileSqlOnError: false,
         connection: {
             filename: `${__dirname}/data/db.sqlite3`
         },
@@ -29,6 +33,8 @@ module.exports = {
 
     mysql: {
         client: 'mysql2',
+        // No bound values in a failing query's error, as for sqlite above.
+        compileSqlOnError: false,
         // ⚠️ Not applied with knex 3.3: CREATE TABLE carries only the charset, so
         // a column looked up by value sets its own collation (db/utf8mb4_bin.js).
         //
@@ -128,6 +134,8 @@ module.exports = {
 
     postgres: {
         client: 'pg',
+        // No bound values in a failing query's error, as for sqlite above.
+        compileSqlOnError: false,
         connection: process.env.AUTHWALL_DB,
         pool: {
             min: 2,
