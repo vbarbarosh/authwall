@@ -16,33 +16,43 @@ const magic_link_mode_to_email = {
 
 async function complete_magic_link_request(req, res, email, code, token)
 {
+    // With sign-up open every allowed address gets its mail: delivery reveals
+    // nothing, so a failure reaches the browser and the error handler.
+    if (config.sign_up.enabled) {
+        await send_magic_link_email(email, code, token);
+        redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
+        return;
+    }
+
     // Account lookup and mail latency must not affect the public response.
     redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
 
     try {
-        if (!config.sign_up.enabled) {
-            const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: normalize_email(email)}).whereNotNull('verified_at').first();
-            if (!ident) {
-                return;
-            }
+        const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: normalize_email(email)}).whereNotNull('verified_at').first();
+        if (!ident) {
+            return;
         }
-
-        await send_email({
-            name: magic_link_mode_to_email[config.flows.magic_link.mode],
-            to: {email},
-            placeholders: {
-                display_name: '',
-                link: config.public_url + urlmod(config.pages.magic_link_confirm, {token}),
-                code,
-                token,
-            },
-        });
+        await send_magic_link_email(email, code, token);
     }
     catch (error) {
         // The response is already sent; a session error would reveal eligibility
         // on the next status request, even if the request itself looked uniform.
         als.logger.write(`[complete_magic_link_request_error] ${JSON.stringify(error.message)}`);
     }
+}
+
+async function send_magic_link_email(email, code, token)
+{
+    await send_email({
+        name: magic_link_mode_to_email[config.flows.magic_link.mode],
+        to: {email},
+        placeholders: {
+            display_name: '',
+            link: config.public_url + urlmod(config.pages.magic_link_confirm, {token}),
+            code,
+            token,
+        },
+    });
 }
 
 module.exports = complete_magic_link_request;
