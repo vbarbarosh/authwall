@@ -514,6 +514,78 @@ To stop the stack and wipe users, sessions, and the secret:
 docker compose down && rm -rf data
 ```
 
+### Several apps, one sign-in
+
+Two apps on their own subdomains, one Authwall in front of both: signed in on
+one, signed in on the other. Authwall hands every request to Caddy, which
+picks the app by its domain. Save this `Caddyfile` next to
+`docker-compose.yaml`:
+
+```
+http://notes.myapp.test {
+    reverse_proxy notes:8080
+}
+
+http://wiki.myapp.test {
+    reverse_proxy wiki:8080
+}
+```
+
+```yaml
+services:
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://notes.myapp.test:3000
+      AUTHWALL_UPSTREAM_URL: http://caddy
+      AUTHWALL_UPSTREAM_MODE: proxy
+      AUTHWALL_COOKIE_DOMAIN: myapp.test
+      AUTHWALL_TRUST_PROXY: none
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - caddy
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - notes
+      - wiki
+
+  notes:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+
+  wiki:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+To try it on your own machine, add both names to `/etc/hosts`:
+
+```
+127.0.0.1 notes.myapp.test wiki.myapp.test
+```
+
+- [`AUTHWALL_COOKIE_DOMAIN`](config.md#authwall_cookie_domain) gives the
+  session cookie to every `*.myapp.test`: one sign-in covers both apps
+- [`AUTHWALL_UPSTREAM_MODE=proxy`](config.md#authwall_upstream_mode) keeps
+  each request's own `Host`, so Caddy can tell the apps apart
+- each domain has the sign-in page under its own `/auth`; links in emails and
+  provider callbacks go to `AUTHWALL_PUBLIC_URL`
+- Authwall faces the clients itself here, with no proxy in front, so
+  `AUTHWALL_TRUST_PROXY=none` keeps a client from naming its own address in
+  `X-Forwarded-For`
+- another app is one more block in the `Caddyfile` and one more service; for
+  three apps, see the [reverse-proxy example](examples/authwall-proxy-caddy/)
+
 ### Health checks, errors to Sentry
 
 Docker checks every 30 seconds that Authwall still answers, and its errors go
