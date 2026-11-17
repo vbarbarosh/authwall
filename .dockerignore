@@ -10,6 +10,7 @@
 !package-lock.json
 !knexfile.js
 
+!bin/password-hash
 !config/
 !config/**
 !db/
