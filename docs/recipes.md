@@ -637,6 +637,110 @@ services:
   ([what is sent](config.md#sentry))
 - add `AUTHWALL_SENTRY_TRACES_SAMPLE_RATE: "0.05"` to trace 5% of requests too
 
+### Your nginx asks Authwall
+
+nginx keeps serving the app, and before each request asks Authwall whether
+the person is signed in (`auth_request`). Authwall serves its sign-in pages
+under `/auth` and never carries the app's traffic. Save this as
+`authwall.conf` next to `docker-compose.yaml`:
+
+```nginx
+# The browser's cookies without Authwall's own: the app never sees it.
+map $http_cookie $cookie_without_authwall {
+    default $http_cookie;
+    "~^authwall\.sid=[^;]*(?:;\s*)?(?<rest>.*)$" $rest;
+    "~^(?<head>.*?);\s*authwall\.sid=[^;]*(?<tail>.*)$" "$head$tail";
+}
+
+# The path asked for, still percent-encoded: the way back after sign-in.
+map $request_uri $authwall_return {
+    "~^(?<path>[^?]*)" $path;
+}
+
+server {
+    listen 80;
+    # Redirects keep the port the browser used (3000 below), not nginx's 80.
+    absolute_redirect off;
+
+    location /auth/ {
+        proxy_pass http://authwall:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        auth_request /_auth;
+        auth_request_set $auth_user $upstream_http_x_auth_user;
+        error_page 401 = @authwall_sign_in;
+        error_page 403 = @authwall_verify;
+
+        proxy_pass http://app:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Auth-User $auth_user;
+        proxy_set_header Authorization "";
+        proxy_set_header Cookie $cookie_without_authwall;
+    }
+
+    location = /_auth {
+        internal;
+        proxy_pass http://authwall:3000/auth/sidecar;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Original-URI $scheme://$host$request_uri;
+        proxy_set_header X-Original-Method $request_method;
+        proxy_set_header Content-Length "";
+        proxy_pass_request_body off;
+    }
+
+    location @authwall_sign_in {
+        return 302 /auth/sign-in?return=$authwall_return;
+    }
+
+    location @authwall_verify {
+        return 302 /auth/email-verify?return=$authwall_return;
+    }
+}
+```
+
+```yaml
+services:
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - 3000:80
+    volumes:
+      - ./authwall.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - authwall
+      - app
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+    volumes:
+      - ./data/authwall:/app/data
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- signed in, a request goes on to the app with
+  [`X-Auth-User`](security.md#the-x-auth-user-trust-boundary); signed out,
+  the browser goes to the sign-in page and comes back to the same path;
+  `403` sends it to confirm its email first
+- Authwall needs no `AUTHWALL_UPSTREAM_URL`: nginx serves the app
+- the app never sees Authwall's cookie or a bearer token, and nginx sets
+  `X-Auth-User` over any a client sends
+- publish only nginx: an app reachable another way skips the check
+- several domains on one nginx: the
+  [sidecar example](examples/authwall-sidecar-nginx/)
+
 ## Going further
 
 - [Getting started](getting-started.md) — the same progression as a Docker
