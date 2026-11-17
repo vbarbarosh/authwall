@@ -514,6 +514,57 @@ To stop the stack and wipe users, sessions, and the secret:
 docker compose down && rm -rf data
 ```
 
+### Health checks, errors to Sentry
+
+Docker checks every 30 seconds that Authwall still answers, and its errors go
+to Sentry. The rest is the [Protect an app](#protect-an-app) file as it was.
+Needs a Sentry project; its DSN is under the project's settings,
+**Client Keys**.
+
+```yaml
+services:
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: http://localhost:3000
+      AUTHWALL_UPSTREAM_URL: http://app:8080
+      AUTHWALL_SENTRY_DSN: https://public@example.ingest.sentry.io/1
+      AUTHWALL_SENTRY_ENVIRONMENT: production
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/auth/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - app
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- `docker compose ps` shows the container `healthy` once
+  [`/auth/health`](deployment.md#health-checks) answers `200 OK`, and
+  `unhealthy` after three misses in a row; the image has no curl, so its
+  `wget` asks
+- the check says the process answers, not that its database does: a copy
+  whose database has stopped answering still shows `healthy`
+- Docker only marks the container, and `restart: unless-stopped` acts only
+  when the process exits; a balancer or an orchestrator in front acts on the
+  mark
+- Sentry gets the exceptions, such as a database that stops answering; a wrong
+  password or **Too many requests** is an answer to the user and is not sent
+- an event names the release, `authwall@<version>`, and the environment;
+  cookies, the `Authorization` header and form fields are kept out of it
+  ([what is sent](config.md#sentry))
+- add `AUTHWALL_SENTRY_TRACES_SAMPLE_RATE: "0.05"` to trace 5% of requests too
+
 ## Going further
 
 - [Getting started](getting-started.md) — the same progression as a Docker
