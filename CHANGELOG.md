@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Security
+
+- With `AUTHWALL_SIGN_UP=off`, a magic-link request is answered before the
+  account lookup and the mail, so neither tells who has an account; a failed
+  mail is logged. A repeat within the cooldown costs the same bcrypt work as
+  a fresh request, so it does not show that someone asked a minute ago.
+
+## 1.17.0
+
 ### Breaking
 
 - `AUTHWALL_TRUST_PROXY` is written in words: `none`, `hops/N`, a comma list
@@ -181,6 +190,10 @@
   Removing the account takes two different ways (the password, the code, a
   linked provider) when the account has two.
 - Changing the email from the profile.
+- `AUTHWALL_SIGN_UP=off` closes sign-up: the sign-up form, a magic link or
+  code for an address with no account, and a first OAuth sign-in make no
+  account, and the sign-in page says registration is closed. `AUTHWALL_SEED`
+  still creates its users. Unset, sign-up stays open.
 
 ### Recipes
 
