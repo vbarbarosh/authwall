@@ -591,7 +591,13 @@ AUTHWALL_DB=postgres://authwall:authwall@postgres/authwall
 ## AUTHWALL_SEED
 
 Bootstrap users created at startup.
-Authwall creates missing users and adds missing username or email identities for existing users.
+Authwall creates missing users,
+and adds missing username or email identities to an existing user that
+holds one of the seed's addresses, confirmed.
+An account holding the seed's username and none of its addresses
+confirmed may be a stranger's, who signed up with that name first:
+the seed gives it nothing, and the log says `seed_user_left_alone`.
+A seed with no address names its user by the username alone.
 Entries with neither a username nor a valid email are logged and skipped.
 Seeding is operator provisioning: it creates missing users and adds missing
 identities even with [`AUTHWALL_SIGN_UP=false`](#authwall_sign_up).

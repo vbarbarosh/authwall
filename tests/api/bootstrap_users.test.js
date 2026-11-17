@@ -39,15 +39,63 @@ describe('bootstrap_users', function () {
         assert.strictEqual(this.written_logs.join('\n').includes('alice-pass-1'), false);
     });
 
-    it('adds the missing address to the user found by username, and says so', async function () {
-        const {user_id} = await this.add_user({username: 'admin'});
+    // A stranger signs up as admin while sign-up is open; the operator seeds
+    // admin with the company address a moment later.
+    it('leaves alone the account a stranger signed up with its username, and warns', async function () {
+        await this.http_post_json('/auth/sign-up', {username: 'admin', password: 'strangers-pass-1', password_confirm: 'strangers-pass-1'});
+        const stranger = await db('user_identities').where({type: const_user_identity.username, value_normalized: 'admin'}).first();
+        this.client.cookies.clear();
         config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test');
+
+        await bootstrap_users();
+        await this.http_post_json('/auth/sign-in', {username: 'admin', password: 'change-me'});
+
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {authenticated: false});
+        const identities = await db('user_identities').orderBy('type');
+        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}`), [`username:admin:${stranger.user_id}`]);
+        assert.strictEqual((await db('users')).length, 1);
+        assert.ok(this.written_logs.some(v => v.includes('[seed_user_left_alone] ⚠️ username=admin ')));
+        assert.strictEqual(this.written_logs.some(v => v.includes('Added identities')), false);
+    });
+
+    // The cost of the above: the seed cannot tell its own admin, made before
+    // the seed had an address, from a stranger's.
+    it('gives no new address to its own user that holds none of its addresses yet, and warns', async function () {
+        config.seed_users = parse_authwall_seed('admin:change-me');
+        await bootstrap_users();
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test');
+        this.written_logs.splice(0);
 
         await bootstrap_users();
 
         const identities = await db('user_identities').orderBy('type');
-        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}`), [`email:admin@myapp.test:${user_id}`, `username:admin:${user_id}`]);
-        assert.ok(this.written_logs.some(v => v.includes('➕ Added identities username=[admin]')));
+        assert.deepStrictEqual(identities.map(v => v.type), ['username']);
+        assert.ok(this.written_logs.some(v => v.includes('[seed_user_left_alone] ⚠️ username=admin ')));
+    });
+
+    // A stranger takes the username between the seed's lookup and its insert:
+    // the seed, rolled back, finds that account by its username alone.
+    it('leaves alone the account that took its username while it was seeding [concurrent]', async function () {
+        const stranger = await this.add_user({email: 'stranger@evil.test', password: 'strangers-pass-1'});
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test');
+        let taken = null;
+        function take(query) {
+            // The first lookup holds the one connection; this insert is next.
+            if (!taken && query.sql.startsWith('select') && query.sql.includes('user_identities')) {
+                const now = new Date();
+                taken = db('user_identities').insert({uid: 'stranger-admin', user_id: stranger.user_id, type: const_user_identity.username, value: 'admin', value_normalized: 'admin', created_at: now, updated_at: now, verified_at: now}).then();
+            }
+        }
+        db.on('query', take);
+        await using _ = {[Symbol.asyncDispose]: () => db.removeListener('query', take)};
+
+        await bootstrap_users();
+        await taken;
+
+        const identities = await db('user_identities').orderBy('type');
+        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}`), [`email:stranger@evil.test:${stranger.user_id}`, `username:admin:${stranger.user_id}`]);
+        assert.strictEqual((await db('users')).length, 1);
+        assert.ok(this.written_logs.some(v => v.includes('[seed_user_left_alone] ⚠️ username=admin ')));
     });
 
     it('says no changes when the seeded user already has every identity', async function () {
@@ -112,17 +160,42 @@ describe('bootstrap_users', function () {
         assert.ok(this.written_logs.some(v => v.includes('👤 Created user username=[admin]')));
     });
 
-    it('takes an address another account holds unconfirmed for the user found by username', async function () {
-        const {user_id} = await this.add_user({username: 'admin'});
-        const stranger = await this.add_user({email: 'admin@myapp.test', verified: false});
+    it('takes an address another account holds unconfirmed for the user found by a confirmed one', async function () {
+        const {user_id} = await this.add_user({email: 'admin@myapp.test'});
+        const stranger = await this.add_user({email: 'ops@myapp.test', verified: false});
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test,ops@myapp.test');
+
+        await bootstrap_users();
+
+        const identities = await db('user_identities').orderBy(['type', 'value']);
+        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}:${Boolean(v.verified_at)}`), [`email:admin@myapp.test:${user_id}:true`, `email:ops@myapp.test:${user_id}:true`, `username:admin:${user_id}:true`]);
+        assert.ok(await db('auth_events').where({user_id: stranger.user_id, event_type: 'identity_removed'}).first());
+        assert.ok(this.written_logs.some(v => v.includes('➕ Added identities username=[admin]')));
+    });
+
+    // The account holding the username holds the address too, but nobody
+    // confirmed it: a sign-up with both, by anyone.
+    it('leaves alone the account found by its username that holds its address unconfirmed', async function () {
+        const stranger = await this.add_user({username: 'admin', email: 'admin@myapp.test', verified: false});
         config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test');
 
         await bootstrap_users();
 
         const identities = await db('user_identities').orderBy('type');
-        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}:${Boolean(v.verified_at)}`), [`email:admin@myapp.test:${user_id}:true`, `username:admin:${user_id}:true`]);
-        assert.ok(await db('auth_events').where({user_id: stranger.user_id, event_type: 'identity_removed'}).first());
-        assert.ok(this.written_logs.some(v => v.includes('➕ Added identities username=[admin]')));
+        assert.deepStrictEqual(identities.map(v => `${v.type}:${v.value}:${v.user_id}:${Boolean(v.verified_at)}`), [`email:admin@myapp.test:${stranger.user_id}:false`, `username:admin:${stranger.user_id}:true`]);
+        assert.ok(this.written_logs.some(v => v.includes('[seed_user_left_alone] ⚠️ username=admin ')));
+    });
+
+    it('says no changes, and no warning, when a seed with no address finds its username', async function () {
+        config.seed_users = parse_authwall_seed('alice:alice-pass-1');
+        await bootstrap_users();
+        this.written_logs.splice(0);
+
+        await bootstrap_users();
+
+        assert.strictEqual((await db('users')).length, 1);
+        assert.ok(this.written_logs.some(v => v.includes('⏭️ No changes username=[alice]')));
+        assert.strictEqual(this.written_logs.some(v => v.includes('seed_user_left_alone')), false);
     });
 
     it('adds the missing username to the user found by a confirmed address', async function () {

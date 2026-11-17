@@ -72,7 +72,7 @@ describe('signup disabled', function () {
     });
 
     it('provisions missing seed users and adds identities while public signup is closed', async function () {
-        const user = await this.add_user({username: 'existing', password: 'password123'});
+        const user = await this.add_user({email: 'existing@example.com', password: 'password123'});
         config.sign_up.enabled = false;
         config.seed_users = [
             {username: 'new-user', password: 'seed-secret', email: ['new@example.com']},
@@ -80,8 +80,8 @@ describe('signup disabled', function () {
         ];
         await bootstrap_users();
         assert.strictEqual((await db('users')).length, 2);
-        const email = await db('user_identities').where({value_normalized: 'existing@example.com'}).first();
-        assert.strictEqual(email.user_id, user.user_id);
+        const username = await db('user_identities').where({value_normalized: 'existing'}).first();
+        assert.strictEqual(username.user_id, user.user_id);
         assert.ok(await db('user_identities').where({value_normalized: 'new@example.com'}).first());
         assert.doesNotMatch(this.written_logs.join('\n'), /seed-secret/);
     });

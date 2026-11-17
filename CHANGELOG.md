@@ -7,8 +7,13 @@
 - A seed no longer joins the account that holds its address unconfirmed:
   anyone can sign up with anyone's address. It takes the address from that
   account, as a sign-up takes one nobody confirmed in time, but at once, and
-  makes its own user with the seed's password. A confirmed address or a
-  username still names the user.
+  makes its own user with the seed's password. A confirmed address still
+  names the user.
+- A seed no longer joins the account found by its username alone: with
+  sign-up open, anyone can take a username before the seed runs. An account
+  holding the seed's username and none of its addresses confirmed gets none
+  of them, and the log says `seed_user_left_alone`: rename or remove a
+  stranger's; to your own, add the address from its profile.
 - With `AUTHWALL_SIGN_UP=off`, a magic-link request is answered before the
   account lookup and the mail, so neither tells who has an account; a failed
   mail is logged. A repeat within the cooldown costs the same bcrypt work as
