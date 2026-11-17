@@ -8,7 +8,7 @@ the example values for your own. For what each variable does, see the
 ## Just run it (one line)
 
 ```sh
-docker run --rm -p 3000:3000 vbarbarosh/authwall
+docker run --rm -p 3000:3000 -e AUTHWALL_TRUST_PROXY=none vbarbarosh/authwall
 ```
 
 Open <http://localhost:3000>, choose **Sign up**, and create the first
@@ -18,6 +18,8 @@ account.
 - storage: **SQLite inside the container** — discarded on stop (`--rm`)
 - upstream: **none yet** — after sign-in, proxying fails until
   `AUTHWALL_UPSTREAM_URL` points at a real app (next recipe)
+- client address: **the connection's own** — with no proxy in front,
+  `AUTHWALL_TRUST_PROXY=none` never takes it from `X-Forwarded-For`
 
 ## Protect an app and keep its data
 
@@ -27,6 +29,7 @@ sessions, and the generated secret survive restarts.
 ```sh
 docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
@@ -38,6 +41,10 @@ docker run -d --name authwall -p 3000:3000 \
   (see [Secret management](overview.md#secret-management))
 - the upstream must be reachable **only** through Authwall, or the header can
   be forged
+- clients reach Authwall itself, with no proxy in front, so
+  [`AUTHWALL_TRUST_PROXY=none`](config.md#authwall_trust_proxy) takes each
+  client's address from its connection, never from an `X-Forwarded-For` it
+  sends; behind one proxy, leave it out for the default `hops/1`
 
 ## Bootstrap an admin user
 
@@ -49,6 +56,7 @@ first.
 docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_SEED='admin:change-me:admin@myapp.test' \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
@@ -69,6 +77,7 @@ docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_SEED='alice:change-me-1;bob:change-me-2;carol:change-me-3' \
     -e AUTHWALL_SIGN_UP=off \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
@@ -99,6 +108,7 @@ docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_SEED_FILE=/app/data/users.csv \
     -e AUTHWALL_SIGN_UP=off \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
@@ -122,7 +132,7 @@ passwords to choose, forget or leak. Needs a mail service:
 [others](config.md#authwall_mailer).
 
 ```sh
-docker run -d --name authwall -p 3000:3000 \
+docker run -d --name authwall -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_RESEND_KEY=re_xxx \
@@ -142,6 +152,10 @@ docker run -d --name authwall -p 3000:3000 \
   ([access rules](config.md#access-rules))
 - the link in the email points at `AUTHWALL_PUBLIC_URL`: set it to the
   address people open
+- the `https://` address needs an HTTPS proxy in front, on this host; the
+  port is published on `127.0.0.1`, for that proxy alone, and the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) takes each
+  client's address from it
 
 ## Team sign-in with Google
 
@@ -150,7 +164,7 @@ in. Needs a [Google OAuth client](oauth-providers.md#google) with
 `https://myapp.test/auth/google/callback` as an authorized redirect URI.
 
 ```sh
-docker run -d --name authwall -p 3000:3000 \
+docker run -d --name authwall -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
@@ -167,6 +181,10 @@ docker run -d --name authwall -p 3000:3000 \
   `@myapp.test` Google accounts; everyone else is rejected
 - ban a single address on top of the domain rule with
   `AUTHWALL_DENIED_EMAILS=fired@myapp.test`
+- the `https://` address needs an HTTPS proxy in front, on this host; the
+  port is published on `127.0.0.1`, for that proxy alone, and the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) takes each
+  client's address from it
 
 ## A few Google accounts only
 
@@ -175,7 +193,7 @@ away, even one at the same domain. Needs the same
 [Google OAuth client](oauth-providers.md#google) as above.
 
 ```sh
-docker run -d --name authwall -p 3000:3000 \
+docker run -d --name authwall -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
@@ -192,6 +210,10 @@ docker run -d --name authwall -p 3000:3000 \
   before the list was set too
 - to add or remove someone, edit the list and restart; a removed address is
   refused at its next request ([access rules](config.md#access-rules))
+- the `https://` address needs an HTTPS proxy in front, on this host; the
+  port is published on `127.0.0.1`, for that proxy alone, and the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) takes each
+  client's address from it
 
 ## Team sign-in with Microsoft
 
@@ -201,7 +223,7 @@ with `https://myapp.test/auth/microsoft/callback` as a redirect URI and the
 optional claim `xms_edov` on its ID token.
 
 ```sh
-docker run -d --name authwall -p 3000:3000 \
+docker run -d --name authwall -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_MICROSOFT_CLIENT_ID=00000000-0000-0000-0000-000000000000 \
@@ -219,6 +241,10 @@ docker run -d --name authwall -p 3000:3000 \
   verified email, and the domain rule refuses it
 - personal Microsoft accounts and other companies' accounts are refused; a
   `@myapp.test` account gets its own account at its first sign-in
+- the `https://` address needs an HTTPS proxy in front, on this host; the
+  port is published on `127.0.0.1`, for that proxy alone, and the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) takes each
+  client's address from it
 
 ## API clients with personal access tokens
 
@@ -230,6 +256,7 @@ lets signed-in users mint bearer tokens from the profile page.
 docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_PERSONAL_ACCESS_TOKENS=true \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./data/authwall:/app/data \
     vbarbarosh/authwall
 ```
@@ -254,7 +281,7 @@ hold WebSocket connections through Authwall.
 [`AUTHWALL_WEBSOCKETS`](config.md#authwall_websockets) proxies upgrades.
 
 ```sh
-docker run -d --name authwall -p 3000:3000 \
+docker run -d --name authwall -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_WEBSOCKETS=true \
@@ -286,6 +313,10 @@ const ws = new WebSocket('wss://myapp.test/realtime', {
 - failed upgrade attempts share the
   [bearer-token rate limiter](security.md#rate-limiting) with HTTP requests
   when the upgrade uses a bearer token
+- the `https://` address needs an HTTPS proxy in front, on this host; the
+  port is published on `127.0.0.1`, for that proxy alone, and the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) takes each
+  client's address from it
 
 ## With Docker Compose
 
@@ -317,6 +348,7 @@ services:
     environment:
       AUTHWALL_PUBLIC_URL: http://localhost:3000
       AUTHWALL_UPSTREAM_URL: http://app:8080
+      AUTHWALL_TRUST_PROXY: none
     ports:
       - 3000:3000
     volumes:
@@ -331,6 +363,9 @@ services:
 
 - Authwall reaches the upstream as `app:8080` over the Compose network; the app
   is never published, so it is reachable **only** through Authwall
+- Authwall faces the clients itself here, with no proxy in front, so
+  `AUTHWALL_TRUST_PROXY: none` keeps a client from naming its own address in
+  `X-Forwarded-For`
 - `./data/authwall` holds the SQLite database and `secret.key` — keep it across
   restarts (see [Secret management](overview.md#secret-management))
 
@@ -351,6 +386,7 @@ services:
       AUTHWALL_PUBLIC_URL: http://localhost:3000
       AUTHWALL_UPSTREAM_URL: http://app:8080
       AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
+      AUTHWALL_TRUST_PROXY: none
     ports:
       - 3000:3000
     volumes:
@@ -474,6 +510,7 @@ services:
       AUTHWALL_SEED: 'admin:change-me:admin@myapp.test'
       AUTHWALL_PERSONAL_ACCESS_TOKENS: "true"
       AUTHWALL_WEBSOCKETS: "true"
+      AUTHWALL_TRUST_PROXY: none
     ports:
       - 3000:3000
     volumes:
@@ -506,7 +543,8 @@ services:
   authenticate with a browser session cookie or bearer token
 - it runs over plain HTTP here; in production set `AUTHWALL_PUBLIC_URL` to your
   `https://` origin and the session cookie becomes `Secure` automatically
-  (see [Deployment](deployment.md))
+  (see [Deployment](deployment.md)); with that HTTPS proxy in front, drop
+  `AUTHWALL_TRUST_PROXY` for the default `hops/1`, and publish only the proxy
 
 To stop the stack and wipe users, sessions, and the secret:
 
@@ -604,6 +642,7 @@ services:
       AUTHWALL_UPSTREAM_URL: http://app:8080
       AUTHWALL_SENTRY_DSN: https://public@example.ingest.sentry.io/1
       AUTHWALL_SENTRY_ENVIRONMENT: production
+      AUTHWALL_TRUST_PROXY: none
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/auth/health"]
       interval: 30s

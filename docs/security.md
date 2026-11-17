@@ -289,6 +289,8 @@ default trusts exactly one hop, so an extra proxy left unaccounted for makes the
 - [ ] The upstream proxy or load balancer **overwrites `X-Forwarded-For`** from
       the real client (see [Running behind a proxy](#running-behind-a-proxy)).
       Otherwise rate-limit keys, last-used IPs, and audit IPs are spoofable.
+- [ ] Clients reach Authwall's port only through that proxy; an instance
+      they reach directly sets `AUTHWALL_TRUST_PROXY=none`.
 - [ ] `AUTHWALL_SECRET` is managed deliberately, or `data/` is persisted.
 - [ ] Rate limiting is left enabled (or handled by an upstream proxy).
 - [ ] Registration is restricted with the access rules if sign-up is not meant

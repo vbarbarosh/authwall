@@ -20,6 +20,7 @@ Edit `theme/spa.html`, then mount the folder over the shipped one:
 ```sh
 docker run -d --name authwall -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_TRUST_PROXY=none \
     -v ./theme:/app/design/public_html:ro \
     vbarbarosh/authwall
 ```

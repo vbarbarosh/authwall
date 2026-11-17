@@ -34,6 +34,7 @@ personal access tokens, WebSockets — are in [Recipes](recipes.md).
 ```bash
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_TRUST_PROXY=none \
     vbarbarosh/authwall
 ```
 
@@ -43,6 +44,7 @@ docker run --rm -p 3000:3000 \
 * registration: **open**
 * email features: **disabled**
 * storage: **SQLite (ephemeral unless volume mounted)**
+* client address: **the connection's own** (`AUTHWALL_TRUST_PROXY=none`, no proxy in front)
 
 ---
 
@@ -53,6 +55,7 @@ docker run --rm -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_RESEND_KEY=re_xxx \
     -e AUTHWALL_RESEND_FROM="Authwall <noreply@myapp.test>" \
+    -e AUTHWALL_TRUST_PROXY=none \
     vbarbarosh/authwall
 ```
 
@@ -62,6 +65,7 @@ docker run --rm -p 3000:3000 \
 * magic link: **enabled**
 * email confirmation: **enabled**
 * registration: **open**
+* client address: **the connection's own** (`AUTHWALL_TRUST_PROXY=none`, no proxy in front)
 
 ---
 
@@ -76,7 +80,7 @@ https://myapp.test/auth/google/callback
 Then run:
 
 ```bash
-docker run --rm -p 3000:3000 \
+docker run --rm -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
@@ -91,6 +95,7 @@ docker run --rm -p 3000:3000 \
 * registration: **open for Google accounts**
 * email identity: **added only when Google reports a verified email**
 * email features: **disabled unless a mailer is configured**
+* port: **this host only**, for the HTTPS proxy in front (the `https://` address)
 
 ---
 
@@ -100,7 +105,7 @@ Same Google OAuth client as above, plus `AUTHWALL_ALLOWED_EMAILS` to limit
 sign-in to named addresses:
 
 ```bash
-docker run --rm -p 3000:3000 \
+docker run --rm -p 127.0.0.1:3000:3000 \
     -e AUTHWALL_PUBLIC_URL=https://myapp.test \
     -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
     -e AUTHWALL_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com \
@@ -116,6 +121,7 @@ docker run --rm -p 3000:3000 \
 * registration: **open for listed Google accounts**
 * allowed users: **only verified Google emails listed in `AUTHWALL_ALLOWED_EMAILS`**
 * everyone else: **rejected**
+* port: **this host only**, for the HTTPS proxy in front (the `https://` address)
 
 ## Notes
 

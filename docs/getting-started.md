@@ -24,6 +24,7 @@ The fastest way to see Authwall. This needs only Docker and a free port `3000`:
 ```sh
 docker run --rm -p 3000:3000 \
     -e AUTHWALL_UPSTREAM_URL=http://localhost:8080 \
+    -e AUTHWALL_TRUST_PROXY=none \
     vbarbarosh/authwall
 ```
 
@@ -37,6 +38,9 @@ What this gives you:
   to keep it.
 - **Sign-in:** username + password, with open registration.
 - **Email features:** disabled, since no mailer is configured.
+- **Client address:** taken from the connection itself.
+  `AUTHWALL_TRUST_PROXY=none` says no proxy stands in front, so a client
+  cannot name its own address in `X-Forwarded-For`.
 
 Point `AUTHWALL_UPSTREAM_URL` at your own app to see authenticated requests
 proxied through it. For a lasting setup, continue with the Compose walkthrough
@@ -71,6 +75,7 @@ environment:
   AUTHWALL_PUBLIC_URL: http://localhost:3000
   AUTHWALL_UPSTREAM_URL: http://echo-server:8080
   AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall
+  AUTHWALL_TRUST_PROXY: ${AUTHWALL_TRUST_PROXY:-none}
 ```
 
 - `AUTHWALL_PUBLIC_URL` — the URL users reach Authwall on. Used to build links
@@ -81,6 +86,9 @@ environment:
   back to a local SQLite database (as in the Quick start above); the Compose
   file sets it to MySQL instead, with a commented-out PostgreSQL alternative if
   you prefer it.
+- `AUTHWALL_TRUST_PROXY` — `none`: no proxy stands in front, so a client's own
+  `X-Forwarded-For` is never taken as its address. With a TLS terminator in
+  front, set `AUTHWALL_TRUST_PROXY=hops/1` in `.env`.
 
 See the [configuration reference](config.md) for every available variable.
 
