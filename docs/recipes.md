@@ -193,6 +193,33 @@ docker run -d --name authwall -p 3000:3000 \
 - to add or remove someone, edit the list and restart; a removed address is
   refused at its next request ([access rules](config.md#access-rules))
 
+## Team sign-in with Microsoft
+
+Everyone at one company signs in with their Microsoft work account; nobody
+else gets in. Needs a [Microsoft Entra app registration](oauth-providers.md#microsoft)
+with `https://myapp.test/auth/microsoft/callback` as a redirect URI and the
+optional claim `xms_edov` on its ID token.
+
+```sh
+docker run -d --name authwall -p 3000:3000 \
+    -e AUTHWALL_PUBLIC_URL=https://myapp.test \
+    -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_MICROSOFT_CLIENT_ID=00000000-0000-0000-0000-000000000000 \
+    -e AUTHWALL_MICROSOFT_CLIENT_SECRET=xxx \
+    -e AUTHWALL_MICROSOFT_REDIRECT_URL=https://myapp.test/auth/microsoft/callback \
+    -e AUTHWALL_ALLOWED_DOMAINS=myapp.test \
+    -v ./data/authwall:/app/data \
+    vbarbarosh/authwall
+```
+
+- only **Continue with Microsoft** is offered: configuring an OAuth provider
+  [turns the password flows off](sign-in-flows.md#auto-mode)
+- an address counts only when Microsoft vouches that its domain belongs to the
+  account's company (`xms_edov`); without that claim the account has no
+  verified email, and the domain rule refuses it
+- personal Microsoft accounts and other companies' accounts are refused; a
+  `@myapp.test` account gets its own account at its first sign-in
+
 ## API clients with personal access tokens
 
 Browser sessions don't help a script or a CI job.
