@@ -7,6 +7,7 @@ const db = require('../../db');
 const normalize_email = require('./normalize/normalize_email');
 const normalize_username = require('./normalize/normalize_username');
 const random_uid_user_identity = require('./random/random_uid_user_identity');
+const release_pending_email = require('./release_pending_email');
 const users_create = require('./models/users_create');
 
 async function bootstrap_users()
@@ -46,13 +47,16 @@ async function bootstrap_users()
     als.logger.write('✅ Users seeding complete');
 }
 
-// The user a seed names: the one holding any of its identities, or a new one
-// holding all of them. Two copies starting at once on one database both find
-// none and both create; the copy whose identities the other took first rolls
-// its user back and takes the other's, as if it had started a moment later.
+// The user a seed names: the one holding its username or one of its addresses
+// confirmed, or a new one holding all of them. An address another account
+// holds unconfirmed is taken from that account first. Two copies starting at
+// once on one database both find none and both create; the copy whose
+// identities the other took first rolls its user back and takes the other's,
+// as if it had started a moment later.
 async function seed_user_find_or_create(params, identities)
 {
     const ident = await seed_identity_find(identities);
+    await seed_emails_release(identities, ident?.user_id ?? null);
     if (ident) {
         return {user_id: ident.user_id, user_created: false};
     }
@@ -64,18 +68,38 @@ async function seed_user_find_or_create(params, identities)
 
     const taken = await seed_identity_find(identities);
     if (!taken) {
-        throw new Error('A seed user lost its identities to another user, and that user is gone');
+        throw new Error('A seed user lost its identities to another user, who is gone or holds them unconfirmed');
     }
     return {user_id: taken.user_id, user_created: false};
 }
 
+// An unconfirmed address proves nothing: anyone can sign up with anyone's
+// address. It never selects the account that holds it.
 async function seed_identity_find(identities)
 {
     const query = db('user_identities');
     for (const identity of identities) {
-        query.orWhere({type: identity.type, value_normalized: identity.value_normalized});
+        query.orWhere(function () {
+            this.where({type: identity.type, value_normalized: identity.value_normalized});
+            if (identity.type === const_user_identity.email) {
+                this.whereNotNull('verified_at');
+            }
+        });
     }
     return query.first();
+}
+
+// The seed is the operator's word: an address of it that another account
+// holds unconfirmed is released from that account at once, its open links
+// with it. The user's own unconfirmed address stays as it is.
+async function seed_emails_release(identities, user_id)
+{
+    for (const identity of identities) {
+        if (identity.type === const_user_identity.email) {
+            // No request at startup: the auth event has no session, IP or agent.
+            await release_pending_email({}, identity.value_normalized, {user_id, seed: true});
+        }
+    }
 }
 
 // One unit: the user with every identity of its seed, or nothing at all.

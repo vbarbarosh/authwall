@@ -13,8 +13,9 @@ const insert_auth_event = require('./insert_auth_event');
 // account"), when that account has another way in; and to any claim once
 // nobody confirmed it within the confirmation window. An account with no
 // other way in keeps it until then: its own mailed link hands it over (AW-25).
+// The operator's seed takes it at once: the operator says whose it is.
 // A confirmed address never yields.
-async function release_pending_email(req, email_normalized, {user_id = null, proof = false, now = new Date()} = {})
+async function release_pending_email(req, email_normalized, {user_id = null, proof = false, seed = false, now = new Date()} = {})
 {
     const ident = await db('user_identities')
         .where({type: const_user_identity.email, value_normalized: email_normalized})
@@ -25,7 +26,7 @@ async function release_pending_email(req, email_normalized, {user_id = null, pro
     }
 
     const stale = await is_stale(ident, now);
-    if (!stale && !(proof && await has_other_way_in({user_id: ident.user_id, email_normalized}))) {
+    if (!seed && !stale && !(proof && await has_other_way_in({user_id: ident.user_id, email_normalized}))) {
         return false;
     }
 
@@ -38,9 +39,20 @@ async function release_pending_email(req, email_normalized, {user_id = null, pro
         user: {id: ident.user_id},
         ident,
         event_type: const_auth_event.identity_removed,
-        custom: {reason: stale ? 'pending_email_stale' : 'pending_email_proven_elsewhere'},
+        custom: {reason: release_reason_from_claim({seed, stale})},
     });
     return true;
+}
+
+function release_reason_from_claim({seed, stale})
+{
+    if (seed) {
+        return 'pending_email_seeded';
+    }
+    if (stale) {
+        return 'pending_email_stale';
+    }
+    return 'pending_email_proven_elsewhere';
 }
 
 // Older than the confirmation window, and no confirmation link still open.
