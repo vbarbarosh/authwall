@@ -114,6 +114,35 @@ docker run --rm vbarbarosh/authwall bin/password-hash 'carol-pass-1'
   `password` column stops startup, and the log says why
 - the rest is as above: no sign-up; to add someone, add a line and restart
 
+## Sign in by email, no passwords
+
+People type their address and get a one-time link and code by email: no
+passwords to choose, forget or leak. Needs a mail service:
+[Resend](config.md#authwall_resend_key) here, or one of the
+[others](config.md#authwall_mailer).
+
+```sh
+docker run -d --name authwall -p 3000:3000 \
+    -e AUTHWALL_PUBLIC_URL=https://myapp.test \
+    -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_RESEND_KEY=re_xxx \
+    -e AUTHWALL_RESEND_FROM='Authwall <noreply@myapp.test>' \
+    -e AUTHWALL_FLOWS=magic_link_and_code \
+    -v ./data/authwall:/app/data \
+    vbarbarosh/authwall
+```
+
+- the sign-in page offers only **Send me a magic link**; the email carries a
+  link and a 6-digit code, and the code works only in the browser that asked
+- [`AUTHWALL_FLOWS`](config.md#authwall_flows) keeps passwords out: with a
+  mail service and the default `auto`, the password form and **Create one**
+  would be offered too
+- an address signing in for the first time gets its account; to let in only
+  your team, add `AUTHWALL_ALLOWED_DOMAINS=myapp.test`
+  ([access rules](config.md#access-rules))
+- the link in the email points at `AUTHWALL_PUBLIC_URL`: set it to the
+  address people open
+
 ## Team sign-in with Google
 
 Everyone at one domain signs in with their Google account; nobody else gets
