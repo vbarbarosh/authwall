@@ -70,14 +70,12 @@ Testable now
 - [x] Ann's laptop has a slow request in flight when Ann revokes its session; the request ends and saves, and the session stays revoked → `revoked_session_stays_revoked.md`, `revoked_session_stays_revoked.test.js`
 - [x] Ann uses Authwall every day and Mallory replays a copied cookie; on day 29 the deadline stays put, past day 30 both are signed out, a WebSocket neither extends nor admits past it, a re-issued cookie keeps its deadline and attributes → `session_ends_at_its_deadline.md`, `session_ends_at_its_deadline.test.js`
 - [x] confirmation required; Ann confirms on the phone and the laptop's WebSocket opens at once; the address loses its confirmation and the open sockets, a session's and a token's, close within the lease → `websocket_follows_verification.md`, `websocket_follows_verification.test.js`
+- [x] Ann asked for `/reports` and signs in by a mailed code, by the mailed link, or with Google; each lands her on `/reports`, and a return to another site is never kept → `sign_in_returns_to_the_page_asked_for.md`, `sign_in_returns_to_the_page_asked_for.test.js`; the page's part, sign-up included → `tests/playwright/sign-in-return.spec.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision
 
-- user navigated to `/auth/profile`; got redirected to `/auth/sign-in?return=/auth/profile`; chose Continue with GitHub; after successful login he should be redirected to `/auth/profile` (return URL is not stored in session during OAuth initiation)
 - user signed up using email+password, then chose Continue with Google using the same verified email; the account should be linked instead of duplicated (currently creates a new Google-only account)
-- user visited a protected page, chose magic link instead of password sign-in, completed the flow, and should return to the original page (return URL not preserved through magic link flow)
-- user visited a protected page, chose sign-up instead of sign-in, completed sign-up, and should return to the original page (return URL not preserved through sign-up flow)
 - user signed up using GitHub, no verified email was found; now he tries to change password via profile page; what should happen?
 - user signed up using email+password with unverified email, then chose Continue with Google with a verified email of the same address; should the email become verified automatically?
 - user signed up using Google, signed out, then tried GitHub with the same email but GitHub returned no email; should this link to the existing account or create a new email-less account?

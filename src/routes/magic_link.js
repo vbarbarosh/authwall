@@ -19,7 +19,6 @@ const normalize_email = require('../helpers/normalize/normalize_email');
 const random_code = require('../helpers/random/random_code');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
-const redirect = require('../helpers/redirect');
 const release_pending_email = require('../helpers/release_pending_email');
 const save_session = require('../helpers/save_session');
 const spend_attempt = require('../helpers/spend_attempt');
@@ -67,7 +66,7 @@ async function magic_link_request_post(req, res)
     if (magic_link && (Date.now() - new Date(magic_link.created_at).getTime()) < 60*SECOND) {
         // A shared notice explains the cooldown without disclosing whether
         // another browser recently requested this address.
-        return redirect(req, res, urlmod(config.pages.magic_link_notice, {email}));
+        return res.redirect(urlmod(config.pages.magic_link_notice, {email}));
     }
 
     const token = random_hex();

@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const allowed_return_url = require('../allowed_return_url');
 const assert_sign_up_enabled = require('../assert/assert_sign_up_enabled');
 const assign_primary_email = require('../assign_primary_email');
 const auth_middleware = require('../middleware/auth_middleware');
@@ -62,6 +63,9 @@ async function authorize_get(oauth_provider, req, res)
 
     req.session.oauth_state = state;
     req.session.oauth_code_verifier = oauth_code_verifier;
+    // The page the sign-in was asked for waits here while the person is at
+    // the provider; the callback lands there.
+    req.session.oauth_return_url = (intent === const_oauth_intent.login) ? allowed_return_url(req.query.return) : null;
     await save_session(req);
 
     res.redirect(oauth_provider.build_authorization_url(state, code_challenge, code_challenge_method));
@@ -71,7 +75,7 @@ async function authorize_get(oauth_provider, req, res)
 async function callback_get(oauth_provider, req, res)
 {
     const {code, state} = req.query;
-    const {oauth_state, oauth_code_verifier} = req.session;
+    const {oauth_state, oauth_code_verifier, oauth_return_url} = req.session;
 
     // Prevent accidentally losing state on invalid requests
     // delete req.session.oauth_state;
@@ -85,6 +89,8 @@ async function callback_get(oauth_provider, req, res)
 
     delete req.session.oauth_state;
     delete req.session.oauth_code_verifier;
+    delete req.session.oauth_return_url;
+    res.locals.return_url = oauth_return_url;
 
     const tokens = await oauth_provider.exchange_code_for_tokens(code, oauth_code_verifier);
     const user_info = await oauth_provider.fetch_user_info(tokens);

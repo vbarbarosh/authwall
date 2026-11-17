@@ -1278,18 +1278,24 @@ function viewFromPath(pathname) {
     return ROUTES[path] || 'sign-in';
 }
 
+// The page a sign-in was asked for, as ?return=, or '': every way in carries it.
+function return_search() {
+  const ret = new URLSearchParams(window.location.search).get('return');
+  return ret ? '?' + new URLSearchParams({return: ret}) : '';
+}
+
+const RETURN_VIEWS = new Set(['sign-in', 'sign-up', 'magic-req', 'magic-sent', 'magic-confirm']);
+
 function build_sign_in_action() {
-  const params = new URLSearchParams(window.location.search);
-  const next = new URLSearchParams();
-  const ret = params.get('return');
-  if (ret) next.set('return', ret);
-  const qs = next.toString();
-  return '/auth/sign-in' + (qs ? '?' + qs : '');
+  return '/auth/sign-in' + return_search();
 }
 
 function sync_sign_in_form() {
   const si_form = document.getElementById('si-form');
   if (si_form) si_form.action = build_sign_in_action();
+  document.querySelectorAll('[data-view="sign-in"] a.btn[data-flow], [data-view="sign-up"] a.btn[data-flow]').forEach(a => {
+    a.href = a.pathname + return_search();
+  });
 }
 
 function renderView(name) {
@@ -1304,7 +1310,7 @@ function renderView(name) {
 function showView(name, pushState = true) {
   const path = PATH_FOR[name];
   if (pushState && path && window.location.pathname !== path) {
-    history.pushState({ view: name }, '', path);
+    history.pushState({ view: name }, '', path + (RETURN_VIEWS.has(name) ? return_search() : ''));
   }
   window.scrollTo(0, 0);
   renderView(name);
@@ -2051,7 +2057,7 @@ document.getElementById('ml-submit').addEventListener('click', async () => {
   const email = document.getElementById('ml-email').value.trim();
   if (!email) return show_error('ml-error-msg', 'ml-error', 'Please enter your email address.');
   set_loading('ml-submit', true);
-  const { final_url, error } = await http_post_urlencoded('/auth/magic-link/request', { email });
+  const { final_url, error } = await http_post_urlencoded('/auth/magic-link/request' + return_search(), { email });
   set_loading('ml-submit', false);
   if (error) return show_error('ml-error-msg', 'ml-error', error);
   _magic_email = email;
@@ -2294,7 +2300,7 @@ document.getElementById('lk-submit').addEventListener('click', async function ()
     hide_error('lk-error');
     const token = new URLSearchParams(window.location.search).get('token') ?? '';
     set_loading('lk-submit', true);
-    const {final_url, error} = await http_post_urlencoded(`${window.location.pathname}/open`, {token});
+    const {final_url, error} = await http_post_urlencoded(`${window.location.pathname}/open` + return_search(), {token});
     if (error) {
         set_loading('lk-submit', false);
         show_error('lk-error-msg', 'lk-error', error);

@@ -213,14 +213,18 @@ auth log against the account that lost it.
 ## Open-redirect protection
 
 Sign-in and similar flows accept a `return` parameter so the user lands back
-where they started. Authwall only honours a `return` value that is either a
-relative path, or an absolute URL on the same host as — or a subdomain of —
-`AUTHWALL_PUBLIC_URL`'s hostname. Protocol-relative URLs (`//evil.com`),
-backslash tricks, and encoded leading slashes are rejected, so `return` cannot
-be used to bounce users to an attacker's site. Every subdomain of that
-hostname is a landing, so one taken over by someone else is one too: keep the
-subdomains under the public host your own. The sign-in page's
-`Content-Security-Policy` lets its form through to them, and nowhere else.
+where they started, whichever way they sign in: the password form, sign-up, a
+magic link or code (the mailed link carries the `return`), or a provider
+(Authwall keeps it in the session while the user is away). Authwall only
+honours a `return` value that is either a relative path, or an absolute URL on
+the same host as — or a subdomain of — `AUTHWALL_PUBLIC_URL`'s hostname.
+Protocol-relative URLs (`//evil.com`), backslash tricks, and encoded leading
+slashes are rejected, so `return` cannot be used to bounce users to an
+attacker's site; a value it refuses is never mailed or kept, and a kept one is
+checked again when it is used. Every subdomain of that hostname is a landing,
+so one taken over by someone else is one too: keep the subdomains under the
+public host your own. The sign-in page's `Content-Security-Policy` lets its
+form through to them, and nowhere else.
 
 ## Audit log
 

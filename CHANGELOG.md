@@ -23,6 +23,12 @@
 - With `AUTHWALL_SIGN_UP=off` the sign-in page no longer says registration
   is closed: it only leaves out the **Create one** link.
 
+### Fixed
+
+- A sign-in by a magic link or its code, by a provider, or a sign-up reached
+  from the sign-in page lands on the page it was asked for (`return`), as the
+  password form always did; each landed on `/`.
+
 ## 1.17.0
 
 ### Breaking
