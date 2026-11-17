@@ -388,10 +388,10 @@ in. Save this `Caddyfile` next to `docker-compose.yaml`:
 
 ```
 :3000 {
-	reverse_proxy authwall-1:3000 authwall-2:3000 {
-		health_uri /auth/health
-		lb_try_duration 5s
-	}
+    reverse_proxy authwall-1:3000 authwall-2:3000 {
+        health_uri /auth/health
+        lb_try_duration 5s
+    }
 }
 ```
 
