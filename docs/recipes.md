@@ -369,6 +369,62 @@ services:
 - `./data/authwall` holds the SQLite database and `secret.key` — keep it across
   restarts (see [Secret management](overview.md#secret-management))
 
+### HTTPS with Caddy in front
+
+Caddy answers on `https://myapp.test`, gets the certificate by itself, and
+hands every request to Authwall. Needs the domain's DNS pointing at this host,
+and ports 80 and 443 open. Save this `Caddyfile` next to `docker-compose.yaml`:
+
+```
+myapp.test {
+    reverse_proxy authwall:3000
+}
+```
+
+```yaml
+services:
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy:/data
+    depends_on:
+      - authwall
+
+  authwall:
+    image: vbarbarosh/authwall
+    restart: unless-stopped
+    environment:
+      AUTHWALL_PUBLIC_URL: https://myapp.test
+      AUTHWALL_UPSTREAM_URL: http://app:8080
+      AUTHWALL_TRUST_PROXY: hops/1
+    volumes:
+      - ./data/authwall:/app/data
+    depends_on:
+      - app
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- only Caddy publishes ports: Authwall and the app are reached through it alone
+- with an `https://` public URL the session cookie is `Secure`, so the browser
+  never sends it over plain HTTP; Caddy sends `http://` on to `https://`
+- `./data/caddy` keeps the certificate; without it every restart asks for a
+  new one, and Let's Encrypt limits how often
+- Caddy is the one proxy in front, named by
+  [`AUTHWALL_TRUST_PROXY: hops/1`](config.md#authwall_trust_proxy), so the
+  limits and the audit log see each client's own address
+- to try it on your own machine first, write `localhost` for `myapp.test` in
+  both files: Caddy makes a certificate of its own, which the browser asks you
+  to trust
+
 ### Back it with PostgreSQL
 
 SQLite is fine for a single instance; point [`AUTHWALL_DB`](config.md#authwall_db)
