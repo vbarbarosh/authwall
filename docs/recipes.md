@@ -82,6 +82,38 @@ docker run -d --name authwall -p 3000:3000 \
 - taking a name out of the seed leaves its account, which still signs in:
   the person removes it from the profile
 
+### From a file of users
+
+A longer list, or no passwords in plain text:
+[`AUTHWALL_SEED_FILE`](config.md#authwall_seed_file) reads the users from a
+CSV file, each password kept as its bcrypt hash. `./data/authwall/users.csv`:
+
+```
+username,emails,display_name,password_hash
+alice,alice@myapp.test,Alice,$2b$12$5L5bc20D5Pw8ojbI/FiwPOih6AI08HsdR71vgglDpTTxe9X0rGX3e
+bob,bob@myapp.test,Bob,$2b$12$RGEFicUo.RhlLMoygJs43ebk4hyWYf2VQFTNRNd8X.YF290yPT3km
+```
+
+```sh
+docker run -d --name authwall -p 3000:3000 \
+    -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_SEED_FILE=/app/data/users.csv \
+    -e AUTHWALL_SIGN_UP=off \
+    -v ./data/authwall:/app/data \
+    vbarbarosh/authwall
+```
+
+The two hashes above are `alice-pass-1` and `bob-pass-1`. A hash for someone
+new:
+
+```sh
+docker run --rm vbarbarosh/authwall bin/password-hash 'carol-pass-1'
+```
+
+- the first line names the columns; one missing, one unknown or a plain
+  `password` column stops startup, and the log says why
+- the rest is as above: no sign-up; to add someone, add a line and restart
+
 ## Team sign-in with Google
 
 Everyone at one domain signs in with their Google account; nobody else gets
