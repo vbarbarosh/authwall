@@ -21,6 +21,7 @@ const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes'
 const db = require('../../db');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
+const is_unique_violation = require('../helpers/is_unique_violation');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const normalize_username = require('../helpers/normalize/normalize_username');
@@ -227,7 +228,7 @@ async function sign_up_post(req, res)
         }
     }
     catch (error) {
-        if (error.code === 'ER_DUP_ENTRY' || error.code === 'SQLITE_CONSTRAINT') {
+        if (is_unique_violation(error)) {
             throw new UserFriendlyError('Identity already exists')
         }
         throw error;

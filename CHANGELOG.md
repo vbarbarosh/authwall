@@ -33,6 +33,9 @@
 
 ### Fixed
 
+- Two sign-ups for the same new username or email at the same moment, on
+  PostgreSQL or SQLite, answer the slower one "Identity already exists", as
+  on MySQL; it got "An error occurred", and the error went to Sentry.
 - A sign-in by a magic link or its code, by a provider, or a sign-up reached
   from the sign-in page lands on the page it was asked for (`return`), as the
   password form always did; each landed on `/`.
