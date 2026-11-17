@@ -28,6 +28,11 @@
 - A sign-in by a magic link or its code, by a provider, or a sign-up reached
   from the sign-in page lands on the page it was asked for (`return`), as the
   password form always did; each landed on `/`.
+- Two copies seeding the same user at the same moment, on one fresh
+  database, no longer leave a second, empty user: the slower one keeps
+  nothing and takes the user the other made, and only one of them logs
+  `Created user`. A seed that adds an identity to a user already there logs
+  `Added identities`; it said `No changes`.
 
 ## 1.17.0
 

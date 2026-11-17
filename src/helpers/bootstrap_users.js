@@ -1,3 +1,4 @@
+const IdentityTaken = require('./errors/IdentityTaken');
 const als = require('./als');
 const assign_primary_email = require('./assign_primary_email');
 const config = require('../../config');
@@ -20,56 +21,21 @@ async function bootstrap_users()
         const {username, email, password, password_hash, display_name} = user_seed;
         const emails = Array.isArray(email) ? email : [email].filter(Boolean);
 
-        const username_normalized = normalize_username(username);
-        const emails_normalized = emails.map(normalize_email).filter(v => v);
-        if (!username_normalized && !emails_normalized.length) {
+        const identities = identities_from_seed(username, emails);
+        if (!identities.length) {
             const redacted = {...user_seed, password: password ? '[Filtered]' : undefined, password_hash: password_hash ? '[Filtered]' : undefined};
             als.logger.write(`⚠️ Skipping invalid user seed: [${JSON.stringify(redacted).slice(1, -1)}]`);
             continue;
         }
 
-        // Either find user or create one
-        const ident = await db('user_identities')
-            .where(function (q) {
-                if (username_normalized) {
-                    q.orWhere({type: const_user_identity.username, value_normalized: username_normalized});
-                }
-                if (emails_normalized.length) {
-                    q.orWhere(function (qq) {
-                        qq.where('type', const_user_identity.email);
-                        qq.whereIn('value_normalized', emails_normalized);
-                    });
-                }
-            })
-            .first();
-
-        let user_id;
-        let user_created = !ident;
-        if (ident) {
-            user_id = ident.user_id;
-        }
-        else {
-            const user = await users_create({password, password_hash, display_name}, {seed: true});
-            user_id = user.id;
-        }
-
-        const idents1 = await db('user_identities').where({user_id}).count();
-
-        const now = new Date();
-        const base = {user_id, created_at: now, updated_at: now, verified_at: now};
-        const rows = [
-            {...base, uid: random_uid_user_identity(), type: const_user_identity.username, value: username, value_normalized: username_normalized},
-            ...emails.map(v => ({...base, user_id, uid: random_uid_user_identity(), type: const_user_identity.email, value: v, value_normalized: normalize_email(v)})),
-        ].filter(v => v.value_normalized);
-        await db('user_identities').insert(rows).onConflict(['type', 'value_normalized']).ignore();
-        await assign_primary_email(user_id);
-
-        const idents2 = await db('user_identities').where({user_id}).count();
-
+        const {user_id, user_created} = await seed_user_find_or_create({password, password_hash, display_name}, identities);
         if (user_created) {
             als.logger.write(`👤 Created user username=[${username}] email=[${email}]`);
+            continue;
         }
-        else if (idents1 < idents2) {
+
+        const added = await user_identities_add(user_id, identities);
+        if (added > 0) {
             als.logger.write(`➕ Added identities username=[${username}] email=[${email}]`);
         }
         else {
@@ -78,6 +44,106 @@ async function bootstrap_users()
     }
 
     als.logger.write('✅ Users seeding complete');
+}
+
+// The user a seed names: the one holding any of its identities, or a new one
+// holding all of them. Two copies starting at once on one database both find
+// none and both create; the copy whose identities the other took first rolls
+// its user back and takes the other's, as if it had started a moment later.
+async function seed_user_find_or_create(params, identities)
+{
+    const ident = await seed_identity_find(identities);
+    if (ident) {
+        return {user_id: ident.user_id, user_created: false};
+    }
+
+    const user_id = await seed_user_create(params, identities);
+    if (user_id) {
+        return {user_id, user_created: true};
+    }
+
+    const taken = await seed_identity_find(identities);
+    if (!taken) {
+        throw new Error('A seed user lost its identities to another user, and that user is gone');
+    }
+    return {user_id: taken.user_id, user_created: false};
+}
+
+async function seed_identity_find(identities)
+{
+    const query = db('user_identities');
+    for (const identity of identities) {
+        query.orWhere({type: identity.type, value_normalized: identity.value_normalized});
+    }
+    return query.first();
+}
+
+// One unit: the user with every identity of its seed, or nothing at all.
+// An identity another user took first rolls the user back: null.
+async function seed_user_create(params, identities)
+{
+    try {
+        return await db.transaction(async function () {
+            const user = await users_create(params, {seed: true});
+            await user_identities_insert(user.id, identities);
+            const total = await user_identities_count(user.id);
+            if (total < identities.length) {
+                throw new IdentityTaken();
+            }
+            await assign_primary_email(user.id);
+            return user.id;
+        });
+    }
+    catch (error) {
+        if (error instanceof IdentityTaken) {
+            return null;
+        }
+        throw error;
+    }
+}
+
+// The identities a seed names, each once: an address given twice, in
+// another letter case, is one identity.
+function identities_from_seed(username, emails)
+{
+    const out = [];
+    const keys = new Set();
+    const candidates = [
+        {type: const_user_identity.username, value: username, value_normalized: normalize_username(username)},
+        ...emails.map(v => ({type: const_user_identity.email, value: v, value_normalized: normalize_email(v)})),
+    ];
+    for (const candidate of candidates) {
+        const key = `${candidate.type}:${candidate.value_normalized}`;
+        if (candidate.value_normalized && !keys.has(key)) {
+            keys.add(key);
+            out.push(candidate);
+        }
+    }
+    return out;
+}
+
+// The identities the user does not hold yet are added to it; the number
+// added is returned. One held by another user stays with that user.
+async function user_identities_add(user_id, identities)
+{
+    const total1 = await user_identities_count(user_id);
+    await user_identities_insert(user_id, identities);
+    await assign_primary_email(user_id);
+    const total2 = await user_identities_count(user_id);
+    return total2 - total1;
+}
+
+async function user_identities_insert(user_id, identities)
+{
+    const now = new Date();
+    const rows = identities.map(v => ({uid: random_uid_user_identity(), user_id, type: v.type, value: v.value, value_normalized: v.value_normalized, created_at: now, updated_at: now, verified_at: now}));
+    await db('user_identities').insert(rows).onConflict(['type', 'value_normalized']).ignore();
+}
+
+async function user_identities_count(user_id)
+{
+    const [{total}] = await db('user_identities').where({user_id}).count('* as total');
+    return Number(total);
 }
 
 module.exports = bootstrap_users;
