@@ -337,8 +337,8 @@ services:
 ### Back it with PostgreSQL
 
 SQLite is fine for a single instance; point [`AUTHWALL_DB`](config.md#authwall_db)
-at a real database when you want managed backups or more than one Authwall
-replica. Authwall waits for the database, then applies its migrations on first
+at a real database when you want managed backups or
+[more than one Authwall replica](#two-copies-one-database). Authwall waits for the database, then applies its migrations on first
 boot — no manual migration step.
 
 ```yaml
@@ -379,6 +379,82 @@ services:
 - for MySQL instead, swap the image and the URL scheme:
   `AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall`
   (the [getting-started walkthrough](getting-started.md) is a full MySQL stack)
+
+### Two copies, one database
+
+Two Authwall containers on one Postgres, behind one Caddy: either copy answers
+any request, so one can restart or fail while the other keeps everyone signed
+in. Save this `Caddyfile` next to `docker-compose.yaml`:
+
+```
+:3000 {
+	reverse_proxy authwall-1:3000 authwall-2:3000 {
+		health_uri /auth/health
+		lb_try_duration 5s
+	}
+}
+```
+
+```yaml
+x-authwall: &authwall
+  image: vbarbarosh/authwall
+  restart: unless-stopped
+  environment:
+    AUTHWALL_PUBLIC_URL: http://localhost:3000
+    AUTHWALL_UPSTREAM_URL: http://app:8080
+    AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
+  volumes:
+    - ./data/authwall:/app/data
+  depends_on:
+    - postgres
+    - app
+
+services:
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - authwall-1
+      - authwall-2
+
+  authwall-1: *authwall
+  authwall-2: *authwall
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authwall
+      POSTGRES_USER: authwall
+      POSTGRES_PASSWORD: authwall
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  app:
+    image: jmalloc/echo-server
+    restart: unless-stopped
+```
+
+- sessions, tokens and sign-in links live in Postgres: signed in on one copy
+  is signed in on both, and signing out on one ends the session on both
+- both copies share `./data/authwall`, so they sign cookies with the same
+  `secret.key` and serve the same profile pictures; on two machines, set the
+  same [`AUTHWALL_SECRET`](config.md#authwall_secret) on both and share
+  `data/uploads`, or a cookie from one copy is refused by the other
+- Caddy asks each copy's `/auth/health` and sends a request on to the other
+  copy when one does not answer: stop one, and the other answers every request
+- each copy counts sign-in tries on its own: with two, an address gets up to
+  twice as many before **Too many requests**
+- one proxy in front is what the default
+  [`AUTHWALL_TRUST_PROXY=hops/1`](config.md#authwall_trust_proxy) expects, so
+  the limits and the audit log see each client's own address
+- the two copies start together on an empty database: the second waits while
+  the first applies the migrations
 
 ### The full setup
 
