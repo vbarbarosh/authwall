@@ -449,7 +449,6 @@
         <a class="brand" href="/auth"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span class="brand-name">authwall</span></a>
         <h1 class="page-title">Welcome back</h1>
         <p class="page-sub mt-4">Sign in to continue to your application.</p>
-        <p class="page-sub mt-4 flow-hidden" data-testid="signup-closed">Registration is closed. Sign in with an existing account.</p>
       </div>
       <div class="card-body">
         <div class="form">
@@ -1641,7 +1640,6 @@ function apply_flows(flows, actions = {})
   // than offer a link to an empty card.
     const allow_signup = actions.can_sign_up !== false;
     const sign_up_reachable = allow_signup && has_password && (has_password_sign_up || has_oauth);
-    show('[data-testid="signup-closed"]', !allow_signup);
     show('.demo-btn[data-goto="sign-up"]', sign_up_reachable);
     if (!allow_signup) {
         show('.demo-btn[data-signup-mode]', false);

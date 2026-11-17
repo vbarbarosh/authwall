@@ -73,8 +73,8 @@ docker run -d --name authwall -p 3000:3000 \
     vbarbarosh/authwall
 ```
 
-- the sign-in page says registration is closed and has no **Create one**
-  link; a sign-up sent anyway is refused, and no account is made
+- the sign-in page has no **Create one** link and says nothing of
+  registration; a sign-up sent anyway is refused, and no account is made
 - alice, bob and carol sign in with their usernames and passwords, and change
   the password from the profile
 - to add someone, add them to the seed and restart; the accounts already

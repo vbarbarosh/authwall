@@ -1022,7 +1022,7 @@ notice: asking again within a minute sends nothing new, and a code works only
 in the browser that asked. To use another browser, wait a minute and
 ask again there.
 
-The sign-in page hides the signup link and says registration is closed. Opening
+The sign-in page hides the signup link and says nothing of registration. Opening
 `/auth/sign-up` shows sign-in instead. Existing users can still sign in, verify
 their email, reset passwords, and connect providers. An OAuth account must
 already be linked to sign in; a matching email alone does not link accounts.

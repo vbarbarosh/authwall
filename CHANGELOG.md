@@ -18,6 +18,11 @@
 - `bin/password-hash`, formerly `bin/bcrypt`, makes such a hash, and the image
   has it: `docker run --rm vbarbarosh/authwall bin/password-hash '…'`.
 
+### Changed
+
+- With `AUTHWALL_SIGN_UP=off` the sign-in page no longer says registration
+  is closed: it only leaves out the **Create one** link.
+
 ## 1.17.0
 
 ### Breaking
