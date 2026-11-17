@@ -58,6 +58,30 @@ docker run -d --name authwall -p 3000:3000 \
 - already-existing users are left alone, so the variable is safe to keep set
   across restarts
 
+## Only the users you name
+
+A fixed set of people and nobody else: the seed makes their accounts, and
+[`AUTHWALL_SIGN_UP=off`](config.md#authwall_sign_up) lets no one make
+another. No mail service needed.
+
+```sh
+docker run -d --name authwall -p 3000:3000 \
+    -e AUTHWALL_UPSTREAM_URL=http://internal:8080 \
+    -e AUTHWALL_SEED='alice:change-me-1;bob:change-me-2;carol:change-me-3' \
+    -e AUTHWALL_SIGN_UP=off \
+    -v ./data/authwall:/app/data \
+    vbarbarosh/authwall
+```
+
+- the sign-in page says registration is closed and has no **Create one**
+  link; a sign-up sent anyway is refused, and no account is made
+- alice, bob and carol sign in with their usernames and passwords, and change
+  the password from the profile
+- to add someone, add them to the seed and restart; the accounts already
+  there are left as they are
+- taking a name out of the seed leaves its account, which still signs in:
+  the person removes it from the profile
+
 ## Team sign-in with Google
 
 Everyone at one domain signs in with their Google account; nobody else gets
