@@ -51,17 +51,17 @@ bin/password-hash 'correct horse battery staple'
 | Command                           | What it does                                                                                                        |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | `bin/build`                       | Build the Docker image, stamping version/revision/source/created build args. Tags `vbarbarosh/authwall` by default. |
-| `bin/release major\|minor\|patch` | Run the tests, bump the version, commit it, tag it, and push the commit and the tag.                                |
+| `bin/release major\|minor\|patch` | Bump the version, commit it, tag it, and push the commit and the tag; the tag's run tests and releases.             |
 | `bin/deploy`                      | Build and push the Docker image under its version, major, and revision tags; the release run calls it.              |
 
 `master` is the one branch, and a release is made from it only. `bin/release`
 refuses on another branch, on uncommitted changes, or when `master` is behind
-`origin/master`; it builds and pushes no image. The `v*` tag it pushes starts
-`.github/workflows/release.yml`: the tag is checked against the version, the
-checks every push gets (`.github/workflows/node.js.yml`) run again on the
-tagged commit, and only then `bin/deploy` pushes the image and the docs of
-the release go to GitHub Pages. `bin/deploy` refuses unless `HEAD` is the tag
-of `package.json`'s version and the working tree is clean.
+`origin/master`; it runs no tests and builds and pushes no image. The `v*` tag
+it pushes starts `.github/workflows/release.yml`: the tag is checked against
+the version, the checks every push gets (`.github/workflows/node.js.yml`) run
+again on the tagged commit, and only then `bin/deploy` pushes the image and the
+docs of the release go to GitHub Pages. `bin/deploy` refuses unless `HEAD` is
+the tag of `package.json`'s version and the working tree is clean.
 
 ## Operations and reporting
 

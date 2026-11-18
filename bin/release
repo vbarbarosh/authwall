@@ -4,10 +4,10 @@
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o nounset -o errexit -o pipefail
 
-# The only way to release, from master, the one branch: it runs the tests,
-# bumps the version, commits it, tags it and pushes both. It builds and
-# pushes no image: the v* tag starts .github/workflows/release.yml, which
-# checks the tagged commit again and only then pushes the image.
+# The only way to release, from master, the one branch: it bumps the
+# version, commits it, tags it and pushes both. It runs no tests and builds
+# no image: the v* tag starts .github/workflows/release.yml, which runs the
+# checks on the tagged commit and only then pushes the image.
 
 script=`realpath $0`
 scriptdir=`dirname $script`
@@ -48,8 +48,6 @@ if test `git rev-list --count HEAD..origin/master` != 0; then
     echo error: master is behind origin/master, pull first >&2
     exit 1
 fi
-
-bin/test
 
 # Increase a version without committing it and making a tag
 npm version $1 --no-git-tag-version
