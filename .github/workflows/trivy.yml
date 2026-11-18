@@ -2,7 +2,7 @@ name: Trivy
 
 on:
   push:
-    branches: [ master, production ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:

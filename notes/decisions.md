@@ -223,3 +223,19 @@ email or not; it is independent of C and can come later.
   documentation currently says it is not.
 - A deployment model where Authwall never runs with access rules; then A is
   enough and C is unneeded complexity.
+
+## Releases from a v* tag on master alone
+
+**Status: implemented** on 2026-11-18, the author's pick: one branch, and every
+tag builds the image of its version.
+
+| Option | What releases | What is pushed to Docker Hub |
+| --- | --- | --- |
+| A. A v* tag on master (chosen) | `bin/release` pushes the tag; `release.yml` runs on it | the tagged commit, after the checks ran on it |
+| B. The production branch (before) | a push to `production` after a merge from `master` | the branch's tip, checked out again after the tests |
+
+Authwall is not published to npm (`"private": true`): its release is the
+image. A tag never moves, so the commit the checks ran on is the one pushed,
+which B could not promise (AW-35). The release run calls `node.js.yml`, the
+checks of every push, so the two cannot drift apart. The docs on GitHub Pages
+follow releases: a docs change shows at the next release, not at its push.

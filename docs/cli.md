@@ -51,13 +51,17 @@ bin/password-hash 'correct horse battery staple'
 | Command                           | What it does                                                                                                        |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | `bin/build`                       | Build the Docker image, stamping version/revision/source/created build args. Tags `vbarbarosh/authwall` by default. |
-| `bin/release major\|minor\|patch` | Bump the version, commit it, and create and push the release tag.                                                   |
-| `bin/deploy`                      | Build and push the Docker image under its version, major, and revision tags.                                        |
+| `bin/release major\|minor\|patch` | Run the tests, bump the version, commit it, tag it, and push the commit and the tag.                                |
+| `bin/deploy`                      | Build and push the Docker image under its version, major, and revision tags; the release run calls it.              |
 
-`bin/release` and `bin/deploy` both refuse to run unless the current branch is
-`production` and the working tree is clean. `bin/release` only handles the Git
-side — it does not run tests or build images; CI runs `bin/test` and then
-`bin/deploy` after `production` is pushed.
+`master` is the one branch, and a release is made from it only. `bin/release`
+refuses on another branch, on uncommitted changes, or when `master` is behind
+`origin/master`; it builds and pushes no image. The `v*` tag it pushes starts
+`.github/workflows/release.yml`: the tag is checked against the version, the
+checks every push gets (`.github/workflows/node.js.yml`) run again on the
+tagged commit, and only then `bin/deploy` pushes the image and the docs of
+the release go to GitHub Pages. `bin/deploy` refuses unless `HEAD` is the tag
+of `package.json`'s version and the working tree is clean.
 
 ## Operations and reporting
 

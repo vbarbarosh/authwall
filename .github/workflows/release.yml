@@ -1,0 +1,75 @@
+# Releases authwall when bin/release pushes a v* tag. The tag must match
+# package.json's version; the jobs of node.js.yml run again on the tagged
+# commit; only then bin/deploy builds the image and pushes it to Docker Hub,
+# and the docs of this release go to GitHub Pages. Any red step stops the run
+# before Docker Hub.
+#
+# Docker Hub logs in with the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets.
+# GitHub Pages must use "GitHub Actions" as its publishing source.
+
+name: Release
+
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Check the tag matches package.json's version
+      run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
+
+  checks:
+    needs: version
+    uses: ./.github/workflows/node.js.yml
+
+  release:
+    needs: [ version, checks ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    # Node 26, the major of the Dockerfile's node:26-alpine and of engines.
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 26
+        cache: npm
+    - run: npm install -g npm@latest
+    - run: npm ci
+    # Built before the push: a red docs build stops the release too.
+    - name: Build the docs
+      run: bin/build-docs
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v4
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Build and push the image
+      run: bin/deploy
+    - name: Upload the docs for GitHub Pages
+      uses: actions/upload-pages-artifact@v5
+      with:
+        path: build/docs
+
+  deploy-docs:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Configure GitHub Pages
+      uses: actions/configure-pages@v6
+    - name: Deploy the docs of this release
+      id: deployment
+      uses: actions/deploy-pages@v5

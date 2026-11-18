@@ -18,7 +18,7 @@ Node.js 26, Express 5, knex over SQLite, MySQL or PostgreSQL, CommonJS.
 | `bin/build` | the Docker image |
 | `bin/build-docs` | the documentation site from `docs/` into `build/docs/` |
 | `bin/migrate`, `bin/migrate-make`, `bin/migrate-rollback` | database migrations in `db/migrations/` |
-| `bin/release major\|minor\|patch` | bump, commit and tag on `production` |
+| `bin/release major\|minor\|patch` | test, bump, commit, tag and push on `master`; the tag's run pushes the image |
 
 - `src/` the app, a folder per part (`routes/`, `actions/`, `services/`,
   `helpers/`, `oauth_providers/`, `http/`); `config/` turns the environment
@@ -66,7 +66,8 @@ Do not apply:
 
 - **VUE**: there is no Vue.
 - **CSS-01 to CSS-11**: no utility classes, no Sass, no `#-` local classes.
-- **REL**: the release is a Docker image; `bin/release` only bumps and tags.
+- **REL**: the release is a Docker image, pushed by the run of its `v*` tag;
+  `bin/release` tests, bumps, tags and pushes.
 - **DOC-01 to DOC-05, DOC-11 to DOC-14**: they cover the rules repository's
   own documents.
 

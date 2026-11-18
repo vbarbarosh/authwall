@@ -10,15 +10,17 @@ scriptname=`basename $script`
 
 cd $scriptdir/..
 
-branch=$(git branch --show-current)
-if [[ $branch != production ]]; then
-    echo "🛑 Refusing production deploy from branch: $branch" >&2
-    echo "👉 Switch to production branch before running bin/$scriptname." >&2
+# An image is pushed from its release tag only, as .github/workflows/release.yml
+# checks it out: what was tested is what is pushed.
+tag=v$(node -p "require('./package.json').version")
+if [[ $(git rev-parse HEAD) != $(git rev-parse -q --verify "refs/tags/$tag^{commit}" || true) ]]; then
+    echo "🛑 Refusing deploy: HEAD is not the tag $tag of package.json's version" >&2
+    echo "👉 bin/release makes the tag; its run in release.yml runs bin/$scriptname." >&2
     exit 1
 fi
 
 if [[ -n "$(git status --porcelain)" ]]; then
-    echo "🛑 Refusing production deploy with uncommitted changes:" >&2
+    echo "🛑 Refusing deploy with uncommitted changes:" >&2
     git status --short >&2
     exit 1
 fi

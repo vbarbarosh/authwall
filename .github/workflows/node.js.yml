@@ -1,24 +1,54 @@
-name: Master
+# The checks of every push and pull request to master: the production audit,
+# the tests on SQLite, MySQL and PostgreSQL, the image and the docs built.
+# release.yml runs these same jobs on a v* tag before it releases, so a
+# release's failure shows here first, before its tag.
+
+name: Node.js CI
+
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_call:
+
+permissions:
+  contents: read
+
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    # Node 26, the major of the Dockerfile's node:26-alpine; lts/* would move on its own.
+    # Node 26, the major of the Dockerfile's node:26-alpine and of engines.
     - uses: actions/setup-node@v7
       with:
         node-version: 26
+    # The newest npm, the same on every run: an npm difference shows on a push.
+    - run: npm install -g npm@latest
     # Production dependencies only. The remaining dev-tree advisories are
     # transitive under mocha with no forward fix available — `npm audit fix
     # --force` downgrades it — and nothing in devDependencies ships in the
     # image. --package-lock-only keeps this to seconds: no install needed.
     - name: Audit production dependencies
       run: npm audit --omit=dev --audit-level=high --package-lock-only
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 26
+        cache: npm
+    - run: npm install -g npm@latest
+    - run: npm ci
+    - name: Build the docs
+      run: bin/build-docs
+    # The image is built, not pushed: a Dockerfile that breaks shows here,
+    # not at the release.
+    - name: Build the image
+      run: bin/build
 
   test-sqlite:
     timeout-minutes: 60
@@ -42,18 +72,20 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 26
+        cache: npm
     # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
     # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
     # the package's gypfile:false). The Playwright image has no compiler.
     - name: Install build tools
       run: apt-get update && apt-get install -y --no-install-recommends make g++
+    - run: npm install -g npm@latest
     - name: Install dependencies
       run: npm ci
     - name: Run all tests
       env:
         # Inside a container job, service containers are reached by label, not localhost.
         AUTHWALL_UPSTREAM_URL: http://echo:8080
-      run: npm test
+      run: bin/test
     - uses: actions/upload-artifact@v7
       if: ${{ !cancelled() }}
       with:
@@ -92,11 +124,13 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 26
+        cache: npm
     # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
     # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
     # the package's gypfile:false). The Playwright image has no compiler.
     - name: Install build tools
       run: apt-get update && apt-get install -y --no-install-recommends make g++
+    - run: npm install -g npm@latest
     - name: Install dependencies
       run: npm ci
     - name: Verify MySQL version
@@ -126,7 +160,7 @@ jobs:
       env:
         AUTHWALL_DB: mysql://root:root@mysql:3306/authwall
         AUTHWALL_UPSTREAM_URL: http://echo:8080
-      run: npm test
+      run: bin/test
     - uses: actions/upload-artifact@v7
       if: ${{ !cancelled() }}
       with:
@@ -163,18 +197,20 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 26
+        cache: npm
     # better-sqlite3 ships prebuilt binaries, but `npm ci` still runs
     # `node-gyp rebuild` for it (npm reads the lockfile entry, which lacks
     # the package's gypfile:false). The Playwright image has no compiler.
     - name: Install build tools
       run: apt-get update && apt-get install -y --no-install-recommends make g++
+    - run: npm install -g npm@latest
     - name: Install dependencies
       run: npm ci
     - name: Run all tests
       env:
         AUTHWALL_DB: postgres://authwall:authwall@postgres:5432/authwall
         AUTHWALL_UPSTREAM_URL: http://echo:8080
-      run: npm test
+      run: bin/test
     - uses: actions/upload-artifact@v7
       if: ${{ !cancelled() }}
       with:
