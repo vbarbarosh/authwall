@@ -2,10 +2,15 @@
 # package.json's version; the jobs of node.js.yml run again on the tagged
 # commit; only then bin/deploy builds the image and pushes it to Docker Hub,
 # and the docs of this release go to GitHub Pages. Any red step stops the run
-# before Docker Hub.
+# before Docker Hub. A red deploy-docs comes after it: the image is out, the
+# docs are as they were, and "Re-run failed jobs" deploys them within a day,
+# while their artifact lasts.
 #
 # Docker Hub logs in with the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets.
-# GitHub Pages must use "GitHub Actions" as its publishing source.
+# GitHub Pages must use "GitHub Actions" as its publishing source, and its
+# github-pages environment must let the v* tags deploy: Settings,
+# Environments, github-pages, a rule of type Tag, v*. Without it, master
+# alone deploys, and deploy-docs is refused on every tag.
 
 name: Release
 
