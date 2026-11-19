@@ -19,9 +19,17 @@ if [[ $# -eq 0 ]]; then
     set -- -t vbarbarosh/authwall
 fi
 
+iidfile=`mktemp`
+trap "rm -f $iidfile" EXIT
+
 docker build \
+    --iidfile "$iidfile" \
     --build-arg AUTHWALL_CREATED="$created" \
     --build-arg AUTHWALL_REVISION="$revision" \
     --build-arg AUTHWALL_SOURCE="$source" \
     --build-arg AUTHWALL_VERSION="$version" \
     "$@" .
+
+# The last step: the image just built is started and probed; one that fails
+# ships nothing, as bin/deploy pushes only after this (M-12, PROJ-30).
+bin/self-check "`cat $iidfile`"

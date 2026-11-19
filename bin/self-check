@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# http://www.gnu.org/software/bash/manual/bash.html#The-Set-Builtin
+# http://redsymbol.net/articles/unofficial-bash-strict-mode
+set -o nounset -o errexit -o pipefail
+
+script=`realpath $0`
+scriptdir=`dirname $script`
+scriptname=`basename $script`
+
+# The image bin/build made, started as a fresh deployment starts it: nothing
+# set, an empty data/. One line per probe; the first that fails names what
+# to fix and stops the build, so bin/deploy pushes nothing (M-12, PROJ-30).
+#
+#   bin/self-check [image]    the image id or tag; vbarbarosh/authwall by default
+
+image=${1:-vbarbarosh/authwall}
+name=authwall-self-check-$$
+
+function finish
+{
+    docker rm -f "$name" > /dev/null 2>&1 || true
+}
+trap finish EXIT
+
+function fail
+{
+    echo "✗ $1" >&2
+    echo "--- the container's log ---" >&2
+    docker logs "$name" 2>&1 | tail -n 30 >&2 || true
+    exit 1
+}
+
+docker run -d --name "$name" -p 127.0.0.1::3000 "$image" > /dev/null
+port=`docker port "$name" 3000 | head -n 1 | sed 's/.*://'`
+
+# The server listens once its migrations and seed are done.
+for i in `seq 60`; do
+    if curl -fsS "http://127.0.0.1:$port/auth/health" > /dev/null 2>&1; then
+        break
+    fi
+    if [ "`docker inspect -f '{{.State.Running}}' "$name"`" != true ]; then
+        fail "[start] the server exited"
+    fi
+    sleep 1
+done
+curl -fsS "http://127.0.0.1:$port/auth/health" > /dev/null 2>&1 || fail "[start] /auth/health did not answer in 60 seconds"
+echo "[start] /auth/health: OK, on an empty data/"
+
+# Each answer is read whole, then matched: `curl | grep -q` fails under
+# pipefail once grep stops reading early.
+page=`curl -fsS "http://127.0.0.1:$port/auth/sign-in"` || fail "[sign-in page] /auth/sign-in did not answer"
+[[ $page == *'<html'* ]] || fail "[sign-in page] /auth/sign-in serves no page"
+echo "[sign-in page] /auth/sign-in: a page"
+
+hash=`docker exec "$name" bin/password-hash self-check` || fail "[bin/password-hash] it failed"
+[[ $hash == '$2'* ]] || fail "[bin/password-hash] no bcrypt hash"
+echo "[bin/password-hash] a bcrypt hash"
+
+summary=`docker exec "$name" bin/activity-summary day` || fail "[bin/activity-summary] it failed"
+[[ $summary == *'Authwall activity summary'* ]] || fail "[bin/activity-summary] no summary"
+echo "[bin/activity-summary] a summary of the last day"

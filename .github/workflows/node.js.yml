@@ -45,8 +45,8 @@ jobs:
     - run: npm ci
     - name: Build the docs
       run: bin/build-docs
-    # The image is built, not pushed: a Dockerfile that breaks shows here,
-    # not at the release.
+    # The image is built and started (bin/build ends with bin/self-check),
+    # not pushed: an image that breaks shows here, not at the release.
     - name: Build the image
       run: bin/build
 

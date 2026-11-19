@@ -37,6 +37,9 @@
 
 ### Changed
 
+- `bin/build` ends with `bin/self-check`: the image is started as a fresh
+  deployment starts it and probed, and one that fails is never pushed.
+  Trivy scans that image, not the checkout.
 - With `AUTHWALL_SIGN_UP=off` the sign-in page no longer says registration
   is closed: it only leaves out the **Create one** link.
 

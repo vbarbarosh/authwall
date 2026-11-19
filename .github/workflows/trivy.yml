@@ -13,26 +13,32 @@ permissions:
 
 jobs:
   trivy:
-    name: Rootfs Scan
+    name: Image Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # The image as it ships, its Alpine packages and its production
+      # node_modules, not the checkout with its dev tree (M-12). bin/build
+      # ends with bin/self-check, so a broken image stops here too.
+      - name: Build the image
+        run: bin/build -t authwall-scan
 
       # Pinned by commit: this action's tags were rewritten in the March 2026 supply-chain attack.
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          scan-type: rootfs
-          scan-ref: .
+          scan-type: image
+          image-ref: authwall-scan
           severity: CRITICAL,HIGH
           hide-progress: true
           format: sarif
           output: trivy-results.sarif
           # Reporter, not gate: findings surface in the Security tab. The
-          # build is gated on production dependencies by the npm-audit step
-          # in master.yml (--omit=dev). Failing here would (a) skip the
-          # upload below and (b) block on dev-only advisories the project
-          # accepts, so this stays 0.
+          # build is gated on production dependencies by the audit job in
+          # node.js.yml (--omit=dev). Failing here would skip the upload
+          # below and block every push on a base-image advisory with no
+          # fix yet, so this stays 0.
           exit-code: 0
 
       - name: Upload Trivy scan results

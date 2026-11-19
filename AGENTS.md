@@ -16,6 +16,7 @@ Node.js 26, Express 5, knex over SQLite, MySQL or PostgreSQL, CommonJS.
 | `npm run test:api` | `tests/api/`, each run on its own temporary SQLite file, never `data/` |
 | `npm run test:e2e` | `tests/playwright/`, Chromium, Firefox and WebKit |
 | `bin/build` | the Docker image |
+| `bin/self-check [image]` | the image started and probed; `bin/build` ends with it |
 | `bin/build-docs` | the documentation site from `docs/` into `build/docs/` |
 | `bin/migrate`, `bin/migrate-make`, `bin/migrate-rollback` | database migrations in `db/migrations/` |
 | `bin/release major\|minor\|patch` | bump, commit, tag and push on `master`; the tag's run tests and pushes the image |
