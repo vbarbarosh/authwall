@@ -19,9 +19,9 @@
   "scripts": {
     "start": "node .",
     "watch": "nodemon -r dotenv/config .",
-    "migrate": "knex migrate:latest --env=sqlite",
+    "migrate": "bin/migrate",
     "migrate:make": "knex migrate:make --env=sqlite",
-    "migrate:rollback": "knex migrate:rollback --env=sqlite",
+    "migrate:rollback": "bin/migrate-rollback",
     "test": "npm run test:unit && npm run test:api && npm run test:e2e",
     "test:unit": "mocha --no-package --config mocha.unit.js",
     "test:api": "mocha --no-package --config mocha.api.js",

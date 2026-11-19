@@ -42,6 +42,11 @@
 
 ### Fixed
 
+- `bin/migrate` and `bin/migrate-rollback` work on the database
+  `AUTHWALL_DB` names, the one the server migrates when it starts, and print
+  which one first; they always worked on `data/db.sqlite3`, making it if it
+  was missing. `bin/activity-summary` is in the image, so it runs in the
+  container as the docs say. `bin/run_knex.js`, which never ran, is gone.
 - Two sign-ups for the same new username or email at the same moment, on
   PostgreSQL or SQLite, answer the slower one "Identity already exists", as
   on MySQL; it got "An error occurred", and the error went to Sentry.

@@ -1,13 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env node
 
-# http://www.gnu.org/software/bash/manual/bash.html#The-Set-Builtin
-# http://redsymbol.net/articles/unofficial-bash-strict-mode
-set -o nounset -o errexit -o pipefail
+const cli = require('@vbarbarosh/node-helpers/src/cli');
+const config = require('../config');
+const format_database = require('../src/helpers/format/format_database');
+const knex = require('knex');
 
-script=`realpath $0`
-scriptdir=`dirname $script`
-scriptname=`basename $script`
+cli(main);
 
-cd $scriptdir/..
+// Applies the pending migrations, in one batch, to the database AUTHWALL_DB
+// names: the one the server migrates when it starts. The Knex CLI it wrapped
+// took --env=sqlite, data/db.sqlite3 whatever AUTHWALL_DB said (M-11).
+async function main()
+{
+    if (process.argv.length > 2) {
+        console.error('Usage: bin/migrate');
+        process.exit(1);
+    }
 
-npm run migrate "$@"
+    const db = knex(config.knexvars);
+    await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
+
+    console.log(`🗄️ ${format_database(config.knexvars)}`);
+    const [batch, files] = await db.migrate.latest();
+    if (!files.length) {
+        console.log('Already up to date');
+        return;
+    }
+    console.log(`Batch ${batch}: ${files.length} applied`);
+    for (const file of files) {
+        console.log(`  ${file}`);
+    }
+}

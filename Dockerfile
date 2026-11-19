@@ -42,6 +42,7 @@ COPY --chown=node:node design/public_html ./design/public_html
 COPY --chown=node:node src ./src
 COPY --chown=node:node knexfile.js ./
 COPY --chown=node:node bin/password-hash ./bin/password-hash
+COPY --chown=node:node bin/activity-summary ./bin/activity-summary
 
 ARG AUTHWALL_CREATED
 ARG AUTHWALL_REVISION

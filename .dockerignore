@@ -11,6 +11,7 @@
 !knexfile.js
 
 !bin/password-hash
+!bin/activity-summary
 !config/
 !config/**
 !db/

@@ -1,9 +1,12 @@
+const format_database = require('../format/format_database');
+const redact_url_password = require('../redact_url_password');
+
 function render_config_summary(config)
 {
     return flat([
         '⚙️ Config summary',
         `🌐 Server: ${config.public_url} → ${config.listen}:${config.port} (${config.logger} logger)`,
-        `🧭 Upstream: ${config.upstream.mode} → ${redact_url(config.upstream.url)}${format_headers(config)}`,
+        `🧭 Upstream: ${config.upstream.mode} → ${redact_url_password(config.upstream.url)}${format_headers(config)}`,
         `🗄️ Database: ${format_database(config.knexvars)}`,
         `🍪 Cookie: domain=${config.cookie.domain ?? ''} path=${config.cookie.path} same_site=${config.cookie.same_site} secure=${config.cookie.secure} max_age_days=${config.cookie.max_age_days}`,
         `🧯 Sentry: ${format_sentry(config.sentry)}`,
@@ -56,22 +59,6 @@ function format_headers(config)
         parts.push(`unset ${unset.join(', ')}`);
     }
     return parts.length ? ` (${parts.join('; ')})` : '';
-}
-
-function format_database(knexvars)
-{
-    const label = knexvars.custom?.label || knexvars.custom?.name || knexvars.client;
-    const connection = knexvars.connection;
-    if (typeof connection === 'string') {
-        return `${label} ${redact_url(connection)}`;
-    }
-    if (connection?.uri) {
-        return `${label} ${redact_url(connection.uri)}`;
-    }
-    if (connection?.filename) {
-        return `${label} ${connection.filename}`;
-    }
-    return label;
 }
 
 function format_flows(flows)
@@ -186,20 +173,6 @@ function format_seed_users(users)
 function format_seed_user(user, i)
 {
     return `- ${user.username || user.email || `user ${i + 1}`}`;
-}
-
-function redact_url(value)
-{
-    try {
-        const url = new URL(value);
-        if (url.password) {
-            url.password = '***';
-        }
-        return url.toString();
-    }
-    catch {
-        return value;
-    }
 }
 
 module.exports = render_config_summary;

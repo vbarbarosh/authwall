@@ -1,13 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env node
 
-# http://www.gnu.org/software/bash/manual/bash.html#The-Set-Builtin
-# http://redsymbol.net/articles/unofficial-bash-strict-mode
-set -o nounset -o errexit -o pipefail
+const cli = require('@vbarbarosh/node-helpers/src/cli');
+const config = require('../config');
+const format_database = require('../src/helpers/format/format_database');
+const knex = require('knex');
 
-script=`realpath $0`
-scriptdir=`dirname $script`
-scriptname=`basename $script`
+cli(main);
 
-cd $scriptdir/..
+// Rolls back the latest batch of the database AUTHWALL_DB names, as
+// bin/migrate applies them (M-11). The server applies each migration as a
+// batch of its own, so there it is the latest migration.
+async function main()
+{
+    if (process.argv.length > 2) {
+        console.error('Usage: bin/migrate-rollback');
+        process.exit(1);
+    }
 
-npm run migrate:rollback "$@"
+    const db = knex(config.knexvars);
+    await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
+
+    console.log(`🗄️ ${format_database(config.knexvars)}`);
+    const [batch, files] = await db.migrate.rollback();
+    if (!files.length) {
+        console.log('Nothing to roll back');
+        return;
+    }
+    console.log(`Batch ${batch}: ${files.length} rolled back`);
+    for (const file of files) {
+        console.log(`  ${file}`);
+    }
+}

@@ -22,7 +22,12 @@ and are run from the repository root, e.g. `bin/activity-summary day`.
 | `bin/migrate-make <name>` | Create a new migration file.               |
 | `bin/migrate-rollback`    | Roll back the most recent migration batch. |
 
-These wrap the Knex CLI for development work against the local SQLite database.
+They work on the database [`AUTHWALL_DB`](config.md#authwall_db) names, the
+one the server migrates when it starts, and print which one first.
+`bin/migrate` applies the pending migrations in one batch, and
+`bin/migrate-rollback` rolls the latest batch back. The server applies each
+migration as a batch of its own, so on a database it migrated, a rollback
+undoes the latest migration.
 
 > [!NOTE]
 > When the server starts, it applies pending migrations automatically (see
@@ -96,7 +101,7 @@ Examples:
 
 It reads the database configured by [`AUTHWALL_DB`](config.md#authwall_db).
 For a Dockerized deployment, run it inside the Authwall container so it sees the
-same configuration.
+same configuration: `docker exec <container> bin/activity-summary day`.
 
 ### `bin/log-summary`
 
