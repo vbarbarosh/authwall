@@ -752,9 +752,10 @@ include a username; use an enabled email or OAuth sign-up flow instead. An
 existing account is admitted, at a new sign-in by any method and with the
 sessions and tokens it already holds alike, only when every verified email passes
 these rules and it has a way to meet them: a verified email; a linked account at
-an enabled OAuth provider, whose verified emails are checked at each of its
-sign-ins; or, while `AUTHWALL_CONFIRM_EMAIL_REQUIRED` holds it at confirmation, a
-pending email the rules admit. A username alone is none of these, and with
+an enabled OAuth provider whose emails pass, the ones it vouched for at its last
+sign-in, kept for every session and token; or, while
+`AUTHWALL_CONFIRM_EMAIL_REQUIRED` holds it at confirmation, a pending email the
+rules admit. A username alone is none of these, and with
 confirmation off a pending email is not either. With no email access rules,
 username sign-up and sign-in work as usual.
 

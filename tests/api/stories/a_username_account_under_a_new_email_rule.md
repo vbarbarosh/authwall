@@ -18,10 +18,11 @@ verified email is required"*, the sidecar answers 401, the token gets 403 and
 a WebSocket is refused. Nothing is deleted, and once the rule is lifted the
 same session and token work again.
 
-Ann keeps her session while Google is enabled: Google's verified addresses are
-checked at each of her Google sign-ins. She cannot disconnect Google while it
-is her only way to meet the rule, as an address that is cannot be removed.
-With Google disabled she has no way to meet it and is refused as Sam is.
+Ann keeps her session while Google is enabled: `ann@corp.test`, the address
+Google vouched for at her last Google sign-in, passes the rule (AW-120). She
+cannot disconnect Google while it is her only way to meet the rule, as an
+address that is cannot be removed. With Google disabled she has no way to meet
+it and is refused as Sam is.
 
 Pat is not refused: she waits at email confirmation, where she can still ask
 for the link, and reaches the app once the address is confirmed.

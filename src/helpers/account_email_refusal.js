@@ -12,7 +12,7 @@ async function account_email_refusal(user)
         return null;
     }
 
-    const identities = await db('user_identities').where({user_id: user.id}).select('type', 'value_normalized', 'verified_at');
+    const identities = await db('user_identities').where({user_id: user.id}).select('type', 'value_normalized', 'verified_at', 'provider_emails');
     return access_refusal_from_identities(identities);
 }
 

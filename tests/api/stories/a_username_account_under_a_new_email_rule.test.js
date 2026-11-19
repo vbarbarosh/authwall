@@ -73,7 +73,8 @@ describe('A username account under a new email rule | stories', function () {
         it('keeps Ann\'s session while her Google account is a way in, and refuses it once Google is disabled', async function () {
             const {user_id, token} = await sign_in_with_a_token(this, {username: 'ann', password: 'anns-pass-123'});
             const now = new Date();
-            await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_google, value: '1001', value_normalized: '1001', created_at: now, updated_at: now, verified_at: now});
+            // Google vouched for ann@corp.test at her last Google sign-in (AW-120).
+            await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_google, value: '1001', value_normalized: '1001', created_at: now, updated_at: now, verified_at: now, provider_emails: JSON.stringify(['ann@corp.test'])});
 
             restart_with_allowed_domains(['corp.test']);
             assert.deepStrictEqual(await doors(this, token), OPEN);

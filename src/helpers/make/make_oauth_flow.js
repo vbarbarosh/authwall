@@ -116,6 +116,9 @@ async function callback_get(oauth_provider, req, res)
         {require_one_when_access_rules: (oauth_intent === const_oauth_intent.login) && !pending_emails.length}
     );
     const provider_emails = [...verified_emails, ...pending_emails].map(v => v.email);
+    // What the provider vouched for, kept on its identity: an account with no
+    // address of its own meets the rules with it at every door (AW-120).
+    const provider_emails_json = JSON.stringify([...verified_emails, ...pending_emails].map(v => v.email_normalized));
 
     // Connect account flow
     if (oauth_intent === const_oauth_intent.connect) {
@@ -220,6 +223,7 @@ async function callback_get(oauth_provider, req, res)
             created_at: now,
             updated_at: now,
             verified_at: now,
+            provider_emails: provider_emails_json,
         });
 
         await insert_auth_event({
@@ -285,6 +289,8 @@ async function callback_get(oauth_provider, req, res)
     // Login flow
     if (ident) {
         user_id = ident.user_id;
+        // Before complete_sign_in judges the account by it.
+        await db('user_identities').where({id: ident.id}).update({provider_emails: provider_emails_json, updated_at: new Date()});
     }
     else {
         assert_sign_up_enabled();
@@ -310,6 +316,7 @@ async function callback_get(oauth_provider, req, res)
                 created_at: now,
                 updated_at: now,
                 verified_at: now,
+                provider_emails: provider_emails_json,
             });
             const verified_email = verified_emails[0];
             if (verified_email) {

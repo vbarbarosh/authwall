@@ -4,6 +4,15 @@
 
 ### Security
 
+- An account that keeps no address of its own, signed in with Google,
+  GitHub or another provider, is refused at every door once the email
+  access rules drop it: the addresses the provider vouched for at its last
+  sign-in are kept and judged for its sessions, tokens and WebSockets, as
+  its sign-in was. Its session and tokens went on while a fresh sign-in
+  was refused: an address removed in the profile, or none given by the
+  provider. Under email access rules, such an account signs in with its
+  provider once after this upgrade before its sessions and tokens work
+  again.
 - Adding an address asks "confirm it is you" first, as removing one does:
   the password, or a fresh sign-in with a linked provider. A signed-in
   session alone added one to an account with no confirmed address (a
