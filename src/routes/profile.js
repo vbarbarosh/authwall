@@ -20,6 +20,7 @@ const plural = require('@vbarbarosh/node-helpers/src/plural');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
 const require_confirmation = require('../helpers/require_confirmation');
+const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const sharp = require('sharp');
 
 const upload_avatar = multer({
@@ -147,8 +148,17 @@ async function profile_post(req, res)
         update.password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
     }
 
-    const now = new Date();
-    await db('users').where({id: user.id}).update({...update, updated_at: now});
+    // One transaction, as a reset's: a new password and the end of every
+    // credential the old one vouched for, or neither (AW-110).
+    await db.transaction(async function () {
+        const now = new Date();
+        await db('users').where({id: user.id}).update({...update, updated_at: now});
+        if (is_password_change) {
+            await revoke_pending_tokens(user.id);
+            await db('sessions').where({user_id: user.id}).whereNot({uid: req.sessionID}).del();
+            await db('personal_access_tokens').where({user_id: user.id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
+        }
+    });
 
     if ('display_name' in update) {
         await insert_auth_event({

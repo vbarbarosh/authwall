@@ -393,9 +393,16 @@ async function change_password_post(req, res)
         await require_confirmation(req, {reason: 'first_password', next: config.pages.profile, message: 'Confirm it is you before setting a password'});
     }
 
+    // One transaction, as a reset's: the new password and the end of every
+    // credential the old one vouched for, or neither (AW-110).
     const password_hash = await bcrypt.hash(password, config.bcrypt_rounds);
-    const now = new Date();
-    await db('users').where({id: user.id}).update({password_hash, updated_at: now});
+    await db.transaction(async function () {
+        const now = new Date();
+        await db('users').where({id: user.id}).update({password_hash, updated_at: now});
+        await revoke_pending_tokens(user.id);
+        await db('sessions').where({user_id: user.id}).whereNot({uid: req.sessionID}).del();
+        await db('personal_access_tokens').where({user_id: user.id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
+    });
 
     await complete_password_change(req, res, user.id, {method: 'profile'});
 }

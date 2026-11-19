@@ -6,10 +6,12 @@ const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24')
 const insert_auth_event = require('../helpers/insert_auth_event');
 const redirect = require('../helpers/redirect');
 const replace_session = require('../helpers/replace_session');
-const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const send_email_nothrow = require('../helpers/send_email_nothrow');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 
+// After the route committed the new password and the end of the old one's
+// credentials: a session of its own for the owner, the event, the profile
+// and the notice.
 async function complete_password_change(req, res, user_id, auth_event_custom)
 {
     const user = await db('users').where({id: user_id}).first();
@@ -23,14 +25,6 @@ async function complete_password_change(req, res, user_id, auth_event_custom)
         event_type: const_auth_event.password_changed,
         custom: {...auth_event_custom, replaced_session_uid},
     });
-
-    // revoke other sessions
-    await db('sessions').where({user_id}).whereNot({uid: req.sessionID}).del();
-
-    // invalidate every link still in flight and every token minted under the old password
-    await revoke_pending_tokens(user_id);
-    const now = new Date();
-    await db('personal_access_tokens').where({user_id}).whereNull('revoked_at').update({revoked_at: now, updated_at: now});
 
     redirect(req, res, config.pages.profile);
 
