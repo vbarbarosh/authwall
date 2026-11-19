@@ -11,6 +11,11 @@
 
 ### Security
 
+- Requests that never finish their body no longer hold up everyone else:
+  the proxy keeps its own pool of upstream sockets, with no cap. It shared
+  the library's pool of 256, so 256 such requests to a public path, from
+  anyone, left every other proxied request without an answer while they
+  lasted.
 - Behind the nginx sidecar example and the nginx recipe, the app no longer
   receives Authwall's session cookie when the browser sends it twice:
   `/auth/sidecar` refuses such a request, on a public path too. nginx's

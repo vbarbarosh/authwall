@@ -22,6 +22,8 @@ const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const has_email_access_rules = require('./helpers/has_email_access_rules');
+const http = require('http');
+const https = require('https');
 const httpxy = require('httpxy');
 const insert_auth_event = require('./helpers/insert_auth_event');
 const is_optional_auth_path = require('./helpers/is_optional_auth_path');
@@ -306,6 +308,11 @@ async function create_app()
     const proxy = httpxy.createProxyServer({
         target: proxy_target(config.upstream.url),
     });
+    // The proxy's own pool of upstream sockets, with no cap (AW-122): the
+    // library's shared pool holds 256, and 256 requests that never finish
+    // their body, on a public path, held every one while the rest waited.
+    // A WebSocket upgrade takes no pooled socket, so proxy.ws() keeps none.
+    const upstream_agent = new (config.upstream.url.startsWith('https:') ? https : http).Agent({keepAlive: true, maxFreeSockets: 64});
     proxy.on('proxyReq', function (proxy_req, req, res) {
         res.on('error', ignore_socket_error);
         // httpxy (http-proxy-middleware >= 4) pipes the client body only
@@ -362,7 +369,7 @@ async function create_app()
         const user_uid = is_public_path(target_path(req.originalUrl)) ? null : authenticated_user_uid(req);
         upstream_headers_set(req.headers, forwarded, user_uid);
         // The 'error' handler answers or destroys the response; next() would answer twice (AW-76).
-        proxy.web(req, res).catch(function (error) {
+        proxy.web(req, res, {agent: upstream_agent}).catch(function (error) {
             proxy.emit('error', error, req, res);
         });
     });
