@@ -244,7 +244,9 @@ the request body are removed, and query parameters that look like secrets
 (`token`, `secret`, `password`, `code`, `state`) are replaced with `[Filtered]`
 wherever a URL can appear: the request URL, the `Referer` header, transaction
 events, and the HTTP breadcrumbs the SDK records for incoming and outgoing
-calls. The request log applies the same redaction to `Referer`.
+calls. A query value that is itself a URL, such as the sign-in page's `return`
+naming a confirmation link, is redacted the same way. The request log applies
+the same redaction to `Referer`.
 
 ## Response headers
 

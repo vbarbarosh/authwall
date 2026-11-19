@@ -35,6 +35,20 @@ describe('request log redaction', function () {
         assert.ok(logs.includes('/auth/password-reset/confirm?token=%5BFiltered%5D'));
     });
 
+    it('does not log a verification token carried inside a return URL (AW-116)', async function () {
+        // The confirmation link sends a browser signed in elsewhere to sign
+        // in, the link itself as its return; the sign-in page asks again.
+        const marker = 'AW116MARKER7f3c';
+        const confirm_link = urlmod(config.pages.email_verify_confirm, {token: marker});
+        const sign_in = urlmod('/auth/sign-in', {return: confirm_link});
+
+        await axios.get(sign_in, {baseURL: config.public_url, headers: {Referer: `${config.public_url}${sign_in}`}, maxRedirects: 0, validateStatus: () => true});
+
+        const logs = this.written_logs.join('\n');
+        assert.strictEqual(logs.includes(marker), false);
+        assert.ok(logs.includes('/auth/sign-in?return=%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3D%255BFiltered%255D'), logs);
+    });
+
     it('still logs parameters that carry no credential', async function () {
         await this.client.get_json_no_redirects('/auth/sign-in?return=%2Fprofile');
 

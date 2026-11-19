@@ -1,6 +1,7 @@
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlparts = require('@vbarbarosh/node-helpers/src/urlparts');
 
+const NESTED_MAX = 4;
 const REDACTED = '[Filtered]';
 
 // Authwall's one-time credentials travel as query parameters: magic-link,
@@ -14,20 +15,40 @@ const REDACTED = '[Filtered]';
 // these logs. The key set is matched, not enumerated — providers return
 // access_token / refresh_token / id_token, and a fixed list silently misses
 // whatever it was not written to expect.
+//
+// A value can be a URL itself: a sign-in page's return names the confirmation
+// link it came from, token and all (AW-116). Every value is redacted the same
+// way, a few levels deep, and keeps what it names otherwise.
 function urlxxx(url)
+{
+    return redact_url(url, 0);
+}
+
+function redact_url(url, depth)
 {
     if (typeof url !== 'string' || !url) {
         return url;
     }
 
-    const keys = Array.from(new URLSearchParams(urlparts(url).search).keys()).filter(is_sensitive_query_param);
-    if (!keys.length) {
+    const changes = {};
+    for (const [key, value] of new URLSearchParams(urlparts(url).search ?? '')) {
+        if (is_sensitive_query_param(key)) {
+            changes[key] = REDACTED;
+        }
+        else if (depth < NESTED_MAX) {
+            const nested = redact_url(value, depth + 1);
+            if (nested !== value) {
+                changes[key] = nested;
+            }
+        }
+    }
+    if (!Object.keys(changes).length) {
         // Return the input untouched rather than a re-serialized URL, so
         // normalization does not rewrite every logged line.
         return url;
     }
 
-    return urlmod(url, Object.fromEntries(keys.map(key => [key, REDACTED])));
+    return urlmod(url, changes);
 }
 
 function is_sensitive_query_param(key)

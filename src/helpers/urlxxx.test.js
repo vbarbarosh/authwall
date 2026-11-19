@@ -43,6 +43,22 @@ describe('urlxxx', function () {
         );
     });
 
+    it('redacts a token inside a return URL, at any depth (AW-116)', function () {
+        assert.strictEqual(
+            urlxxx('/auth/sign-in?return=%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3Dabc123'),
+            '/auth/sign-in?return=%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3D%255BFiltered%255D'
+        );
+        assert.strictEqual(
+            urlxxx('https://authwall.test/auth/sign-in?return=https%3A%2F%2Fauthwall.test%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3Dabc123'),
+            'https://authwall.test/auth/sign-in?return=https%3A%2F%2Fauthwall.test%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3D%255BFiltered%255D'
+        );
+        assert.strictEqual(urlxxx('/a?next=%2Fb%3Freturn%3D%252Fc%253Ftoken%253Dabc123').includes('abc123'), false);
+    });
+
+    it('leaves a return URL without credentials untouched', function () {
+        assert.strictEqual(urlxxx('/auth/sign-in?return=%2Freports%3Fyear%3D2026'), '/auth/sign-in?return=%2Freports%3Fyear%3D2026');
+    });
+
     it('returns non-string and unparsable input unchanged', function () {
         assert.strictEqual(urlxxx(null), null);
         assert.strictEqual(urlxxx(undefined), undefined);

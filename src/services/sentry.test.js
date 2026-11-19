@@ -53,6 +53,14 @@ describe('sentry', function () {
         assert.strictEqual(event.request.url, '/auth/magic-link/confirm?token=%5BFiltered%5D');
     });
 
+    it('redacts a token inside a return URL (AW-116)', function () {
+        const url = '/auth/sign-in?return=%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3Dcf0bbd31074e5df6';
+        const event = sanitize_sentry_event({request: {url, headers: {referer: `https://authwall.test${url}`}}});
+
+        assert.strictEqual(JSON.stringify(event).includes('cf0bbd31074e5df6'), false);
+        assert.strictEqual(event.request.url, '/auth/sign-in?return=%2Fauth%2Femail-verify%2Fconfirm%3Ftoken%3D%255BFiltered%255D');
+    });
+
     it('redacts the Referer header instead of dropping it', function () {
         const event = sanitize_sentry_event({
             request: {
