@@ -45,8 +45,8 @@ async function main()
         await bootstrap_users();
         // Beside startup, not before it: a long backlog must not hold up
         // listening.
-        records_prune_logged();
-        setInterval(records_prune_logged, PRUNE_EVERY_MS).unref();
+        records_prune_tick();
+        setInterval(records_prune_tick, PRUNE_EVERY_MS).unref();
         const app = await create_app();
         await express_run(app, config.port, config.listen, function (inst) {
             const {address, port} = inst.address();
@@ -58,7 +58,7 @@ async function main()
 // What has outlived config.retention goes at start and every hour after
 // (M-10). It never throws: a failed pass is logged, and the next one tries
 // again.
-async function records_prune_logged()
+async function records_prune_tick()
 {
     try {
         const removed = await records_prune(new Date());
