@@ -222,6 +222,35 @@ describe('proxy', function () {
         assert.deepStrictEqual(auth_headers, []);
     });
 
+    describe('direct mode', function () {
+
+        beforeEach(function () {
+            config.upstream.mode = 'direct';
+        });
+
+        it('sends the upstream its own host, and a configured Host overrides it', async function () {
+            const upstream = new URL(config.upstream.url).host;
+            assert.strictEqual((await axios.get(`${config.public_url}/terms.html`)).data.headers.host, upstream);
+
+            config.upstream.set_headers = [{name: 'Host', value: 'app.internal'}];
+            assert.strictEqual((await axios.get(`${config.public_url}/terms.html`)).data.headers.host, 'app.internal');
+        });
+
+    });
+
+    describe('proxy mode', function () {
+
+        beforeEach(function () {
+            config.upstream.mode = 'proxy';
+        });
+
+        it('keeps the client\'s host', async function () {
+            const r = await axios.get(`${config.public_url}/terms.html`, {headers: {Host: 'site-b.test'}});
+            assert.strictEqual(r.data.headers.host, 'site-b.test');
+        });
+
+    });
+
     // AW-76: an upstream that broke after its headers went out made the 502
     // handler write to a sent response, and the throw ended the process.
     it('survives an upstream that resets after its headers', async function () {

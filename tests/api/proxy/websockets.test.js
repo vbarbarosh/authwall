@@ -5,6 +5,7 @@ const create_app = require('../../../src/create_app');
 const db = require('../../../db');
 const http = require('http');
 const net = require('net');
+const nock = require('nock').default;
 
 describe('websocket proxy', function () {
 
@@ -219,6 +220,47 @@ describe('websocket proxy', function () {
             }
             server.closeAllConnections();
             await new Promise(v => server.close(v));
+        }
+    });
+
+    // AW-121: an upgrade carrying Expect left the upstream request with no
+    // 'error' listener, and an upstream that dropped it ended the process.
+    it('answers an upgrade with Expect that the upstream drops unanswered, and lives on', async function () {
+        const {token} = await sign_in_with_token(this);
+        // As nginx, Go or gunicorn do with a connection that stays idle.
+        const dropping = net.createServer(function (socket) {
+            socket.on('error', () => null);
+            setTimeout(() => socket.destroy(), 100);
+        });
+        await new Promise(v => dropping.listen(0, '127.0.0.1', v));
+        config.upstream.url = `http://127.0.0.1:${dropping.address().port}`;
+
+        const app = await create_app();
+        const server = http.createServer(app);
+        app.setup_server(server);
+        await new Promise(v => server.listen(0, '127.0.0.1', v));
+        const {port} = server.address();
+        // nock, loaded by other files of the suite, stands between Authwall and
+        // its upstream; through it a dropped connection never comes back as an
+        // error. Production has no such layer.
+        nock.restore();
+        try {
+            const client = net.connect(port, '127.0.0.1');
+            client.on('error', () => null);
+            client.write(['GET /realtime HTTP/1.1', `Host: 127.0.0.1:${port}`, 'Connection: Upgrade', 'Upgrade: websocket', 'Sec-WebSocket-Version: 13', 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==', `Authorization: Bearer ${token}`, 'Expect: 100-continue', '', ''].join('\r\n'));
+            await new Promise(v => client.on('close', v));
+
+            assert.ok(this.written_logs.some(v => v.includes('[proxy_error]')), 'the drop reached the proxy\'s error handler');
+            const status = await new Promise(function (resolve, reject) {
+                http.get({host: '127.0.0.1', port, path: '/auth/status'}, v => resolve(v.statusCode)).on('error', reject);
+            });
+            assert.strictEqual(status, 200);
+        }
+        finally {
+            nock.activate();
+            server.closeAllConnections();
+            await new Promise(v => server.close(v));
+            await new Promise(v => dropping.close(v));
         }
     });
 

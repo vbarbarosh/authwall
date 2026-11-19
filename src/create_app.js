@@ -305,34 +305,9 @@ async function create_app()
     // below), so it authenticates a WebSocket before proxy.ws() forwards it.
     const proxy = httpxy.createProxyServer({
         target: proxy_target(config.upstream.url),
-        changeOrigin: (config.upstream.mode === 'direct'),
     });
     proxy.on('proxyReq', function (proxy_req, req, res) {
         res.on('error', ignore_socket_error);
-        set_forwarded_headers(proxy_req, req.ip, req.protocol, req.host);
-        strip_authwall_cookies(proxy_req);
-        // // ⚠️ Beware that headers are proxied too
-        // // ⚠️ Take special care not to special headers
-        // // curl http://localhost:3000/foo/bar -H X-Auth-User:foo -H 'Cookie: connect.sid=s%3A7lIgELaKCxNmyCw5iDcFsAUq6-nVQ6o6.LCvDq0niOJtMT75hMUL2sqvssyXC4Ilm99ftI9Fa4BE'
-        // // curl http://localhost:3000/bypass/foo/bar -H X-Auth-User:foo
-        // const headers = proxy_req.getHeaderNames();
-        // for (let i = 0, ii = headers.length; i < ii; ++i) {
-        //     const header = headers[i];
-        //     if (header.startsWith('x-auth-')) {
-        //         proxy_req.removeHeader(header);
-        //     }
-        // }
-        const user_uid = authenticated_user_uid(req);
-        if (user_uid && !is_public_path(target_path(req.originalUrl))) {
-            proxy_req.setHeader('X-Auth-User', user_uid);
-        }
-        for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
-            const header = config.upstream.set_headers[i];
-            proxy_req.setHeader(header.name, header.value);
-        }
-        for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
-            proxy_req.removeHeader(config.upstream.unset_headers[i]);
-        }
         // httpxy (http-proxy-middleware >= 4) pipes the client body only
         // after the upstream socket connects, and Node holds the request
         // line + headers back until the first write. Send them now so the
@@ -351,18 +326,6 @@ async function create_app()
                 proxy_socket.once(event, () => socket.destroy());
             }
         });
-        set_forwarded_headers(proxy_req, req.ws_forwarded.ip, req.ws_forwarded.proto, req.ws_forwarded.host);
-        strip_authwall_cookies(proxy_req);
-        if (req.ws_user_uid) {
-            proxy_req.setHeader('X-Auth-User', req.ws_user_uid);
-        }
-        for (let i = 0, ii = config.upstream.set_headers.length; i < ii; ++i) {
-            const header = config.upstream.set_headers[i];
-            proxy_req.setHeader(header.name, header.value);
-        }
-        for (let i = 0, ii = config.upstream.unset_headers.length; i < ii; ++i) {
-            proxy_req.removeHeader(config.upstream.unset_headers[i]);
-        }
     });
     proxy.on('error', function (error, req, res) {
         als.logger.write(`[proxy_error] ⚠️ ${error.message} url=${urlxxx(req.url)} originalUrl=${urlxxx(req.originalUrl)}`);
@@ -395,6 +358,9 @@ async function create_app()
             next();
             return;
         }
+        const forwarded = {ip: req.ip, proto: req.protocol, host: req.host};
+        const user_uid = is_public_path(target_path(req.originalUrl)) ? null : authenticated_user_uid(req);
+        upstream_headers_set(req.headers, forwarded, user_uid);
         // The 'error' handler answers or destroys the response; next() would answer twice (AW-76).
         proxy.web(req, res).catch(function (error) {
             proxy.emit('error', error, req, res);
@@ -633,13 +599,13 @@ function make_ws_upgrade_handler(proxy, bearer_miss_limiter, trust_proxy, ws_lea
             }
             delete req.headers.authorization;
 
-            req.ws_user_uid = auth.user_uid;
             ws_lease.add(socket, auth.credential);
-            req.ws_forwarded = {
+            const forwarded = {
                 ip,
                 proto: trusted_forwarded_value(req, 'x-forwarded-proto', trust_proxy) ?? (req.socket.encrypted ? 'https' : 'http'),
                 host: trusted_forwarded_value(req, 'x-forwarded-host', trust_proxy) ?? req.headers.host,
             };
+            upstream_headers_set(req.headers, forwarded, auth.user_uid);
             als.logger.write(`[ws_upgrade] user_uid=${auth.user_uid} ${auth.details} url=${JSON.stringify(urlxxx(req.url))}`);
             proxy.ws(req, socket, {}, head).catch(function (error) {
                 proxy.emit('error', error, req, socket);
@@ -799,37 +765,89 @@ function ignore_socket_error()
 {
 }
 
+// Every header rule is applied to the request's own headers before the proxy
+// is called, never in a proxy event: httpxy skips proxyReq for a request that
+// carries Expect, and on an upgrade proxyReqWs comes once the headers are sent
+// (AW-118, AW-121). Expect is Node's to answer, never the upstream's.
+function upstream_headers_set(headers, forwarded, user_uid)
+{
+    delete headers.expect;
+    if (config.upstream.mode === 'direct') {
+        header_set(headers, 'host', host_from_upstream_url(config.upstream.url));
+    }
+    set_forwarded_headers(headers, forwarded.ip, forwarded.proto, forwarded.host);
+    strip_authwall_cookies(headers);
+    if (user_uid) {
+        header_set(headers, 'X-Auth-User', user_uid);
+    }
+    for (const header of config.upstream.set_headers) {
+        header_set(headers, header.name, header.value);
+    }
+    for (const name of config.upstream.unset_headers) {
+        header_unset(headers, name);
+    }
+}
+
+// Direct mode sends the upstream its own host, as if the request had come
+// straight to it; "::" is reached as "::1", as proxy_target does.
+function host_from_upstream_url(upstream_url)
+{
+    const url = new URL(upstream_url);
+    if (url.hostname === '[::]') {
+        url.hostname = '[::1]';
+    }
+    return url.host;
+}
+
+// Node gives the request's header names in lowercase; a header Authwall sets
+// keeps its own spelling, and replaces the one of any case.
+function header_set(headers, name, value)
+{
+    header_unset(headers, name);
+    headers[name] = value;
+}
+
+function header_unset(headers, name)
+{
+    const lower = name.toLowerCase();
+    for (const key of Object.keys(headers)) {
+        if (key.toLowerCase() === lower) {
+            delete headers[key];
+        }
+    }
+}
+
 // The client's own X-Forwarded-* and the other forwarded headers never reach
 // the upstream; in proxy mode Authwall sets X-Forwarded-* from the request it
 // resolved (AW-20). Underscores read as dashes, as for the identity headers:
 // PHP and Apache fold X_Forwarded_For onto X-Forwarded-For (AW-83).
-function set_forwarded_headers(proxy_req, ip, proto, host)
+function set_forwarded_headers(headers, ip, proto, host)
 {
-    for (const name of proxy_req.getHeaderNames()) {
-        const folded = name.replace(/_/g, '-');
+    for (const name of Object.keys(headers)) {
+        const folded = name.toLowerCase().replace(/_/g, '-');
         if (folded.startsWith('x-forwarded-') || FORWARDED_HEADERS.has(folded)) {
-            proxy_req.removeHeader(name);
+            delete headers[name];
         }
     }
     if (config.upstream.mode !== 'proxy') {
         return;
     }
     if (ip) {
-        proxy_req.setHeader('X-Forwarded-For', ip);
+        headers['X-Forwarded-For'] = ip;
     }
-    proxy_req.setHeader('X-Forwarded-Proto', proto);
+    headers['X-Forwarded-Proto'] = proto;
     if (host) {
-        proxy_req.setHeader('X-Forwarded-Host', host);
-        proxy_req.setHeader('X-Forwarded-Port', /:(\d+)$/.exec(host)?.[1] ?? (proto === 'https' ? '443' : '80'));
+        headers['X-Forwarded-Host'] = host;
+        headers['X-Forwarded-Port'] = /:(\d+)$/.exec(host)?.[1] ?? (proto === 'https' ? '443' : '80');
     }
 }
 
 // The upstream never sees Authwall's session cookie (AW-19): neither
 // authwall.sid nor a connect.sid that Authwall signed before the rename. A
 // connect.sid of the upstream's own, which Authwall did not sign, passes.
-function strip_authwall_cookies(proxy_req)
+function strip_authwall_cookies(headers)
 {
-    const cookie = proxy_req.getHeader('cookie');
+    const cookie = headers.cookie;
     if (!cookie) {
         return;
     }
@@ -845,10 +863,10 @@ function strip_authwall_cookies(proxy_req)
         return part.trim() !== '';
     });
     if (kept.length) {
-        proxy_req.setHeader('cookie', kept.map(v => v.trim()).join('; '));
+        headers.cookie = kept.map(v => v.trim()).join('; ');
     }
     else {
-        proxy_req.removeHeader('cookie');
+        delete headers.cookie;
     }
 }
 

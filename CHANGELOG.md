@@ -4,6 +4,13 @@
 
 ### Security
 
+- A request carrying `Expect: 100-continue`, as curl and .NET send with a
+  large body, reaches the app exactly as the same request without it. It
+  skipped every header rule: the app got no `X-Auth-User`, but Authwall's
+  live session cookie, the client's `X-Forwarded-*`, and the client's own
+  values for the headers `AUTHWALL_SET_HEADERS` pins and
+  `AUTHWALL_UNSET_HEADERS` drops. On a WebSocket upgrade it failed, and an
+  upstream that was down then ended the process.
 - Authwall deletes what it no longer needs: sessions, sign-in links and
   codes, and access tokens a day after they expire, are used or are
   revoked; the sign-in history, with its IPs, browsers and addresses, and
