@@ -212,7 +212,7 @@ async function email_verify_confirm_post(req, res)
 
     const now = new Date();
     const wrong_codes = req.app.locals.wrong_codes;
-    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent('email_verify_tokens', ident.value_normalized, now)) {
+    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent(const_auth_event.email_verified, ident.value_normalized, now)) {
         throw new UserFriendlyError('Too many attempts. Try again later.');
     }
 
@@ -227,6 +227,10 @@ async function email_verify_confirm_post(req, res)
         .first();
     if (!record?.code_hash || !await spend_attempt('email_verify_tokens', record.id, config.confirm_email.max_attempts, now) || !await bcrypt.compare(code, record.code_hash)) {
         wrong_codes.record_failure(req.ip);
+        // A guess at a code that was sent counts against the address.
+        if (record?.code_hash) {
+            await insert_auth_event({req, ident, event_type: const_auth_event.email_verified, event_status: const_auth_event_status.failure, custom: {reason: 'wrong_code'}});
+        }
         throw new UserFriendlyError('Invalid or expired verification code');
     }
 

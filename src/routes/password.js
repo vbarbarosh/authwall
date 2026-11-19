@@ -23,6 +23,7 @@ const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes'
 const db = require('../../db');
 const has_email_access_rules = require('../helpers/has_email_access_rules');
 const insert_auth_event = require('../helpers/insert_auth_event');
+const is_sign_up_mail_recent = require('../helpers/is_sign_up_mail_recent');
 const is_unique_violation = require('../helpers/is_unique_violation');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
@@ -180,6 +181,11 @@ async function sign_up_post(req, res)
             throw new UserFriendlyError('Email already exists');
         }
         await authorize_email(email_normalized);
+        // The resend cooldown: an account removed and made again must not
+        // mail the address more often than a resend would (AW-124).
+        if (await is_sign_up_mail_recent(email_normalized)) {
+            throw new UserFriendlyError('Verification email already sent. Please wait.');
+        }
     }
     if (username_normalized) {
         if (await db('user_identities').where({type: const_user_identity.username, value_normalized: username_normalized}).first()) {

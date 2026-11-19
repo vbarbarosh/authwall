@@ -4,6 +4,12 @@
 
 ### Security
 
+- The ten wrong codes an address gets per hour stay counted whatever the
+  guessing account does: a new code, a removed and re-added address, a
+  removed account or a new sign-up. They were counted on the codes still
+  unused, so each of those brought ten new guesses, and a right guess at
+  an address nobody reads confirmed it. A sign-up with an address another
+  sign-up mailed now waits out the resend cooldown, as a resend does.
 - An account that keeps no address of its own, signed in with Google,
   GitHub or another provider, is refused at every door once the email
   access rules drop it: the addresses the provider vouched for at its last

@@ -111,9 +111,12 @@ Wrong one-time codes are also counted **per address**, in the database, across
 all of the address's codes: 10 wrong sign-in codes, or 10 wrong verification
 codes, per hour. After that every code for the address is refused, the right
 one too, until the wrong guesses are an hour old. This budget holds across
-processes and restarts and does not depend on `AUTHWALL_RATE_LIMITING`. A
-stranger can spend it and block code sign-in for an address for up to an
-hour; a link in the same mail still works.
+processes and restarts and does not depend on `AUTHWALL_RATE_LIMITING`. The
+wrong guesses are kept as events of the address, so nothing the guessing
+account does takes them back: a new code, a removed and re-added address, a
+removed account or a new sign-up. A sign-up with an address another sign-up
+mailed waits out the resend cooldown, as a resend does. A stranger can spend the budget and block code sign-in for an
+address for up to an hour; a link in the same mail still works.
 
 ## Password storage
 

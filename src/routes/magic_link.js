@@ -7,12 +7,15 @@ const complete_magic_link_request = require('../actions/complete_magic_link_requ
 const complete_sign_in = require('../actions/complete_sign_in');
 const complete_sign_up = require('../actions/complete_sign_up');
 const config = require('../../config');
+const const_auth_event = require('../helpers/const/const_auth_event');
+const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const consume_one_time_token = require('../helpers/consume_one_time_token');
 const crypto_hash_sha256 = require('@vbarbarosh/node-helpers/src/crypto_hash_sha256');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const date_add_minutes = require('@vbarbarosh/node-helpers/src/date_add_minutes');
 const db = require('../../db');
+const insert_auth_event = require('../helpers/insert_auth_event');
 const is_code_budget_spent = require('../helpers/is_code_budget_spent');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
@@ -144,7 +147,7 @@ async function magic_link_confirm_post(req, res)
 
     const now = new Date();
     const wrong_codes = req.app.locals.wrong_codes;
-    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent('magic_links', email_normalized, now)) {
+    if (wrong_codes.is_blocked(req.ip) || await is_code_budget_spent(const_auth_event.sign_in, email_normalized, now)) {
         throw new UserFriendlyError('Too many attempts. Try again later.');
     }
 
@@ -158,6 +161,10 @@ async function magic_link_confirm_post(req, res)
     const found = magic_link && (magic_link.email_normalized === email_normalized);
     if (!found || !await spend_attempt('magic_links', magic_link.id, config.flows.magic_link.max_attempts, now) || !await bcrypt.compare(code, magic_link.code_hash)) {
         wrong_codes.record_failure(req.ip);
+        // A guess at a code that was sent counts against the address.
+        if (found) {
+            await insert_auth_event({req, user: null, ident: {type: const_user_identity.email, value: req.body.email, value_normalized: email_normalized}, event_type: const_auth_event.sign_in, event_status: const_auth_event_status.failure, custom: {method: 'magic_link_by_code', reason: 'wrong_code'}});
+        }
         throw new UserFriendlyError('Invalid or expired code');
     }
 
