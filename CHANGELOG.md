@@ -11,6 +11,10 @@
 
 ### Security
 
+- A JSON `AUTHWALL_SEED` that does not parse stops the start with
+  `AUTHWALL_SEED: not valid JSON`, and prints no part of it. Node printed
+  the line it failed on, the whole seed with every password, at every
+  restart into the collected log.
 - Requests that never finish their body no longer hold up everyone else:
   the proxy keeps its own pool of upstream sockets, with no cap. It shared
   the library's pool of 256, so 256 such requests to a public path, from

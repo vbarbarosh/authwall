@@ -16,7 +16,7 @@ function parse_authwall_seed(value)
 
     // JSON format: [{"username":"foo","password":"pass123","emails":["email@domain.com"]}]
     if (str.startsWith('[')) {
-        return JSON.parse(str).map(function (v) {
+        return parse_seed_json(str).map(function (v) {
             return {
                 username: v.username,
                 password: v.password,
@@ -35,6 +35,24 @@ function parse_authwall_seed(value)
             email: (parts[2] ?? '').split(',').filter(Boolean),
         };
     });
+}
+
+// The seed's JSON, or an error that names the place and never the text: an
+// uncaught JSON.parse error prints its input, every password of the seed,
+// at every restart (AW-127). AUTHWALL_SEED_FILE's parser does the same.
+function parse_seed_json(str)
+{
+    let out = null;
+    try {
+        out = JSON.parse(str);
+    }
+    catch {
+        throw new Error('AUTHWALL_SEED: not valid JSON');
+    }
+    if (!Array.isArray(out) || out.some(v => (typeof v !== 'object') || (v === null) || Array.isArray(v))) {
+        throw new Error('AUTHWALL_SEED: a JSON seed is an array of objects');
+    }
+    return out;
 }
 
 module.exports = parse_authwall_seed;

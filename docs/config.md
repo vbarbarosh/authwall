@@ -633,6 +633,9 @@ JSON format — an array of objects:
 AUTHWALL_SEED='[{"username":"admin","password":"change-me","display_name":"Admin","emails":["admin@myapp.test"]}]'
 ```
 
+A JSON seed that does not parse, or is not an array of objects, stops startup
+with a message that quotes no part of it: the seed holds passwords.
+
 ## AUTHWALL_SEED_FILE
 
 The seed users from a file, in place of [`AUTHWALL_SEED`](#authwall_seed):
