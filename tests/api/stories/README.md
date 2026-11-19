@@ -7,6 +7,7 @@ Testable now
 
 - [x] prevent user from removing the last authentication method → `last_auth_method.test.js`
   - [x] user signed up using Google, then connected GitHub, then disconnected Google; GitHub should not be disconnectable → `last_auth_method.test.js`
+- [x] Bea signs up with Google, adds an address she never confirms, and disconnects Google; it is refused, since a link for an unconfirmed address is refused and she has no password; with a password, an unconfirmed address stays as her way in → `a_disconnect_leaves_a_way_in.md`, `a_disconnect_leaves_a_way_in.test.js`
 - [x] edge case: user signed up using Google, then connected GitHub, then disconnected Google → `google_re_signup.test.js`
   - [x] later sign-up using the same Google account should create a new user
   - [x] if that email is already attached to another user, the new Google-only account should be created without email

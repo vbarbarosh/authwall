@@ -445,7 +445,13 @@ async function disconnect_post(oauth_provider, req, res)
         return redirect(req, res, '/auth/profile');
     }
 
-    if (identities.length <= 1) {
+    // What remains must still let the owner in. An unconfirmed address is a
+    // way in only with a password: a magic link or code for it is refused
+    // until it is confirmed, and no reset goes to it; counted as a way, it
+    // stranded an account with no password (M-02).
+    const user = await db('users').where({id: user_id}).first();
+    const remaining = identities.filter(v => v.id !== ident.id);
+    if (!remaining.some(v => v.type !== const_user_identity.email || v.verified_at || user.password_hash)) {
         await insert_auth_event({
             req,
             ident,
@@ -459,7 +465,7 @@ async function disconnect_post(oauth_provider, req, res)
     // at an address's removal: without this provider an account with no
     // verified address would be refused at every door, its own pages
     // included, and could add nothing back (AW-106).
-    if (await access_refusal_from_identities(identities.filter(v => v.id !== ident.id))) {
+    if (await access_refusal_from_identities(remaining)) {
         await insert_auth_event({
             req,
             ident,
@@ -476,7 +482,6 @@ async function disconnect_post(oauth_provider, req, res)
     await insert_auth_event({req, ident, event_type: const_auth_event.identity_removed});
     redirect(req, res, '/auth/profile');
 
-    const user = await db('users').where({id: user_id}).first();
     const email_and_name = await get_user_email_and_name(user_id);
     if (email_and_name) {
         await send_email_nothrow({

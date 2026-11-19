@@ -58,6 +58,10 @@
   nothing and takes the user the other made, and only one of them logs
   `Created user`. A seed that adds an identity to a user already there logs
   `Added identities`; it said `No changes`.
+- Disconnecting a provider is refused when only an unconfirmed address
+  would remain and the account has no password: a magic link for that
+  address is refused until it is confirmed, so the account was left with no
+  way in. With a password, the address stays a way in.
 
 ## 1.17.0
 
