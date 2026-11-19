@@ -16,9 +16,10 @@ thought through but deliberately not built.
 
 A is the soft way the entry below names as worth exploring: nothing is
 destroyed and nothing is down, and a mistyped rule costs no one a token. The
-answer for an account is asked once per account and kept while the rules stand
-(`src/helpers/account_access_refusal.js`), since the rules are read at startup
-and every address is checked against them before it joins an account.
+answer for an account is the one a new sign-in gets
+(`src/helpers/access_refusal_from_identities.js`), asked at every door rather
+than kept: since AW-106 it turns on the account's addresses and providers as
+well as on the rules, and those change, on any replica.
 
 ## Refusing to start when the database holds denied sessions or tokens
 

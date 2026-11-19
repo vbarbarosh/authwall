@@ -180,9 +180,10 @@ when the rule is removed and Authwall restarts, the same sessions and tokens
 work again.
 
 The rules also bind username accounts: registration by username is disabled
-while any rule is configured, and a username sign-in is admitted only on the
-strength of the account's verified emails. How that is decided, and how a
-refusal is reported, is under [access rules](config.md#access-rules).
+while any rule is configured, and an account with only a username has no way to
+meet them, so its sign-ins, sessions and tokens are refused alike. How that is
+decided, and how a refusal is reported, is under
+[access rules](config.md#access-rules).
 
 [`AUTHWALL_CONFIRM_EMAIL_REQUIRED`](config.md#email-confirmation) holds users
 at an email-confirmation step until they prove control of their address before

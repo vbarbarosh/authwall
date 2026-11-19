@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const access_refusal_from_identities = require('../helpers/access_refusal_from_identities');
 const assign_primary_email = require('../helpers/assign_primary_email');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const config = require('../../config');
@@ -52,21 +53,22 @@ async function email_remove_post(req, res)
     // The only verified address cannot be removed when the account would be
     // stranded without it. With verification required, the next sign-in is
     // held at the verify step, and nothing there lets it add one back. Under
-    // email access rules a username signs in on the strength of the account's
-    // verified addresses (see username_sign_in_refusal), so it would be turned
-    // away as though the password were wrong; an OAuth sign-in is authorized
-    // against the provider's addresses instead, so an account with no username
-    // is safe. An unverified address authorizes nothing under either rule and
-    // stays removable: removing and re-adding is how a typo is fixed.
-    const has_username = identities.some(v => v.type === const_user_identity.username);
-    const strands_the_account = ident.verified_at && (config.confirm_email.required || (has_email_access_rules() && has_username));
+    // email access rules the account must keep a way to meet them
+    // (access_refusal_from_identities): without the address, an account with
+    // no enabled provider would be refused at every door, its own pages
+    // included, and could add nothing back (AW-106). Elsewhere an unverified
+    // address authorizes nothing and stays removable: removing and re-adding
+    // is how a typo is fixed.
+    const remaining = identities.filter(v => v.id !== ident.id);
+    const strands_the_account = (ident.verified_at && config.confirm_email.required)
+        || (has_email_access_rules() && Boolean(await access_refusal_from_identities(remaining)));
     if (strands_the_account) {
         await insert_auth_event({
             req,
             ident,
             event_type: const_auth_event.identity_removed,
             event_status: const_auth_event_status.failure,
-            custom: {reason: 'last_verified_email'},
+            custom: {reason: ident.verified_at ? 'last_verified_email' : 'last_email_under_access_rules'},
         });
         throw new UserFriendlyError('Cannot remove email: a verified email is required to sign in');
     }

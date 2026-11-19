@@ -727,12 +727,15 @@ When neither allow list is set, only the deny lists are enforced and everything 
 When either allow list is set, the default flips to deny — addresses not matched by any rule are rejected.
 
 When any email or domain allow/deny rule is configured, new registrations cannot
-include a username; use an enabled email or OAuth sign-up flow instead. Existing
-accounts may still sign in by username, but only with at least one verified email,
-and every verified email must pass these rules. This check applies even when
-`AUTHWALL_CONFIRM_EMAIL_REQUIRED=false`. A pending email does not establish
-eligibility for username sign-in. With no email access rules, username sign-up
-and sign-in work as usual.
+include a username; use an enabled email or OAuth sign-up flow instead. An
+existing account is admitted, at a new sign-in by any method and with the
+sessions and tokens it already holds alike, only when every verified email passes
+these rules and it has a way to meet them: a verified email; a linked account at
+an enabled OAuth provider, whose verified emails are checked at each of its
+sign-ins; or, while `AUTHWALL_CONFIRM_EMAIL_REQUIRED` holds it at confirmation, a
+pending email the rules admit. A username alone is none of these, and with
+confirmation off a pending email is not either. With no email access rules,
+username sign-up and sign-in work as usual.
 
 Every sign-in, by any method, also checks every verified address the account
 already holds, not only the one presented: an account that holds a denied

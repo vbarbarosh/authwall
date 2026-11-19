@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const access_refusal_from_identities = require('../access_refusal_from_identities');
 const allowed_return_url = require('../allowed_return_url');
 const assert_sign_up_enabled = require('../assert/assert_sign_up_enabled');
 const assign_primary_email = require('../assign_primary_email');
@@ -450,6 +451,20 @@ async function disconnect_post(oauth_provider, req, res)
             custom: {reason: 'last_identity'},
         });
         throw new UserFriendlyError(oauth_provider.error_last_auth_method);
+    }
+    // Under email access rules the account must keep a way to meet them, as
+    // at an address's removal: without this provider an account with no
+    // verified address would be refused at every door, its own pages
+    // included, and could add nothing back (AW-106).
+    if (await access_refusal_from_identities(identities.filter(v => v.id !== ident.id))) {
+        await insert_auth_event({
+            req,
+            ident,
+            event_type: const_auth_event.identity_removed,
+            event_status: const_auth_event_status.failure,
+            custom: {reason: 'last_way_under_access_rules'},
+        });
+        throw new UserFriendlyError('Cannot disconnect: a verified email is required to sign in');
     }
     await require_confirmation(req, {reason: 'provider_disconnect', next: config.pages.profile, message: 'Confirm it is you before disconnecting an account', disconnect: oauth_provider.user_identity_type});
 

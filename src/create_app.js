@@ -1,6 +1,7 @@
 const EmailNotAuthorized = require('./helpers/errors/EmailNotAuthorized');
 const SessionStore = require('./helpers/SessionStore');
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const access_refusal_from_identities = require('./helpers/access_refusal_from_identities');
 const account_access_refusal = require('./helpers/account_access_refusal');
 const als = require('./helpers/als');
 const authenticate_personal_access_token = require('./helpers/authenticate_personal_access_token');
@@ -20,6 +21,7 @@ const express_session = require('express-session');
 const format_hrtime0 = require('./helpers/format/format_hrtime0');
 const fs_exists = require('@vbarbarosh/node-helpers/src/fs_exists');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
+const has_email_access_rules = require('./helpers/has_email_access_rules');
 const httpxy = require('httpxy');
 const insert_auth_event = require('./helpers/insert_auth_event');
 const is_optional_auth_path = require('./helpers/is_optional_auth_path');
@@ -743,9 +745,20 @@ async function lease_admitted_users(user_ids)
             }
         }
     }
+    // Each account's identities, read in batches, for the answer
+    // account_access_refusal gives one account at a time (AW-106).
+    const identities_by_user = new Map(Array.from(user_ids, v => [v, []]));
+    if (has_email_access_rules()) {
+        for (const ids of chunks(Array.from(user_ids), 500)) {
+            const rows = await db('user_identities').whereIn('user_id', ids).select('user_id', 'type', 'value_normalized', 'verified_at');
+            for (const row of rows) {
+                identities_by_user.get(row.user_id).push(row);
+            }
+        }
+    }
     const out = new Set();
     for (const user_id of user_ids) {
-        if (((verified === null) || verified.has(user_id)) && !await account_access_refusal(user_id)) {
+        if (((verified === null) || verified.has(user_id)) && !await access_refusal_from_identities(identities_by_user.get(user_id))) {
             out.add(user_id);
         }
     }

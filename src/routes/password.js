@@ -33,7 +33,6 @@ const redirect = require('../helpers/redirect');
 const release_pending_email = require('../helpers/release_pending_email');
 const require_confirmation = require('../helpers/require_confirmation');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
-const username_sign_in_refusal = require('../helpers/username_sign_in_refusal');
 const users_create = require('../helpers/models/users_create');
 
 const SECOND = 1000;
@@ -120,8 +119,10 @@ async function sign_in_post(req, res)
         throw new UserFriendlyError('Invalid username or password');
     }
 
-    // Answered as a wrong password is: see username_sign_in_refusal.
-    const refusal = is_email ? await account_email_refusal(user) : await username_sign_in_refusal(user);
+    // The access rules answer as a wrong password does: their refusal comes
+    // after the password matched, and naming it would confirm the password to
+    // whoever guessed it. The auth event records it.
+    const refusal = await account_email_refusal(user);
     if (refusal) {
         await insert_auth_event_sign_in_failure({req, ident, user, custom: refusal});
         throw new UserFriendlyError('Invalid username or password');

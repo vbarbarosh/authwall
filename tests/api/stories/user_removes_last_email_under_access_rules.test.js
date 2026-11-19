@@ -36,10 +36,29 @@ describe('User removes their last email under access rules | stories', function 
         assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {authenticated: true, error: null});
     });
 
-    it('still allows removing an unverified address', async function () {
-        // The guard covers only what a username sign-in relies on. An
-        // unverified address authorizes nothing, so removing and re-adding it
-        // stays the way to fix a typo.
+    it('keeps an unverified address that is the account\'s only way to meet the rules', async function () {
+        // With the email flow under an allow list Authwall requires
+        // confirmation, and the address holds Mocha at it. Without the
+        // address only the username is left, which the rules refuse at every
+        // door, the profile included: nothing could be added back (AW-106).
+        config.confirm_email.required = true;
+        const {user_id} = await this.add_user({username: 'mocha', email: 'typo@authwall.test', verified: false, password: 'pass123'});
+        await this.http_post_json('/auth/sign-in', {username: 'typo@authwall.test', password: 'pass123'});
+
+        await this.http_post_json('/auth/email/remove', {});
+
+        assert.partialDeepStrictEqual(await this.http_get_json('/auth/status'), {authenticated: true, error: 'Cannot remove email: a verified email is required to sign in'});
+        assert.strictEqual((await db('user_identities').where({user_id, type: const_user_identity.email})).length, 1);
+        assert.partialDeepStrictEqual(await db('auth_events').where({event_type: const_auth_event.identity_removed}), [{
+            event_status: const_auth_event_status.failure,
+            custom: JSON.stringify({reason: 'last_email_under_access_rules'}),
+        }]);
+    });
+
+    it('still allows removing an unverified address where no rule needs it', async function () {
+        // Removing and re-adding an unverified address stays the way to fix
+        // a typo while the account needs no address to be let in.
+        config.access.allowed_domains = [];
         const {user_id} = await this.add_user({username: 'mocha', email: 'typo@authwall.test', verified: false, password: 'pass123'});
         await this.http_post_json('/auth/sign-in', {username: 'typo@authwall.test', password: 'pass123'});
 

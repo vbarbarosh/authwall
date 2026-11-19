@@ -28,7 +28,10 @@ describe('gmail plus-addressing and access rules', function () {
     });
 
     it('an allowed gmail address admits the owner\'s +tag', async function () {
+        // With the email flow under an allow list Authwall requires
+        // confirmation (validate_email_access_rules): the account waits at it.
         config.access.allowed_emails = ['foo@gmail.com'];
+        config.confirm_email.required = true;
 
         await this.http_post_json('/auth/sign-up', {
             email: 'foo+newsletter@gmail.com',

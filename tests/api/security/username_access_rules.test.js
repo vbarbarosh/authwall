@@ -62,7 +62,7 @@ describe('Username authentication with email access rules', function () {
                     user_id,
                     identity_type: const_user_identity.username,
                     identity_value: username,
-                    custom: JSON.stringify({method: 'sign_in_form', reason: 'no_verified_email'}),
+                    custom: JSON.stringify({method: 'sign_in_form', reason: 'no_verified_email', error: 'A verified email is required'}),
                 }]);
             }
         });
