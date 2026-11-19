@@ -4,6 +4,13 @@
 
 ### Security
 
+- Adding an address asks "confirm it is you" first, as removing one does:
+  the password, or a fresh sign-in with a linked provider. A signed-in
+  session alone added one to an account with no confirmed address (a
+  username, a pending address, a provider that gave none); the code went
+  to that address, it became the primary, and a password reset to it took
+  the account. A user held at the verify step still fixes a typo without
+  asking, within ten minutes of signing in.
 - A request carrying `Expect: 100-continue`, as curl and .NET send with a
   large body, reaches the app exactly as the same request without it. It
   skipped every header rule: the app got no `X-Auth-User`, but Authwall's

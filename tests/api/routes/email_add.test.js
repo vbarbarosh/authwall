@@ -7,6 +7,7 @@ describe('POST /auth/email/add', function () {
         const email = 'new@authwall.test';
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email});
         await this.wait_for_emails(1);
 
@@ -42,10 +43,12 @@ describe('POST /auth/email/add', function () {
         const email = 'target@authwall.test';
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email});
         await this.wait_for_emails(1);
         await this.http_post_json('/auth/email/remove');
 
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email});
 
         const status = await this.http_get_json('/auth/status');

@@ -2154,6 +2154,7 @@ const OWNER_ACTIONS = {
     pat_create: 'Creating a token needs the owner. Confirm it is you, then create it again.',
     first_password: 'Setting a first password needs the owner. Confirm it is you, then set it again.',
     account_remove: 'Removing your account needs the owner. Confirm it is you, then remove it again.',
+    email_add: 'Adding an email address needs the owner. Confirm it is you, then add it again.',
     email_remove: 'Removing your email address needs the owner. Confirm it is you, then remove it again.',
     provider_disconnect: 'Disconnecting {provider} needs the owner. Confirm it is you, then disconnect it again.',
 };
@@ -2173,12 +2174,17 @@ function confirm_steps_text(step, given)
 }
 
 // After a refused action: whether it was refused for want of a confirmation,
-// in which case the confirm view is shown instead of the error.
-async function confirm_if_asked()
+// in which case the confirm view is shown instead of the error. `reason`,
+// when given, is the action's own: an ask another action left open is not
+// what refused this one (AW-119).
+async function confirm_if_asked(reason = null)
 {
     // Unreachable, nothing is known to be asked: the post's own error shows (M-14).
     const s = await api_status().catch(() => null);
     if (!s || s.confirmed || !s.confirmation || !OWNER_ACTIONS[s.confirmation.reason]) {
+        return false;
+    }
+    if (reason && (s.confirmation.reason !== reason)) {
         return false;
     }
     showView('confirm');
@@ -2463,6 +2469,9 @@ document.getElementById('p-add-email-submit').addEventListener('click', async ()
   set_loading('p-add-email-submit', true);
   const { final_url, error } = await http_post_urlencoded('/auth/email/add', { email });
   set_loading('p-add-email-submit', false);
+  if (error && await confirm_if_asked('email_add')) {
+    return;
+  }
   if (error) return show_error('p-add-email-error-msg', 'p-add-email-error', error);
   navigate_after(final_url);
 });

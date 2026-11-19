@@ -13,6 +13,7 @@ describe('An added address is confirmed only where its account is signed in | st
             const now = new Date();
             await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '777', value_normalized: '777', created_at: now, updated_at: now, verified_at: now});
         }
+        await _this.mark_confirmed({reason: 'email_add'});
         await _this.http_post_json('/auth/email/add', {email: 'vera@corp.test'});
         const {link} = _this.sent_emails.find(v => v.placeholders?.link).placeholders;
         return {user_id, link: new URL(link).pathname + new URL(link).search};

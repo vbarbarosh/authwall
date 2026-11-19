@@ -37,6 +37,7 @@ describe('A changed or removed address kills its sibling links | stories', funct
         await this.approve_email_change();
         await this.mark_confirmed({reason: 'email_remove'});
         await this.http_post_json('/auth/email/remove');
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email: 'other@authwall.test'});
         assert.strictEqual((await this.http_get_json('/auth/status')).error, null);
 
@@ -46,6 +47,7 @@ describe('A changed or removed address kills its sibling links | stories', funct
 
     it('kills a verification link when its address is removed', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email: 'typo@authwall.test'});
         const verify = this.sent_emails.find(v => v.placeholders?.link && (v.to === 'typo@authwall.test'));
         await this.http_post_json('/auth/email/remove');

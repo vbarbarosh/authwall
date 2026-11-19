@@ -24,6 +24,7 @@ describe('A disconnect leaves a way in | stories', function () {
         const {oauth_state} = await ctx.client.get_session();
         await ctx.client.get_json(urlmod('/auth/google/callback', {state: oauth_state, code: 'fake_code'}));
 
+        await ctx.mark_confirmed({reason: 'email_add'});
         await ctx.http_post_json('/auth/email/add', {email: 'bea@authwall.test'});
         const status = await ctx.http_get_json('/auth/status');
         assert.deepStrictEqual(status.providers.map(v => [v.type, Boolean(v.verified_at)]).sort(), [['email', false], ['oauth_google', true]]);

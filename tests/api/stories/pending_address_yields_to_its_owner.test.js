@@ -26,6 +26,7 @@ describe('A pending address yields to the person who reads the mailbox | stories
         const {user_id} = await ctx.sign_in({username: 'mallory', password: 'mallorys-pass'});
         const now = new Date();
         await db('user_identities').insert({uid: random_uid_user_identity(), user_id, type: const_user_identity.oauth_github, value: '666', value_normalized: '666', created_at: now, updated_at: now, verified_at: now});
+        await ctx.mark_confirmed({reason: 'email_add'});
         await ctx.http_post_json('/auth/email/add', {email: 'vera@corp.test'});
         await ctx.wait_for_emails(1);
         const {link} = ctx.sent_emails.find(v => v.placeholders?.link).placeholders;

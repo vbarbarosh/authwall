@@ -37,6 +37,7 @@ describe('A password change settles the recovery | stories', function () {
 
         it(`kills the verification of an address added before the change (${route.label})`, async function () {
             await this.sign_in({username: 'mocha', password: 'pass123'});
+            await this.mark_confirmed({reason: 'email_add'});
             await this.http_post_json('/auth/email/add', {email: 'attacker@evil.test'});
             const verify = this.sent_emails.find(v => v.placeholders?.link && (v.to === 'attacker@evil.test'));
             assert.ok(verify, 'a verification link should be sent');

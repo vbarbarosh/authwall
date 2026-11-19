@@ -17,6 +17,7 @@ describe('emails • email_removed', function () {
 
     it('should not be sent to an address the account never verified', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email: 'typo@authwall.test'});
         this.sent_emails.splice(0);
 

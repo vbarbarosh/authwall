@@ -65,6 +65,7 @@ describe('auth_events • identity_added', function () {
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
 
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email: 'mocha@authwall.test'});
 
         const events = await db('auth_events').where({event_type: const_auth_event.identity_added}).orderBy('id');

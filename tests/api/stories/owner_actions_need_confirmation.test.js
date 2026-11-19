@@ -134,6 +134,7 @@ describe('Actions that need the owner ask "confirm it is you" | stories', functi
 
     it('a mistyped address the account never verified goes without asking', async function () {
         await this.sign_in({username: 'ann', password: 'anns-pass'});
+        await this.mark_confirmed({reason: 'email_add'});
         await this.http_post_json('/auth/email/add', {email: 'typo@authwall.test'});
 
         await this.http_post_json('/auth/email/remove');

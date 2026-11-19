@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assert_signed_in_recently = require('../helpers/assert_signed_in_recently');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
 const complete_email_verify_request = require('../actions/complete_email_verify_request');
@@ -9,11 +10,13 @@ const const_user_identity = require('../helpers/const/const_user_identity');
 const create_email_verify_token = require('../helpers/create_email_verify_token');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
+const email_verification_required = require('../helpers/email_verification_required');
 const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const release_pending_email = require('../helpers/release_pending_email');
+const require_confirmation = require('../helpers/require_confirmation');
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
@@ -77,6 +80,20 @@ async function email_add_post(req, res)
             custom: {reason: 'verification_email_already_sent'},
         });
         throw new UserFriendlyError('Verification email already sent. Please wait.');
+    }
+
+    // A confirmed address is a way in and the way back: a password reset
+    // goes to it, and so does every later "confirm it is you" code. The code
+    // mailed to it proves the mailbox, not whose account it joins, so a
+    // session alone does not add one (AW-119). Asked last, the confirmation
+    // is spent only on an add that goes through. A user held at the verify
+    // step fixes a typo here, and the confirmation is shut to them
+    // (auth_middleware): a sign-in of the last ten minutes stands for it.
+    if (await email_verification_required(req)) {
+        assert_signed_in_recently(req, 'Sign in again before adding an email');
+    }
+    else {
+        await require_confirmation(req, {reason: 'email_add', next: config.pages.profile, message: 'Confirm it is you before adding an email'});
     }
 
     const now = new Date();

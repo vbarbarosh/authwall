@@ -86,6 +86,50 @@ test.describe('confirm it is you', function () {
         expect(await db('user_identities').where({user_id, type: 'oauth_github'}).first()).toBeUndefined();
     });
 
+    // AW-119: an address added to an account with no confirmed one becomes
+    // its way back, so the owner adds it.
+    test('adding an address asks the password, then adds it', async function ({page}) {
+        const {user_id, email} = await sign_up_with_primary(page, {primary: false});
+        await using db = open_e2e_db();
+        await db('user_identities').where({user_id, type: 'email'}).delete();
+        // The sign-up's own address is still in its resend cooldown.
+        const added = `added.${email}`;
+
+        await page.goto('/auth/profile');
+        await page.locator('#p-add-email-input').fill(added);
+        await page.locator('#p-add-email-submit').click();
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Adding an email address needs the owner. Confirm it is you, then add it again.');
+        await expect(page.getByTestId('confirm-code')).toBeHidden();
+        await expect(page.locator('label[for="cf-password"]')).toHaveText('Your password');
+        expect(await db('user_identities').where({user_id, type: 'email'}).first()).toBeUndefined();
+
+        await page.getByTestId('confirm-password').fill('pass1234');
+        await page.getByTestId('confirm-password-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/profile');
+        await page.locator('#p-add-email-input').fill(added);
+        await page.locator('#p-add-email-submit').click();
+        await page.waitForURL(v => v.pathname === '/auth/email-verify/sent');
+        expect(await db('user_identities').where({user_id, type: 'email', value_normalized: added}).first()).toMatchObject({verified_at: null});
+    });
+
+    test('the add form shows its own refusal, not an ask another action left open', async function ({page}) {
+        const {user_id} = await sign_up_with_primary(page, {primary: false});
+        await using db = open_e2e_db();
+        await db('user_identities').where({user_id, type: 'email'}).delete();
+        const now = new Date();
+        await db('user_identities').insert({uid: `gh${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`, user_id, type: 'oauth_github', value: 'gh-user', value_normalized: `gh-${user_id}`, created_at: now, updated_at: now, verified_at: now});
+
+        await page.goto('/auth/profile');
+        await page.getByTestId('profile-connections').locator('.connection-item', {hasText: 'GitHub'}).getByRole('button', {name: 'Disconnect'}).click();
+        await expect(page.getByTestId('confirm-reason')).toHaveText('Disconnecting GitHub needs the owner. Confirm it is you, then disconnect it again.');
+
+        await page.goto('/auth/profile');
+        await page.locator('#p-add-email-input').fill('not-an-address');
+        await page.locator('#p-add-email-submit').click();
+        await expect(page.locator('#p-add-email-error-msg')).toHaveText('Invalid email');
+        await expect(page.getByTestId('profile-view')).toBeVisible();
+    });
+
     test('offers a fresh sign-in with each linked provider account', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
         await using db = open_e2e_db();
