@@ -43,6 +43,9 @@ opaque session id, in the `authwall.sid` cookie.
   every request and WebSocket it forwards, in proxy and in direct mode, and
   the nginx and Caddy sidecar examples drop it too. The app learns who the
   user is from `X-Auth-User` alone.
+- The app's own scripts run on Authwall's origin: they cannot read that
+  cookie, but they can call Authwall's pages as the signed-in user. Trust
+  them as you trust Authwall; account changes ask the owner to confirm.
 - The session cookie is **`HttpOnly`** (not readable from JavaScript) and
   **`SameSite`** (`lax` by default — see [`AUTHWALL_COOKIE_SAMESITE`](config.md#session-cookie)).
 - It is marked **`Secure`** automatically when [`AUTHWALL_PUBLIC_URL`](config.md#authwall_public_url)

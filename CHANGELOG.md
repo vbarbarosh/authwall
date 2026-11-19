@@ -4,6 +4,10 @@
 
 ### Security
 
+- Every session ends once, at this upgrade, and everyone signs in again:
+  1.17 renamed the cookie but kept the sessions, so an old `connect.sid`
+  value, sent back as `authwall.sid`, still signed in, and an app behind
+  the nginx or Caddy sidecar was still sent that value.
 - A seed no longer joins the account that holds its address unconfirmed:
   anyone can sign up with anyone's address. It takes the address from that
   account, as a sign-up takes one nobody confirmed in time, but at once, and
