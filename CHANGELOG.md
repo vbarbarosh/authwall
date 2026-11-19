@@ -53,6 +53,9 @@
 - A sign-in by a magic link or its code, by a provider, or a sign-up reached
   from the sign-in page lands on the page it was asked for (`return`), as the
   password form always did; each landed on `/`.
+- A confirmed email change is answered at once, and a notice to the old
+  address that fails is logged instead of undoing the change: the notice
+  went out inside the change's transaction, before its commit.
 - Two copies seeding the same user at the same moment, on one fresh
   database, no longer leave a second, empty user: the slower one keeps
   nothing and takes the user the other made, and only one of them logs

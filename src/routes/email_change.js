@@ -222,8 +222,6 @@ async function email_change_confirm_open_post(req, res)
     await db.transaction(async function () {
         await db('email_change_tokens').where({id: email_change.id}).update({used_at: now, updated_at: now});
 
-        const old_email = ident.value;
-
         await db('user_identities').where({id: ident.id}).del();
 
         // A reset link was delivered to the old address, and that address is
@@ -245,11 +243,11 @@ async function email_change_confirm_open_post(req, res)
             primary_at: ident.primary_at,
         });
         await assign_primary_email(email_change.user_id);
-
-        const user_id = email_change.user_id;
-        const new_email = email_change.email;
-        await complete_email_change_confirm(req, res, user_id, old_email, new_email);
     });
+    // After the commit, as a password change: the notice to the old address
+    // neither holds the transaction open while it is delivered nor undoes the
+    // change when it fails, and the browser is told of a change made (M-06).
+    await complete_email_change_confirm(req, res, email_change.user_id, ident.value, email_change.email);
 }
 
 async function find_email_change_to_approve(token, now)

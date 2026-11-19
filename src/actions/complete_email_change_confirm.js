@@ -7,23 +7,14 @@ const format_date_pretty_24 = require('../helpers/format/format_date_pretty_24')
 const insert_auth_event = require('../helpers/insert_auth_event');
 const normalize_email = require('../helpers/normalize/normalize_email');
 const redirect = require('../helpers/redirect');
-const send_email = require('../helpers/send_email');
+const send_email_nothrow = require('../helpers/send_email_nothrow');
 
+// After the route committed the new address: the event, the success page,
+// then the notice to the old address. A notice that fails is logged; the
+// change stands (M-06).
 async function complete_email_change_confirm(req, res, user_id, old_email, new_email)
 {
     const user = await db('users').where('id', user_id).first();
-
-    await send_email({
-        name: const_email.email_changed,
-        to: {name: user.display_name, email: old_email},
-        placeholders: {
-            display_name: user.display_name,
-            date: format_date_pretty_24(new Date()),
-            ip: req.session.ip ?? 'n/a',
-            ua: req.session.ua ?? 'n/a',
-            new_email,
-        },
-    });
 
     await insert_auth_event({
         req,
@@ -40,6 +31,18 @@ async function complete_email_change_confirm(req, res, user_id, old_email, new_e
     });
 
     redirect(req, res, config.pages.email_change_success);
+
+    await send_email_nothrow({
+        name: const_email.email_changed,
+        to: {name: user.display_name, email: old_email},
+        placeholders: {
+            display_name: user.display_name,
+            date: format_date_pretty_24(new Date()),
+            ip: req.session.ip ?? 'n/a',
+            ua: req.session.ua ?? 'n/a',
+            new_email,
+        },
+    });
 }
 
 module.exports = complete_email_change_confirm;

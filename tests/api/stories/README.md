@@ -16,6 +16,7 @@ Testable now
 - [x] user signed up using Google with verified email, then connected GitHub with the same email; both providers should attach to the same user → `oauth_same_email.test.js`
 - [x] user has email+password and Google linked; after changing email, sign-in with the old email should fail and Google sign-in should still work → `email_change.test.js`
 - [x] user changes their email using a form that differs from its normalized identity; the profile should show the entered address while sign-in continues to use normalized matching → `email_change_preserves_entered_value.md`, `email_change_preserves_entered_value.test.js`
+- [x] Bea confirms an email change while the mail server is slow, or down, at the notice to her old address; she lands on the success page at once, and a failed notice is logged while the change stands → `an_email_change_does_not_wait_for_its_notice.md`, `an_email_change_does_not_wait_for_its_notice.test.js`
 - [x] user changed password from profile, then tried to use an older password-reset link; the old reset link should be invalid → `password_reset_after_change.test.js`
 - [x] user signed up with `User@example.com`, later signs in with `user@example.com`; it should resolve to the same identity → `email_case_insensitive.test.js`
 - [x] user with a Gmail address signs up as `john.doe@gmail.com`; a second sign-up attempt with `johndoe@gmail.com` must be rejected (Gmail ignores dots) → `gmail_dots.test.js`
