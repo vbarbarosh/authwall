@@ -47,6 +47,7 @@ const tables_in_delete_order = [
     'email_verify_tokens',
     'email_change_tokens',
     'magic_links',
+    'spent_confirmations',
     'user_identities',
     'users',
 ];

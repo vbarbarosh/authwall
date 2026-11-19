@@ -17,7 +17,9 @@ through without asking.
 The confirmation remembers what asked for it. Only that action accepts it,
 within the ten minutes, and using it spends it: a second token asks again,
 and a Google account linked by someone else asks again, though Ann has just
-confirmed.
+confirmed. Spent once means once even when Ann's browser sends the form twice
+at the same moment: one token is made, and the other request is asked again
+(AW-107).
 
 ## Why
 

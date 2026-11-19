@@ -182,7 +182,7 @@ async function callback_get(oauth_provider, req, res)
             subject: sub,
             provider_emails,
         };
-        if (!await returns_primary_email(req.session.user_id, oauth_provider, verified_emails) && !spend_confirmation(req, asked)) {
+        if (!await returns_primary_email(req.session.user_id, oauth_provider, verified_emails) && !await spend_confirmation(req, asked)) {
             req.session.confirmation = asked;
             await save_session(req);
             await insert_auth_event({

@@ -43,6 +43,21 @@ describe('A confirmation covers the action that asked for it, once | stories', f
         assert.strictEqual((await db('personal_access_tokens')).length, 1);
     });
 
+    // [concurrent]: each request on a pooled connection of its own, as in
+    // production (mocha.api.js).
+    it('one confirmation makes one token when the owner\'s browser sends the form twice at once (AW-107) [concurrent]', async function () {
+        await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass'});
+        await this.http_post_json('/auth/personal-access-tokens', {label: 'ci'});
+        await this.confirm({password: 'anns-pass'});
+
+        const {csrf_token} = await this.http_get_json('/auth/status');
+        const answers = await Promise.all([1, 2].map(() => this.client.post_json('/auth/personal-access-tokens', {_csrf: csrf_token, label: 'ci'}).catch(e => e.response?.data ?? null)));
+
+        assert.strictEqual(answers.filter(v => /^awp_/.test(v?.token ?? '')).length, 1);
+        assert.strictEqual((await db('personal_access_tokens')).length, 1);
+        assert.strictEqual((await db('auth_events').where({event_type: 'personal_access_token_created'})).length, 1);
+    });
+
     it('the owner confirms to remove an address; within the ten minutes a borrower links Google, and is asked (AW-81)', async function () {
         await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass'});
         await this.http_post_json('/auth/email/add', {email: 'second@authwall.test'});

@@ -12,7 +12,7 @@ const spend_confirmation = require('./spend_confirmation');
 async function require_confirmation(req, {reason, next, message, ...details})
 {
     const asked = {next, reason, ...details};
-    if (spend_confirmation(req, asked)) {
+    if (await spend_confirmation(req, asked)) {
         return;
     }
     req.session.confirmation = asked;
