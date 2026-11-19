@@ -1038,6 +1038,10 @@
         </div>
         <h1 class="page-title">Sign out?</h1>
         <p class="page-sub mt-8">You're signed in as <strong id="so-user-display">—</strong>. This will end your current session.</p>
+        <div id="so-error" class="alert alert-error mt-20" style="display:none" data-testid="signout-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="so-error-msg"></span>
+        </div>
         <div class="flex flex-col gap-8 mt-20">
           <button id="so-submit" class="btn btn-danger" data-testid="signout-submit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1408,48 +1412,81 @@ function plural(n, singular, plural, zero) {
 // never reached a return on a subdomain (AW-32).
 const ASK_LANDING = { 'X-Authwall-Landing': 'ask' };
 
-async function http_post_urlencoded(path, fields) {
-  if (!_csrf) await api_status();
-  const body = new URLSearchParams({ ...fields, _csrf });
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...ASK_LANDING },
-    body,
-    redirect: 'follow',
-  });
-  const final_url = await landing_of(res);
-  const status = await api_status();
-    if (status.flows) {
-        apply_flows(status.flows, status.actions);
+// One post of this page, and what came of it (M-14). Authwall answers each
+// with 2xx and keeps its own error for /auth/status. No answer at all, or
+// another status (a proxy's 413, 502 or 504), is not Authwall's word: the post
+// is an error, never shown as done. It never throws, so no button stays on
+// "Please wait…".
+async function post_and_status(path, make_request)
+{
+    let res;
+    try {
+        if (!_csrf) {
+            await api_status();
+        }
+        res = await fetch(path, {method: 'POST', redirect: 'follow', ...make_request(_csrf)});
     }
-  render_confirm_email_status(status);
-  return { final_url, error: status.error };
+    catch {
+        return {res: null, status: null, error: 'Authwall could not be reached. Check the connection and try again.'};
+    }
+    let status = null;
+    try {
+        status = await api_status();
+    }
+    catch {
+        // What the post's own answer says still holds.
+    }
+    if (!res.ok) {
+        return {res, status, error: status?.error || `The request did not go through (HTTP ${res.status}). Try again.`};
+    }
+    if (!status) {
+        return {res, status, error: 'The answer was lost on its way. Reload the page to see where things stand.'};
+    }
+    return {res, status, error: status.error};
 }
 
-async function http_post_multipart(path, form_data) {
-  if (!_csrf) await api_status();
-  form_data.append('_csrf', _csrf);
-  const res = await fetch(path, { method: 'POST', headers: ASK_LANDING, body: form_data, redirect: 'follow' });
-  const final_url = await landing_of(res);
-  const status = await api_status();
-  return { final_url, error: status.error };
-}
-
-async function http_post_json(path, fields) {
-  if (!_csrf) await api_status();
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...ASK_LANDING },
-    body: JSON.stringify({ ...fields, _csrf }),
-    redirect: 'follow',
-  });
-  const content_type = res.headers.get('content-type') || '';
-  const data = content_type.includes('application/json') ? await res.json() : null;
-  const status = await api_status();
-    if (status.flows) {
+async function http_post_urlencoded(path, fields)
+{
+    const {res, status, error} = await post_and_status(path, function (csrf) {
+        return {
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', ...ASK_LANDING},
+            body: new URLSearchParams({...fields, _csrf: csrf}),
+        };
+    });
+    if (status?.flows) {
         apply_flows(status.flows, status.actions);
     }
-  return { data, error: status.error };
+    if (status) {
+        render_confirm_email_status(status);
+    }
+    const final_url = res?.ok ? await landing_of(res) : null;
+    return {final_url, error};
+}
+
+async function http_post_multipart(path, form_data)
+{
+    const {res, error} = await post_and_status(path, function (csrf) {
+        form_data.set('_csrf', csrf);
+        return {headers: ASK_LANDING, body: form_data};
+    });
+    const final_url = res?.ok ? await landing_of(res) : null;
+    return {final_url, error};
+}
+
+async function http_post_json(path, fields)
+{
+    const {res, status, error} = await post_and_status(path, function (csrf) {
+        return {
+            headers: {'Content-Type': 'application/json', ...ASK_LANDING},
+            body: JSON.stringify({...fields, _csrf: csrf}),
+        };
+    });
+    if (status?.flows) {
+        apply_flows(status.flows, status.actions);
+    }
+    const is_json = (res?.headers.get('content-type') || '').includes('application/json');
+    const data = (res?.ok && is_json) ? await res.json().catch(() => null) : null;
+    return {data, error};
 }
 
 // Where a post landed: the {next} the server answers when asked, else the
@@ -2139,8 +2176,9 @@ function confirm_steps_text(step, given)
 // in which case the confirm view is shown instead of the error.
 async function confirm_if_asked()
 {
-    const s = await api_status();
-    if (s.confirmed || !s.confirmation || !OWNER_ACTIONS[s.confirmation.reason]) {
+    // Unreachable, nothing is known to be asked: the post's own error shows (M-14).
+    const s = await api_status().catch(() => null);
+    if (!s || s.confirmed || !s.confirmation || !OWNER_ACTIONS[s.confirmation.reason]) {
         return false;
     }
     showView('confirm');
@@ -2196,7 +2234,8 @@ async function confirm_submit(fields, button_id) {
   const { error } = await http_post_urlencoded('/auth/confirm', fields);
   set_loading(button_id, false);
   if (error) return show_error('cf-error-msg', 'cf-error', error);
-  const s = await api_status();
+  // The status the post brought.
+  const s = _status;
   // An action that takes two ways stays here for the second one.
   if (s.confirmation && ((s.confirmation.factors || 1) > (s.confirmed_with || []).length)) {
     for (const input of document.querySelectorAll('#cf-code .otp-input')) {
@@ -2249,9 +2288,9 @@ document.getElementById('ecr-submit').addEventListener('click', async () => {
   const { final_url, error } = await http_post_urlencoded('/auth/email-change/request', { email });
   set_loading('ecr-submit', false);
   if (error) {
-    const s = await api_status();
+    const s = await api_status().catch(() => null);
     // An account without a primary confirms it is the owner, then comes back here.
-    if (s.confirmation && (s.confirmation.reason === 'email_change')) return showView('confirm');
+    if (s?.confirmation && (s.confirmation.reason === 'email_change')) return showView('confirm');
     return show_error('ecr-error-msg', 'ecr-error', error);
   }
   navigate_after(final_url);
@@ -2450,8 +2489,7 @@ async function handle_disconnect(endpoint) {
     return;
   }
   if (error) return alert(error);
-  const s = await api_status();
-  if (s.authenticated) render_user_data(s);
+  if (_status.authenticated) render_user_data(_status);
 }
 
 // ── Personal access tokens ──────────────────────────────────────────────────
@@ -2512,8 +2550,7 @@ document.getElementById('pat-create').addEventListener('click', async () => {
   }
   document.getElementById('pat-label').value = '';
 
-  const s = await api_status();
-  if (s.authenticated) render_user_data(s);
+  if (_status.authenticated) render_user_data(_status);
 });
 
 document.getElementById('pat-copy').addEventListener('click', async () => {
@@ -2532,8 +2569,7 @@ async function handle_revoke_pat(uid) {
   hide_error('pat-error');
   const { error } = await http_post_json('/auth/personal-access-tokens/revoke', { uid });
   if (error) return show_error('pat-error-msg', 'pat-error', error);
-  const s = await api_status();
-  if (s.authenticated) render_user_data(s);
+  if (_status.authenticated) render_user_data(_status);
 }
 
 // ── Sessions — Revoke one ────────────────────────────────────────────────────
@@ -2541,8 +2577,7 @@ async function handle_revoke(uid) {
   hide_error('sess-error');
   const { error } = await http_post_urlencoded('/auth/sessions/revoke', { uid });
   if (error) return show_error('sess-error-msg', 'sess-error', error);
-  const s = await api_status();
-  if (s.authenticated) render_user_data(s);
+  if (_status.authenticated) render_user_data(_status);
 }
 
 // ── Sessions — Revoke all ────────────────────────────────────────────────────
@@ -2552,8 +2587,7 @@ document.getElementById('sess-revoke-all').addEventListener('click', async () =>
   const { error } = await http_post_urlencoded('/auth/sessions/revoke-all', {});
   set_loading('sess-revoke-all', false);
   if (error) return show_error('sess-error-msg', 'sess-error', error);
-  const s = await api_status();
-  if (s.authenticated) render_user_data(s);
+  if (_status.authenticated) render_user_data(_status);
 });
 
 // ── Email Verify — Request ───────────────────────────────────────────────────
@@ -2629,9 +2663,12 @@ function read_email_code() {
 
 // ── Sign Out ─────────────────────────────────────────────────────────────────
 document.getElementById('so-submit').addEventListener('click', async () => {
+  hide_error('so-error');
   set_loading('so-submit', true);
-  const { final_url } = await http_post_urlencoded('/auth/sign-out', {});
+  const { final_url, error } = await http_post_urlencoded('/auth/sign-out', {});
   set_loading('so-submit', false);
+  // Not signed out until Authwall says so (M-14).
+  if (error) return show_error('so-error-msg', 'so-error', error);
   navigate_after(final_url);
 });
 

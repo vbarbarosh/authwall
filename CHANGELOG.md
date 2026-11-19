@@ -45,6 +45,11 @@
 
 ### Fixed
 
+- A form whose post never reaches Authwall says so, and its button comes
+  back: no connection, or a proxy's error page such as a 502 or a 413. It
+  showed success ("Profile saved.", the profile after a confirmation that
+  failed), showed nothing, or stayed on "Please wait…". Sign-out says so
+  too, rather than leaving you where you were.
 - An account with no password, signed in by a link or a provider, sets its
   first one from the profile: the form is **Set a password**, with no
   current password asked; it always asked for one, and refused without it.
