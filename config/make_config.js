@@ -195,6 +195,12 @@ function make_config(input = {})
             max_age_days: {type: 'int', min: 1, max: 365, default: 30},
         }),
 
+        // How long records are kept, in days; 0 keeps them forever (M-10).
+        retention: make(settings.retention, {
+            ended_days: {type: 'int', min: 0, default: 1},
+            history_days: {type: 'int', min: 0, default: 365},
+        }),
+
         flows: make(settings.flows, {
             password: {
                 enabled: 'bool',

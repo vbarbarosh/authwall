@@ -4,6 +4,11 @@
 
 ### Security
 
+- Authwall deletes what it no longer needs: sessions, sign-in links and
+  codes, and access tokens a day after they expire, are used or are
+  revoked; the sign-in history, with its IPs, browsers and addresses, and
+  the daily log files after a year. It kept all of them forever.
+  `retention` in `config/settings.yaml` sets both; 0 keeps that kind forever.
 - Every session ends once, at this upgrade, and everyone signs in again:
   1.17 renamed the cookie but kept the sessions, so an old `connect.sid`
   value, sent back as `authwall.sid`, still signed in, and an app behind

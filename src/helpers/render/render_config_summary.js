@@ -25,7 +25,16 @@ function render_config_summary(config)
         '👤 Seed users:',
         format_seed_users(config.seed_users).map(v => `  ${v}`),
         `🗂️ Storage: logs=${config.logs_dir}, uploads=${config.uploads_dir}`,
+        `🧹 Retention: ended records ${format_retention_days(config.retention.ended_days)}, history and day logs ${format_retention_days(config.retention.history_days)}`,
     ]).map(v => `[config] ${v}`);
+}
+
+function format_retention_days(days)
+{
+    if (!days) {
+        return 'kept forever';
+    }
+    return (days === 1) ? '1 day' : `${days} days`;
 }
 
 function flat(items)

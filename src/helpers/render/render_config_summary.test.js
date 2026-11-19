@@ -37,6 +37,10 @@ describe('render_config_summary', function () {
                 same_site: 'none',
                 max_age_days: 30,
             },
+            retention: {
+                ended_days: 1,
+                history_days: 0,
+            },
             sentry: {
                 enabled: true,
                 dsn: 'https://public@example.com/1',
@@ -140,6 +144,7 @@ describe('render_config_summary', function () {
         assert.match(text, /🔑 Personal access tokens: enabled/);
         assert.match(text, /🔌 WebSockets: enabled/);
         assert.match(text, /👤 Sign-up: disabled/);
+        assert.match(text, /🧹 Retention: ended records 1 day, history and day logs kept forever/);
         assert.match(text, /🔐 Sign-in:/);
         assert.match(text, / - password: username, min 8/);
         assert.match(text, / - Google OAuth: https:\/\/authwall.test\/auth\/google\/callback/);

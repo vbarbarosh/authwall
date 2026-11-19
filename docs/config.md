@@ -144,7 +144,7 @@ Where Authwall writes its log output.
 - Values: `daily`, `stdout` (an unrecognized value refuses to start)
 - Default: `daily` when running from source; the published Docker image bakes in `AUTHWALL_LOGGER=stdout`
 
-Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes.
+Use `daily` to write to a date-stamped file under `data/logs/`, named `app-YYYY-MM-DD.log` and rotated automatically when the date changes; a file is deleted after a year ([retention](#retention)).
 Use `stdout` to write to standard output, which is the right choice for containerized deployments where a process supervisor or log collector picks up stdout.
 
 Example:
@@ -709,6 +709,23 @@ AUTHWALL_COOKIE_PATH=/
 AUTHWALL_COOKIE_SAMESITE=lax
 AUTHWALL_COOKIE_SECURE=true
 ```
+
+## Retention
+
+How long Authwall keeps what it records, set in `config/settings.yaml` under
+`retention`, in days; `0` keeps a kind forever. Authwall deletes what is
+past its time at startup and every hour after; the log says
+`records_pruned`, with how many of each kind went.
+
+- `ended_days` — sessions, sign-in links and codes, verification, reset and
+  email-change tokens, and personal access tokens, counted from when each
+  expired, was used or was revoked. Default: `1`.
+- `history_days` — the sign-in history (`auth_events`, with each event's IP,
+  browser and address, a deleted account's too) and the daily log files,
+  `app-YYYY-MM-DD.log` under `data/logs/`. Default: `365`.
+
+A log collector reading stdout keeps its own copy, for as long as it is
+set to.
 
 <a id="authwall_allowed_emails"></a>
 <a id="authwall_allowed_domains"></a>

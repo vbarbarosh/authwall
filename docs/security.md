@@ -280,7 +280,8 @@ trust assumption is load-bearing for several user-visible signals:
 - Per-IP **rate-limit keys** (sign-in, sign-up, PAT creation, bearer-token
   validation, etc.).
 - **Last-used IP** shown for browser sessions and for personal access tokens.
-- **Source IP** recorded on every row in the `auth_events` audit log.
+- **Source IP** recorded on every row in the `auth_events` audit log, kept
+  for a year by default ([retention](config.md#retention)).
 
 Deploy Authwall **behind a reverse proxy or load balancer that overwrites
 `X-Forwarded-For`** with the real client connection (nginx's `real_ip_header`,

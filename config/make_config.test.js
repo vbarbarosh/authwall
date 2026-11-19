@@ -121,6 +121,18 @@ describe('make_config', function () {
         });
     });
 
+    it('keeps ended records a day and the history a year by default (M-10)', function () {
+        const config = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_UPSTREAM_URL: 'http://127.0.0.1:8080',
+        });
+
+        assert.deepStrictEqual(config.retention, {
+            ended_days: 1,
+            history_days: 365,
+        });
+    });
+
     it('takes the seed users from AUTHWALL_SEED_FILE', function () {
         const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'seed-file-')), 'users.csv');
         fs.writeFileSync(file, 'username,emails,password_hash\nalice,alice@myapp.test,\n');
