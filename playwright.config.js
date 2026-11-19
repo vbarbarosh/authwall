@@ -1,14 +1,7 @@
-require('dotenv/config');
-
 const {defineConfig, devices} = require('@playwright/test');
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+// No .env here: the server the run starts would get the database it names,
+// and seed and sign up users in it (AW-105).
 
 // see https://playwright.dev/docs/test-configuration
 module.exports = defineConfig({
@@ -80,7 +73,9 @@ module.exports = defineConfig({
     webServer: [{
         command: 'node tests/playwright/start_server.js',
         url: 'http://127.0.0.1:3000',
-        reuseExistingServer: !process.env.CI,
+        // Port 3000 is also the app's own: a server found there may run on
+        // the app's database, so the run starts its own or stops.
+        reuseExistingServer: false,
         stdout: 'pipe',
         stderr: 'pipe',
         env: {

@@ -1,7 +1,7 @@
-require('dotenv/config');
 // A per-run database: the suite must never touch data/db.sqlite3 (the
-// developer's working copy) or whatever .env points at unless asked to
-// explicitly by exporting AUTHWALL_DB.
+// developer's working copy) or the database .env names, so it reads no .env.
+// An exported AUTHWALL_DB names one of its own, which spin_test_database
+// refuses when it holds someone's data (AW-105).
 const test_db_file = require('path').join(require('os').tmpdir(), `authwall-test-${process.pid}.sqlite3`);
 process.env.AUTHWALL_DB ??= `sqlite://${test_db_file}`;
 process.env.AUTHWALL_SECRET ??= require('crypto').randomBytes(32).toString('base64url');
@@ -19,6 +19,7 @@ const make_logger_fake = require('./src/services/logger/make_logger_fake');
 const make_logger_stdout = require('./src/services/logger/make_logger_stdout');
 const make_mailer_fake = require('./src/services/mailer/make_mailer_fake');
 const setup_servers = require('./tests/setup_servers');
+const spin_test_database = require('./tests/spin_test_database');
 const {Runnable} = require('mocha/lib/runnable');
 
 const db = knex(config.knexvars);
@@ -94,6 +95,7 @@ module.exports = {
     mochaHooks: {
         beforeAll: async function () {
             this.timeout(30000);
+            await spin_test_database(db);
             await using logger = make_logger_stdout();
             await als.run({db, logger}, () => bootstrap_database());
             process.stdout.write('\n');

@@ -71,6 +71,7 @@ Testable now
 - [x] Ann uses Authwall every day and Mallory replays a copied cookie; on day 29 the deadline stays put, past day 30 both are signed out, a WebSocket neither extends nor admits past it, a re-issued cookie keeps its deadline and attributes → `session_ends_at_its_deadline.md`, `session_ends_at_its_deadline.test.js`
 - [x] confirmation required; Ann confirms on the phone and the laptop's WebSocket opens at once; the address loses its confirmation and the open sockets, a session's and a token's, close within the lease → `websocket_follows_verification.md`, `websocket_follows_verification.test.js`
 - [x] Ann asked for `/reports` and signs in by a mailed code, by the mailed link, or with Google; each lands her on `/reports`, and a return to another site is never kept → `sign_in_returns_to_the_page_asked_for.md`, `sign_in_returns_to_the_page_asked_for.test.js`; the page's part, sign-up included → `tests/playwright/sign-in-return.spec.js`
+- [x] a developer's `.env` names the app's database and they run the API and e2e suites; both run on a database of their own, an exported `AUTHWALL_DB` holding the app's tables without the suites' mark is refused before anything changes, and Mocha's account is still there → `a_test_run_keeps_the_app_database.md`, `a_test_run_keeps_the_app_database.test.js`
 - [ ] the owner lost access to the primary address and recovers the account (planned, no story yet)
 
 Needs product decision

@@ -1,5 +1,7 @@
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../../config');
+const knex = require('knex');
+const spin_test_database = require('../spin_test_database');
 const {create_echo_server} = require('../setup_servers');
 const {once} = require('events');
 
@@ -7,6 +9,15 @@ cli(main);
 
 async function main()
 {
+    // Before the app migrates and seeds it (AW-105).
+    const db = knex(config.knexvars);
+    try {
+        await spin_test_database(db);
+    }
+    finally {
+        await db.destroy();
+    }
+
     const upstream = await create_echo_server();
 
     const listening = once(upstream, 'listening');
