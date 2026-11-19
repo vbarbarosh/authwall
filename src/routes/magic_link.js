@@ -109,42 +109,18 @@ async function magic_link_open_post(req, res)
         throw new UserFriendlyError(error);
     }
 
-    if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
-        throw new UserFriendlyError('Invalid or expired magic link');
-    }
-
-    const email = magic_link.email;
-    const email_normalized = magic_link.email_normalized;
-    await authorize_email(email_normalized);
+    await authorize_email(magic_link.email_normalized);
 
     // The link proves the mailbox (AW-82).
-    if (config.sign_up.enabled) {
-        await release_pending_email(req, email_normalized, {proof: true, now});
+    const proven = await prove_mailbox(req, magic_link, now);
+    if (!proven) {
+        throw new UserFriendlyError('Invalid or expired magic link');
     }
-    const ident = await find_email_identity_for_sign_in(email_normalized);
-    if (ident) {
-        const user = await db('users').where({id: ident.user_id}).first();
-        await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_link'});
+    if (proven.created) {
+        await complete_sign_up(req, res, proven.user, null, proven.ident, {method: 'magic_link_by_link'});
     }
     else {
-        const user = await users_create();
-        await db('user_identities').insert({
-            uid: random_uid_user_identity(),
-            user_id: user.id,
-            type: const_user_identity.email,
-            value: email,
-            value_normalized: email_normalized,
-            created_at: now,
-            updated_at: now,
-            verified_at: now,
-        });
-        await assign_primary_email(user.id);
-        const fresh_ident = {
-            type: const_user_identity.email,
-            value: email,
-            value_normalized: email_normalized,
-        };
-        await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_link'});
+        await complete_sign_in(req, res, proven.user, proven.ident, {method: 'magic_link_by_link'});
     }
 }
 
@@ -185,40 +161,16 @@ async function magic_link_confirm_post(req, res)
         throw new UserFriendlyError('Invalid or expired code');
     }
 
-    if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
+    // The code proves the mailbox (AW-82).
+    const proven = await prove_mailbox(req, magic_link, now);
+    if (!proven) {
         throw new UserFriendlyError('Invalid or expired code');
     }
-
-    // The address as typed when the code was mailed, as the GET link uses it.
-    const email = magic_link.email;
-    // The code proves the mailbox (AW-82).
-    if (config.sign_up.enabled) {
-        await release_pending_email(req, email_normalized, {proof: true, now});
-    }
-    const ident = await find_email_identity_for_sign_in(email_normalized);
-    if (ident) {
-        const user = await db('users').where({id: ident.user_id}).first();
-        await complete_sign_in(req, res, user, ident, {method: 'magic_link_by_code'});
+    if (proven.created) {
+        await complete_sign_up(req, res, proven.user, null, proven.ident, {method: 'magic_link_by_code'});
     }
     else {
-        const user = await users_create();
-        await db('user_identities').insert({
-            uid: random_uid_user_identity(),
-            user_id: user.id,
-            type: const_user_identity.email,
-            value: email,
-            value_normalized: email_normalized,
-            created_at: now,
-            updated_at: now,
-            verified_at: now,
-        });
-        await assign_primary_email(user.id);
-        const fresh_ident = {
-            type: const_user_identity.email,
-            value: email,
-            value_normalized: email_normalized,
-        };
-        await complete_sign_up(req, res, user, null, fresh_ident, {method: 'magic_link_by_code'});
+        await complete_sign_in(req, res, proven.user, proven.ident, {method: 'magic_link_by_code'});
     }
 }
 
@@ -259,6 +211,32 @@ async function find_magic_link_to_open(token, now)
 // into such an account would hand them to the squatter (and, with a password
 // on that account, hand the recipient's future activity to the squatter).
 // Only a verified identity signs in; a pending one is refused with directions.
+// The link or code is spent, a pending address of another account released,
+// and the account found or made, in one transaction (AW-112): a failure
+// halfway leaves neither a user without its address nor a spent link, and
+// the same link or code tries again. Null when the link was spent already.
+// The address is the one typed when the link was mailed.
+async function prove_mailbox(req, magic_link, now)
+{
+    return db.transaction(async function () {
+        if (!await consume_one_time_token('magic_links', magic_link.id, now)) {
+            return null;
+        }
+        if (config.sign_up.enabled) {
+            await release_pending_email(req, magic_link.email_normalized, {proof: true, now});
+        }
+        const ident = await find_email_identity_for_sign_in(magic_link.email_normalized);
+        if (ident) {
+            return {user: await db('users').where({id: ident.user_id}).first(), ident, created: false};
+        }
+        const user = await users_create();
+        const fresh_ident = {type: const_user_identity.email, value: magic_link.email, value_normalized: magic_link.email_normalized};
+        await db('user_identities').insert({...fresh_ident, uid: random_uid_user_identity(), user_id: user.id, created_at: now, updated_at: now, verified_at: now});
+        await assign_primary_email(user.id);
+        return {user, ident: fresh_ident, created: true};
+    });
+}
+
 async function find_email_identity_for_sign_in(email_normalized)
 {
     const ident = await db('user_identities').where({type: const_user_identity.email, value_normalized: email_normalized}).first();
