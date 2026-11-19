@@ -10,14 +10,25 @@ const is_relative_url = require('./is_relative_url');
 // Reject:
 //   - Protocol-relative URLs (//evil.com) — treated as absolute by browsers
 //   - Absolute URLs on unrelated origins
+//   - Control characters: a browser drops tabs and line breaks from a URL
+//     before it reads one, so "/\t/evil.com" passed as a path here and was
+//     followed as //evil.com by the SPA's landing (AW-113)
 function allowed_return_url(value)
 {
     if (typeof value !== 'string') {
         return null;
     }
 
+    if (/[\u0000-\u001f\u007f]/.test(value)) {
+        return null;
+    }
+
+    // Resolved once on the public origin, as the browser will resolve it, and
+    // returned as given: serialized again, "/..//evil.com" would read as
+    // //evil.com.
     if (is_relative_url(value)) {
-        return value;
+        const base = new URL(config.public_url);
+        return (new URL(value, base).origin === base.origin) ? value : null;
     }
 
     // Absolute URL: validate origin against public_url

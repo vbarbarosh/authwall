@@ -9,7 +9,9 @@ Authwall's public URL is `http://corp.test`; the wiki lives on
 The SPA's posts ask for their landing (`X-Authwall-Landing: ask`) and get
 `{next}` instead of a redirect: the page goes there itself, once. The sign-in
 form posts itself and gets the redirect, which the page's `form-action` lets
-through to `*.corp.test`. A return to another site lands on `/`, as before. A
+through to `*.corp.test`. A return to another site lands on `/`, as before,
+and so does one a browser would read as another site, such as a path with a
+tab in it, which it drops (AW-113). A
 post that fails answers `{next}` to the page it came from, and the SPA shows
 the error there.
 

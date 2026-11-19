@@ -39,6 +39,20 @@ describe('A sign-in sends you back to a subdomain, and the landing loads once | 
         assert.deepStrictEqual(asked.data, {next: '/'});
     });
 
+    it('lands a return a browser would read as another site on /, landing and redirect alike (AW-113)', async function () {
+        this.client_base_url = config.public_url;
+        config.public_url = 'http://corp.test';
+        const sign_up = {username: 'ann', password: 'anns-pass-123', password_confirm: 'anns-pass-123'};
+        const url = `/auth/sign-up?${new URLSearchParams({return: '/\t/evil.test/page'})}`;
+
+        const asked = await post_as_the_spa(this, url, sign_up);
+        assert.deepStrictEqual(asked.data, {next: '/'});
+
+        this.client.cookies.clear();
+        const form = await post_as_the_spa(this, url, {...sign_up, username: 'bob'}, {});
+        assert.deepStrictEqual([form.status, form.headers.location], [302, '/']);
+    });
+
     it('answers a failed post with the page it came from, the error in the session', async function () {
         this.client_base_url = config.public_url;
         const asked = await post_as_the_spa(this, '/auth/sign-up', {username: 'ann', password: 'anns-pass-123', password_confirm: 'another-pass'});
