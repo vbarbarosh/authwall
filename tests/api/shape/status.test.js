@@ -81,6 +81,7 @@ describe('shape • status', function () {
             actions: {
                 can_sign_up: true,
                 can_change_email: true,
+                can_change_password: true,
                 can_manage_personal_access_tokens: true,
             },
             user_uid: String, // 'awuser_yhyxthy3ykkz048q5s4j5sdb',

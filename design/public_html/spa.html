@@ -848,18 +848,20 @@
           <div data-flow="password" style="display:contents">
           <hr>
 
-          <div class="section-title">Change password</div>
-          <div class="field">
+          <div class="section-title" id="p-chpw-title" data-testid="profile-password-title">Change password</div>
+          <p id="p-chpw-needs" class="text-sm text-muted" style="display:none" data-testid="profile-password-needs">A password needs a confirmed email address first.</p>
+          <div id="p-chpw-form" style="display:contents">
+          <div class="field" id="p-curpass-field">
             <label for="p-curpass">Current password</label>
-            <input type="password" id="p-curpass" placeholder="••••••••">
+            <input type="password" id="p-curpass" placeholder="••••••••" data-testid="profile-current-password">
           </div>
           <div class="field">
             <label for="p-newpass">New password</label>
-            <input type="password" id="p-newpass" placeholder="Choose a strong password">
+            <input type="password" id="p-newpass" placeholder="Choose a strong password" data-testid="profile-new-password">
           </div>
           <div class="field">
             <label for="p-newpass2">Confirm new password</label>
-            <input type="password" id="p-newpass2" placeholder="Repeat password">
+            <input type="password" id="p-newpass2" placeholder="Repeat password" data-testid="profile-new-password-confirm">
           </div>
           <div id="p-chpw-error" class="alert alert-error" style="display:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -867,9 +869,10 @@
           </div>
           <div id="p-chpw-ok" class="alert alert-success" style="display:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Password updated.</span>
+            <span id="p-chpw-ok-msg" data-testid="profile-password-ok">Password updated.</span>
           </div>
-          <button id="p-chpw" class="btn btn-outline">Update password</button>
+          <button id="p-chpw" class="btn btn-outline" data-testid="profile-password-submit">Update password</button>
+          </div><!-- /p-chpw-form -->
           </div><!-- /data-flow="password" -->
 
           <hr>
@@ -1661,6 +1664,27 @@ function apply_flows(flows, actions = {})
 // ═══════════════════════════════════════════════════════════════════════════════
 // RENDER USER DATA (profile + sessions + sign-out)
 // ═══════════════════════════════════════════════════════════════════════════════
+// The profile's password form: change it, set a first one with no current
+// one to give, or say what it needs (M-13).
+function render_password_form(s)
+{
+    const title = document.getElementById('p-chpw-title');
+    if (!title) {
+        return;
+    }
+    const has_password = Boolean(s.has_password);
+    const can_change_password = s.actions?.can_change_password !== false;
+    title.textContent = has_password ? 'Change password' : 'Set a password';
+    document.getElementById('p-curpass-field').style.display = has_password ? '' : 'none';
+    document.getElementById('p-chpw-form').style.display = can_change_password ? 'contents' : 'none';
+    document.getElementById('p-chpw-needs').style.display = can_change_password ? 'none' : '';
+    // A button at work keeps its spinner; the next render names it.
+    const button = document.getElementById('p-chpw');
+    if (!button.disabled) {
+        button.textContent = has_password ? 'Update password' : 'Set password';
+    }
+}
+
 function render_user_data(s) {
   render_confirm(s);
   render_email_change(s);
@@ -1693,6 +1717,7 @@ function render_user_data(s) {
   }
   const name_input = document.getElementById('p-name');
   if (name_input) name_input.value = display;
+  render_password_form(s);
 
   // Connections
   const conn_el = document.getElementById('p-connections');
@@ -2367,22 +2392,28 @@ document.getElementById('p-avatar-file').addEventListener('change', function () 
 // ── Profile — Change password ────────────────────────────────────────────────
 document.getElementById('p-chpw').addEventListener('click', async () => {
   hide_error('p-chpw-error');
+  // A first password has no current one to give (M-13).
+  const has_password = Boolean(_status?.has_password);
   const current_password = document.getElementById('p-curpass').value;
   const password = document.getElementById('p-newpass').value;
   const password_confirm = document.getElementById('p-newpass2').value;
-  if (!current_password || !password) return show_error('p-chpw-error-msg', 'p-chpw-error', 'Please fill in all fields.');
+  if ((has_password && !current_password) || !password) return show_error('p-chpw-error-msg', 'p-chpw-error', 'Please fill in all fields.');
   if (password !== password_confirm) return show_error('p-chpw-error-msg', 'p-chpw-error', 'New passwords do not match.');
   set_loading('p-chpw', true);
-  const { error } = await http_post_urlencoded('/auth/change-password', { current_password, password, password_confirm });
+  const fields = has_password ? { current_password, password, password_confirm } : { password, password_confirm };
+  const { error } = await http_post_urlencoded('/auth/change-password', fields);
   set_loading('p-chpw', false);
   if (error && await confirm_if_asked()) {
     return;
   }
   if (error) return show_error('p-chpw-error-msg', 'p-chpw-error', error);
+  document.getElementById('p-chpw-ok-msg').textContent = has_password ? 'Password updated.' : 'Password set.';
   show_ok('p-chpw-ok');
   document.getElementById('p-curpass').value = '';
   document.getElementById('p-newpass').value = '';
   document.getElementById('p-newpass2').value = '';
+  // A first password set, the form is "Change password" from now on.
+  render_user_data(_status);
 });
 
 // ── Profile — Add email ─────────────────────────────────────────────────────

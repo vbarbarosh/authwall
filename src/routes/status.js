@@ -132,6 +132,11 @@ async function status_get(req, res)
         optional.personal_access_tokens = frontend_personal_access_tokens(items);
     }
 
+    // POST /auth/change-password takes a password, a first one too, only on
+    // an account with a verified email or username (M-13).
+    const sign_in_names = [const_user_identity.email, const_user_identity.username];
+    const can_change_password = config.flows.password.enabled && identities.some(v => v.verified_at && sign_in_names.includes(v.type));
+
     res.send({
         error,
         authenticated: true,
@@ -139,6 +144,7 @@ async function status_get(req, res)
         actions: {
             can_sign_up: config.sign_up.enabled,
             can_change_email: config.mailer.enabled,
+            can_change_password,
             can_manage_personal_access_tokens: config.personal_access_tokens.enabled,
         },
         user_uid: user.uid,

@@ -45,6 +45,11 @@
 
 ### Fixed
 
+- An account with no password, signed in by a link or a provider, sets its
+  first one from the profile: the form is **Set a password**, with no
+  current password asked; it always asked for one, and refused without it.
+  An account with no confirmed email or username is told a password needs
+  one.
 - `bin/migrate` and `bin/migrate-rollback` work on the database
   `AUTHWALL_DB` names, the one the server migrates when it starts, and print
   which one first; they always worked on `data/db.sqlite3`, making it if it
