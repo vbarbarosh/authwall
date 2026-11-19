@@ -32,11 +32,13 @@ for (const mode of modes) {
             return page.evaluate(() => Math.round(window.scrollY));
         }
 
-        test('a key pressed on the page focuses the search box without scrolling', async function ({page}) {
-            await page.keyboard.press('Space');
+        // `/` only separates terms: an empty search, so nothing on the page
+        // changes but the focus. Space scrolls the page instead (AW-34).
+        test('a character typed on the page focuses the search box without scrolling', async function ({page}) {
+            await page.keyboard.press('/');
             expect(await scroll_y(page)).toBe(START);
             await expect(page.locator('.search-input')).toBeFocused();
-            await expect(page.locator('.search-input')).toHaveValue(' ');
+            await expect(page.locator('.search-input')).toHaveValue('/');
         });
 
         test('focusing the search box from script does not scroll', async function ({page}) {

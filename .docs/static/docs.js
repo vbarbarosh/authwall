@@ -252,19 +252,27 @@
 
         update_clear_button();
 
-        // Any keydown (bar Tab and modifier combos) jumps focus into the search
-        // box, so the keystroke lands there and search starts immediately.
+        // A character typed outside a field starts a search, that character
+        // included (UIM-11). Every other key keeps what the browser does with
+        // it: Enter and Space press, Shift+Tab goes back, the arrows scroll.
         document.addEventListener('keydown', function (event) {
-            if (event.ctrlKey || event.metaKey || event.altKey || event.key === 'Tab') {
-                return;
+            if (is_search_keystroke(event)) {
+                input.focus();
             }
-            const target = event.target;
-            const tag = target && target.tagName ? target.tagName.toLowerCase() : '';
-            if (tag === 'input' || tag === 'textarea' || (target && target.isContentEditable)) {
-                return;
-            }
-            input.focus();
         });
+    }
+
+    function is_search_keystroke(event) {
+        if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+            return false;
+        }
+        if (!/^\S$/u.test(event.key)) {
+            return false;
+        }
+        if (event.target.isContentEditable) {
+            return false;
+        }
+        return !event.target.closest('input, textarea, select');
     }
 
     // Single-page mode: every section is in the DOM, so filter it in place.
@@ -478,6 +486,21 @@
 
         document.addEventListener('click', function (event) {
             if (!box.contains(event.target)) {
+                close();
+            }
+        });
+
+        // The results are links Tab reaches: Escape on one goes back to the
+        // input, and focus leaving the search closes them, as a click does.
+        panel.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                input.focus();
+                close();
+            }
+        });
+
+        box.addEventListener('focusout', function (event) {
+            if (event.relatedTarget && !box.contains(event.relatedTarget)) {
                 close();
             }
         });

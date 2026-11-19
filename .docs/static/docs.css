@@ -105,6 +105,14 @@ html {
     scroll-margin-top: calc(var(--header-h) + 20px);
 }
 
+/* What Tab and Shift+Tab focus lands below the sticky header too: going back
+   up the page, the browser scrolls it to the top edge, under the header. */
+.content a,
+.content button,
+.content [tabindex] {
+    scroll-margin-top: calc(var(--header-h) + 20px);
+}
+
 body {
     margin: 0;
     background: var(--bg);

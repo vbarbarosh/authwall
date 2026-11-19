@@ -45,6 +45,12 @@
 
 ### Fixed
 
+- The documentation works from the keyboard: Enter and Space press the
+  theme switch, the Copy buttons and the links, Shift+Tab goes back, and
+  Space, the arrows and End scroll. Every key but Tab jumped into the
+  search box. A character typed outside a field still starts a search.
+  Escape or Tab out of the search results closes them, and a link focused
+  going back up the page is no longer hidden under the header.
 - A form whose post never reaches Authwall says so, and its button comes
   back: no connection, or a proxy's error page such as a 502 or a 413. It
   showed success ("Profile saved.", the profile after a confirmation that
