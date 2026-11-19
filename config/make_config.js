@@ -292,64 +292,23 @@ function make_config(input = {})
         label: 'Confirm email',
     }));
 
-    if (config.flows.google.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.google;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.google.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  Google OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
+    // A provider is on with all three of its variables and off with none of
+    // them. One or two of them is a mistake, and the start is refused, naming
+    // what is missing (AW-126): dropped with a warning, the provider left the
+    // flows to their automatic choice, which opened the password form and its
+    // sign-up in its place.
+    for (const [name, label] of [['google', 'Google'], ['github', 'GitHub'], ['microsoft', 'Microsoft'], ['facebook', 'Facebook'], ['twitter', 'X'], ['discord', 'Discord']]) {
+        const flow = config.flows[name];
+        const missing = ['client_id', 'client_secret', 'redirect_url'].filter(v => !flow[v]);
+        if (!flow.enabled || !missing.length) {
+            continue;
         }
-    }
-
-    if (config.flows.github.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.github;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.github.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  GitHub OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
+        if (missing.length === 3) {
+            flow.enabled = false;
+            continue;
         }
-    }
-
-    if (config.flows.microsoft.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.microsoft;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.microsoft.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  Microsoft OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
-        }
-    }
-
-    if (config.flows.facebook.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.facebook;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.facebook.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  Facebook OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
-        }
-    }
-
-    if (config.flows.twitter.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.twitter;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.twitter.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  X OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
-        }
-    }
-
-    if (config.flows.discord.enabled) {
-        const {client_id, client_secret, redirect_url} = config.flows.discord;
-        if (!client_id || !client_secret || !redirect_url) {
-            config.flows.discord.enabled = false;
-            if (client_id || client_secret || redirect_url) {
-                console.warn('⚠️  Discord OAuth disabled: client_id, client_secret, and redirect_url must all be set');
-            }
-        }
+        const names = missing.map(v => `AUTHWALL_${name.toUpperCase()}_${v.toUpperCase()}`);
+        throw new Error(`${label} sign-in is half set up: ${names.join(' and ')} ${(names.length === 1) ? 'is' : 'are'} missing. Set all three of its variables, or none.`);
     }
 
     const flows = parse_flows_setting(env.AUTHWALL_FLOWS, {

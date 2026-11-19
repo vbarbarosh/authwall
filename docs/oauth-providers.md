@@ -51,8 +51,9 @@ AUTHWALL_<PROVIDER>_REDIRECT_URL
 
 - With `AUTHWALL_FLOWS=auto` (the default), a provider turns on automatically
   once all three of its variables are set.
-- If only some of the three are set, Authwall logs a warning and leaves the
-  provider disabled.
+- If only some of the three are set, Authwall refuses to start and names the
+  missing ones: left out quietly, the provider would leave the password form
+  and its sign-up in its place.
 - If `AUTHWALL_FLOWS` names the provider explicitly but the three variables are
   not all set, Authwall refuses to start.
 

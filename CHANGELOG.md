@@ -2,8 +2,20 @@
 
 ## Unreleased
 
+### Upgrading
+
+- A sign-in provider set up by half now stops the start. An `.env` copied
+  from an earlier `.env.example` sets `AUTHWALL_GOOGLE_REDIRECT_URL` and
+  `AUTHWALL_GITHUB_REDIRECT_URL` with no client id or secret: remove those
+  two lines, or set the provider's other two.
+
 ### Security
 
+- A sign-in provider with one or two of its three variables set, such as a
+  client secret left out, refuses to start and names the missing ones. It
+  was switched off with a warning, and with `AUTHWALL_FLOWS` unset the
+  password form and its open sign-up came up in its place: a Google-only
+  instance started without its secret let anyone sign up with a username.
 - "Sign in again with a provider" confirms it is you only for an account
   with no password; one with a password confirms with it. Where the
   browser was still signed in to Google, GitHub, Discord or X, one click

@@ -306,6 +306,38 @@ describe('make_config', function () {
         );
     });
 
+    // AW-126: dropped with a warning, a half set-up provider left the
+    // password form and its sign-up to take its place.
+    it('refuses a provider with one or two of its three variables, naming the missing ones', function () {
+        assert.throws(function () {
+            make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_GOOGLE_CLIENT_ID: 'id',
+                AUTHWALL_GOOGLE_REDIRECT_URL: 'https://myapp.test/auth/google/callback',
+            });
+        }, /Google sign-in is half set up: AUTHWALL_GOOGLE_CLIENT_SECRET is missing/);
+        assert.throws(function () {
+            make_config({
+                AUTHWALL_SECRET: '12345678901234567890123456789012',
+                AUTHWALL_TWITTER_CLIENT_SECRET: 'secret',
+            });
+        }, /X sign-in is half set up: AUTHWALL_TWITTER_CLIENT_ID and AUTHWALL_TWITTER_REDIRECT_URL are missing/);
+    });
+
+    it('leaves a provider off with none of its variables, and on with all three', function () {
+        const off = make_config({AUTHWALL_SECRET: '12345678901234567890123456789012'});
+        assert.strictEqual(off.flows.google.enabled, false);
+
+        const on = make_config({
+            AUTHWALL_SECRET: '12345678901234567890123456789012',
+            AUTHWALL_GOOGLE_CLIENT_ID: 'id',
+            AUTHWALL_GOOGLE_CLIENT_SECRET: 'secret',
+            AUTHWALL_GOOGLE_REDIRECT_URL: 'https://myapp.test/auth/google/callback',
+        });
+        assert.strictEqual(on.flows.google.enabled, true);
+        assert.strictEqual(on.flows.password.enabled, false);
+    });
+
     it('allows unrelated env vars', function () {
         const config = make_config({
             AUTHWALL_SECRET: '12345678901234567890123456789012',

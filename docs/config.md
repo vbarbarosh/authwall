@@ -1117,7 +1117,7 @@ All three variables are required together; the flow is enabled only when all of 
 - `AUTHWALL_GOOGLE_CLIENT_SECRET` — OAuth 2.0 client secret. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_GOOGLE_REDIRECT_URL` — Callback URL Google redirects to after the user authorizes Authwall. It must match an Authorized Redirect URI registered on the OAuth client in Google Cloud Console; otherwise Google rejects the request. Authwall handles the callback at `/auth/google/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/google/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the Google flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=google` is requested explicitly without all three, Authwall refuses to start.
@@ -1145,7 +1145,7 @@ All three variables are required together; the flow is enabled only when all of 
 - `AUTHWALL_GITHUB_CLIENT_SECRET` — OAuth client secret. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_GITHUB_REDIRECT_URL` — Callback URL GitHub redirects to after the user authorizes Authwall. It must match the Authorization callback URL registered on the OAuth App in GitHub; otherwise GitHub rejects the request. Authwall handles the callback at `/auth/github/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/github/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the GitHub flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=github` is requested explicitly without all three, Authwall refuses to start.
@@ -1173,7 +1173,7 @@ All three variables are required together; the flow is enabled only when all of 
 - `AUTHWALL_FACEBOOK_CLIENT_SECRET` — App Secret. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_FACEBOOK_REDIRECT_URL` — Callback URL Facebook redirects to after the user authorizes Authwall. It must match a Valid OAuth Redirect URI configured on the app in Meta for Developers; otherwise Facebook rejects the request. Authwall handles the callback at `/auth/facebook/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/facebook/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the Facebook flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=facebook` is requested explicitly without all three, Authwall refuses to start.
@@ -1201,7 +1201,7 @@ All three variables are required together; the flow is enabled only when all of 
 - `AUTHWALL_MICROSOFT_CLIENT_SECRET` — Client secret value. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_MICROSOFT_REDIRECT_URL` — Callback URL Microsoft redirects to after the user authorizes Authwall. It must match a Redirect URI registered on the app registration in Microsoft Entra; otherwise Microsoft rejects the request. Authwall handles the callback at `/auth/microsoft/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/microsoft/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the Microsoft flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=microsoft` is requested explicitly without all three, Authwall refuses to start.
@@ -1231,7 +1231,7 @@ The variables keep their `TWITTER` names for compatibility, even though the prod
 - `AUTHWALL_TWITTER_CLIENT_SECRET` — OAuth 2.0 Client Secret. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_TWITTER_REDIRECT_URL` — Callback URL X redirects to after the user authorizes Authwall. It must match a Callback URI registered on the OAuth 2.0 client in the X Developer Portal; otherwise X rejects the request. Authwall handles the callback at `/auth/twitter/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/twitter/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the X flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=twitter` is requested explicitly without all three, Authwall refuses to start.
@@ -1259,7 +1259,7 @@ All three variables are required together; the flow is enabled only when all of 
 - `AUTHWALL_DISCORD_CLIENT_SECRET` — Application's Client Secret. Treat it as a secret: do not commit it or expose it to clients.
 - `AUTHWALL_DISCORD_REDIRECT_URL` — Callback URL Discord redirects to after the user authorizes Authwall. It must match a Redirect registered on the application in the Discord Developer Portal; otherwise Discord rejects the request. Authwall handles the callback at `/auth/discord/callback`, so this is normally `<AUTHWALL_PUBLIC_URL>/auth/discord/callback`.
 
-If only some of the three are set, Authwall logs a warning and disables the Discord flow.
+If only some of the three are set, Authwall refuses to start and names the missing ones.
 
 > [!WARNING]
 > If `AUTHWALL_FLOWS=discord` is requested explicitly without all three, Authwall refuses to start.
