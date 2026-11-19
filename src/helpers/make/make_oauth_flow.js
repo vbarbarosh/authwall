@@ -69,7 +69,14 @@ async function authorize_get(oauth_provider, req, res)
     req.session.oauth_return_url = (intent === const_oauth_intent.login) ? allowed_return_url(req.query.return) : null;
     await save_session(req);
 
-    res.redirect(oauth_provider.build_authorization_url(state, code_challenge, code_challenge_method));
+    // A confirmation asks the provider for a new sign-in where it can be
+    // asked: Microsoft and Facebook; the others answer at once where the
+    // browser is still signed in to them (AW-123).
+    let url = oauth_provider.build_authorization_url(state, code_challenge, code_challenge_method);
+    if ((intent === const_oauth_intent.confirm) && oauth_provider.reauthenticate_params) {
+        url = urlmod(url, oauth_provider.reauthenticate_params);
+    }
+    res.redirect(url);
 }
 
 // GET /auth/google/callback
@@ -381,15 +388,22 @@ async function create_pending_email_token(user_id)
     return create_email_verify_token(user_id, ident.value_normalized);
 }
 
-// A fresh sign-in with a provider account already linked to this user
-// confirms it is the owner, as a code or the password does (routes/confirm.js).
-// It is how an account with neither a primary address nor a password confirms.
+// A sign-in with a provider account already linked to this user confirms it
+// is the owner, as a code does (routes/confirm.js), for an account with no
+// password only. Most providers ask nothing where the browser is still signed
+// in to them, so the click proves the browser, not the person; an account
+// with a password confirms with it (AW-123).
 async function confirm_with_provider(oauth_provider, req, res, ident)
 {
     if (!req.session.user_id) {
         throw new UserFriendlyError('Authentication required');
     }
     const custom = {method: oauth_provider.user_identity_type};
+    const user = await db('users').where({id: req.session.user_id}).first();
+    if (user.password_hash !== null) {
+        await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.noop, custom: {...custom, reason: 'has_password'}});
+        throw new UserFriendlyError('Confirm with your password.');
+    }
     if (!ident || (ident.user_id !== req.session.user_id)) {
         await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure, custom});
         throw new UserFriendlyError('This account is not linked to yours. Sign in with an account you have linked.');

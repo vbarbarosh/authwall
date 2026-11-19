@@ -21,6 +21,8 @@ const oauth_provider_microsoft = {
     route_authorize: '/auth/microsoft',
     route_callback: '/auth/microsoft/callback',
     route_disconnect: '/auth/microsoft/disconnect',
+    // At a confirmation, the person signs in again (AW-123).
+    reauthenticate_params: {prompt: 'login'},
     build_authorization_url,
     exchange_code_for_tokens,
     fetch_user_info,

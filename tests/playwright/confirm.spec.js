@@ -181,16 +181,24 @@ test.describe('confirm it is you', function () {
 
     });
 
-    test('offers a fresh sign-in with each linked provider account', async function ({page}) {
+    // AW-123: a provider still signed in in the browser asks nothing, so it
+    // stands in only for an account with no password.
+    test('offers a sign-in with each linked provider to an account with no password', async function ({page}) {
         const {user_id} = await sign_up_with_primary(page);
         await using db = open_e2e_db();
         const now = new Date();
         await db('user_identities').insert({uid: `awident_g${user_id}`, user_id, type: 'oauth_google', value: `g${user_id}`, value_normalized: `g${user_id}`, created_at: now, updated_at: now, verified_at: now});
 
         await page.goto('/auth/confirm');
+        await expect(page.getByTestId('confirm-password')).toBeVisible();
+        await expect(page.getByTestId('confirm-provider-oauth_google')).toBeHidden();
+
+        await db('users').where({id: user_id}).update({password_hash: null});
+        await page.goto('/auth/confirm');
         const button = page.getByTestId('confirm-provider-oauth_google');
         await expect(button).toHaveText('Sign in again with Google');
         await expect(button).toHaveAttribute('href', '/auth/google?confirm=1');
+        await expect(page.getByTestId('confirm-password')).toBeHidden();
     });
 
     test('explains a pending connect and continues to it after confirming', async function ({page}) {

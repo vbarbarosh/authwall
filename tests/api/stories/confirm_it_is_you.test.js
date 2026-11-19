@@ -113,7 +113,7 @@ describe('Confirm it is you | stories', function () {
     });
 
     it('refuses a provider account that is not linked to this user', async function () {
-        await this.sign_in({username: 'mocha', password: 'pass123'});
+        await google(this, '/auth/google', 'mocha-google');
         await google(this, '/auth/google?confirm=1', 'someone-else');
 
         const status = await this.http_get_json('/auth/status');

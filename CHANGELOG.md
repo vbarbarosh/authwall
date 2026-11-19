@@ -4,6 +4,13 @@
 
 ### Security
 
+- "Sign in again with a provider" confirms it is you only for an account
+  with no password; one with a password confirms with it. Where the
+  browser was still signed in to Google, GitHub, Discord or X, one click
+  there confirmed anyone at the browser, who could then create a token,
+  remove an address or remove the account. Microsoft and Facebook are now
+  asked for a new sign-in at a confirmation, and account removal no longer
+  counts a provider as a second way beside a password.
 - Five wrong answers to "confirm it is you", or wrong current passwords at
   the password change and profile forms, now hold however many arrive at
   once. The budget was read before the answer was compared and written

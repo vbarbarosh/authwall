@@ -2201,8 +2201,9 @@ function render_confirm(s) {
   // offered again. Two-step actions offer only the next one.
   const given = s.confirmed_with || [];
   const linked = (s.providers || []).map(p => p.type).filter(v => CONFIRM_PROVIDER_ROUTES[v]);
-  // A code needs the mailer; can_change_email says whether it is on.
-  const ways = {password: Boolean(s.has_password), code: Boolean(primary && s.actions?.can_change_email !== false), provider: linked.length > 0};
+  // A code needs the mailer; can_change_email says whether it is on. A
+  // linked provider confirms an account with no password only (AW-123).
+  const ways = {password: Boolean(s.has_password), code: Boolean(primary && s.actions?.can_change_email !== false), provider: (linked.length > 0) && !s.has_password};
   const step = (c && (c.factors > 1)) ? CONFIRM_STEPS.find(v => ways[v] && !given.includes(v)) : null;
   const shown = Object.fromEntries(CONFIRM_STEPS.map(v => [v, step ? (step === v) : (ways[v] && !given.includes(v))]));
   if (c && (c.reason === 'email_change')) {

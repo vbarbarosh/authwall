@@ -10,9 +10,11 @@ Mocha has a password and the primary address `mocha@authwall.test`.
 1. Mocha asks for a code. Authwall mails a 6-digit code to the primary
    address, valid for 10 minutes. Mocha types it in.
 2. Or Mocha types the account's password instead.
-3. Or Mocha signs in again with a provider account already linked to the
-   account ("Sign in again with Google"). An account with neither a primary
-   address nor a password confirms this way.
+3. Or, for an account with no password, a sign-in again with a provider
+   account already linked to it ("Sign in again with Google"). An account
+   with a password confirms with it instead: a provider still signed in in
+   the browser asks nothing (AW-123,
+   `a_borrowed_browser_signs_in_again_with_google.md`).
 
 ## Expected
 
@@ -35,7 +37,7 @@ sign-in starts without it, and the action spends it
 
 A borrowed session can do anything the owner can do in the profile. The code
 proves control of the primary mailbox, the password proves knowledge of the
-secret, and a fresh provider sign-in proves control of the linked account; the
-borrower has none of them. Counting failures in the database, per
+secret, and a provider sign-in proves control of the linked account, which is
+all an account with no password has; the borrower has none of them. Counting failures in the database, per
 account, keeps the budget across codes, across processes and across restarts,
 unlike the in-memory throttles.

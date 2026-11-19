@@ -16,6 +16,8 @@ const oauth_provider_facebook = {
     route_authorize: '/auth/facebook',
     route_callback: '/auth/facebook/callback',
     route_disconnect: '/auth/facebook/disconnect',
+    // At a confirmation, the person signs in again (AW-123).
+    reauthenticate_params: {auth_type: 'reauthenticate'},
     build_authorization_url,
     exchange_code_for_tokens,
     fetch_user_info,

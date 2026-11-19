@@ -153,9 +153,11 @@ passwords together, lock the confirmation for the account; a wrong current
 password at the password change and profile forms counts among them, so a
 signed-in session cannot try passwords there either. Each try is counted
 before its answer is compared, so no more than five are compared however
-many arrive at once. An account with
-neither a primary address nor a password confirms by signing in again with a
-provider account it has already linked.
+many arrive at once. An account with no password may also confirm by signing
+in again with a provider account it has linked; one with a password confirms
+with it. Google, GitHub, Discord and X answer at once where the browser is
+still signed in to them, so their click proves the browser, not the person;
+Microsoft and Facebook are asked for a new sign-in.
 
 Changing the account's email changes the primary address, so it needs the
 current primary first: Authwall mails it a link to approve the move, and only
@@ -169,7 +171,8 @@ password and removing the account. A confirmation covers the one action that
 asked for it, in the session that made it, within ten minutes; that action
 spends it, and the next one asks again. Removing the account takes two
 different ways when the account has two: its password, the code mailed to
-its primary address, a fresh sign-in with a linked provider. An unverified
+its primary address, and, without a password, a sign-in with a linked
+provider. An unverified
 address is removed without asking: it is no way in, and removing it is how a
 typo is fixed. A user held at the verify step adds the right address without
 asking within ten minutes of signing in, since the confirmation is shut to
