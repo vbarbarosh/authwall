@@ -4,6 +4,11 @@
 
 ### Security
 
+- Five wrong answers to "confirm it is you", or wrong current passwords at
+  the password change and profile forms, now hold however many arrive at
+  once. The budget was read before the answer was compared and written
+  after, so a held session that sent 40 passwords at the same moment had
+  all 40 compared, and a right one among them was accepted.
 - The ten wrong codes an address gets per hour stay counted whatever the
   guessing account does: a new code, a removed and re-added address, a
   removed account or a new sign-up. They were counted on the codes still

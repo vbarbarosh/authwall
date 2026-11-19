@@ -1,6 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('../helpers/als');
-const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
 const assert_password_valid = require('../helpers/assert/assert_password_valid');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
@@ -18,8 +17,10 @@ const insert_auth_event = require('../helpers/insert_auth_event');
 const multer = require('multer');
 const plural = require('@vbarbarosh/node-helpers/src/plural');
 const redirect = require('../helpers/redirect');
+const release_confirmation_try = require('../helpers/release_confirmation_try');
 const replace_session = require('../helpers/replace_session');
 const require_confirmation = require('../helpers/require_confirmation');
+const reserve_confirmation_try = require('../helpers/reserve_confirmation_try');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const sharp = require('sharp');
 
@@ -138,8 +139,9 @@ async function profile_post(req, res)
             throw new UserFriendlyError('Missing fields');
         }
         if (has_password) {
-            await assert_confirmation_budget_available(user.id);
-            await assert_password_valid(req, user, current_password);
+            const tried = await reserve_confirmation_try(req, user.id, 'current_password');
+            await assert_password_valid(user, current_password);
+            await release_confirmation_try(tried);
         }
         // A first password has no current one to prove the owner (AW-04).
         if (!has_password) {

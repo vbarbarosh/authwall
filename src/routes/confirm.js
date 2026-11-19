@@ -1,10 +1,8 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
-const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const config = require('../../config');
 const const_auth_event = require('../helpers/const/const_auth_event');
-const const_auth_event_status = require('../helpers/const/const_auth_event_status');
 const consume_one_time_token = require('../helpers/consume_one_time_token');
 const csrf_middleware = require('../helpers/middleware/csrf_middleware');
 const db = require('../../db');
@@ -12,6 +10,8 @@ const insert_auth_event = require('../helpers/insert_auth_event');
 const make_rate_limit_middleware = require('../helpers/middleware/rate_limit_middleware');
 const record_confirmation = require('../helpers/record_confirmation');
 const redirect = require('../helpers/redirect');
+const release_confirmation_try = require('../helpers/release_confirmation_try');
+const reserve_confirmation_try = require('../helpers/reserve_confirmation_try');
 const save_session = require('../helpers/save_session');
 const send_confirm_code = require('../helpers/send_confirm_code');
 const spend_attempt = require('../helpers/spend_attempt');
@@ -47,14 +47,18 @@ async function confirm_post(req, res)
         throw new UserFriendlyError('Missing fields');
     }
 
-    await assert_confirmation_budget_available(user_id);
+    const user = await db('users').where({id: user_id}).first();
+    if ((method === 'password') && (user.password_hash === null)) {
+        throw new UserFriendlyError('Your account has no password. Confirm with a code sent to your primary address.');
+    }
 
     const now = new Date();
-    const ok = (method === 'code') ? await confirm_by_code(user_id, code, now) : await confirm_by_password(user_id, password);
+    const tried = await reserve_confirmation_try(req, user_id, method, now);
+    const ok = (method === 'code') ? await confirm_by_code(user_id, code, now) : await bcrypt.compare(password, user.password_hash);
     if (!ok) {
-        await insert_auth_event({req, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure, custom: {method}});
         throw new UserFriendlyError((method === 'code') ? 'Invalid or expired code' : 'Password is incorrect');
     }
+    await release_confirmation_try(tried);
 
     // For the action that asked, for a few minutes, once (AW-81).
     record_confirmation(req, method);
@@ -82,15 +86,6 @@ async function confirm_by_code(user_id, code, now)
         return false;
     }
     return consume_one_time_token('confirm_codes', record.id, now);
-}
-
-async function confirm_by_password(user_id, password)
-{
-    const user = await db('users').where({id: user_id}).first();
-    if (user.password_hash === null) {
-        throw new UserFriendlyError('Your account has no password. Confirm with a code sent to your primary address.');
-    }
-    return bcrypt.compare(password, user.password_hash);
 }
 
 module.exports = routes;

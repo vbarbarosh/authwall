@@ -1,5 +1,7 @@
 const assert = require('assert');
+const config = require('../../../config');
 const const_auth_event = require('../../../src/helpers/const/const_auth_event');
+const const_auth_event_status = require('../../../src/helpers/const/const_auth_event_status');
 const db = require('../../../db');
 
 // See a_borrowed_session_tries_passwords.md.
@@ -42,6 +44,33 @@ describe('A borrowed session tries passwords | stories', function () {
         assert.strictEqual(await confirm(this, 'anns-pass-123'), 'Too many attempts. Try again later.');
         assert.strictEqual(await change_password(this, 'anns-pass-123'), 'Too many attempts. Try again later.');
     });
+
+    // AW-87: the tries of a burst are counted before any is compared, not
+    // each against a budget the others have not spent yet.
+    function burst_fields(url, guess) {
+        if (url === '/auth/confirm') {
+            return {password: guess};
+        }
+        return {current_password: guess, password: 'mallorys-pass', password_confirm: 'mallorys-pass'};
+    }
+
+    for (const [door, url] of [['the password change form', '/auth/change-password'], ['the profile form', '/auth/profile'], ['"confirm it is you"', '/auth/confirm']]) {
+        it(`compares no more than five of 40 passwords sent at once to ${door} [concurrent]`, async function () {
+            this.timeout(60000);
+            // The shipped cost: each compare long enough for the whole burst
+            // to arrive while the first ones run.
+            config.bcrypt_rounds = 12;
+            const {user_id} = await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass-123'});
+            const {csrf_token} = await this.http_get_json('/auth/status');
+
+            const guesses = Array.from({length: 40}, (_, i) => `guess-${i}`);
+            await Promise.all(guesses.map(v => this.client.post_json_no_redirects(url, {...burst_fields(url, v), _csrf: csrf_token})));
+
+            const [{failures}] = await db('auth_events').where({user_id, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure}).count('* AS failures');
+            assert.ok(Number(failures) <= 5, `${failures} passwords compared`);
+            await this.assert_password({username: 'ann', password: 'anns-pass-123'});
+        });
+    }
 
     it('lets Ann change her password once the 15 minutes pass', async function () {
         const {user_id} = await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass-123'});

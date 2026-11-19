@@ -151,7 +151,9 @@ code mailed to the primary address or the account's password: a signed-in
 session alone is not enough. Five wrong answers within 15 minutes, codes and
 passwords together, lock the confirmation for the account; a wrong current
 password at the password change and profile forms counts among them, so a
-signed-in session cannot try passwords there either. An account with
+signed-in session cannot try passwords there either. Each try is counted
+before its answer is compared, so no more than five are compared however
+many arrive at once. An account with
 neither a primary address nor a password confirms by signing in again with a
 provider account it has already linked.
 

@@ -1,6 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const account_email_refusal = require('../helpers/account_email_refusal');
-const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
 const assert_password_valid = require('../helpers/assert/assert_password_valid');
 const assert_sign_up_enabled = require('../helpers/assert/assert_sign_up_enabled');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
@@ -33,8 +32,10 @@ const random_base62 = require('../helpers/random/random_base62');
 const random_hex = require('@vbarbarosh/node-helpers/src/random_hex');
 const random_uid_user_identity = require('../helpers/random/random_uid_user_identity');
 const redirect = require('../helpers/redirect');
+const release_confirmation_try = require('../helpers/release_confirmation_try');
 const release_pending_email = require('../helpers/release_pending_email');
 const require_confirmation = require('../helpers/require_confirmation');
+const reserve_confirmation_try = require('../helpers/reserve_confirmation_try');
 const revoke_pending_tokens = require('../helpers/revoke_pending_tokens');
 const users_create = require('../helpers/models/users_create');
 
@@ -391,8 +392,9 @@ async function change_password_post(req, res)
     }
 
     if (has_password) {
-        await assert_confirmation_budget_available(user.id);
-        await assert_password_valid(req, user, current_password);
+        const tried = await reserve_confirmation_try(req, user.id, 'current_password');
+        await assert_password_valid(user, current_password);
+        await release_confirmation_try(tried);
     }
     // A first password has no current one to prove the owner (AW-04).
     if (!has_password) {
