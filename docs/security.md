@@ -41,8 +41,10 @@ opaque session id, in the `authwall.sid` cookie.
 
 - The app behind Authwall never receives that cookie: Authwall drops it from
   every request and WebSocket it forwards, in proxy and in direct mode, and
-  the nginx and Caddy sidecar examples drop it too. The app learns who the
-  user is from `X-Auth-User` alone.
+  the nginx and Caddy sidecar examples drop it too. nginx's pattern removes
+  one copy, so `/auth/sidecar` refuses a request that carries the cookie
+  twice, as a script of the app can make the browser send it. The app learns
+  who the user is from `X-Auth-User` alone.
 - The app's own scripts run on Authwall's origin: they cannot read that
   cookie, but they can call Authwall's pages as the signed-in user. Trust
   them as you trust Authwall; account changes ask the owner to confirm.

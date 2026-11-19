@@ -1,6 +1,7 @@
 const account_access_refusal = require('../helpers/account_access_refusal');
 const config = require('../../config');
 const confirmation_key = require('../helpers/confirmation_key');
+const const_cookie = require('../helpers/const/const_cookie');
 const const_user_identity = require('../helpers/const/const_user_identity');
 const db = require('../../db');
 const email_verification_required = require('../helpers/email_verification_required');
@@ -208,6 +209,15 @@ async function get_confirm_email_status(user_id, identities)
 // behavior.
 async function sidecar_get(req, res)
 {
+    // The session cookie twice is refused, a public path too (AW-131): the
+    // nginx recipes take it out of the app's Cookie header with one pattern,
+    // which removes one copy, and the app would get the other. A script of
+    // the app can plant the second for a path of its choosing.
+    if (session_cookie_count(req) > 1) {
+        res.status(401).send();
+        return;
+    }
+
     const original_path = sidecar_original_path(req);
 
     // Public paths: admitted without an identity header, even for a signed-in
@@ -254,6 +264,12 @@ async function sidecar_get(req, res)
 
     res.setHeader('X-Auth-User',  user.uid);
     res.status(200).send();
+}
+
+// How many times the request's Cookie header names Authwall's session cookie.
+function session_cookie_count(req)
+{
+    return String(req.headers.cookie ?? '').split(';').filter(v => v.split('=')[0].trim() === const_cookie.session).length;
 }
 
 function sidecar_original_path(req)

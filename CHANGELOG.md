@@ -11,6 +11,12 @@
 
 ### Security
 
+- Behind the nginx sidecar example and the nginx recipe, the app no longer
+  receives Authwall's session cookie when the browser sends it twice:
+  `/auth/sidecar` refuses such a request, on a public path too. nginx's
+  pattern removed one copy, so a script of the app could plant a second
+  `authwall.sid` for a public path and read the real, HttpOnly one from
+  the request the app then received.
 - A sign-in provider with one or two of its three variables set, such as a
   client secret left out, refuses to start and names the missing ones. It
   was switched off with a warning, and with `AUTHWALL_FLOWS` unset the
