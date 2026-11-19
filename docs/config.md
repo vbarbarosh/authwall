@@ -597,6 +597,10 @@ holds one of the seed's addresses, confirmed.
 An account holding the seed's username and none of its addresses
 confirmed may be a stranger's, who signed up with that name first:
 the seed gives it nothing, and the log says `seed_user_left_alone`.
+An entry whose username and confirmed addresses are held by more than one
+account names none of them: nothing changes, and the log says
+`seed_user_owners_differ`, with the entry's place in the seed and the
+account that holds each of them.
 A seed with no address names its user by the username alone.
 Entries with neither a username nor a valid email are logged and skipped.
 Seeding is operator provisioning: it creates missing users and adds missing

@@ -19,7 +19,7 @@ async function bootstrap_users()
     }
 
     als.logger.write('👤 Seeding users...');
-    for (const user_seed of config.seed_users) {
+    for (const [i, user_seed] of config.seed_users.entries()) {
         const {username, email, password, password_hash, display_name} = user_seed;
         const emails = Array.isArray(email) ? email : [email].filter(Boolean);
 
@@ -30,7 +30,14 @@ async function bootstrap_users()
             continue;
         }
 
-        const {user_id, user_created, left_alone} = await seed_user_find_or_create({password, password_hash, display_name}, identities);
+        const {user_id, user_created, left_alone, identities_held} = await seed_user_find_or_create({password, password_hash, display_name}, identities);
+        if (identities_held) {
+            // The place of the entry, as the seed file's own errors give it:
+            // the operator fixes the seed, not the accounts.
+            const user_uid_by_identity = Object.fromEntries(identities_held.map(v => [`${v.type}:${v.value_normalized}`, v.user_uid]));
+            als.logger.write(`[seed_user_owners_differ] ⚠️ seed_user=${i + 1} username=${log_value_from_string(normalize_username(username) ?? '')} user_uid_by_identity=${JSON.stringify(user_uid_by_identity)} its identities are held by more than one account; nothing changed: one entry names one account`);
+            continue;
+        }
         if (left_alone) {
             als.logger.write(`[seed_user_left_alone] ⚠️ username=${log_value_from_string(normalize_username(username))} holds none of the seed's addresses confirmed; a stranger's: rename or remove it; yours: add the address from its profile`);
             continue;
@@ -53,11 +60,12 @@ async function bootstrap_users()
 }
 
 // The user a seed names, an existing one or a new one holding all its
-// identities; or one it leaves alone. An address another account holds
-// unconfirmed is taken from that account first. Two copies starting at once
-// on one database both find none and both create; the copy whose identities
-// the other took first rolls its user back and takes the other's, as if it
-// had started a moment later. Whoever took them is judged as at the start.
+// identities; or one it leaves alone; or none, its identities held by two
+// accounts. An address another account holds unconfirmed is taken from that
+// account first. Two copies starting at once on one database both find none
+// and both create; the copy whose identities the other took first rolls its
+// user back and takes the other's, as if it had started a moment later.
+// Whoever took them is judged as at the start.
 async function seed_user_find_or_create(params, identities)
 {
     const found = await seed_user_find(identities);
@@ -82,42 +90,45 @@ async function seed_user_find_or_create(params, identities)
 // confirmed. A username proves nothing either: with sign-up open, anyone can
 // take it before the seed runs. The account holding it is the seed's only for
 // a seed with no address, which has nothing to give it; for any other it is
-// left alone, as it is, whoever it belongs to.
+// left alone, as it is, whoever it belongs to. A seed whose identities two
+// accounts hold names neither: it is refused before anything changes, and
+// identities_held says whose they are.
 async function seed_user_find(identities)
 {
-    const ident = await seed_identity_find(identities);
-    if (!ident) {
+    const identities_held = await seed_identities_held_find(identities);
+    if (!identities_held.length) {
         return null;
     }
-    if ((ident.type === const_user_identity.username) && identities.some(v => v.type === const_user_identity.email)) {
-        return {user_id: ident.user_id, user_created: false, left_alone: true};
+    if (new Set(identities_held.map(v => v.user_id)).size > 1) {
+        return {user_id: null, user_created: false, left_alone: false, identities_held};
     }
-    await seed_emails_release(identities, ident.user_id);
-    return {user_id: ident.user_id, user_created: false, left_alone: false};
+
+    const user_id = identities_held[0].user_id;
+    const is_held_by_username = identities_held.every(v => v.type === const_user_identity.username);
+    if (is_held_by_username && identities.some(v => v.type === const_user_identity.email)) {
+        return {user_id, user_created: false, left_alone: true};
+    }
+    await seed_emails_release(identities, user_id);
+    return {user_id, user_created: false, left_alone: false};
 }
 
-// The identity that names the seed's user: one of its addresses confirmed,
-// else its username. An unconfirmed address proves nothing: anyone can sign
-// up with anyone's address. It never selects the account that holds it.
-async function seed_identity_find(identities)
+// The seed's identities that name an account: its username, and its
+// addresses held confirmed. An unconfirmed address proves nothing: anyone can
+// sign up with anyone's address. It never selects the account that holds it.
+async function seed_identities_held_find(identities)
 {
+    const usernames_normalized = identities.filter(v => v.type === const_user_identity.username).map(v => v.value_normalized);
     const emails_normalized = identities.filter(v => v.type === const_user_identity.email).map(v => v.value_normalized);
-    if (emails_normalized.length) {
-        const confirmed = await db('user_identities')
-            .where({type: const_user_identity.email})
-            .whereIn('value_normalized', emails_normalized)
-            .whereNotNull('verified_at')
-            .first();
-        if (confirmed) {
-            return confirmed;
-        }
-    }
-    const username = identities.find(v => v.type === const_user_identity.username);
-    if (!username) {
-        return null;
-    }
-    const ident = await db('user_identities').where({type: username.type, value_normalized: username.value_normalized}).first();
-    return ident ?? null;
+    return db('user_identities')
+        .join('users', 'users.id', 'user_identities.user_id')
+        .where(function () {
+            this.where('user_identities.type', const_user_identity.username).whereIn('user_identities.value_normalized', usernames_normalized);
+        })
+        .orWhere(function () {
+            this.where('user_identities.type', const_user_identity.email).whereIn('user_identities.value_normalized', emails_normalized).whereNotNull('user_identities.verified_at');
+        })
+        .orderBy(['user_identities.type', 'user_identities.value_normalized'])
+        .select('user_identities.type', 'user_identities.value_normalized', 'user_identities.user_id', 'users.uid AS user_uid');
 }
 
 // The seed is the operator's word: an address of it that another account

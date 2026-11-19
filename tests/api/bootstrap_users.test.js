@@ -10,6 +10,21 @@ const parse_authwall_seed = require('../../src/helpers/parse/parse_authwall_seed
 const parse_authwall_seed_file = require('../../src/helpers/parse/parse_authwall_seed_file');
 const path = require('path');
 
+// A seed whose second entry names two people's addresses, a pending one and
+// a new one.
+const SEED_TWO_OWNERS = [
+    {username: 'ops', emails: ['ops@myapp.test']},
+    {username: 'admin', emails: ['alice@myapp.test', 'bob@myapp.test', 'pending@myapp.test', 'new@myapp.test']},
+];
+
+// Each form an operator can write a seed in.
+const SEED_SOURCES = [
+    {name: 'AUTHWALL_SEED, compact', parse: v => parse_authwall_seed(v.map(vv => `${vv.username}:pass-1234:${vv.emails.join(',')}`).join(';'))},
+    {name: 'AUTHWALL_SEED, JSON', parse: v => parse_authwall_seed(JSON.stringify(v))},
+    {name: 'AUTHWALL_SEED_FILE, CSV', parse: v => seed_from_file('users.csv', `username,emails,password_hash\n${v.map(vv => `${vv.username},"${vv.emails.join(' ')}",`).join('\n')}\n`)},
+    {name: 'AUTHWALL_SEED_FILE, JSON', parse: v => seed_from_file('users.json', JSON.stringify(v))},
+];
+
 describe('bootstrap_users', function () {
 
     it('does not write the password of a rejected seed to the log', async function () {
@@ -210,4 +225,78 @@ describe('bootstrap_users', function () {
         assert.ok(this.written_logs.some(v => v.includes('➕ Added identities username=[admin]')));
     });
 
+    // An operator's mistake (AW-117): one entry names the addresses of two
+    // people. Neither gets the other's or the entry's new one, a pending one
+    // stays where it is, and the log says which entry and whose they are.
+    for (const source of SEED_SOURCES) {
+        it(`refuses an entry whose addresses two accounts hold confirmed, and changes nothing (${source.name})`, async function () {
+            const alice = await this.add_user({email: 'alice@myapp.test'});
+            const bob = await this.add_user({email: 'bob@myapp.test'});
+            const stranger = await this.add_user({email: 'pending@myapp.test', verified: false});
+            config.seed_users = source.parse(SEED_TWO_OWNERS);
+
+            await bootstrap_users();
+
+            const ops = await db('user_identities').where({type: const_user_identity.username, value_normalized: 'ops'}).first();
+            assert.deepStrictEqual(await identities_list(), [
+                `email:alice@myapp.test:${alice.user_id}:true`,
+                `email:bob@myapp.test:${bob.user_id}:true`,
+                `email:ops@myapp.test:${ops.user_id}:true`,
+                `email:pending@myapp.test:${stranger.user_id}:false`,
+                `username:ops:${ops.user_id}:true`,
+            ]);
+            assert.deepStrictEqual(await db('auth_events').where({event_type: 'identity_removed'}), []);
+            const alice_uid = (await db('users').where({id: alice.user_id}).first()).uid;
+            const bob_uid = (await db('users').where({id: bob.user_id}).first()).uid;
+            const refused = `[seed_user_owners_differ] ⚠️ seed_user=2 username=admin user_uid_by_identity={"email:alice@myapp.test":"${alice_uid}","email:bob@myapp.test":"${bob_uid}"} `;
+            assert.ok(this.written_logs.some(v => v.includes(refused)), this.written_logs.join('\n'));
+            assert.strictEqual(this.written_logs.some(v => v.includes('username=[admin]')), false);
+        });
+    }
+
+    // A stranger signed up as admin; the company's admin holds the address.
+    it('refuses an entry whose username one account holds and whose address another holds confirmed', async function () {
+        const admin = await this.add_user({email: 'admin@myapp.test'});
+        const stranger = await this.add_user({username: 'admin', password: 'strangers-pass-1'});
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test,ops@myapp.test');
+
+        await bootstrap_users();
+
+        assert.deepStrictEqual(await identities_list(), [`email:admin@myapp.test:${admin.user_id}:true`, `username:admin:${stranger.user_id}:true`]);
+        assert.ok(this.written_logs.some(v => v.includes('[seed_user_owners_differ] ⚠️ seed_user=1 username=admin ')));
+    });
+
+    it('adds to the account that holds two of its addresses confirmed', async function () {
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test,ops@myapp.test');
+        await bootstrap_users();
+        config.seed_users = parse_authwall_seed('admin:change-me:admin@myapp.test,ops@myapp.test,new@myapp.test');
+        this.written_logs.splice(0);
+
+        await bootstrap_users();
+
+        const users = await db('users');
+        assert.strictEqual(users.length, 1);
+        assert.strictEqual((await db('user_identities').where({user_id: users[0].id})).length, 4);
+        assert.ok(this.written_logs.some(v => v.includes('➕ Added identities username=[admin]')));
+    });
+
 });
+
+function seed_from_file(name, text)
+{
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seed-file-'));
+    try {
+        const file = path.join(dir, name);
+        fs.writeFileSync(file, text);
+        return parse_authwall_seed_file(file);
+    }
+    finally {
+        fs.rmSync(dir, {recursive: true, force: true});
+    }
+}
+
+async function identities_list()
+{
+    const identities = await db('user_identities').orderBy(['type', 'value']);
+    return identities.map(v => `${v.type}:${v.value}:${v.user_id}:${Boolean(v.verified_at)}`);
+}
