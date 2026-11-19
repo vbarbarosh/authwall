@@ -58,7 +58,7 @@ for (const mode of modes) {
 
         test('Space, the arrows and End scroll the page', async function ({page}) {
             for (const key of ['Space', 'ArrowDown', 'End']) {
-                const y = await page.evaluate(() => window.scrollY);
+                const y = await scroll_y_settled(page);
                 await page.keyboard.press(key);
                 await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(y);
             }
@@ -109,6 +109,21 @@ test.describe('docs search results from the keyboard (classic)', function () {
         await expect(page.locator('.search-results')).toBeHidden();
     });
 });
+
+// The page's scroll position once its smooth scroll has stopped. Chromium
+// may drop a key pressed just as a smooth scroll ends, sooner than anyone
+// types: the page then stays where it was.
+async function scroll_y_settled(page)
+{
+    let y = -1;
+    let y2 = await page.evaluate(() => window.scrollY);
+    while (y2 !== y) {
+        y = y2;
+        await page.waitForTimeout(100);
+        y2 = await page.evaluate(() => window.scrollY);
+    }
+    return y2;
+}
 
 // How far the focused element sits below the sticky header: negative when
 // part of it is under the header, or when focus has left the content.
