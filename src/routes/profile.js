@@ -1,5 +1,7 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const als = require('../helpers/als');
+const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
+const assert_password_valid = require('../helpers/assert/assert_password_valid');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const complete_password_change = require('../actions/complete_password_change');
@@ -134,8 +136,9 @@ async function profile_post(req, res)
         if (has_password && !current_password) {
             throw new UserFriendlyError('Missing fields');
         }
-        if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
-            throw new UserFriendlyError('Current password is incorrect');
+        if (has_password) {
+            await assert_confirmation_budget_available(user.id);
+            await assert_password_valid(req, user, current_password);
         }
         // A first password has no current one to prove the owner (AW-04).
         if (!has_password) {

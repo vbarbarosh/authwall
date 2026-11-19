@@ -1,5 +1,7 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
 const account_email_refusal = require('../helpers/account_email_refusal');
+const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
+const assert_password_valid = require('../helpers/assert/assert_password_valid');
 const assert_sign_up_enabled = require('../helpers/assert/assert_sign_up_enabled');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const authorize_email = require('../helpers/authorize_email');
@@ -382,8 +384,9 @@ async function change_password_post(req, res)
         throw new UserFriendlyError(plural(config.flows.password.min_password_length, 'Password must be at least # character', 'Password must be at least # characters'));
     }
 
-    if (has_password && !await bcrypt.compare(current_password, user.password_hash)) {
-        throw new UserFriendlyError('Current password is incorrect');
+    if (has_password) {
+        await assert_confirmation_budget_available(user.id);
+        await assert_password_valid(req, user, current_password);
     }
     // A first password has no current one to prove the owner (AW-04).
     if (!has_password) {

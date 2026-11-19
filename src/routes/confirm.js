@@ -1,4 +1,5 @@
 const UserFriendlyError = require('@vbarbarosh/node-helpers/src/errors/UserFriendlyError');
+const assert_confirmation_budget_available = require('../helpers/assert/assert_confirmation_budget_available');
 const auth_middleware = require('../helpers/middleware/auth_middleware');
 const bcrypt = require('bcrypt');
 const config = require('../../config');
@@ -19,11 +20,6 @@ const SECOND = 1000;
 const MINUTE = 60*SECOND;
 
 const CODE_MAX_ATTEMPTS = 5;
-
-// One budget for wrong codes and wrong passwords, across codes and processes:
-// counted from the failure events in the database, not in memory.
-const FAILURES_MAX = 5;
-const FAILURES_WINDOW = 15*MINUTE;
 
 const confirm_request_limiter = make_rate_limit_middleware(5, 60*MINUTE);
 
@@ -51,14 +47,7 @@ async function confirm_post(req, res)
         throw new UserFriendlyError('Missing fields');
     }
 
-    const since = new Date(Date.now() - FAILURES_WINDOW);
-    const [{failures}] = await db('auth_events')
-        .where({user_id, event_type: const_auth_event.identity_confirmed, event_status: const_auth_event_status.failure})
-        .where('created_at', '>', since)
-        .count('* as failures');
-    if (Number(failures) >= FAILURES_MAX) {
-        throw new UserFriendlyError('Too many attempts. Try again later.');
-    }
+    await assert_confirmation_budget_available(user_id);
 
     const now = new Date();
     const ok = (method === 'code') ? await confirm_by_code(user_id, code, now) : await confirm_by_password(user_id, password);
