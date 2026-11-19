@@ -69,6 +69,10 @@
 
 ### Fixed
 
+- A profile form refused for its own reason shows its own error. After a
+  "confirm it is you" left unanswered, such as for Disconnect, the next
+  form refused for anything (a wrong current password, the last way in)
+  opened that old ask instead.
 - The documentation works from the keyboard: Enter and Space press the
   theme switch, the Copy buttons and the links, Shift+Tab goes back, and
   Space, the arrows and End scroll. Every key but Tab jumped into the

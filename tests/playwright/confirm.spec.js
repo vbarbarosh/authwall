@@ -112,22 +112,73 @@ test.describe('confirm it is you', function () {
         expect(await db('user_identities').where({user_id, type: 'email', value_normalized: added}).first()).toMatchObject({verified_at: null});
     });
 
-    test('the add form shows its own refusal, not an ask another action left open', async function ({page}) {
-        const {user_id} = await sign_up_with_primary(page, {primary: false});
-        await using db = open_e2e_db();
-        await db('user_identities').where({user_id, type: 'email'}).delete();
-        const now = new Date();
-        await db('user_identities').insert({uid: `gh${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`, user_id, type: 'oauth_github', value: 'gh-user', value_normalized: `gh-${user_id}`, created_at: now, updated_at: now, verified_at: now});
+    // An ask another action left open is not what refused this form: its
+    // own error shows, not the other action's confirm view.
+    test.describe('a form shows its own refusal, not an ask another action left open', function () {
 
-        await page.goto('/auth/profile');
-        await page.getByTestId('profile-connections').locator('.connection-item', {hasText: 'GitHub'}).getByRole('button', {name: 'Disconnect'}).click();
-        await expect(page.getByTestId('confirm-reason')).toHaveText('Disconnecting GitHub needs the owner. Confirm it is you, then disconnect it again.');
+        async function link_github(db, user_id) {
+            const now = new Date();
+            await db('user_identities').insert({uid: `gh${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`, user_id, type: 'oauth_github', value: 'gh-user', value_normalized: `gh-${user_id}`, created_at: now, updated_at: now, verified_at: now});
+        }
 
-        await page.goto('/auth/profile');
-        await page.locator('#p-add-email-input').fill('not-an-address');
-        await page.locator('#p-add-email-submit').click();
-        await expect(page.locator('#p-add-email-error-msg')).toHaveText('Invalid email');
-        await expect(page.getByTestId('profile-view')).toBeVisible();
+        // Disconnect asks "confirm it is you", and the owner goes back.
+        async function leave_a_disconnect_ask(page) {
+            await page.goto('/auth/profile');
+            await page.getByTestId('profile-connections').locator('.connection-item', {hasText: 'GitHub'}).getByRole('button', {name: 'Disconnect'}).click();
+            await expect(page.getByTestId('confirm-reason')).toHaveText('Disconnecting GitHub needs the owner. Confirm it is you, then disconnect it again.');
+            await page.goto('/auth/profile');
+        }
+
+        test('add email', async function ({page}) {
+            const {user_id} = await sign_up_with_primary(page, {primary: false});
+            await using db = open_e2e_db();
+            await db('user_identities').where({user_id, type: 'email'}).delete();
+            await link_github(db, user_id);
+
+            await leave_a_disconnect_ask(page);
+            await page.locator('#p-add-email-input').fill('not-an-address');
+            await page.locator('#p-add-email-submit').click();
+            await expect(page.locator('#p-add-email-error-msg')).toHaveText('Invalid email');
+            await expect(page.getByTestId('profile-view')).toBeVisible();
+        });
+
+        test('change password', async function ({page}) {
+            const {user_id} = await sign_up_with_primary(page);
+            await using db = open_e2e_db();
+            await link_github(db, user_id);
+
+            await leave_a_disconnect_ask(page);
+            await page.locator('#p-curpass').fill('wrong-pass');
+            await page.locator('#p-newpass').fill('newpass1234');
+            await page.locator('#p-newpass2').fill('newpass1234');
+            await page.locator('#p-chpw').click();
+            await expect(page.locator('#p-chpw-error-msg')).toHaveText('Current password is incorrect');
+            await expect(page.getByTestId('profile-view')).toBeVisible();
+        });
+
+        test('disconnect', async function ({page}) {
+            // GitHub and a pending address, no password: GitHub is the only way in.
+            const {user_id} = await sign_up_with_primary(page, {primary: false});
+            await using db = open_e2e_db();
+            await db('user_identities').where({user_id, type: 'username'}).delete();
+            await db('users').where({id: user_id}).update({password_hash: null});
+            await link_github(db, user_id);
+
+            // Removing the account asks "confirm it is you", and the owner goes back.
+            await page.goto('/auth/profile');
+            await page.getByTestId('profile-remove-confirm').fill('DELETE');
+            await page.getByTestId('profile-remove-account').click();
+            await expect(page.getByTestId('confirm-reason')).toHaveText('Removing your account needs the owner. Confirm it is you, then remove it again.');
+            await page.goto('/auth/profile');
+
+            const dialog = page.waitForEvent('dialog');
+            await page.getByTestId('profile-connections').locator('.connection-item', {hasText: 'GitHub'}).getByRole('button', {name: 'Disconnect'}).click();
+            const alert = await dialog;
+            expect(alert.message()).toBe('Cannot disconnect GitHub: it is your only sign-in method');
+            await alert.dismiss();
+            await expect(page.getByTestId('profile-view')).toBeVisible();
+        });
+
     });
 
     test('offers a fresh sign-in with each linked provider account', async function ({page}) {

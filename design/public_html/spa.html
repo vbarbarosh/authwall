@@ -1831,7 +1831,7 @@ function render_user_data(s) {
         action += `<button class="btn btn-ghost btn-sm" style="color:var(--primary);flex-shrink:0" onclick="showView('email-change-req')" data-testid="email-change-open">Change</button>`;
       }
       if (p.type === 'email' && providers.length > 1) {
-        action += `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('/auth/email/remove')">Remove</button>`;
+        action += `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('/auth/email/remove', {reason: 'email_remove'})">Remove</button>`;
       } else if ((p.type === 'oauth_google' || p.type === 'oauth_github' || p.type === 'oauth_microsoft' || p.type === 'oauth_facebook' || p.type === 'oauth_twitter' || p.type === 'oauth_discord') && providers.length > 1) {
         const endpoint = {
           oauth_google: '/auth/google/disconnect',
@@ -1841,7 +1841,7 @@ function render_user_data(s) {
           oauth_twitter: '/auth/twitter/disconnect',
           oauth_discord: '/auth/discord/disconnect',
         }[p.type];
-        action = `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('${endpoint}')">Disconnect</button>`;
+        action = `<button class="btn btn-ghost btn-sm" style="color:var(--danger);flex-shrink:0" onclick="handle_disconnect('${endpoint}', {reason: 'provider_disconnect', disconnect: '${p.type}'})">Disconnect</button>`;
       }
 
       return `<div class="connection-item">
@@ -2174,17 +2174,18 @@ function confirm_steps_text(step, given)
 }
 
 // After a refused action: whether it was refused for want of a confirmation,
-// in which case the confirm view is shown instead of the error. `reason`,
-// when given, is the action's own: an ask another action left open is not
-// what refused this one (AW-119).
-async function confirm_if_asked(reason = null)
+// in which case the confirm view is shown instead of the error. `asked` is
+// the refused action, its reason and, for a disconnect, its provider: an ask
+// another action left open in the session is not what refused this one, and
+// its view would hide this one's own error.
+async function confirm_if_asked(asked)
 {
     // Unreachable, nothing is known to be asked: the post's own error shows (M-14).
     const s = await api_status().catch(() => null);
     if (!s || s.confirmed || !s.confirmation || !OWNER_ACTIONS[s.confirmation.reason]) {
         return false;
     }
-    if (reason && (s.confirmation.reason !== reason)) {
+    if (Object.entries(asked).some(([key, value]) => s.confirmation[key] !== value)) {
         return false;
     }
     showView('confirm');
@@ -2448,7 +2449,7 @@ document.getElementById('p-chpw').addEventListener('click', async () => {
   const fields = has_password ? { current_password, password, password_confirm } : { password, password_confirm };
   const { error } = await http_post_urlencoded('/auth/change-password', fields);
   set_loading('p-chpw', false);
-  if (error && await confirm_if_asked()) {
+  if (error && await confirm_if_asked({reason: 'first_password'})) {
     return;
   }
   if (error) return show_error('p-chpw-error-msg', 'p-chpw-error', error);
@@ -2469,7 +2470,7 @@ document.getElementById('p-add-email-submit').addEventListener('click', async ()
   set_loading('p-add-email-submit', true);
   const { final_url, error } = await http_post_urlencoded('/auth/email/add', { email });
   set_loading('p-add-email-submit', false);
-  if (error && await confirm_if_asked('email_add')) {
+  if (error && await confirm_if_asked({reason: 'email_add'})) {
     return;
   }
   if (error) return show_error('p-add-email-error-msg', 'p-add-email-error', error);
@@ -2484,7 +2485,7 @@ document.getElementById('p-remove').addEventListener('click', async () => {
   set_loading('p-remove', true);
   const { final_url, error } = await http_post_urlencoded('/auth/account/remove', { confirmation });
   set_loading('p-remove', false);
-  if (error && await confirm_if_asked()) {
+  if (error && await confirm_if_asked({reason: 'account_remove'})) {
     return;
   }
   if (error) return show_error('p-remove-error-msg', 'p-remove-error', error);
@@ -2492,9 +2493,9 @@ document.getElementById('p-remove').addEventListener('click', async () => {
 });
 
 // ── OAuth — Disconnect ───────────────────────────────────────────────────────
-async function handle_disconnect(endpoint) {
+async function handle_disconnect(endpoint, asked) {
   const { error } = await http_post_urlencoded(endpoint, {});
-  if (error && await confirm_if_asked()) {
+  if (error && await confirm_if_asked(asked)) {
     return;
   }
   if (error) return alert(error);
@@ -2540,7 +2541,7 @@ document.getElementById('pat-create').addEventListener('click', async () => {
   set_loading('pat-create', true);
   const { data, error } = await http_post_json('/auth/personal-access-tokens', { label, expires_days });
   set_loading('pat-create', false);
-  if (error && await confirm_if_asked()) {
+  if (error && await confirm_if_asked({reason: 'pat_create'})) {
     return;
   }
   if (error) return show_error('pat-error-msg', 'pat-error', error);
