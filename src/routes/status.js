@@ -12,6 +12,7 @@ const is_optional_auth_path = require('../helpers/is_optional_auth_path');
 const is_public_path = require('../helpers/is_public_path');
 const is_recently_confirmed = require('../helpers/is_recently_confirmed');
 const pkg = require('../../package.json');
+const recent_confirmation_kinds = require('../helpers/recent_confirmation_kinds');
 const target_path = require('../helpers/target_path');
 
 const routes = [
@@ -266,7 +267,7 @@ function confirmed_with(req)
     if (!is_recently_confirmed(req) || (confirmation_key(req.session.confirmed_for) !== confirmation_key(req.session.confirmation))) {
         return [];
     }
-    return req.session.confirmed_with ?? [];
+    return recent_confirmation_kinds(req);
 }
 
 module.exports = routes;

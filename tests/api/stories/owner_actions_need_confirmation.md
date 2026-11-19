@@ -22,7 +22,9 @@ session keeps where to come back; once confirmed, the owner does it again.
 
 Removing the account asks two different ways when the account has two:
 the password, then the code mailed to the primary (or a linked provider);
-with only a password, the password. The ask itself mails the code.
+with only a password, the password. The ask itself mails the code. Each way
+counts for ten minutes from when it was given: a password given eleven
+minutes before the code is asked for again (AW-109).
 
 An unverified address is removed without asking: it is no way in, and a user
 held at the verify step fixes a typo that way.

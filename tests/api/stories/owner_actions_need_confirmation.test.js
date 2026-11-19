@@ -89,6 +89,25 @@ describe('Actions that need the owner ask "confirm it is you" | stories', functi
         assert.strictEqual((await db('users')).length, 0);
     });
 
+    it('removing the account asks the password again when it was given more than ten minutes before the code (AW-109)', async function () {
+        await this.sign_in({username: 'ann', email: 'ann@authwall.test', password: 'anns-pass'});
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
+        await this.confirm({password: 'anns-pass'});
+
+        // Eleven minutes pass before the code is typed, in this tab or another.
+        const {confirmed_times} = await this.client.get_session();
+        const eleven_minutes_ago = new Date(Date.now() - 11*60*1000).toJSON();
+        await this.client.add_to_session({confirmed_at: eleven_minutes_ago, confirmed_times: {...confirmed_times, password: eleven_minutes_ago}});
+        await this.confirm();
+        assert.deepStrictEqual((await this.http_get_json('/auth/status')).confirmed_with, ['code']);
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
+        assert.strictEqual((await db('users')).length, 1);
+
+        await this.confirm({password: 'anns-pass'});
+        await this.http_post_json('/auth/account/remove', {confirmation: 'DELETE'});
+        assert.strictEqual((await db('users')).length, 0);
+    });
+
     it('removing an account with only a password asks for the password alone', async function () {
         await this.sign_in({username: 'ann', password: 'anns-pass'});
 
