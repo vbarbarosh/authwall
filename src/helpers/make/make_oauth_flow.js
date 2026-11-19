@@ -172,11 +172,14 @@ async function callback_get(oauth_provider, req, res)
 
         // The primary address vouches for the owner. A provider account under
         // any other address waits until the owner confirms it is them for this
-        // connect (AW-24, AW-81).
+        // connect of this account (AW-24, AW-81): another account at the same
+        // provider, signed in to by the time the flow comes back, asks again
+        // (AW-108).
         const asked = {
             next: urlmod(oauth_provider.route_authorize, {connect: 1}),
             reason: 'provider_connect',
             provider: oauth_provider.user_identity_type,
+            subject: sub,
             provider_emails,
         };
         if (!await returns_primary_email(req.session.user_id, oauth_provider, verified_emails) && !spend_confirmation(req, asked)) {

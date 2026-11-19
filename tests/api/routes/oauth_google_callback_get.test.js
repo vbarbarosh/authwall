@@ -62,7 +62,7 @@ describe('GET /auth/google/callback', function () {
     it('connects google account to existing session', async function () {
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google', subject: 'google-user-123'});
 
         mock_google();
         await this.client.get_json_no_redirects('/auth/google?connect=1');

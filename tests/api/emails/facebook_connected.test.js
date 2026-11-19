@@ -11,6 +11,7 @@ describe('emails • facebook_connected', function () {
     it('should be sent after connecting a Facebook account from profile', async function () {
         await assert_oauth_connected_email(this, {
             provider: 'facebook',
+            subject: 'facebook-user-123',
             mock: mock_facebook,
             expected: const_email.facebook_connected,
         });

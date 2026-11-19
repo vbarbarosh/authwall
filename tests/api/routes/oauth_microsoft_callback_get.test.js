@@ -68,7 +68,7 @@ describe('GET /auth/microsoft/callback', function () {
     it('connects microsoft account to existing session', async function () {
 
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_microsoft'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_microsoft', subject: 'microsoft-user-123'});
 
         mock_microsoft();
         await this.client.get_json_no_redirects('/auth/microsoft?connect=1');

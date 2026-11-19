@@ -11,6 +11,7 @@ describe('emails • twitter_connected', function () {
     it('should be sent after connecting an X account from profile', async function () {
         await assert_oauth_connected_email(this, {
             provider: 'twitter',
+            subject: '123456789',
             mock: mock_twitter,
             expected: const_email.twitter_connected,
         });

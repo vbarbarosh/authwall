@@ -71,7 +71,7 @@ describe('A link planted from a borrowed session survives the owner\'s recovery 
         await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@gmail.test'});
         assert.deepStrictEqual(await google_subs(), []);
         const status = await this.http_get_json('/auth/status');
-        assert.deepStrictEqual(status.confirmation, {next: '/auth/google?connect=1', reason: 'provider_connect', provider: 'oauth_google', provider_emails: ['mocha@gmail.test']});
+        assert.deepStrictEqual(status.confirmation, {next: '/auth/google?connect=1', reason: 'provider_connect', provider: 'oauth_google', subject: 'mocha-google', provider_emails: ['mocha@gmail.test']});
         assert.strictEqual(status.confirmed, false);
 
         await this.wait_for_emails(1);
@@ -81,6 +81,22 @@ describe('A link planted from a borrowed session survives the owner\'s recovery 
 
         assert.deepStrictEqual(await google_subs(), ['mocha-google']);
         assert.strictEqual((await this.http_get_json('/auth/status')).confirmation, null);
+    });
+
+    it('asks again when Google comes back with another account than the one confirmed (AW-108)', async function () {
+        await this.sign_in({username: 'mocha', email: 'mocha@authwall.test', password: 'pass123'});
+        await google_callback(this, '/auth/google?connect=1', {sub: 'mocha-google', email: 'mocha@gmail.test'});
+        await this.wait_for_emails(1);
+        const {code} = this.sent_emails.find(v => v.name === const_email.confirm_code).placeholders;
+        await this.http_post_json('/auth/confirm', {code});
+
+        // Before the flow comes back, the browser's Google session is someone
+        // else's: the confirmation was for Mocha's account, not this one.
+        await google_callback(this, '/auth/google?connect=1', {sub: 'other-google', email: 'other@gmail.test'});
+        assert.deepStrictEqual(await google_subs(), []);
+        const status = await this.http_get_json('/auth/status');
+        assert.partialDeepStrictEqual(status.confirmation, {reason: 'provider_connect', subject: 'other-google', provider_emails: ['other@gmail.test']});
+        assert.deepStrictEqual(status.confirmed_with, []);
     });
 
     it('asks for confirmation for Facebook even when it returns the primary address', async function () {

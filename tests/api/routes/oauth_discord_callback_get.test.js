@@ -61,7 +61,7 @@ describe('GET /auth/discord/callback', function () {
 
     it('connects discord account to existing session', async function () {
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_discord'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_discord', subject: '123456789123456789'});
 
         mock_discord();
         await this.client.get_json_no_redirects('/auth/discord?connect=1');

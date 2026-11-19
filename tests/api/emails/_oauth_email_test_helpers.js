@@ -13,12 +13,12 @@ function configure_oauth_provider(provider)
     config.flows[provider].redirect_url = `mocha_${provider}_redirect_url`;
 }
 
-async function assert_oauth_connected_email(ctx, {provider, mock, expected})
+async function assert_oauth_connected_email(ctx, {provider, subject, mock, expected})
 {
     mock();
 
     await ctx.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
-    await ctx.mark_confirmed({reason: 'provider_connect', provider: `oauth_${provider}`});
+    await ctx.mark_confirmed({reason: 'provider_connect', provider: `oauth_${provider}`, subject});
     await ctx.client.get_json_no_redirects(`/auth/${provider}?connect=1`);
     const sess = await ctx.client.get_session();
     await ctx.http_get_json(urlmod(`/auth/${provider}/callback`, {

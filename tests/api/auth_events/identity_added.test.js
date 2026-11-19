@@ -24,7 +24,7 @@ describe('auth_events • identity_added', function () {
         await db('auth_events').del();
         mock_github();
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_github'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_github', subject: '583231'});
 
         await this.client.get_json_no_redirects('/auth/github?connect=1');
         const sess = await this.client.get_session();
@@ -44,7 +44,7 @@ describe('auth_events • identity_added', function () {
         await db('auth_events').del();
         mock_google();
         await this.sign_in({username: 'mocha', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google', subject: 'google-user-123'});
 
         await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();

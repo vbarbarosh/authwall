@@ -20,7 +20,7 @@ describe('emails • google_connected', function () {
         mock_google();
 
         await this.sign_in({email: 'mocha@authwall.test', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google', subject: 'google-user-123'});
 
         await this.client.get_json_no_redirects('/auth/google?connect=1');
         const sess = await this.client.get_session();

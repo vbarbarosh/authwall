@@ -22,6 +22,10 @@ Mocha's, so it never signs in as Mocha, before or after the reset.
 A Google account that returns Mocha's primary address, verified by Google,
 links at once, as before.
 
+Mocha's confirmation is for the Google account the page showed, by its
+account id: if the browser comes back from Google signed in to another
+account, that one is asked for again and nothing is linked (AW-108).
+
 ## Why
 
 A linked provider account is a sign-in method of its own, and a signed-in

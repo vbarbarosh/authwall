@@ -17,7 +17,7 @@ describe('Email change invalidates old email sign-in | stories', function () {
     it('old email sign-in fails after email change; Google sign-in still works', async function () {
         // Set up: user with email+password and Google linked
         await this.sign_in({email: 'old@authwall.test', password: 'pass123'});
-        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google'});
+        await this.mark_confirmed({reason: 'provider_connect', provider: 'oauth_google', subject: 'google-user-123'});
 
         // Connect Google
         mock_google();

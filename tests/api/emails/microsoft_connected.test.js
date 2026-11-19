@@ -11,6 +11,7 @@ describe('emails • microsoft_connected', function () {
     it('should be sent after connecting a Microsoft account from profile', async function () {
         await assert_oauth_connected_email(this, {
             provider: 'microsoft',
+            subject: 'microsoft-user-123',
             mock: mock_microsoft,
             expected: const_email.microsoft_connected,
         });

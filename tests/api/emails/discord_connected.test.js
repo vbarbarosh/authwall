@@ -11,6 +11,7 @@ describe('emails • discord_connected', function () {
     it('should be sent after connecting a Discord account from profile', async function () {
         await assert_oauth_connected_email(this, {
             provider: 'discord',
+            subject: '123456789123456789',
             mock: mock_discord,
             expected: const_email.discord_connected,
         });
