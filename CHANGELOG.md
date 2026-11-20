@@ -4,6 +4,9 @@
 
 ### Upgrading
 
+- A stack copied from the repository's `docker-compose.yaml` or from a
+  recipe with Postgres: give its database the `db` network the new ones
+  have, which only Authwall joins, so the app cannot reach it.
 - A SQLite database made by an earlier version keeps its mode, `0644`
   under the usual umask, readable by every user of the machine: run
   `chmod 600` on it once (`data/db.sqlite3`, or the file `AUTHWALL_DB`
@@ -15,6 +18,10 @@
 
 ### Security
 
+- The repository's `docker-compose.yaml` and the recipes with Postgres put
+  the database on a network of its own, which only Authwall joins. The app
+  behind Authwall shared its network, and could reach the database with
+  the password every copy of the file holds.
 - A wrong `AUTHWALL_SET_HEADERS` entry stops the start with its number and
   the form expected, `entry 2 must contain "=": Header-Name=value`, and
   prints no part of it. The error quoted the whole entry, the upstream's

@@ -17,6 +17,9 @@ services:
       - 3000:3000
     volumes:
       - ./data/authwall:/app/data
+    networks:
+      - default
+      - db
     depends_on:
       - mysql
 
@@ -30,6 +33,8 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - ./data/mysql:/var/lib/mysql
+    networks:
+      - db
 
 #  postgres:
 #    image: postgres:17-alpine
@@ -40,7 +45,16 @@ services:
 #      POSTGRES_PASSWORD: authwall
 #    volumes:
 #      - ./data/postgres:/var/lib/postgresql/data
+#    networks:
+#      - db
 
   echo-server:
       image: jmalloc/echo-server
       restart: unless-stopped
+
+# The database on a network of its own, which only Authwall joins: the app
+# behind it never reaches the database or tries its password (AW-171).
+networks:
+  default: {}
+  db:
+    internal: true

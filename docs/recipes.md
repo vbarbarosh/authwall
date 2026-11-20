@@ -447,6 +447,9 @@ services:
       - 3000:3000
     volumes:
       - ./data/authwall:/app/data
+    networks:
+      - default
+      - db
     depends_on:
       - postgres
       - app
@@ -460,14 +463,23 @@ services:
       POSTGRES_PASSWORD: authwall
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - db
 
   app:
     image: jmalloc/echo-server
     restart: unless-stopped
+
+networks:
+  default: {}
+  db:
+    internal: true
 ```
 
 - users and sessions now live in Postgres; `./data/authwall` still holds
   `secret.key`, so keep it too — losing the secret signs everyone out
+- Postgres sits on a network of its own, `db`, which only Authwall joins:
+  the app behind Authwall cannot reach the database or try its password
 - for MySQL instead, swap the image and the URL scheme:
   `AUTHWALL_DB: mysql://authwall:authwall@mysql/authwall`
   (the [getting-started walkthrough](getting-started.md) is a full MySQL stack)
@@ -497,6 +509,9 @@ x-authwall: &authwall
     AUTHWALL_DB: postgres://authwall:authwall@postgres/authwall
   volumes:
     - ./data/authwall:/app/data
+  networks:
+    - default
+    - db
   depends_on:
     - postgres
     - app
@@ -526,10 +541,17 @@ services:
       POSTGRES_PASSWORD: authwall
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - db
 
   app:
     image: jmalloc/echo-server
     restart: unless-stopped
+
+networks:
+  default: {}
+  db:
+    internal: true
 ```
 
 - sessions, tokens and sign-in links live in Postgres: signed in on one copy
@@ -571,6 +593,9 @@ services:
       - 3000:3000
     volumes:
       - ./data/authwall:/app/data
+    networks:
+      - default
+      - db
     depends_on:
       - postgres
       - app
@@ -584,10 +609,17 @@ services:
       POSTGRES_PASSWORD: authwall
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - db
 
   app:
     image: jmalloc/echo-server
     restart: unless-stopped
+
+networks:
+  default: {}
+  db:
+    internal: true
 ```
 
 - [`AUTHWALL_SEED`](config.md#authwall_seed) creates the `admin` user on first

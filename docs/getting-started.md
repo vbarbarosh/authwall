@@ -68,6 +68,9 @@ The shipped `docker-compose.yaml` defines three services:
 | `mysql`       | `mysql:8.4.8`         | Persistent storage for users and sessions             |
 | `echo-server` | `jmalloc/echo-server` | A stand-in upstream app that echoes each request back |
 
+MySQL sits on a network of its own, `db`, which only Authwall joins: the
+upstream app cannot reach the database or try its password.
+
 The `authwall` service is configured entirely through environment variables:
 
 ```yaml
