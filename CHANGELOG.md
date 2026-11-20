@@ -4,6 +4,8 @@
 
 ### Upgrading
 
+- The image carries no `npm` or `npx`: a script that ran them inside the
+  container runs `node` or the scripts of `bin/` instead.
 - A stack copied from the repository's `docker-compose.yaml` or from a
   recipe with Postgres: give its database the `db` network the new ones
   have, which only Authwall joins, so the app cannot reach it.
@@ -18,6 +20,9 @@
 
 ### Security
 
+- The image no longer carries the base image's `npm`, which Authwall never
+  started and whose own packages held every high finding of an image scan,
+  and its Alpine packages are brought to their fixed versions.
 - A Facebook sign-in keeps its address apart, in
   `user_identities.provider_unconfirmed_emails`: `provider_emails` holds
   only what a provider confirmed. Facebook never says it confirmed an

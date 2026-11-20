@@ -21,6 +21,8 @@ Authwall is published as `vbarbarosh/authwall` on Docker Hub. The image:
 
 - runs as the non-root `node` user;
 - uses `dumb-init` as PID 1 for correct signal handling;
+- runs `node` and nothing else: it carries no `npm` or `npx`, so a script
+  that ran `npm` inside the container runs `node` instead;
 - sets `NODE_ENV=production`, `LISTEN=0.0.0.0`, `PORT=3000`, and
   `AUTHWALL_LOGGER=stdout` by default;
 - is tagged per release (`:1`, `:1.12`, `:1.12.0`) as well as `:latest`.

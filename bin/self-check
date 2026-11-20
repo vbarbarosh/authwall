@@ -60,3 +60,10 @@ echo "[bin/password-hash] a bcrypt hash"
 summary=`docker exec "$name" bin/activity-summary day` || fail "[bin/activity-summary] it failed"
 [[ $summary == *'Authwall activity summary'* ]] || fail "[bin/activity-summary] no summary"
 echo "[bin/activity-summary] a summary of the last day"
+
+# Only node runs in the image: npm, with the packages an image scan finds
+# old in it, is not there (AW-174).
+if docker exec "$name" sh -c 'command -v npm || command -v npx || test -e /usr/local/lib/node_modules/npm' > /dev/null 2>&1; then
+    fail "[no npm] npm is in the image"
+fi
+echo "[no npm] none in the image"
