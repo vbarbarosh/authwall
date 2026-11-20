@@ -489,7 +489,8 @@ Headers to add to requests before Authwall forwards them to `AUTHWALL_UPSTREAM_U
 
 - Type: semicolon-separated `Header-Name=value` entries
 - Default: none
-- Validation: each header name and value must be valid for Node's HTTP client
+- Validation: each header name and value must be valid for Node's HTTP client;
+  a wrong entry stops the start, named by its number, never by its text
 
 Use this for static headers the upstream expects on every proxied request.
 Header values may be empty.

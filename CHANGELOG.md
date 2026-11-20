@@ -15,6 +15,11 @@
 
 ### Security
 
+- A wrong `AUTHWALL_SET_HEADERS` entry stops the start with its number and
+  the form expected, `entry 2 must contain "=": Header-Name=value`, and
+  prints no part of it. The error quoted the whole entry, the upstream's
+  credential in it, at every restart into the collected log: a credential
+  in such a log is rotated.
 - A new SQLite database is made readable by its owner only, by the first
   start and by `bin/migrate` alike. SQLite made it with the umask, `0644`
   under the usual `022`, so anyone on the machine could copy every
