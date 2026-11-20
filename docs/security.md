@@ -45,6 +45,10 @@ opaque session id, in the `authwall.sid` cookie.
   one copy, so `/auth/sidecar` refuses a request that carries the cookie
   twice, as a script of the app can make the browser send it. The app learns
   who the user is from `X-Auth-User` alone.
+- Every answer of `/auth/sidecar` says `Cache-Control: no-store`: a
+  decision holds for one request, its credential and its path. A cache
+  between the gateway and Authwall that kept one would hand one user's
+  `X-Auth-User` to the next request, so none is set up in the examples.
 - The app's own scripts run on Authwall's origin: they cannot read that
   cookie, but they can call Authwall's pages as the signed-in user. Trust
   them as you trust Authwall; account changes ask the owner to confirm.

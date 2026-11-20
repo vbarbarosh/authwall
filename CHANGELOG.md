@@ -20,6 +20,9 @@
 
 ### Security
 
+- Every answer of `/auth/sidecar` says `Cache-Control: no-store`, so a
+  cache in front of it never keeps a decision, with the user it names, for
+  another request. It said nothing, where `/auth/status` said `no-store`.
 - The image no longer carries the base image's `npm`, which Authwall never
   started and whose own packages held every high finding of an image scan,
   and its Alpine packages are brought to their fixed versions.

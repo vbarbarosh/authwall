@@ -209,6 +209,11 @@ async function get_confirm_email_status(user_id, identities)
 // behavior.
 async function sidecar_get(req, res)
 {
+    // A decision holds for this request alone, its credential, its path and
+    // the user it names: no cache between the gateway and Authwall keeps it
+    // for the next one (AW-172).
+    res.set('Cache-Control', 'no-store');
+
     // The session cookie twice is refused, a public path too (AW-131): the
     // nginx recipes take it out of the app's Cookie header with one pattern,
     // which removes one copy, and the app would get the other. A script of
