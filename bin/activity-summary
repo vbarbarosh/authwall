@@ -3,7 +3,7 @@
 const als = require('../src/helpers/als');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
-const knex = require('knex');
+const db_from_knexvars = require('../src/helpers/db_from_knexvars');
 const {
     load_activity_summary_events,
     parse_activity_summary_args,
@@ -23,7 +23,7 @@ async function main()
         return;
     }
 
-    const db = knex(config.knexvars);
+    const db = db_from_knexvars(config.knexvars);
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     const events = await als.run({db}, () => load_activity_summary_events(options))

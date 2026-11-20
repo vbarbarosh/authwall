@@ -2,8 +2,8 @@
 
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../config');
+const db_from_knexvars = require('../src/helpers/db_from_knexvars');
 const format_database = require('../src/helpers/format/format_database');
-const knex = require('knex');
 
 cli(main);
 
@@ -17,7 +17,7 @@ async function main()
         process.exit(1);
     }
 
-    const db = knex(config.knexvars);
+    const db = db_from_knexvars(config.knexvars);
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     console.log(`🗄️ ${format_database(config.knexvars)}`);

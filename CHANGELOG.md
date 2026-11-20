@@ -4,6 +4,10 @@
 
 ### Upgrading
 
+- A SQLite database made by an earlier version keeps its mode, `0644`
+  under the usual umask, readable by every user of the machine: run
+  `chmod 600` on it once (`data/db.sqlite3`, or the file `AUTHWALL_DB`
+  names).
 - A sign-in provider set up by half now stops the start. An `.env` copied
   from an earlier `.env.example` sets `AUTHWALL_GOOGLE_REDIRECT_URL` and
   `AUTHWALL_GITHUB_REDIRECT_URL` with no client id or secret: remove those
@@ -11,6 +15,10 @@
 
 ### Security
 
+- A new SQLite database is made readable by its owner only, by the first
+  start and by `bin/migrate` alike. SQLite made it with the umask, `0644`
+  under the usual `022`, so anyone on the machine could copy every
+  password hash and address in it.
 - A JSON `AUTHWALL_SEED` that does not parse stops the start with
   `AUTHWALL_SEED: not valid JSON`, and prints no part of it. Node printed
   the line it failed on, the whole seed with every password, at every

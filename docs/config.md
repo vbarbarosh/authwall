@@ -577,6 +577,10 @@ Set `sqlite://` with a file path to keep SQLite but use a different file (a
 side deployment, or a database the test suite can own). Set `mysql://` or
 `postgres://` when Authwall should use MySQL or PostgreSQL instead.
 
+Authwall makes a new SQLite file readable by its owner only (`0600`), and
+leaves the mode of an existing one as it is. A file made by an earlier
+version is `0644` under the usual umask: run `chmod 600` on it.
+
 > [!WARNING]
 > If the URI uses any other scheme, Authwall refuses to start.
 

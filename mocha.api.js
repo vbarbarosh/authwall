@@ -14,7 +14,7 @@ process.env.AUTHWALL_BCRYPT_ROUNDS = '4';
 const als = require('./src/helpers/als');
 const bootstrap_database = require('./src/helpers/bootstrap_database');
 const config = require('./config');
-const knex = require('knex');
+const db_from_knexvars = require('./src/helpers/db_from_knexvars');
 const make_logger_fake = require('./src/services/logger/make_logger_fake');
 const make_logger_stdout = require('./src/services/logger/make_logger_stdout');
 const make_mailer_fake = require('./src/services/mailer/make_mailer_fake');
@@ -22,7 +22,7 @@ const setup_servers = require('./tests/setup_servers');
 const spin_test_database = require('./tests/spin_test_database');
 const {Runnable} = require('mocha/lib/runnable');
 
-const db = knex(config.knexvars);
+const db = db_from_knexvars(config.knexvars);
 const original_run = Runnable.prototype.run;
 const saved_config = structuredClone(config);
 

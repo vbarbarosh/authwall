@@ -1,6 +1,6 @@
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const config = require('../../config');
-const knex = require('knex');
+const db_from_knexvars = require('../../src/helpers/db_from_knexvars');
 const spin_test_database = require('../spin_test_database');
 const {create_echo_server} = require('../setup_servers');
 const {once} = require('events');
@@ -10,7 +10,7 @@ cli(main);
 async function main()
 {
     // Before the app migrates and seeds it (AW-105).
-    const db = knex(config.knexvars);
+    const db = db_from_knexvars(config.knexvars);
     try {
         await spin_test_database(db);
     }

@@ -9,8 +9,8 @@ const bootstrap_database = require('./helpers/bootstrap_database');
 const bootstrap_users = require('./helpers/bootstrap_users');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const create_app = require('./create_app');
+const db_from_knexvars = require('./helpers/db_from_knexvars');
 const express_run = require('./helpers/express/express_run');
-const knex = require('knex');
 const log_value_from_string = require('./helpers/log_value_from_string');
 const make_logger_daily = require('./services/logger/make_logger_daily');
 const make_logger_stdout = require('./services/logger/make_logger_stdout');
@@ -28,7 +28,7 @@ cli(main);
 
 async function main()
 {
-    const db = knex(config.knexvars);
+    const db = db_from_knexvars(config.knexvars);
     await using _ = {[Symbol.asyncDispose]: () => db.destroy()};
 
     await using logger = make_logger();
