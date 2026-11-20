@@ -29,13 +29,13 @@ Node.js 26, Express 5, knex over SQLite, MySQL or PostgreSQL, CommonJS.
   `decisions.md`, `ui-contract.md`, `dictionary.md` and the flow notes.
 - This is an auth proxy: the attacker's point of view (below) is never skipped.
 
-<!-- rules: begin https://github.com/vbarbarosh/rules 23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f 2026-10-19 -->
+<!-- rules: begin https://github.com/vbarbarosh/rules 33cf36275d1384ee5e60232cab779214b6290f0d 2026-11-20 -->
 
 ## Rules
 
 New code follows the rulebook, https://vbarbarosh.github.io/rules/docs/rules.html
 (the repository [vbarbarosh/rules](https://github.com/vbarbarosh/rules), taken at
-[`23ee7f9`](https://github.com/vbarbarosh/rules/tree/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f) on 2026-10-19).
+[`33cf362`](https://github.com/vbarbarosh/rules/tree/33cf36275d1384ee5e60232cab779214b6290f0d) on 2026-11-20).
 Read the rules that touch your change before you make it, as they stand that
 day, for they change. The rule text lives there only; this file names the
 groups. Old code stays as it is.
@@ -62,6 +62,7 @@ Apply:
 - **UI, UIM**: the SPA (`design/public_html/spa.html`) and the docs site
   (`bin/build-docs`, `.docs/static/`).
 - **DOC-06 to DOC-10**: the audit notes in `notes/`.
+- **DOC-15, DOC-16**: all Markdown: `docs/`, `notes/`, the README.
 
 Do not apply:
 
@@ -75,14 +76,16 @@ Do not apply:
 ### Lint
 
 ```sh
-npx --yes github:vbarbarosh/rules#23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f <the .js files you wrote>
+npx --yes github:vbarbarosh/rules#33cf36275d1384ee5e60232cab779214b6290f0d <the files you wrote>
 ```
 
-The rulebook's linter, at the commit above, over the new code only; old
-code is not linted. It exits non-zero on any violation. It reads `.js`
-files only: the node scripts in `bin/` without an extension and the SPA's
-script are checked by hand (a `.js` copy passes through the same command). Many rules are not linted at all (FMT-27,
-FMT-30, FMT-31, FLOW-05, naming): read them.
+The rulebook's linter, at the commit above, over the new code only;
+old code is not linted. It exits non-zero on any violation.
+It reads `.js` and `.css` files and the scripts and styles of a page:
+the SPA goes in whole, and only the lines you wrote must pass.
+A node script of `bin/`, with no extension, goes in as a `.js` copy.
+Read the rules the linter leaves out: naming, FMT-27, FMT-30, FMT-31,
+FMT-33 to FMT-37, FLOW-05, FLOW-13 and FN-17.
 
 ## How to work
 
@@ -90,11 +93,12 @@ What is expected of an agent: how it does the work, without the author having
 to say it each time. Handed to an agent as it is, "work like this". Kept apart
 from the rules, which say how the code looks.
 
-- [consequences_first.md](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/consequences_first.md) — before the first edit, picture what the change leads to, "what if this, what if that"; the entries below follow from it
-- [one_example_all_cases.md](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/one_example_all_cases.md) — one example stands for all cases like it: find them, change them all, say the consequences first
-- [every_state_before_done.md](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every_state_before_done.md) — a UI is tried in every state (long, empty, one letter, absurd) before it is called done; its layout holds them all; the reply says what was decided and asks what is ambiguous
-- [every_point_of_view.md](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every_point_of_view.md) — one task is several stories: the user's, the implementation's, the attacker's (and the operator's, the next developer's, the newcomer's); tell each before done; the screen follows the user's story
-- [data_as_a_picture.md](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/data_as_a_picture.md) — a reply that carries data shows it as a picture: ask what the data answers, take the kind of diagram the chooser gives, draw it as its page says, check it; no shape, no picture
+- [consequences_first.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/consequences_first.md) — before the first edit, picture what the change leads to, "what if this, what if that"; the entries below follow from it
+- [one_example_all_cases.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/one_example_all_cases.md) — one example stands for all cases like it: find them, change them all, say the consequences first
+- [every_state_before_done.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every_state_before_done.md) — a UI is tried in every state (long, empty, one letter, absurd) before it is called done; its layout holds them all; the reply says what was decided and asks what is ambiguous
+- [every_point_of_view.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every_point_of_view.md) — one task is several stories: the user's, the implementation's, the attacker's (and the operator's, the next developer's, the newcomer's); tell each before done; the screen follows the user's story
+- [data_as_a_picture.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/data_as_a_picture.md) — a reply that carries data shows it as a picture: ask what the data answers, take the kind of diagram the chooser gives, draw it as its page says, check it; no shape, no picture
+- [fixing.md](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/fixing.md) — a failure is made to happen on demand before a line of fix is written; the change goes to the cause, not to where it hurts; muting the report or loosening the test fixes nothing
 
 - Probably the first thing to do: give a task to a real developer. The first
   thing they do is build, at least in their head, an understanding of the
@@ -106,7 +110,7 @@ A developer given a task does not start typing. They first picture what the
 change leads to: what if this, what if that. Only then do they start, and the
 work follows from that picture. An agent works the same way.
 
-![The task, the four "what if" questions asked before the first edit, and what each one shapes: the scope, what is said before the change, the states to test, the stories to tell](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/img/guides/consequences_first.svg)
+![The task, the four "what if" questions asked before the first edit, and what each one shapes: the scope, what is said before the change, the states to test, the stories to tell](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/consequences_first.svg)
 
 #### Why
 
@@ -123,9 +127,9 @@ costs the author a message, found one at a time.
    when the data is long, empty, absurd? What does the author not see from
    where they stand?
 2. **Let the answers shape the work.** They decide the scope (see
-   [One example, all cases](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/one_example_all_cases.md)), the states to
-   test (see [Every state before done](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every_state_before_done.md)) and the
-   stories to tell (see [Every point of view](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every_point_of_view.md)).
+   [One example, all cases](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/one_example_all_cases.md)), the states to
+   test (see [Every state before done](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every_state_before_done.md)) and the
+   stories to tell (see [Every point of view](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every_point_of_view.md)).
 3. **Tell the author what was found.** A consequence that makes the change a
    poor one is said before the change, with the better way. What was decided
    along the way is said for information. What is truly ambiguous is asked,
@@ -161,9 +165,9 @@ instance of it. The agent's job is to find the rest of that kind, not to fix
 the one instance and stop.
 
 This page is meant to be handed to an agent as it is: "work like this".
-It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/consequences_first.md).
+It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/consequences_first.md).
 
-![The author shows one dropdown that lags: fixing only that one leaves nine lagging; finding every case like it changes all of them, and the one left is named in the reply](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/img/guides/one_example_all_cases.svg)
+![The author shows one dropdown that lags: fixing only that one leaves nine lagging; finding every case like it changes all of them, and the one left is named in the reply](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/one_example_all_cases.svg)
 
 #### Why
 
@@ -223,9 +227,9 @@ discover it after.
 A piece of UI is not done when it looks right with the one text it was built
 with. It is done when it holds with every text and value it will be given.
 The agent tries those before saying "done", not the author after.
-It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/consequences_first.md).
+It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/consequences_first.md).
 
-![the close button pushed under a long alert message](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every-state-alert.png)
+![the close button pushed under a long alert message](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every-state-alert.png)
 
 The alert above was built with a short message. A long one took the whole
 row, and the close button wrapped to a line of its own, under the text. One
@@ -239,7 +243,7 @@ million. Each of those breaks a layout made for the sample, and each break
 costs the author a screenshot and a message. Trying the states takes the
 agent minutes; finding them one by one takes the author days.
 
-![One alert in six states: the sample, too long, missing, tiny, absurd and error; in each the text wraps inside and the close button stays top right](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/img/guides/every_state_before_done.svg)
+![One alert in six states: the sample, too long, missing, tiny, absurd and error; in each the text wraps inside and the close button stays top right](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/every_state_before_done.svg)
 
 #### The rule
 
@@ -297,9 +301,9 @@ is built, how someone would break it. An agent tells each story before
 calling the work done, and the screen follows the user's story, whatever the
 implementation does inside.
 
-It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/consequences_first.md).
+It is one case of [Consequences first](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/consequences_first.md).
 
-![Send is pressed: on the left the comment is nowhere for 2 seconds, then it shows; on the right it shows at once marked Sending, and the mark goes when the server has it](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/drafts/optimistic-updates.gif)
+![Send is pressed: on the left the comment is nowhere for 2 seconds, then it shows; on the right it shows at once marked Sending, and the mark goes when the server has it](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/drafts/optimistic-updates.gif)
 
 Above, a comment sent under a task. In the implementation's story it goes
 to the server, waits until it is filed, and comes back with the next
@@ -318,7 +322,7 @@ author finds each one by living that story, one message each.
 
 #### The points of view
 
-![One task, send a comment, and the stories around it: the user's, the implementation's and the attacker's told by the author; the operator's, the next developer's and the newcomer's suggested by the agent](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/img/guides/every_point_of_view.svg)
+![One task, send a comment, and the stories around it: the user's, the implementation's and the attacker's told by the author; the operator's, the next developer's and the newcomer's suggested by the agent](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/every_point_of_view.svg)
 
 
 Told by the author:
@@ -369,10 +373,10 @@ at a glance, where the same data as a paragraph takes a minute and still
 hides how its parts connect. The agent asks what the data answers, picks the
 kind of diagram for it, and draws that.
 
-It is one case of [Every point of view](https://github.com/vbarbarosh/rules/blob/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/agents/every_point_of_view.md): the
+It is one case of [Every point of view](https://github.com/vbarbarosh/rules/blob/33cf36275d1384ee5e60232cab779214b6290f0d/agents/every_point_of_view.md): the
 author's story is what they see.
 
-![Six questions about the data, each with the kinds of picture that answer it: how it works, what it is made of, where it stands, what went wrong, how much and how often, what it changes](https://raw.githubusercontent.com/vbarbarosh/rules/23ee7f914c2d2eedd3008d4725155f0bfdd4cb4f/img/guides/data_as_a_picture.svg)
+![Six questions about the data, each with the kinds of picture that answer it: how it works, what it is made of, where it stands, what went wrong, how much and how often, what it changes](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/data_as_a_picture.svg)
 
 #### Why
 
@@ -398,7 +402,7 @@ itself. Text that holds data is the author's work left undone.
    the colours of the page it is shown on. A picture that was not looked at
    was not checked.
 6. **No shape, no picture.** One fact, a yes or no, a name, a single number:
-   a sentence. A code change: its diff.
+   a sentence.
 
 #### Which picture for which data
 
@@ -409,8 +413,12 @@ itself. Text that holds data is the author's work left undone.
   (what is decided where),
   [state](https://vbarbarosh.github.io/rules/docs/diagrams.html#state)
   (what it can be, what moves it),
+  [flywheel](https://vbarbarosh.github.io/rules/docs/diagrams.html#flywheel)
+  (what feeds itself, where it is slow),
   [swimlanes](https://vbarbarosh.github.io/rules/docs/diagrams.html#swimlanes)
   (who does each step),
+  [step tree](https://vbarbarosh.github.io/rules/docs/diagrams.html#steptree)
+  (stages and their small steps, who does each, what it costs),
   [pipeline](https://vbarbarosh.github.io/rules/docs/diagrams.html#pipeline)
   (files in, steps, files out),
   [call graph](https://vbarbarosh.github.io/rules/docs/diagrams.html#callgraph)
@@ -427,6 +435,10 @@ itself. Text that holds data is the author's work left undone.
   (where each part runs),
   [entities](https://vbarbarosh.github.io/rules/docs/diagrams.html#entities)
   (the data and its links),
+  [class](https://vbarbarosh.github.io/rules/docs/diagrams.html#class)
+  (the types of a program and their links),
+  [breakdown](https://vbarbarosh.github.io/rules/docs/diagrams.html#breakdown)
+  (a whole split into its parts),
   [modules](https://vbarbarosh.github.io/rules/docs/diagrams.html#modules)
   and [matrix](https://vbarbarosh.github.io/rules/docs/diagrams.html#matrix)
   (which file or part needs which),
@@ -448,6 +460,8 @@ itself. Text that holds data is the author's work left undone.
 - **What went wrong, and why?** A failure, a log:
   [timeline](https://vbarbarosh.github.io/rules/docs/diagrams.html#timeline)
   (what happened when),
+  [chronology](https://vbarbarosh.github.io/rules/docs/diagrams.html#chronology)
+  (what one user did, in order),
   [cause tree](https://vbarbarosh.github.io/rules/docs/diagrams.html#causetree)
   (why),
   [one case](https://vbarbarosh.github.io/rules/docs/diagrams.html#case)
@@ -459,8 +473,14 @@ itself. Text that holds data is the author's work left undone.
 - **How much, how often?** Numbers:
   [line chart](https://vbarbarosh.github.io/rules/docs/diagrams.html#linechart)
   (over time),
+  [bar chart](https://vbarbarosh.github.io/rules/docs/diagrams.html#barchart)
+  (how much of each),
+  [pie chart](https://vbarbarosh.github.io/rules/docs/diagrams.html#piechart)
+  (shares of one whole),
   [heatmap](https://vbarbarosh.github.io/rules/docs/diagrams.html#heatmap)
   (which days and hours),
+  [event plot](https://vbarbarosh.github.io/rules/docs/diagrams.html#eventplot)
+  (every event of many actors, at its time),
   [sankey](https://vbarbarosh.github.io/rules/docs/diagrams.html#sankey)
   (where it goes, how much),
   [service map](https://vbarbarosh.github.io/rules/docs/diagrams.html#servicemap)
@@ -474,7 +494,208 @@ itself. Text that holds data is the author's work left undone.
   sees),
   [change map](https://vbarbarosh.github.io/rules/docs/diagrams.html#changemap)
   (which files),
+  [before and after](https://vbarbarosh.github.io/rules/docs/diagrams.html#delta)
+  (which parts of a system),
   [quadrant](https://vbarbarosh.github.io/rules/docs/diagrams.html#quadrant)
   (what to do first).
+
+- The first rule is REPRODUCE. NOT GUESS. Do not fix what you cannot
+  reproduce. Found a bug: reproduce it first. Reproduced? Now fix. Without
+  reproduction do not even try to fix. Without reproduction there is
+  nothing to fix. Without reproduction there is nothing to report as broken
+  either. (2026-10-29 00:11)
+- The main goal: to define what counts as fixing an issue reported from
+  production, so that fixes address causes instead of reports.
+  (2026-10-29 00:11)
+- Instead of fixing the cause, it just sticks crutches on, left and right.
+  The cause is what has to be fixed, not the place that hurts. It is not the
+  place that hurts that gets numbed with an anaesthetic: work out what
+  causes this behaviour. (2026-11-10 22:31)
+
+### Fixing: reproduce it, then fix the cause
+
+Fixing a bug means the system handles one more case. Before a line of fix is
+written, the failure is made to happen on demand; then the change goes to
+what caused it, not to the place where it showed. Muting the report, or
+loosening the test, fixes nothing.
+
+This page is meant to be handed to an agent as it is: "work like this".
+
+![The order of work on a failure, left to right: a failure is reported, its trace only a guess; reproduce it on demand; a red line, no line of fix before this; name the condition in one sentence; decide the response; wire it in at the cause, not where it hurts; only then the reporting](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/fixing.svg)
+
+#### Why
+
+Reading a trace, a diff or the surrounding code produces a hypothesis; only a
+reproduction turns it into a fact. A fix built on a hypothesis is a guess
+that ships. The reproduction earns its cost several times over:
+
+- It **disproves wrong theories cheaply**, before they become code that has
+  to be reverted.
+- It tells **when the work is done**: the reproduction stops reproducing.
+- It becomes the **regression test**, so the condition cannot come back
+  unnoticed.
+- It shows the **surrounding facts** otherwise assumed. The state at the
+  moment of failure is routinely the opposite of what the code suggests.
+
+#### The rule
+
+1. **Reproduce it.** Find the conditions under which the error occurs and
+   trigger it deliberately. The breadcrumbs, the release and the affected
+   users form the hypothesis; the reproduction confirms it. Trace the
+   event's group uid through the logs first
+   ([LOG-05](https://vbarbarosh.github.io/rules/docs/rules.html#LOG-05)): it
+   shows the whole sequence around the failure.
+2. **Name the condition.** State in one sentence what has to be true in the
+   world for this to happen. If it cannot be stated, it is not understood
+   yet.
+3. **Decide the response.** What should the app do when that condition
+   holds: retry, wait, re-authenticate, fall back, ask the user? "Nothing"
+   is an answer only for conditions outside the app's control, and it still
+   needs an outcome the user sees.
+4. **Wire the response into the app,** at the cause. The condition is now
+   handled: the code has an answer for it.
+5. **Only then consider the reporting.** Once the condition is handled, the
+   report for that exact case has served its purpose.
+
+No line of fix is written before the first step is done, however obvious the
+cause looks from the stack trace. A condition that cannot be reproduced
+locally is no permission to skip ahead: add instrumentation that captures
+the discriminating facts, ship it, and wait for real data. Observation is a
+slower reproduction, not a substitute for one.
+
+#### Fix the cause, not where it hurts
+
+**What fails shows where it hurts, not what broke.** A red test, an error on
+the screen, a step that hangs: that is where the pain shows. Trace it back to
+what made it so, and change that.
+
+![A blocked install script made the tests red: the fix goes to the cause, allow the script, as the log's next line said; a longer limit on the tests is an anaesthetic, and so are a retry, a longer wait, a guard, a special case and a skipped test](https://raw.githubusercontent.com/vbarbarosh/rules/33cf36275d1384ee5e60232cab779214b6290f0d/img/guides/fixing_cause.svg)
+
+- A change only where it shows (a longer limit, a retry, a longer wait, a
+  guard, a special case, a test loosened or skipped) is an **anaesthetic**:
+  the pain goes quiet, the cause stays, and the next case meets it again.
+- **Read the whole log before the first change,** the line after the error
+  too. The cause, and often the remedy, is written right beside the pain.
+- A cause **out of reach** (another repository, someone else's machine) is
+  named, where it is and what it does, and goes to whoever can fix it. A
+  stopgap where it hurts only when asked for, and called a stopgap.
+
+For example: before a release the tests went red. The install log held the
+cause and the remedy side by side: a package's install script was blocked,
+and the next line named the command that allows it. The limit of a test was
+stretched instead: four lines, already understood, a release waiting. It
+cost a question, a commit of junk and a commit to undo it. The right order
+was the other one: make the install right first, and stretch a test only if
+that cannot be done.
+
+#### Muting is not fixing
+
+- Dropping a report, lowering its level, filtering it in `beforeSend`,
+  resolving or archiving the issue, or collapsing it into a single group
+  **fixes nothing**. For the muted condition it is the same as not
+  monitoring at all.
+- Reducing report volume is a **separate task**, valid only after the
+  condition is reproduced and handled, and only for the exact cases the
+  handling covers.
+- A report that still arrives after the fix is **information**, not a
+  failure of the fix: the condition occurred for a reason the handling does
+  not cover yet.
+- The same applies to guards added on a hunch. A `catch` that swallows a
+  class of errors because they "look transient" is a mute with better
+  manners.
+
+#### A fix is one more case the system handles
+
+**Fixing is not making the test mute; it is making the system handle one
+more case.** The measure of a fix is the set of inputs the system answers
+correctly. A fix grows that set. Anything that leaves the set unchanged is
+not a fix, whatever it does to the red.
+
+The same move wears two costumes, and both are mutes:
+
+- **Muting the report:** dropping the event, lowering its level, filtering
+  it, resolving the issue.
+- **Muting the test:** loosening the assertion, accepting the wrong value as
+  expected, marking it skipped, deleting it.
+
+A test that goes green because the expectation moved to meet the code has
+reported nothing. The condition still occurs, and now nothing watches it.
+
+Green comes from the other direction: the code learns the case, and the
+untouched assertion stops failing. So write the assertion as the outcome the
+user should get, watch it fail for the real reason, then teach the system
+the case. If the assertion has to change to pass, the change is the finding:
+say what new behaviour it now describes, and why that is the right one.
+
+For example: a batch update returned 500 when an item carried a label. The
+client updates an item by posting its listing row back with one field
+changed, so the labels came back as objects where the handler expected
+titles. The test asserted 200 and the labels intact, and stayed exactly as
+written; the handler learned to read a title out of either shape. One more
+case handled, one assertion never touched.
+
+#### Reproduce before naming a defect
+
+The rule is usually read as a rule about writing code. It is also a rule
+about writing sentences. Naming something a defect sends a person to look
+for it, and that person pays for the claim in hours while the reproduction
+would have cost minutes.
+
+**Reproduce before you name it.** A screen that looks wrong, a value that
+looks odd, a list that reads strangely: none of that is a defect until the
+thing happens on demand.
+
+**What cannot be reproduced is still worth reporting, under its own name.**
+Call it an **unreproduced observation**, in those words, and give three
+things: what was seen, what was tried, and what is missing. A reader then
+knows at once whether an item costs them an investigation or is merely
+something noticed.
+
+For example: four items in a library carried the name of a placeholder file,
+and a check report called it a naming defect. One upload showed that every
+path already named its item correctly; the four records had come from
+outside the product. Thirty seconds of checking would have prevented the
+claim; without it, it would have become someone's afternoon.
+
+#### What an unhandled error means
+
+- An unhandled error means **we are not prepared for this condition**: we do
+  not yet know what the app should do about it. It is an open question, not
+  a defect in the reporting.
+- A stack trace is a **hypothesis about the cause, not the cause**. An
+  explanation derived only from reading a trace, a diff or the surrounding
+  code is unverified until it is reproduced.
+- Event volume measures **how often we are unprepared**, not how broken the
+  code is. A high event count is no reason to silence the group.
+
+#### What the user sees
+
+- The user must **never see a raw error** for a condition the app can
+  recover from: no error modal, no stack trace, no library wording such as
+  `Network Error`.
+- The worst acceptable outcome is a **visible recovery state**: a preloader,
+  a "reconnecting" indicator, a disabled control, something that says the
+  app is working on it and the user's data is safe.
+- Show a real error only when **recovery is impossible** and the user has to
+  make a decision. Then say what happened in their terms and what they can
+  do.
+
+#### Before calling it fixed
+
+- Can the triggering condition be stated in one sentence?
+- Was it reproduced, and does the reproduction stop reproducing after the
+  change?
+- What does the user see while the app recovers?
+- If this error class occurs again for a different reason, does it still
+  reach us?
+- Is the change where the cause is, or only where it showed?
+
+#### Before calling it a defect
+
+- Did it happen on demand, or was it only seen once?
+- Was one thing changed at a time between the working case and the broken
+  one?
+- Was the code path that produces it read, or only the screen that shows it?
+- If none of those hold, is it written as an unreproduced observation?
 
 <!-- rules: end -->
