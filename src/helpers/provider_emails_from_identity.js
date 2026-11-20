@@ -1,11 +1,18 @@
-// The addresses a provider identity's provider vouched for at its last
-// sign-in (user_identities.provider_emails, AW-120), normalized; none when it
-// kept none: a row from before they were kept, or one that is not a list.
+// The addresses a provider identity's provider gave at its last sign-in
+// (AW-120), normalized: the ones it confirmed, user_identities.provider_emails,
+// then the ones it gave unconfirmed, provider_unconfirmed_emails (Facebook's,
+// AW-170); none when it kept none: a row from before they were kept, or one
+// that is not a list.
 function provider_emails_from_identity(ident)
+{
+    return [...emails_from_json(ident.provider_emails), ...emails_from_json(ident.provider_unconfirmed_emails)];
+}
+
+function emails_from_json(value)
 {
     let parsed;
     try {
-        parsed = JSON.parse(ident.provider_emails ?? '[]');
+        parsed = JSON.parse(value ?? '[]');
     }
     catch {
         return [];

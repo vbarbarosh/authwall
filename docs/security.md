@@ -196,8 +196,8 @@ sent to sign in, its personal access tokens get 403, its WebSockets are
 refused, and its account pages allow only signing out. Nothing is deleted:
 when the rule is removed and Authwall restarts, the same sessions and tokens
 work again. An account that keeps no address of its own, signed in with a
-provider, is judged by the addresses that provider vouched for at its last
-sign-in, as that sign-in was.
+provider, is judged by the addresses that provider gave at its last sign-in,
+confirmed or not, as that sign-in was.
 
 The rules also bind username accounts: registration by username is disabled
 while any rule is configured, and an account with only a username has no way to

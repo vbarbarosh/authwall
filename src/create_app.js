@@ -723,7 +723,7 @@ async function lease_admitted_users(user_ids)
     const identities_by_user = new Map(Array.from(user_ids, v => [v, []]));
     if (has_email_access_rules()) {
         for (const ids of chunks(Array.from(user_ids), 500)) {
-            const rows = await db('user_identities').whereIn('user_id', ids).select('user_id', 'type', 'value_normalized', 'verified_at', 'provider_emails');
+            const rows = await db('user_identities').whereIn('user_id', ids).select('user_id', 'type', 'value_normalized', 'verified_at', 'provider_emails', 'provider_unconfirmed_emails');
             for (const row of rows) {
                 identities_by_user.get(row.user_id).push(row);
             }

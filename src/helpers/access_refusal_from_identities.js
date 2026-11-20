@@ -15,18 +15,18 @@ const PROVIDER_FLOWS = new Map([
 ]);
 
 // Why the email access rules refuse an account with these identities (rows
-// of user_identities: type, value_normalized, verified_at, provider_emails),
-// or null when they admit it. The one answer for a sign-in and for every
-// credential the account already holds: a session, a token, a socket
-// (AW-106).
+// of user_identities: type, value_normalized, verified_at, provider_emails,
+// provider_unconfirmed_emails), or null when they admit it. The one answer
+// for a sign-in and for every credential the account already holds: a
+// session, a token, a socket (AW-106).
 //
 // Every verified address must pass (AW-28). And the account must have a way
 // to meet the rules, as a sign-in would: a verified address; an account at an
-// enabled provider whose addresses, the ones it vouched for at its last
-// sign-in, pass (AW-120): a session or a token is no sign-in, and the stored
-// addresses may go; or a pending address the rules admit, where confirmation
-// is required and holds the account at it until it is confirmed. A username
-// alone has none (notes/decisions.md).
+// enabled provider whose addresses, the ones it gave at its last sign-in,
+// confirmed or not, pass (AW-120, AW-170): a session or a token is no
+// sign-in, and the stored addresses may go; or a pending address the rules
+// admit, where confirmation is required and holds the account at it until it
+// is confirmed. A username alone has none (notes/decisions.md).
 async function access_refusal_from_identities(identities)
 {
     if (!has_email_access_rules()) {

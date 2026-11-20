@@ -18,6 +18,11 @@
 
 ### Security
 
+- A Facebook sign-in keeps its address apart, in
+  `user_identities.provider_unconfirmed_emails`: `provider_emails` holds
+  only what a provider confirmed. Facebook never says it confirmed an
+  address, and the code took the one list for confirmed ones. Who is let in
+  stays as it was, and a migration moves the Facebook rows.
 - The repository's `docker-compose.yaml` and the recipes with Postgres put
   the database on a network of its own, which only Authwall joins. The app
   behind Authwall shared its network, and could reach the database with
